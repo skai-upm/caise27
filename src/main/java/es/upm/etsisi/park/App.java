@@ -1,15 +1,23 @@
 package es.upm.etsisi.park;
 
-import es.upm.etsisi.park.cli.CommandProcessor;
-import es.upm.etsisi.park.cli.CommandRunner;
-import es.upm.etsisi.park.core.Park;
+import es.upm.etsisi.park.business.controller.Park;
+import es.upm.etsisi.park.business.exception.PersistenceException;
+import es.upm.etsisi.park.business.security.BCryptPasswordHasher;
+import es.upm.etsisi.park.persistence.DataPaths;
+import es.upm.etsisi.park.persistence.Repositories;
+import es.upm.etsisi.park.persistence.file.FileRepositories;
+import es.upm.etsisi.park.presentation.CommandProcessor;
+import es.upm.etsisi.park.presentation.CommandRunner;
+import es.upm.etsisi.park.presentation.help.ExtendedHelpFormatter;
+import es.upm.etsisi.park.presentation.help.HelpGenerator;
+import es.upm.etsisi.park.presentation.help.HelpOption;
+import es.upm.etsisi.park.presentation.help.SimpleHelpFormatter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +29,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Application entry point.
+ * Application entry point and composition root: creates the repositories for the chosen
+ * data directory, configures the controllers and builds the presentation objects.
  * <ul>
  *   <li>no arguments: interactive mode, data in the working directory;</li>
  *   <li>{@code <file>}: command file mode;</li>
@@ -48,7 +57,7 @@ public class App {
                 dataDir = createTemporaryDirectory(workDir);
             }
             return execute(dataDir, commandFile, in, out, err);
-        } catch (IOException | UncheckedIOException e) {
+        } catch (IOException | PersistenceException e) {
             err.println("ERROR: " + e.getMessage());
             return 1;
         } finally {
@@ -60,9 +69,10 @@ public class App {
 
     private static int execute(Path dataDir, String commandFile, InputStream in, PrintStream out, PrintStream err)
             throws IOException {
+        Repositories repositories = FileRepositories.open(new DataPaths(dataDir));
         Park park = Park.getInstance();
-        park.load(dataDir);
-        CommandRunner runner = new CommandRunner(new CommandProcessor(park, out));
+        park.configure(repositories, new BCryptPasswordHasher());
+        CommandRunner runner = new CommandRunner(new CommandProcessor(park, helpOptions(), out));
 
         if (commandFile == null) {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
@@ -80,6 +90,13 @@ public class App {
             runner.run(reader);
         }
         return 0;
+    }
+
+    public static List<HelpOption> helpOptions() {
+        return List.of(
+                new HelpOption("", "Lists the syntax of every command.", new HelpGenerator(new SimpleHelpFormatter())),
+                new HelpOption("EXTENDED", "Lists every command with a description of its purpose.",
+                        new HelpGenerator(new ExtendedHelpFormatter())));
     }
 
     private static String argumentOrNull(String[] args, int index) {
