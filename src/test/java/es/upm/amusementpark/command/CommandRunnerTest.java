@@ -5,23 +5,26 @@ import static es.upm.amusementpark.command.CommandProcessorTest.CREATE_PEDRO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.amusementpark.persistence.InMemoryUserRepository;
-import es.upm.amusementpark.service.UserService;
+import es.upm.amusementpark.TestParks;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class CommandRunnerTest {
 
-    private static String run(String input) throws IOException {
+    @TempDir
+    Path dir;
+
+    private String run(String input) throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(bytes, true, StandardCharsets.UTF_8);
-        CommandRunner runner = new CommandRunner(
-                new CommandProcessor(new UserService(new InMemoryUserRepository())), out);
+        CommandRunner runner = new CommandRunner(new CommandProcessor(TestParks.open(dir)), out);
         runner.run(new BufferedReader(new StringReader(input)));
         return bytes.toString(StandardCharsets.UTF_8).replace("\r\n", "\n");
     }

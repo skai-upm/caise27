@@ -7,11 +7,16 @@ Keeps users across application runs by storing them in a plain text file in a fi
 ## Requirements
 
 ### Requirement: User file format
-Users SHALL be stored in a text file named `users.txt` in the working directory. The file holds one user per line, with attributes in the order first name, surnames, DNI, email, password, phone, card, separated by `;`.
+Users SHALL be stored in a text file named `users.txt` in the active data directory: the working directory in normal execution, or the run's temporary directory in `--fly` mode. The file holds one user per line, with attributes in the order first name, surnames, DNI, email, password, phone, card, separated by `;`.
 
 #### Scenario: Stored line format
 - **WHEN** the user Ana (`Ana`, `Garcia Lopez`, `12345678Z`, `ana@correo.com`, `Clave1!`, `612345678`, `1234567890123456`) is stored
 - **THEN** the file contains the line `Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456`
+
+#### Scenario: Users file in temporary mode
+- **WHEN** a user is created during a `--fly` execution
+- **THEN** the user is written to `users.txt` inside the run's temporary directory, and the working directory's `users.txt` is not modified
+
 
 ### Requirement: Load users on startup
 On startup the application SHALL load all users stored in the user file. A missing file SHALL be treated as no users. A line that is blank, malformed, or whose data violates the validation or uniqueness rules SHALL be skipped with a warning, without stopping the application.

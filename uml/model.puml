@@ -1,0 +1,111 @@
+@startuml model
+' Amusement Park - Delivery 2 class model.
+' Relationship labels are the names of the fields that implement them.
+
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package es.upm.amusementpark.service {
+  class Park <<singleton>> {
+    - {static} INSTANCE : Park
+    - today : LocalDate
+    - price : BigDecimal
+  }
+
+  class UserService {
+  }
+}
+
+package es.upm.amusementpark.model {
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    - id : String
+    - name : String
+  }
+
+  abstract class Ticket {
+    - id : String
+    - date : LocalDate
+  }
+
+  class IndividualTicket {
+    - basePrice : BigDecimal
+    - discountPercent : int
+  }
+
+  class GroupTicket {
+  }
+
+  enum GroupDiscount {
+    NONE
+    SMALL
+    MEDIUM
+    LARGE
+    - minMembers : int
+    - maxMembers : int
+    - percent : int
+  }
+
+  class Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+  }
+}
+
+package es.upm.amusementpark.persistence {
+  interface UserRepository {
+  }
+
+  class FileUserRepository {
+  }
+
+  class ParkStore {
+    - directory : Path
+  }
+}
+
+' Inheritance and interface implementation
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+UserRepository <|.. FileUserRepository
+
+' Central management
+Park --> "1" UserService : users
+Park --> "0..*" Group : groups
+Park --> "0..*" Ticket : tickets
+Park --> "0..*" Attraction : attractions
+Park --> "1" ParkStore : store
+UserService --> "0..*" User : usersByEmail
+UserService --> "1" UserRepository : repository
+ParkStore --> "1" FileUserRepository : users
+
+' Domain relationships (directions as required: users know nothing)
+Group --> "0..*" User : members
+IndividualTicket --> "1" User : user
+GroupTicket *-- "1..*" IndividualTicket : composition
+GroupTicket --> "0..1" Group : group
+Attraction --> "0..*" User : occupants
+
+GroupTicket ..> GroupDiscount : uses
+User ..> UserField : modified through
+
+@enduml

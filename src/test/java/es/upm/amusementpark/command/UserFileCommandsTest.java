@@ -5,8 +5,8 @@ import static es.upm.amusementpark.command.CommandProcessorTest.CREATE_PEDRO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.amusementpark.TestParks;
 import es.upm.amusementpark.persistence.FileUserRepository;
-import es.upm.amusementpark.service.UserService;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -32,8 +32,8 @@ class UserFileCommandsTest {
         file = dir.resolve(FileUserRepository.DEFAULT_FILE_NAME);
     }
 
-    private CommandProcessor start() throws IOException {
-        return new CommandProcessor(new UserService(new FileUserRepository(file)));
+    private CommandProcessor start() {
+        return new CommandProcessor(TestParks.open(dir));
     }
 
     private List<String> fileLines() throws IOException {

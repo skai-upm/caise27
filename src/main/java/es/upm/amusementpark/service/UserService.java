@@ -36,6 +36,15 @@ public class UserService {
         return email == null ? null : usersByEmail.get(key(email));
     }
 
+    public User findByDni(String dni) {
+        for (User user : usersByEmail.values()) {
+            if (user.getDni().equalsIgnoreCase(dni)) {
+                return user;
+            }
+        }
+        return null;
+    }
+
     public void create(String firstName, String surnames, String dni, String email,
                        String password, String phone, String card) throws UserException {
         requireNonBlank(firstName, "First name");
@@ -118,7 +127,12 @@ public class UserService {
         commit(updated);
     }
 
-    private User authenticate(String email, String password) throws UserException {
+    /**
+     * Returns the user with that email if the password matches.
+     *
+     * @throws UserException if no user has that email or the password is wrong
+     */
+    public User authenticate(String email, String password) throws UserException {
         User user = findByEmail(email);
         if (user == null) {
             throw new UserException("No user with email " + email);

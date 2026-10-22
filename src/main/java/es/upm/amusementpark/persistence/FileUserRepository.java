@@ -3,19 +3,17 @@ package es.upm.amusementpark.persistence;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.validation.UserValidator;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -79,26 +77,19 @@ public class FileUserRepository implements UserRepository {
 
     @Override
     public void saveAll(Collection<User> users) throws IOException {
-        Path parent = file.toAbsolutePath().getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
+        TextFiles.writeAll(Map.of(file, toLines(users)));
+    }
+
+    Path getFile() {
+        return file;
+    }
+
+    static List<String> toLines(Collection<User> users) {
+        List<String> lines = new ArrayList<>();
+        for (User user : users) {
+            lines.add(format(user));
         }
-        Path temp = Files.createTempFile(parent, "users", ".tmp");
-        try {
-            try (BufferedWriter writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {
-                for (User user : users) {
-                    writer.write(format(user));
-                    writer.newLine();
-                }
-            }
-            try {
-                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } finally {
-            Files.deleteIfExists(temp);
-        }
+        return lines;
     }
 
     static String format(User user) {
