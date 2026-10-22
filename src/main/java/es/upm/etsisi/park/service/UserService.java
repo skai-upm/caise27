@@ -1,9 +1,17 @@
 package es.upm.etsisi.park.service;
 
+import es.upm.etsisi.park.core.SystemState;
+import es.upm.etsisi.park.model.Group;
 import es.upm.etsisi.park.model.User;
 import es.upm.etsisi.park.model.UserField;
+import es.upm.etsisi.park.repository.AttractionRepository;
+import es.upm.etsisi.park.repository.GroupRepository;
+import es.upm.etsisi.park.repository.TicketRepository;
 import es.upm.etsisi.park.repository.UserRepository;
 import es.upm.etsisi.park.validation.UserValidator;
+
+import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Business rules for creating, deleting and updating users.
@@ -11,9 +19,18 @@ import es.upm.etsisi.park.validation.UserValidator;
 public class UserService {
 
     private final UserRepository repository;
+    private final GroupRepository groups;
+    private final TicketRepository tickets;
+    private final AttractionRepository attractions;
+    private final SystemState state;
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, GroupRepository groups, TicketRepository tickets,
+                       AttractionRepository attractions, SystemState state) {
         this.repository = repository;
+        this.groups = groups;
+        this.tickets = tickets;
+        this.attractions = attractions;
+        this.state = state;
     }
 
     public User create(String firstName, String surnames, String dni, String email,
@@ -36,8 +53,26 @@ public class UserService {
         return user;
     }
 
+    /**
+     * Deletes a user who has no active tickets and belongs to no locked group. The user is
+     * removed from their groups; historical tickets keep referring to them.
+     */
     public void delete(String email, String password) {
-        repository.remove(authenticate(email, password));
+        User user = authenticate(email, password);
+        LocalDate today = state.getCurrentDate();
+        require(!tickets.hasActiveTicket(user, today), "User has active tickets and cannot be deleted");
+        List<Group> memberships = groups.findByMember(user);
+        for (Group group : memberships) {
+            require(!tickets.hasActiveGroupTicket(group, today),
+                    "User belongs to group " + group.getId() + ", which has active group tickets");
+        }
+        for (Group group : memberships) {
+            group.remove(user);
+        }
+        attractions.findContaining(user).ifPresent(attraction -> attraction.exit(user));
+        groups.save();
+        tickets.save();
+        repository.remove(user);
     }
 
     public void update(String email, String password, String fieldName, String newValue) {
@@ -76,6 +111,7 @@ public class UserService {
             }
         }
         repository.save();
+        tickets.save();
     }
 
     private User authenticate(String email, String password) {
@@ -86,8 +122,6 @@ public class UserService {
     }
 
     private static void require(boolean condition, String message) {
-        if (!condition) {
-            throw new UserOperationException(message);
-        }
+        Checks.require(condition, message);
     }
 }

@@ -22,3 +22,7 @@ buildNumber.properties
 
 # Amusement park runtime data
 users.txt
+groups.txt
+tickets.txt
+attractions.txt
+tmp/

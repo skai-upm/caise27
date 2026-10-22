@@ -1,5 +1,6 @@
 package es.upm.etsisi.park.service;
 
+import es.upm.etsisi.park.core.Park;
 import es.upm.etsisi.park.model.User;
 import es.upm.etsisi.park.persistence.UserFileStore;
 import es.upm.etsisi.park.repository.UserRepository;
@@ -23,8 +24,9 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        repository = new UserRepository(new UserFileStore(dir.resolve("users.txt")));
-        service = new UserService(repository);
+        Park.getInstance().load(dir);
+        repository = Park.getInstance().getUsers();
+        service = Park.getInstance().getUserService();
         service.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
     }
 

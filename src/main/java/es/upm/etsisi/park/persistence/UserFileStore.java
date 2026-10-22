@@ -2,12 +2,7 @@ package es.upm.etsisi.park.persistence;
 
 import es.upm.etsisi.park.model.User;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,22 +22,10 @@ public class UserFileStore {
 
     public List<User> load() {
         List<User> users = new ArrayList<>();
-        if (!Files.exists(file)) {
-            return users;
-        }
-        List<String> lines;
-        try {
-            lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot read user data file " + file, e);
-        }
-        for (String line : lines) {
-            if (line.isBlank()) {
-                continue;
-            }
+        for (String line : TextFiles.readLines(file)) {
             String[] fields = line.split(SEPARATOR, -1);
             if (fields.length != FIELD_COUNT) {
-                System.err.println("WARNING: skipping malformed user line in " + file);
+                TextFiles.warnMalformed(file, line);
                 continue;
             }
             users.add(new User(fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6]));
@@ -56,13 +39,6 @@ public class UserFileStore {
             lines.add(String.join(SEPARATOR, user.getFirstName(), user.getSurnames(), user.getDni(),
                     user.getEmail(), user.getPassword(), user.getPhone(), user.getCard()));
         }
-        try {
-            Path parent = file.toAbsolutePath().getParent();
-            Path temp = Files.createTempFile(parent, "users", ".tmp");
-            Files.write(temp, lines, StandardCharsets.UTF_8);
-            Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot write user data file " + file, e);
-        }
+        TextFiles.writeLines(file, lines);
     }
 }
