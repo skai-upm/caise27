@@ -1,16 +1,29 @@
 package es.upm.park;
 
-import es.upm.park.cli.CommandProcessor;
-import es.upm.park.cli.CommandRunner;
+import es.upm.park.business.controller.AttractionController;
+import es.upm.park.business.controller.GroupController;
+import es.upm.park.business.controller.InvoiceController;
+import es.upm.park.business.controller.Park;
+import es.upm.park.business.controller.PassController;
+import es.upm.park.business.controller.TicketController;
+import es.upm.park.business.controller.UserController;
+import es.upm.park.business.security.BCryptPasswordHasher;
+import es.upm.park.business.security.PasswordHasher;
 import es.upm.park.persistence.DataPaths;
-import es.upm.park.service.Park;
+import es.upm.park.persistence.PersistenceException;
+import es.upm.park.persistence.Repositories;
+import es.upm.park.persistence.file.FileRepositories;
+import es.upm.park.presentation.CommandProcessor;
+import es.upm.park.presentation.CommandRunner;
+import es.upm.park.presentation.help.ExtendedHelpFormatter;
+import es.upm.park.presentation.help.HelpGenerator;
+import es.upm.park.presentation.help.SyntaxHelpFormatter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,7 +33,10 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 
 /**
- * Application entry point. Accepted forms:
+ * Application entry point and composition root: creates the repositories
+ * for the chosen data directory, injects them and the controller
+ * collaborations into the singletons, and builds the presentation layer.
+ * Accepted forms:
  * <pre>
  * java -jar app.jar                 interactive, permanent data
  * java -jar app.jar input.txt       command file, permanent data
@@ -41,13 +57,43 @@ public final class App {
     }
 
     public static void main(String[] args) {
-        int status = run(args, System.in, System.out, System.err);
+        int status = run(args, System.in, System.out, System.err, new BCryptPasswordHasher());
         if (status != 0) {
             System.exit(status);
         }
     }
 
-    static int run(String[] args, InputStream in, PrintStream out, PrintStream err) {
+    /**
+     * Configures every singleton for the given repositories and loads the
+     * stored park state.
+     */
+    public static CommandProcessor.Controllers initialize(Repositories repositories, PasswordHasher hasher) {
+        Park park = Park.getInstance();
+        park.configure(repositories);
+        park.load();
+
+        PassController passes = PassController.getInstance();
+        passes.configure(park);
+        UserController users = UserController.getInstance();
+        users.configure(park, hasher);
+        GroupController groups = GroupController.getInstance();
+        groups.configure(park);
+        TicketController tickets = TicketController.getInstance();
+        tickets.configure(park, passes);
+        AttractionController attractions = AttractionController.getInstance();
+        attractions.configure(park, passes);
+        InvoiceController invoices = InvoiceController.getInstance();
+        invoices.configure(park, passes);
+        return new CommandProcessor.Controllers(park, users, groups, tickets, passes, attractions, invoices);
+    }
+
+    public static CommandProcessor createCommandProcessor(CommandProcessor.Controllers controllers) {
+        return new CommandProcessor(controllers,
+                new HelpGenerator(new SyntaxHelpFormatter()),
+                new HelpGenerator(new ExtendedHelpFormatter()));
+    }
+
+    static int run(String[] args, InputStream in, PrintStream out, PrintStream err, PasswordHasher hasher) {
         boolean fly = args.length > 0 && FLY_OPTION.equals(args[0]);
         int fileArgument = fly ? 1 : 0;
         Path commandFile = args.length > fileArgument ? Path.of(args[fileArgument]) : null;
@@ -68,7 +114,7 @@ public final class App {
         }
 
         try {
-            return execute(dataDir, commandFile, in, out, err);
+            return execute(dataDir, commandFile, in, out, err, hasher);
         } finally {
             if (fly) {
                 deleteRecursively(dataDir, err);
@@ -79,15 +125,17 @@ public final class App {
         }
     }
 
-    private static int execute(Path dataDir, Path commandFile, InputStream in, PrintStream out, PrintStream err) {
-        Park park = Park.getInstance();
+    private static int execute(Path dataDir, Path commandFile, InputStream in, PrintStream out, PrintStream err,
+                               PasswordHasher hasher) {
+        CommandProcessor processor;
         try {
-            park.open(new DataPaths(dataDir));
-        } catch (UncheckedIOException e) {
+            processor = createCommandProcessor(
+                    initialize(FileRepositories.create(new DataPaths(dataDir)), hasher));
+        } catch (PersistenceException e) {
             err.println("ERROR: " + e.getMessage());
             return 1;
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(park), out);
+        CommandRunner runner = new CommandRunner(processor, out);
 
         if (commandFile == null) {
             try {

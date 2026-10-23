@@ -1,16 +1,17 @@
 @startuml model
-' Delivery 2 class model (es.upm.park). Methods and constructors omitted.
+' Delivery 3 class model (es.upm.park). Methods and constructors omitted;
+' exceptions, help formatting and repository implementations summarised.
 hide empty methods
 skinparam classAttributeIconSize 0
 
-package es.upm.park.model {
+package es.upm.park.business.model {
 
   class User {
     - firstName : String
     - surnames : String
     - dni : String {readOnly}
     - email : String
-    - password : String
+    - passwordHash : String
     - phone : String
     - card : String
   }
@@ -27,12 +28,6 @@ package es.upm.park.model {
   class Group {
     - id : String
     - name : String
-  }
-
-  class Attraction {
-    - id : String
-    - name : String
-    - capacity : int
   }
 
   abstract class Ticket {
@@ -56,39 +51,169 @@ package es.upm.park.model {
   }
 }
 
-package es.upm.park.service {
+package es.upm.park.business.model.access {
+  interface GeneralAccess
+  interface IndividualAccess
+  interface GroupAccess
+}
+
+package es.upm.park.business.model.attraction {
+  abstract class "Attraction<T extends GeneralAccess>" as Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+    - accessType : Class<T>
+  }
+  class "GeneralAttraction\n<T = GeneralAccess>" as GeneralAttraction
+  class "IndividualAttraction\n<T = IndividualAccess>" as IndividualAttraction
+  class "GroupAttraction\n<T = GroupAccess>" as GroupAttraction
+  class "SpecialAttraction\n<T = IndividualAccess>" as SpecialAttraction
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+}
+
+package es.upm.park.business.model.pass {
+  abstract class Pass {
+    - id : String
+    - price : BigDecimal
+    - consumed : boolean
+  }
+  class SpeedPass
+  class SpecialPass
+  interface PassRegistry
+}
+
+package es.upm.park.business.invoice {
+  interface InvoiceBuilder
+  abstract class AbstractInvoiceBuilder
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
+  class Invoice <<record>>
+  class InvoiceSection <<record>>
+  class InvoiceItem <<record>>
+}
+
+package es.upm.park.business.security {
+  interface PasswordHasher
+  class BCryptPasswordHasher
+}
+
+package es.upm.park.business.controller {
   class Park <<singleton>> {
     - currentDate : LocalDate
     - currentPrice : BigDecimal
   }
-  class UserService
+  class UserController <<singleton>>
+  class GroupController <<singleton>>
+  class TicketController <<singleton>>
+  class PassController <<singleton>>
+  class AttractionController <<singleton>>
+  class InvoiceController <<singleton>>
 }
 
+package es.upm.park.persistence {
+  class Repositories <<record>>
+  interface UserRepository
+  interface GroupRepository
+  interface TicketRepository
+  interface AttractionRepository
+  interface PassRepository
+}
+
+package es.upm.park.presentation {
+  class CommandProcessor
+  class HelpGenerator
+  interface HelpFormatter
+}
+
+class App <<composition root>>
+
+' ---- tickets and access capabilities
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+GeneralAccess <|.. Ticket
+GeneralAccess <|-- IndividualAccess
+GeneralAccess <|-- GroupAccess
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
 
 Group "*" --> "0..*" User : members
-Attraction "*" --> "0..*" User : occupants
 IndividualTicket "*" --> "1" User : user
 IndividualTicket "*" --> "1" GroupDiscount : discount
 GroupTicket "1" *--> "1..*" IndividualTicket : composition
 GroupTicket "*" --> "0..1" Group : group
 
-Park "1" *--> "1" UserService : users
-UserService "1" o--> "*" User : users
+' ---- attractions (bounded generics)
+Attraction <|-- GeneralAttraction
+Attraction <|-- IndividualAttraction
+Attraction <|-- GroupAttraction
+Attraction <|-- SpecialAttraction
+Attraction "*" --> "0..*" User : occupants
+Attraction ..> GeneralAccess : T extends
+GeneralAttraction ..> GeneralAccess : admits
+IndividualAttraction ..> IndividualAccess : admits
+GroupAttraction ..> GroupAccess : admits
+SpecialAttraction ..> IndividualAccess : admits
+Attraction ..> PassRegistry : consumes passes via
+AttractionType ..> Attraction : creates
+
+' ---- passes
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+SpeedPass "0..*" --> "1" IndividualTicket : ticket
+SpecialPass "0..1" --> "1" IndividualTicket : ticket
+PassRegistry <|.. PassController
+
+' ---- invoices (Builder; InvoiceController is the director)
+InvoiceBuilder <|.. AbstractInvoiceBuilder
+AbstractInvoiceBuilder <|-- UserInvoiceBuilder
+AbstractInvoiceBuilder <|-- GroupInvoiceBuilder
+AbstractInvoiceBuilder ..> Invoice : builds
+Invoice "1" *--> "0..*" InvoiceSection
+InvoiceSection "1" *--> "1..*" InvoiceItem
+InvoiceController ..> UserInvoiceBuilder : directs
+InvoiceController ..> GroupInvoiceBuilder : directs
+
+' ---- central state
+Park "1" o--> "*" User : users
 Park "1" o--> "*" Group : groups
 Park "1" o--> "*" Ticket : tickets
 Park "1" o--> "*" Attraction : attractions
-UserService ..> UserField : uses
+Park "1" o--> "*" Pass : passes
 
-note right of GroupTicket
-  The group reference becomes null
-  when the group is deleted; the
-  composition is fixed at purchase.
-end note
+' ---- dependency injection (configured by App)
+Park --> "1" Repositories : injected
+Repositories --> UserRepository
+Repositories --> GroupRepository
+Repositories --> TicketRepository
+Repositories --> AttractionRepository
+Repositories --> PassRepository
+UserController --> Park : injected
+UserController --> PasswordHasher : injected
+PasswordHasher <|.. BCryptPasswordHasher
+GroupController --> Park : injected
+PassController --> Park : injected
+TicketController --> Park : injected
+TicketController --> PassController : injected
+AttractionController --> Park : injected
+AttractionController --> PassController : injected
+InvoiceController --> Park : injected
+InvoiceController --> PassController : injected
+CommandProcessor --> "2" HelpGenerator : injected
+HelpGenerator --> "1" HelpFormatter : injected
+CommandProcessor ..> UserController
+CommandProcessor ..> TicketController
+CommandProcessor ..> AttractionController
+CommandProcessor ..> InvoiceController
+App ..> Repositories : creates
+App ..> Park : configures
 
 note bottom of User
   Users hold no references to
-  tickets, groups or attractions.
+  tickets, groups, passes or attractions.
 end note
 @enduml

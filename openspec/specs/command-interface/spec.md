@@ -62,7 +62,7 @@ An unknown command, a command with the wrong number of fields, or any rejected o
 - **THEN** an error message describing the expected syntax is printed and the application keeps running
 
 ### Requirement: HELP command
-The `HELP` command SHALL display the available commands and their basic syntax, covering at least `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>`, `USER DELETE;<Email>;<Password>`, `USER UPDATE;<Email>;<Password>;<Field>;<NewValue>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `GROUPTICKET CREATE;<identifier>;<group>;<date>`, `GROUPTICKET DELETE;<identifier>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>`, `ATTRACTION ENTER;<attraction>;<ticket>`, `ATTRACTION EXIT;<attraction>;<email>`, `ATTRACTION LIST;<attraction>`, `ATTRACTION STATUS;<attractionIdentifier>`, `HELP` and `EXIT`.
+The `HELP` command SHALL display the syntax of every command recognised by the application across Deliveries 1, 2 and 3, including `ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>`, `ATTRACTION ENTER;<attraction>;<ticket>;SPEED`, `SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>`, `SPEEDPASS DELETE;<speedPassIdentifier>`, `SPECIALPASS CREATE;<identifier>;<individualTicket>`, `SPECIALPASS DELETE;<specialPassIdentifier>`, `INVOICE CREATE;USER;<email>`, `INVOICE CREATE;GROUP;<groupIdentifier>`, `HELP EXTENDED`, `HELP` and `EXIT`.
 
 #### Scenario: Show help
 - **WHEN** `HELP` is processed
@@ -72,9 +72,20 @@ The `HELP` command SHALL display the available commands and their basic syntax, 
 - **WHEN** `HELP` is processed
 - **THEN** the output also lists the syntax of every `SYSTEM`, `GROUP`, `TICKET`, `GROUPTICKET` and `ATTRACTION` command
 
+#### Scenario: Delivery 3 commands in help
+- **WHEN** `HELP` is processed
+- **THEN** the output also lists the syntax of the typed `ATTRACTION CREATE`, `ATTRACTION ENTER ... ;SPEED`, every `SPEEDPASS`, `SPECIALPASS` and `INVOICE` command, and `HELP EXTENDED`
+
 ### Requirement: EXIT command
 The `EXIT` command SHALL terminate the application in a controlled manner; no command after `EXIT` SHALL be executed, in either execution mode.
 
 #### Scenario: Exit stops file processing
 - **WHEN** a command file contains `USER CREATE;...`, then `EXIT`, then another `USER CREATE;...`
 - **THEN** only the first user is created and the application terminates after `EXIT`
+
+### Requirement: Extended help
+The `HELP EXTENDED` command SHALL display, for every command shown by `HELP`, its syntax together with a brief description of its purpose.
+
+#### Scenario: Extended help
+- **WHEN** `HELP EXTENDED` is processed
+- **THEN** each command's syntax is shown with a one-line explanation of what it does

@@ -1,5 +1,6 @@
 package es.upm.park;
 
+import es.upm.park.business.controller.ParkFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ class AppTest {
         InputStream in = new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8));
         return App.run(args, in,
                 new PrintStream(out, true, StandardCharsets.UTF_8),
-                new PrintStream(err, true, StandardCharsets.UTF_8));
+                new PrintStream(err, true, StandardCharsets.UTF_8), ParkFixture.FAST_HASHER);
     }
 
     private String output() {
@@ -76,8 +77,10 @@ class AppTest {
         assertTrue(output.contains("USER UPDATED"));
         assertTrue(output.contains("USER DELETED"));
         assertTrue(output.contains("Available commands"));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456"),
-                Files.readAllLines(dataDir.resolve("users.txt")));
+        List<String> stored = Files.readAllLines(dataDir.resolve("users.txt"));
+        assertEquals(1, stored.size());
+        assertTrue(stored.get(0).startsWith("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;$2a$"));
+        assertTrue(stored.get(0).endsWith(";699999999;1234567890123456"));
     }
 
     @Test
