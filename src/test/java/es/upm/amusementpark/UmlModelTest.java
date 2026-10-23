@@ -6,8 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +35,9 @@ class UmlModelTest {
     private static final Pattern PACKAGE = Pattern.compile("^\\s*package\\s+([\\w.]+)");
     private static final Pattern ATTRIBUTE = Pattern.compile("^\\s*-\\s*(\\{static}\\s*)?(\\w+)\\s*:");
     private static final Pattern RELATION = Pattern.compile(
-            "^(\\w+)\\s+(-->|\\*--)\\s+\"[^\"]+\"\\s+(\\w+)\\s*:\\s*(\\w+)\\s*$");
+            "^(\\w+)\\s+(?:\"[^\"]+\"\\s+)?(-->|\\*--)\\s+\"[^\"]+\"\\s+(\\w+)\\s*:\\s*(\\w+)\\s*$");
+    private static final Pattern BIND = Pattern.compile("^(\\w+)\\s+\\.\\.>\\s+(\\w+)\\s*:\\s*<<bind>>\\s*T\\s*$");
+    private static final Pattern SINGLETON = Pattern.compile("^\\s*class\\s+(\\w+)\\s+<<singleton>>");
     private static final Pattern EXTENSION = Pattern.compile("^(\\w+)\\s+(<\\|--|<\\|\\.\\.)\\s+(\\w+)\\s*$");
 
     private static List<String> lines;
@@ -72,13 +78,16 @@ class UmlModelTest {
         return clazz;
     }
 
+    /** Asserts that {@code owner} or one of its superclasses declares {@code field}. */
     private static void assertField(Class<?> owner, String field) {
-        try {
-            Field declared = owner.getDeclaredField(field);
-            assertEquals(field, declared.getName());
-        } catch (NoSuchFieldException e) {
-            fail(owner.getSimpleName() + " has no field " + field);
+        for (Class<?> type = owner; type != null; type = type.getSuperclass()) {
+            for (Field declared : type.getDeclaredFields()) {
+                if (declared.getName().equals(field)) {
+                    return;
+                }
+            }
         }
+        fail(owner.getSimpleName() + " has no field " + field);
     }
 
     @Test
@@ -91,7 +100,10 @@ class UmlModelTest {
     @Test
     void coreModelTypesArePresent() {
         for (String name : List.of("Park", "User", "UserField", "Group", "Ticket", "IndividualTicket",
-                "GroupTicket", "GroupDiscount", "Attraction")) {
+                "GroupTicket", "GroupDiscount", "Attraction", "GeneralAccess", "IndividualAccess", "GroupAccess",
+                "GeneralAttraction", "IndividualAttraction", "GroupAttraction", "SpecialAttraction", "Pass",
+                "SpeedPass", "SpecialPass", "InvoiceBuilder", "UserInvoiceBuilder", "GroupInvoiceBuilder",
+                "UserRepository", "PassRepository", "HelpFormatter", "PasswordHasher")) {
             assertTrue(types.containsKey(name), name);
         }
     }
@@ -122,7 +134,7 @@ class UmlModelTest {
                 checked++;
             }
         }
-        assertTrue(checked >= 10, "expected the labelled associations to be checked");
+        assertTrue(checked >= 40, "expected the labelled associations to be checked");
     }
 
     @Test
@@ -144,6 +156,40 @@ class UmlModelTest {
                 checked++;
             }
         }
-        assertEquals(3, checked);
+        assertTrue(checked >= 30, "expected the inheritance and implementation edges to be checked");
+    }
+
+    @Test
+    void genericBindingsMatchTheAttractionClasses() {
+        int checked = 0;
+        for (String line : lines) {
+            Matcher bind = BIND.matcher(line.trim());
+            if (bind.find()) {
+                Type argument = ((ParameterizedType) type(bind.group(1)).getGenericSuperclass())
+                        .getActualTypeArguments()[0];
+                assertEquals(type(bind.group(2)), argument, bind.group(1));
+                checked++;
+            }
+        }
+        assertEquals(4, checked);
+    }
+
+    @Test
+    void singletonsInTheDiagramAreSingletonsInTheCode() throws ReflectiveOperationException {
+        int checked = 0;
+        for (String line : lines) {
+            Matcher singleton = SINGLETON.matcher(line);
+            if (singleton.find()) {
+                Class<?> controller = type(singleton.group(1));
+                Method getInstance = controller.getMethod("getInstance");
+                assertTrue(Modifier.isStatic(getInstance.getModifiers()));
+                assertTrue(getInstance.invoke(null) == getInstance.invoke(null));
+                for (Constructor<?> constructor : controller.getDeclaredConstructors()) {
+                    assertTrue(Modifier.isPrivate(constructor.getModifiers()), controller.getSimpleName());
+                }
+                checked++;
+            }
+        }
+        assertEquals(8, checked);
     }
 }

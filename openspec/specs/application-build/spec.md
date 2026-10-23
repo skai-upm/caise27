@@ -21,11 +21,15 @@ The project SHALL be a Maven project with the standard Maven directory layout, c
 - **THEN** the application starts without class-loading or manifest errors
 
 ### Requirement: Runtime uses only the Java standard library
-The application SHALL depend only on the Java standard library at runtime. It SHALL NOT use databases, frameworks, external libraries, regular expressions, or encryption mechanisms.
+The application SHALL depend at runtime only on the Java standard library plus the BCrypt library (`org.mindrot:jbcrypt`) used to protect passwords. That library SHALL be packaged inside the executable JAR, so `java -jar` needs no extra classpath. It SHALL NOT use databases, frameworks, regular expressions, or any other external library.
 
 #### Scenario: No runtime dependencies packaged
 - **WHEN** the built JAR is inspected
-- **THEN** it contains only the application's own classes and resources
+- **THEN** it contains only the application's own classes and resources plus the classes of the BCrypt library
+
+#### Scenario: JAR runs standalone with BCrypt
+- **WHEN** `java -jar target/amusement-park.jar` creates a user
+- **THEN** the password is hashed without any additional classpath configuration
 
 ### Requirement: Execution mode selection
 When started without arguments, the application SHALL run in interactive mode and read commands from standard input. When started with at least one argument, it SHALL treat the first argument as the path of a command file and run in file mode. As an exception, when the first argument is exactly `--fly`, the application SHALL run in temporary persistence mode, and the optional second argument SHALL be the command file; without it, interactive mode is used.

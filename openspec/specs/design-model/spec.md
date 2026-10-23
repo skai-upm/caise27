@@ -7,7 +7,7 @@ Documents the implemented domain model as a PlantUML class diagram that is kept 
 ## Requirements
 
 ### Requirement: PlantUML class model
-The repository SHALL contain `uml/model.puml`, a PlantUML class diagram of the model. It SHALL show the relevant classes, interfaces, and enumerations with their relevant attributes, inheritance and interface implementation, associations and compositions with directions and multiplicities. It SHALL include the ticket hierarchy, the composition of a group ticket from individual tickets, and the relationships among users, groups, tickets, attractions, and the central park controller.
+`uml/model.puml` SHALL be a PlantUML class diagram consistent with the code. It SHALL show classes, interfaces, and enumerations with their relevant attributes, inheritance, interface implementation, and associations with directions and multiplicities. It SHALL include the ticket hierarchy and group-ticket composition; users, groups, tickets, and attractions; ticket access interfaces and generic attraction types; passes with their multiplicities; the invoice builders; Singleton controllers; and injected dependencies.
 
 #### Scenario: Diagram present and parseable
 - **WHEN** the repository is inspected
@@ -16,3 +16,7 @@ The repository SHALL contain `uml/model.puml`, a PlantUML class diagram of the m
 #### Scenario: Diagram matches the code
 - **WHEN** the classes and fields named in the diagram are compared with the model source code
 - **THEN** every diagram class exists in the code, and every listed relationship corresponds to a field of the stated direction
+
+#### Scenario: Delivery 3 elements shown
+- **WHEN** the diagram is inspected
+- **THEN** it contains the access interfaces, the generic attraction classes, `SpeedPass` and `SpecialPass` linked to `IndividualTicket`, the invoice builder abstraction with user and group builders, and the Singleton controllers

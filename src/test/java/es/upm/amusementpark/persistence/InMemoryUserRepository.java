@@ -1,6 +1,6 @@
 package es.upm.amusementpark.persistence;
 
-import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.business.model.User;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;

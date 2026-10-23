@@ -1,28 +1,78 @@
 @startuml model
-' Amusement Park - Delivery 2 class model.
+' Amusement Park - Delivery 3 class model.
 ' Relationship labels are the names of the fields that implement them.
+' "<<bind>> T" shows the access capability that binds an attraction's type parameter.
 
 hide empty methods
+hide empty fields
 skinparam classAttributeIconSize 0
 
-package es.upm.amusementpark.service {
+package es.upm.amusementpark.presentation {
+  class CommandProcessor {
+  }
+
+  class HelpGenerator {
+  }
+
+  interface HelpFormatter {
+  }
+
+  class SyntaxHelpFormatter {
+  }
+
+  class ExtendedHelpFormatter {
+  }
+
+  class InvoiceFormatter {
+  }
+}
+
+package es.upm.amusementpark.business.controller {
+  abstract class AbstractController {
+  }
+
   class Park <<singleton>> {
     - {static} INSTANCE : Park
+  }
+
+  class SystemController <<singleton>> {
+    - {static} INSTANCE : SystemController
     - today : LocalDate
     - price : BigDecimal
   }
 
-  class UserService {
+  class UserController <<singleton>> {
+    - {static} INSTANCE : UserController
+  }
+
+  class GroupController <<singleton>> {
+    - {static} INSTANCE : GroupController
+  }
+
+  class TicketController <<singleton>> {
+    - {static} INSTANCE : TicketController
+  }
+
+  class PassController <<singleton>> {
+    - {static} INSTANCE : PassController
+  }
+
+  class AttractionController <<singleton>> {
+    - {static} INSTANCE : AttractionController
+  }
+
+  class InvoiceController <<singleton>> {
+    - {static} INSTANCE : InvoiceController
   }
 }
 
-package es.upm.amusementpark.model {
+package es.upm.amusementpark.business.model {
   class User {
     - firstName : String
     - surnames : String
     - dni : String {readOnly}
     - email : String
-    - password : String
+    - passwordHash : String
     - phone : String
     - card : String
   }
@@ -39,6 +89,15 @@ package es.upm.amusementpark.model {
   class Group {
     - id : String
     - name : String
+  }
+
+  interface GeneralAccess {
+  }
+
+  interface IndividualAccess {
+  }
+
+  interface GroupAccess {
   }
 
   abstract class Ticket {
@@ -64,48 +123,225 @@ package es.upm.amusementpark.model {
     - percent : int
   }
 
-  class Attraction {
+  abstract class Pass {
+    - id : String
+    - price : BigDecimal
+    - consumed : boolean
+  }
+
+  class SpeedPass {
+  }
+
+  class SpecialPass {
+  }
+
+  enum PassType {
+    SPEED
+    SPECIAL
+  }
+
+  interface PassWallet {
+  }
+
+  abstract class Attraction<T extends GeneralAccess> {
     - id : String
     - name : String
     - capacity : int
+    - accessType : Class<T>
+  }
+
+  class GeneralAttraction {
+  }
+
+  class IndividualAttraction {
+  }
+
+  class GroupAttraction {
+  }
+
+  class SpecialAttraction {
+  }
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+}
+
+package es.upm.amusementpark.business.invoice {
+  interface InvoiceBuilder<B extends InvoiceBuilder<B>> {
+  }
+
+  abstract class AbstractInvoiceBuilder<B extends AbstractInvoiceBuilder<B>> {
+    - title : String
+    - date : LocalDate
+  }
+
+  class UserInvoiceBuilder {
+  }
+
+  class GroupInvoiceBuilder {
+  }
+
+  class Invoice {
+    - title : String
+    - date : LocalDate
+    - total : BigDecimal
+  }
+
+  class InvoiceSection {
+    - title : String
+  }
+
+  class InvoiceItem {
+    - description : String
+    - amount : BigDecimal
+  }
+}
+
+package es.upm.amusementpark.business.security {
+  interface PasswordHasher {
+  }
+
+  class BCryptPasswordHasher {
+    - logRounds : int
   }
 }
 
 package es.upm.amusementpark.persistence {
+  interface TransactionManager {
+  }
+
+  class FileDataStore {
+  }
+
   interface UserRepository {
+  }
+
+  interface GroupRepository {
+  }
+
+  interface TicketRepository {
+  }
+
+  interface AttractionRepository {
+  }
+
+  interface PassRepository {
   }
 
   class FileUserRepository {
   }
 
-  class ParkStore {
-    - directory : Path
+  class FileGroupRepository {
+  }
+
+  class FileTicketRepository {
+  }
+
+  class FileAttractionRepository {
+  }
+
+  class FilePassRepository {
   }
 }
 
-' Inheritance and interface implementation
+' ---------- Inheritance and interface implementation ----------
+GeneralAccess <|-- IndividualAccess
+GeneralAccess <|-- GroupAccess
+GeneralAccess <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Attraction <|-- GeneralAttraction
+Attraction <|-- IndividualAttraction
+Attraction <|-- GroupAttraction
+Attraction <|-- SpecialAttraction
+PassWallet <|.. PassController
+AbstractController <|-- UserController
+AbstractController <|-- GroupController
+AbstractController <|-- TicketController
+AbstractController <|-- PassController
+AbstractController <|-- AttractionController
+InvoiceBuilder <|.. AbstractInvoiceBuilder
+AbstractInvoiceBuilder <|-- UserInvoiceBuilder
+AbstractInvoiceBuilder <|-- GroupInvoiceBuilder
+PasswordHasher <|.. BCryptPasswordHasher
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+TransactionManager <|.. FileDataStore
 UserRepository <|.. FileUserRepository
+GroupRepository <|.. FileGroupRepository
+TicketRepository <|.. FileTicketRepository
+AttractionRepository <|.. FileAttractionRepository
+PassRepository <|.. FilePassRepository
 
-' Central management
-Park --> "1" UserService : users
-Park --> "0..*" Group : groups
-Park --> "0..*" Ticket : tickets
-Park --> "0..*" Attraction : attractions
-Park --> "1" ParkStore : store
-UserService --> "0..*" User : usersByEmail
-UserService --> "1" UserRepository : repository
-ParkStore --> "1" FileUserRepository : users
+' ---------- Generic attractions: the bound of each type ----------
+GeneralAttraction ..> GeneralAccess : <<bind>> T
+IndividualAttraction ..> IndividualAccess : <<bind>> T
+GroupAttraction ..> GroupAccess : <<bind>> T
+SpecialAttraction ..> IndividualAccess : <<bind>> T
 
-' Domain relationships (directions as required: users know nothing)
+' ---------- Central management and injected collaborations ----------
+Park --> "1" SystemController : system
+Park --> "1" UserController : users
+Park --> "1" GroupController : groups
+Park --> "1" TicketController : tickets
+Park --> "1" PassController : passes
+Park --> "1" AttractionController : attractions
+Park --> "1" InvoiceController : invoices
+AbstractController --> "1" TransactionManager : transactions
+UserController --> "0..*" User : usersByEmail
+UserController --> "1" UserRepository : repository
+UserController --> "1" PasswordHasher : hasher
+UserController --> "1" TicketController : tickets
+UserController --> "1" GroupController : groups
+UserController --> "1" AttractionController : attractions
+GroupController --> "0..*" Group : groups
+GroupController --> "1" GroupRepository : repository
+GroupController --> "1" TicketController : tickets
+TicketController --> "0..*" Ticket : tickets
+TicketController --> "1" TicketRepository : repository
+TicketController --> "1" SystemController : system
+TicketController --> "1" PassController : passes
+PassController --> "0..*" Pass : passes
+PassController --> "1" PassRepository : repository
+PassController --> "1" TicketController : tickets
+AttractionController --> "0..*" Attraction : attractions
+AttractionController --> "1" AttractionRepository : repository
+AttractionController --> "1" PassController : passes
+InvoiceController --> "1" TicketController : tickets
+InvoiceController --> "1" PassController : passes
+CommandProcessor --> "1" Park : park
+CommandProcessor --> "1" HelpGenerator : help
+CommandProcessor --> "1" HelpGenerator : extendedHelp
+CommandProcessor --> "1" InvoiceFormatter : invoiceFormatter
+HelpGenerator --> "1" HelpFormatter : formatter
+
+' ---------- Domain relationships (users know nothing about the rest) ----------
 Group --> "0..*" User : members
 IndividualTicket --> "1" User : user
 GroupTicket *-- "1..*" IndividualTicket : composition
 GroupTicket --> "0..1" Group : group
+SpeedPass "0..*" --> "1" IndividualTicket : ticket
+SpecialPass "0..1" --> "1" IndividualTicket : ticket
 Attraction --> "0..*" User : occupants
+Invoice *-- "0..*" InvoiceSection : sections
+InvoiceSection *-- "1..*" InvoiceItem : items
+AbstractInvoiceBuilder *-- "0..*" InvoiceSection : sections
 
+' ---------- Other dependencies ----------
 GroupTicket ..> GroupDiscount : uses
+Pass ..> PassType : typed by
+Attraction ..> PassWallet : uses
+AttractionType ..> Attraction : creates
+InvoiceController ..> UserInvoiceBuilder : directs
+InvoiceController ..> GroupInvoiceBuilder : directs
 User ..> UserField : modified through
 
 @enduml

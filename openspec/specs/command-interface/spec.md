@@ -7,7 +7,7 @@ Defines the text-command language of the application and how commands are read, 
 ## Requirements
 
 ### Requirement: Semicolon-separated command syntax
-Each command SHALL be one line whose elements are separated by `;`. The first element is the command keyword (`USER CREATE`, `USER DELETE`, `USER UPDATE`, `SYSTEM DATE`, `SYSTEM PRICE`, `GROUP CREATE`, `GROUP ADD`, `GROUP REMOVE`, `GROUP DELETE`, `TICKET CREATE`, `TICKET DELETE`, `GROUPTICKET CREATE`, `GROUPTICKET DELETE`, `ATTRACTION CREATE`, `ATTRACTION ENTER`, `ATTRACTION EXIT`, `ATTRACTION LIST`, `ATTRACTION STATUS`, `HELP`, `EXIT`). Leading and trailing whitespace around each element SHALL be ignored, and keywords SHALL be matched case-insensitively. Parsing SHALL use only basic `String` operations and `split`.
+Each command SHALL be one line of `;`-separated elements. The first element is the command keyword: one of `USER CREATE|DELETE|UPDATE`, `SYSTEM DATE|PRICE`, `GROUP CREATE|ADD|REMOVE|DELETE`, `TICKET CREATE|DELETE`, `GROUPTICKET CREATE|DELETE`, `SPEEDPASS CREATE|DELETE`, `SPECIALPASS CREATE|DELETE`, `ATTRACTION CREATE|ENTER|EXIT|LIST|STATUS`, `INVOICE CREATE`, `HELP`, `HELP EXTENDED`, and `EXIT`. Whitespace around elements SHALL be ignored, and keywords matched case-insensitively. Parsing SHALL use only basic `String` operations and `split`.
 
 #### Scenario: Recognized command with arguments
 - **WHEN** the line `USER DELETE;ana@correo.com;Clave1!` is processed
@@ -21,6 +21,9 @@ Each command SHALL be one line whose elements are separated by `;`. The first el
 - **WHEN** the line `attraction status;A01` is processed
 - **THEN** it is interpreted as the `ATTRACTION STATUS` command with argument `A01`
 
+#### Scenario: Delivery 3 keyword recognized
+- **WHEN** the line `speedpass create;SP01;T001;1` is processed
+- **THEN** it is interpreted as the `SPEEDPASS CREATE` command with arguments `SP01`, `T001`, and `1`
 
 ### Requirement: Invalid commands are reported without terminating
 An unknown keyword, a wrong number of arguments, or any invalid argument SHALL produce an error message beginning with `ERROR` and SHALL NOT terminate the application. Processing then continues with the next command.
@@ -67,7 +70,7 @@ In file mode the application SHALL execute the commands in the given file, one p
 - **THEN** it prints an error message beginning with `ERROR` naming the file and terminates without a stack trace
 
 ### Requirement: HELP command
-The `HELP` command SHALL print the available commands and their syntax, including at least `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<price>`, `GROUP CREATE;<identifier>;<name>`, `GROUP ADD;<identifier>;<email>`, `GROUP REMOVE;<identifier>;<email>`, `GROUP DELETE;<identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `GROUPTICKET CREATE;<identifier>;<group>;<date>`, `GROUPTICKET DELETE;<identifier>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>`, `ATTRACTION ENTER;<attraction>;<ticket>`, `ATTRACTION EXIT;<attraction>;<email>`, `ATTRACTION LIST;<attraction>`, `ATTRACTION STATUS;<attraction>`, `HELP`, and `EXIT`.
+`HELP` SHALL print the syntax of every command of all deliveries. That includes every Delivery 1 and 2 syntax, `ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>`, `ATTRACTION ENTER;<attraction>;<ticket>;SPEED`, `SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>`, `SPEEDPASS DELETE;<speedPassIdentifier>`, `SPECIALPASS CREATE;<identifier>;<individualTicket>`, `SPECIALPASS DELETE;<specialPassIdentifier>`, `INVOICE CREATE;USER;<email>`, `INVOICE CREATE;GROUP;<groupIdentifier>`, and `HELP EXTENDED`.
 
 #### Scenario: Help lists all commands
 - **WHEN** `HELP` is processed
@@ -77,6 +80,9 @@ The `HELP` command SHALL print the available commands and their syntax, includin
 - **WHEN** `HELP` is processed
 - **THEN** the output also contains the syntax of every `SYSTEM`, `GROUP`, `TICKET`, `GROUPTICKET`, and `ATTRACTION` command
 
+#### Scenario: Help lists Delivery 3 commands
+- **WHEN** `HELP` is processed
+- **THEN** the output also contains every `SPEEDPASS`, `SPECIALPASS`, and `INVOICE CREATE` syntax, the typed `ATTRACTION CREATE`, `ATTRACTION ENTER` with `SPEED`, and `HELP EXTENDED`
 
 ### Requirement: EXIT command
 The `EXIT` command SHALL terminate the application in a controlled manner. In file mode, no line after `EXIT` SHALL be processed.
@@ -84,3 +90,10 @@ The `EXIT` command SHALL terminate the application in a controlled manner. In fi
 #### Scenario: Lines after EXIT are ignored in file mode
 - **WHEN** a command file contains `USER CREATE;...` for user A, then `EXIT`, then `USER CREATE;...` for user B
 - **THEN** user A is created, the application terminates, and user B is not created
+
+### Requirement: HELP EXTENDED command
+`HELP EXTENDED` SHALL print, for every recognized command syntax, the syntax together with a short description of the command's purpose. It SHALL change no state.
+
+#### Scenario: Extended help describes commands
+- **WHEN** `HELP EXTENDED` is processed
+- **THEN** every syntax listed by `HELP` appears, each followed by a non-empty description

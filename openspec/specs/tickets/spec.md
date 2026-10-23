@@ -40,7 +40,7 @@ A ticket SHALL be active when its date is on or after the current system date, a
 - **THEN** an error is printed and no ticket is created
 
 ### Requirement: Individual ticket deletion
-`TICKET DELETE;<identifier>` SHALL delete a standalone individual ticket only when its date is strictly after the current system date, persist the change, and print `TICKET DELETED`. Tickets dated today or earlier, group tickets, and individual tickets inside a group ticket SHALL be rejected with an error.
+`TICKET DELETE;<identifier>` SHALL delete a standalone individual ticket only when its date is strictly after the current system date. With the ticket it SHALL delete all its SpeedPasses and its Special Pass, consumed or not, persist the change atomically, and print `TICKET DELETED`. Tickets dated today or earlier, group tickets, and individual tickets inside a group ticket SHALL be rejected with an error, leaving everything unchanged.
 
 #### Scenario: Delete future ticket
 - **WHEN** the system date is `2027-04-15` and `TICKET DELETE;T002` is processed for a ticket dated `2027-04-20`
@@ -53,3 +53,7 @@ A ticket SHALL be active when its date is on or after the current system date, a
 #### Scenario: Group component cannot be deleted directly
 - **WHEN** `TICKET DELETE;TG02:87654321X` is processed for an individual ticket inside group ticket `TG02`
 - **THEN** an error is printed and the ticket still exists
+
+#### Scenario: Passes deleted with the ticket
+- **WHEN** future ticket `T002` has SpeedPasses from two purchases and a Special Pass, and `TICKET DELETE;T002` is processed
+- **THEN** the ticket and all of those passes no longer exist, including after a restart

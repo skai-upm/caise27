@@ -1,10 +1,13 @@
 package es.upm.amusementpark;
 
-import es.upm.amusementpark.command.CommandProcessor;
-import es.upm.amusementpark.command.CommandRunner;
-import es.upm.amusementpark.persistence.ParkStore;
+import es.upm.amusementpark.presentation.CommandProcessor;
+import es.upm.amusementpark.presentation.CommandRunner;
+import es.upm.amusementpark.presentation.ExtendedHelpFormatter;
+import es.upm.amusementpark.presentation.HelpGenerator;
+import es.upm.amusementpark.presentation.SyntaxHelpFormatter;
 import es.upm.amusementpark.persistence.TemporaryDataDirectory;
-import es.upm.amusementpark.service.Park;
+import es.upm.amusementpark.business.controller.Park;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,14 +72,17 @@ public final class App {
 
     private static int runWith(Path dataDir, String commandFile, InputStream in, PrintStream out,
                                PrintStream err) {
-        Park park = Park.getInstance();
+        Park park;
         try {
-            park.open(new ParkStore(dataDir, err), LocalDate.now(ZoneId.systemDefault()));
+            park = ApplicationContext.start(ApplicationContext.fileRepositories(dataDir, err),
+                    LocalDate.now(ZoneId.systemDefault()), new BCryptPasswordHasher());
         } catch (IOException e) {
             out.println("ERROR: Cannot load park data from " + dataDir.toAbsolutePath() + ": " + e.getMessage());
             return 1;
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(park), out);
+        CommandProcessor processor = new CommandProcessor(park, new HelpGenerator(new SyntaxHelpFormatter()),
+                new HelpGenerator(new ExtendedHelpFormatter()));
+        CommandRunner runner = new CommandRunner(processor, out);
 
         if (commandFile == null) {
             try {

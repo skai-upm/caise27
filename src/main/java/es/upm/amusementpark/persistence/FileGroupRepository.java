@@ -1,7 +1,7 @@
 package es.upm.amusementpark.persistence;
 
-import es.upm.amusementpark.model.Group;
-import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.User;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -16,29 +16,29 @@ import java.util.function.Function;
  * Stores groups in a text file, one group per line:
  * {@code id;name[;memberDni...]}.
  */
-public class FileGroupRepository {
+public class FileGroupRepository implements GroupRepository {
 
     public static final String DEFAULT_FILE_NAME = "groups.txt";
 
     private static final String SEPARATOR = ";";
 
     private final Path file;
+    private final FileDataStore store;
     private final PrintStream warnings;
 
-    public FileGroupRepository(Path file, PrintStream warnings) {
+    public FileGroupRepository(Path file, FileDataStore store, PrintStream warnings) {
         this.file = file;
+        this.store = store;
         this.warnings = warnings;
     }
 
-    Path getFile() {
-        return file;
-    }
 
     /**
      * Loads all groups, resolving members by DNI. Malformed lines, duplicate
      * identifiers and unknown members are skipped with a warning.
      */
-    public List<Group> load(Function<String, User> userByDni) throws IOException {
+    @Override
+    public List<Group> loadAll(Function<String, User> userByDni) throws IOException {
         List<Group> groups = new ArrayList<>();
         Set<String> ids = new HashSet<>();
         int lineNumber = 0;
@@ -67,6 +67,11 @@ public class FileGroupRepository {
             groups.add(group);
         }
         return groups;
+    }
+
+    @Override
+    public void saveAll(Collection<Group> groups) throws IOException {
+        store.write(file, toLines(groups));
     }
 
     static List<String> toLines(Collection<Group> groups) {

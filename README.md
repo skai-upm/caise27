@@ -2,7 +2,7 @@
 
 ## Amusement Park
 
-Java 21 command-line application for managing an amusement park. Delivery 1 covers user management. Delivery 2 adds groups, individual and group tickets, attractions, and a temporary execution mode.
+Java 21 command-line application for managing an amusement park. Delivery 1 covers user management. Delivery 2 adds groups, individual and group tickets, attractions, and a temporary execution mode. Delivery 3 adds typed attractions, SpeedPasses and Special Passes, invoices, extended help, and BCrypt-protected passwords.
 
 ### Build
 
@@ -10,7 +10,7 @@ Java 21 command-line application for managing an amusement park. Delivery 1 cove
 mvn package
 ```
 
-This produces the executable JAR `target/amusement-park.jar`. The application uses only the Java standard library.
+This produces the executable JAR `target/amusement-park.jar`. The only runtime library is jBCrypt (`org.mindrot:jbcrypt:0.4`), which protects passwords. It is bundled into the JAR, so `java -jar` needs no extra classpath.
 
 ### Run
 
@@ -55,14 +55,25 @@ TICKET CREATE;<identifier>;<email>;<date>
 TICKET DELETE;<identifier>
 GROUPTICKET CREATE;<identifier>;<group>;<date>
 GROUPTICKET DELETE;<identifier>
+SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>
+SPEEDPASS DELETE;<speedPassIdentifier>
+SPECIALPASS CREATE;<identifier>;<individualTicket>
+SPECIALPASS DELETE;<specialPassIdentifier>
 ATTRACTION CREATE;<identifier>;<name>;<capacity>
+ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>
 ATTRACTION ENTER;<attraction>;<ticket>
+ATTRACTION ENTER;<attraction>;<ticket>;SPEED
 ATTRACTION EXIT;<attraction>;<email>
 ATTRACTION LIST;<attraction>
 ATTRACTION STATUS;<attraction>
+INVOICE CREATE;USER;<email>
+INVOICE CREATE;GROUP;<groupIdentifier>
 HELP
+HELP EXTENDED
 EXIT
 ```
+
+`HELP EXTENDED` shows each command with a description of its purpose.
 
 `<field>` is one of `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD`. The DNI cannot be modified.
 
@@ -86,19 +97,53 @@ Park rules:
 - A user with an active ticket, or in a locked group, cannot be deleted. Deleting a user removes them from their groups and from any attraction.
 - `ATTRACTION ENTER` admits every holder of a ticket valid today, all together or not at all, within capacity. Users leave one by one with `ATTRACTION EXIT`.
 
+Attraction types (`<type>`, default `GENERAL`):
+
+| Type | Accepts | Passes |
+| --- | --- | --- |
+| `GENERAL` | individual and group tickets | optional `SPEED`: one SpeedPass per entering individual ticket |
+| `INDIVIDUAL` | individual tickets | optional `SPEED`: one SpeedPass |
+| `GROUP` | group tickets | optional `SPEED`: one SpeedPass for every ticket in the group ticket |
+| `SPECIAL` | individual tickets | always uses the ticket's unconsumed Special Pass; `SPEED` is not allowed |
+
+An individual ticket inside a group ticket (`TG01:<dni>`) counts as an individual ticket. If an entry fails for any reason, nobody enters and no pass is consumed.
+
+Passes:
+
+- A SpeedPass costs 20% of its ticket's stored price, so group discounts carry over. They are sold in 1 or 10 (`<purchase>:1` … `<purchase>:10`, with no package discount).
+- A Special Pass costs the same as its ticket. A ticket can only ever have one.
+- Passes can be bought for individual tickets dated today or later. They can be refunded (`... DELETE`) only while unconsumed and while the ticket is dated after today. Consumed passes are kept as purchase records.
+- Deleting a ticket or group ticket also deletes all passes of its individual tickets.
+
+Invoices list each item with its price and the total, and omit empty sections:
+
+- A user invoice shows the user's direct individual tickets and their personal SpeedPasses and Special Passes, including passes on tickets inside group tickets.
+- A group invoice shows the group's group tickets with their composition. The individual tickets inside are not charged again, and members' passes are not included.
+
+Passwords are stored only as BCrypt hashes. User files from earlier versions with plain-text passwords are not migrated: those lines are skipped with a warning.
+
 ### Data files
 
 Data is stored in the working directory (or the `--fly` temporary directory) as `;`-separated text files:
 
 | File | Content |
 | --- | --- |
-| `users.txt` | `firstName;surnames;dni;email;password;phone;card` |
+| `users.txt` | `firstName;surnames;dni;email;passwordHash;phone;card` (BCrypt hash, never the password) |
 | `groups.txt` | `id;name;memberDni;...` |
-| `attractions.txt` | `id;name;capacity` (occupants are not stored; attractions start empty) |
+| `attractions.txt` | `id;name;capacity;TYPE` (occupants are not stored; attractions start empty; lines without a type are `GENERAL`) |
+| `passes.txt` | `SPEED` or `SPECIAL`, then `;id;ticketId;price;consumed` |
 | `tickets.txt` | `INDIVIDUAL;id;date;basePrice;discount;dni;email;firstName;surnames`, or `GROUP;id;date;groupId;count` followed by `count` `MEMBER;...` lines |
 
-Files are loaded at startup and all rewritten together after every change. Tickets keep their holder's identity, so historical tickets of deleted users or groups survive restarts. Lines that are malformed or invalid are skipped with a warning on standard error.
+Files are loaded at startup. After every change, the files it affects are rewritten together: either all of them are written or none. Tickets keep their holder's identity, so historical tickets of deleted users or groups survive restarts. Lines that are malformed or invalid are skipped with a warning on standard error.
 
-### Design model
+### Design
 
-The class model is documented in PlantUML in [uml/model.puml](uml/model.puml). The test `UmlModelTest` checks that it matches the code.
+The code is organized in layers under `es.upm.amusementpark`:
+
+- `presentation`: command parsing, help generation, invoice text.
+- `business`: model, Singleton controllers, invoice builders, exceptions, validation, password hashing.
+- `persistence`: repository interfaces and their text-file implementations.
+
+`App` (the entry point) and `ApplicationContext` (the composition root) create the repositories for the data directory and inject them, together with the collaborations between controllers, into the Singleton controllers. Normal and `--fly` runs differ only in that directory.
+
+The class model is documented in PlantUML in [uml/model.puml](uml/model.puml). The tests `UmlModelTest` and `ArchitectureTest` check that the diagram and the layering match the code.

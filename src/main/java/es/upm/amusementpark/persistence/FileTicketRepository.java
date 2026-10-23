@@ -1,10 +1,10 @@
 package es.upm.amusementpark.persistence;
 
-import es.upm.amusementpark.model.Group;
-import es.upm.amusementpark.model.GroupTicket;
-import es.upm.amusementpark.model.IndividualTicket;
-import es.upm.amusementpark.model.Ticket;
-import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.User;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigDecimal;
@@ -33,7 +33,7 @@ import java.util.function.Function;
  * The holder's identity is kept so that historical tickets survive the
  * deletion of their user.
  */
-public class FileTicketRepository {
+public class FileTicketRepository implements TicketRepository {
 
     public static final String DEFAULT_FILE_NAME = "tickets.txt";
 
@@ -46,23 +46,23 @@ public class FileTicketRepository {
     private static final int GROUP_FIELDS = 4;
 
     private final Path file;
+    private final FileDataStore store;
     private final PrintStream warnings;
 
-    public FileTicketRepository(Path file, PrintStream warnings) {
+    public FileTicketRepository(Path file, FileDataStore store, PrintStream warnings) {
         this.file = file;
+        this.store = store;
         this.warnings = warnings;
     }
 
-    Path getFile() {
-        return file;
-    }
 
     /**
      * Loads all tickets. Holders are resolved by DNI among the active users;
      * holders who are no longer users are rebuilt from the stored identity.
      * Groups are resolved by identifier.
      */
-    public List<Ticket> load(Function<String, User> userByDni, Function<String, Group> groupById)
+    @Override
+    public List<Ticket> loadAll(Function<String, User> userByDni, Function<String, Group> groupById)
             throws IOException {
         Loader loader = new Loader(userByDni, groupById);
         int lineNumber = 0;
@@ -74,6 +74,11 @@ public class FileTicketRepository {
         }
         loader.closeGroup();
         return loader.tickets;
+    }
+
+    @Override
+    public void saveAll(Collection<Ticket> tickets) throws IOException {
+        store.write(file, toLines(tickets));
     }
 
     static List<String> toLines(Collection<Ticket> tickets) {

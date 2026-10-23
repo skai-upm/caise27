@@ -11,6 +11,8 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -44,6 +46,15 @@ class AppTest {
         return out.toString(StandardCharsets.UTF_8).replace("\r\n", "\n");
     }
 
+    /** User file lines without the salted password hash, which differs on every run. */
+    private static List<String> masked(Path usersFile) throws IOException {
+        return Files.readAllLines(usersFile).stream().map(line -> {
+            String[] fields = line.split(";", -1);
+            fields[4] = "<hash>";
+            return String.join(";", fields);
+        }).toList();
+    }
+
     private Path subDir(String name) throws IOException {
         return Files.createDirectories(dir.resolve(name));
     }
@@ -67,8 +78,7 @@ class AppTest {
         assertEquals(0, run("", fileMode, input.toString()));
 
         assertEquals(interactiveOutput, output());
-        assertEquals(Files.readAllLines(interactive.resolve("users.txt")),
-                Files.readAllLines(fileMode.resolve("users.txt")));
+        assertEquals(masked(interactive.resolve("users.txt")), masked(fileMode.resolve("users.txt")));
     }
 
     @Test
@@ -133,7 +143,8 @@ class AppTest {
 
         assertEquals(0, status);
         assertTrue(output().startsWith("USER CREATED\nUSER CREATED\n"), "fly run starts without data");
-        assertEquals(4, input.seen.size(), input.seen.toString());
+        assertEquals(List.of("groups.txt", "users.txt"),
+                input.seen.stream().map(name -> Path.of(name).getFileName().toString()).sorted().toList());
         assertTrue(input.seen.stream().allMatch(name -> name.matches("\\d{8}_\\d{6}(_\\d+)?[/\\\\].+\\.txt")));
         assertEquals(List.of("Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"),
                 Files.readAllLines(dir.resolve("users.txt")));
@@ -146,11 +157,14 @@ class AppTest {
         Path input = dir.resolve("input_fase2.txt");
         Files.writeString(input, String.join("\n",
                 "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
-                "ATTRACTION CREATE;A01;Dragon Rojo;20",
+                "ATTRACTION CREATE;A01;Dragon Rojo;20;GENERAL",
+                "TICKET CREATE;T001;ana@correo.com;" + LocalDate.now(ZoneId.systemDefault()),
+                "SPEEDPASS CREATE;SP01;T001;1",
                 "EXIT",
                 "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"));
         assertEquals(0, run("", dir, "--fly", input.toString()));
-        assertEquals("USER CREATED\nATTRACTION CREATED\nBye\n", output());
+        assertTrue(output().startsWith("USER CREATED\nATTRACTION CREATED\nTICKET CREATED"));
+        assertTrue(output().contains("SPEEDPASS CREATED"));
         assertFalse(Files.exists(dir.resolve("tmp")));
         assertFalse(Files.exists(dir.resolve("users.txt")));
         try (Stream<Path> files = Files.list(dir)) {

@@ -1,7 +1,7 @@
 package es.upm.amusementpark.persistence;
 
-import es.upm.amusementpark.model.User;
-import es.upm.amusementpark.validation.UserValidator;
+import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.validation.UserValidator;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -29,14 +28,20 @@ public class FileUserRepository implements UserRepository {
     private static final int FIELD_COUNT = 7;
 
     private final Path file;
+    private final FileDataStore store;
     private final PrintStream warnings;
 
     public FileUserRepository(Path file) {
-        this(file, System.err);
+        this(file, new FileDataStore(), System.err);
     }
 
     public FileUserRepository(Path file, PrintStream warnings) {
+        this(file, new FileDataStore(), warnings);
+    }
+
+    public FileUserRepository(Path file, FileDataStore store, PrintStream warnings) {
         this.file = file;
+        this.store = store;
         this.warnings = warnings;
     }
 
@@ -77,12 +82,9 @@ public class FileUserRepository implements UserRepository {
 
     @Override
     public void saveAll(Collection<User> users) throws IOException {
-        TextFiles.writeAll(Map.of(file, toLines(users)));
+        store.write(file, toLines(users));
     }
 
-    Path getFile() {
-        return file;
-    }
 
     static List<String> toLines(Collection<User> users) {
         List<String> lines = new ArrayList<>();
@@ -94,7 +96,7 @@ public class FileUserRepository implements UserRepository {
 
     static String format(User user) {
         return String.join(SEPARATOR, user.getFirstName(), user.getSurnames(), user.getDni(), user.getEmail(),
-                user.getPassword(), user.getPhone(), user.getCard());
+                user.getPasswordHash(), user.getPhone(), user.getCard());
     }
 
     static User parse(String line) {
@@ -109,7 +111,7 @@ public class FileUserRepository implements UserRepository {
                 && UserValidator.isNonBlank(fields[1])
                 && UserValidator.isValidDni(fields[2])
                 && UserValidator.isValidEmail(fields[3])
-                && UserValidator.isValidPassword(fields[4])
+                && UserValidator.isPasswordHash(fields[4])
                 && UserValidator.isNonBlank(fields[5])
                 && UserValidator.isValidCard(fields[6]);
         if (!valid) {
