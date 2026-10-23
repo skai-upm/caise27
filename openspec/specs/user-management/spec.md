@@ -77,7 +77,7 @@ The system SHALL NOT hold two users with the same DNI or the same email address 
 - **THEN** an error about the email already being registered is printed and no user is created
 
 ### Requirement: User deletion
-`USER DELETE;Email;Password` SHALL locate the user by email, verify it exists and that the password matches exactly, then delete the user and update persistent storage. An unknown email or wrong password SHALL leave all users unchanged.
+`USER DELETE;Email;Password` SHALL locate the user by email, verify it exists and that the password matches exactly, and then delete the user only if they have no active ticket (an individual ticket or a member ticket of a group ticket dated on or after the system date) and belong to no locked group. On success the user is removed from all their groups, persistent storage is updated, and historical tickets keep the user's information. These restrictions are derived from tickets and the system date, not stored. Otherwise all data is left unchanged.
 
 #### Scenario: Successful deletion
 - **WHEN** `USER DELETE;pedro@correo.com;Otra2#` is processed and that user exists with that password
@@ -90,6 +90,22 @@ The system SHALL NOT hold two users with the same DNI or the same email address 
 #### Scenario: Unknown user
 - **WHEN** `USER DELETE;nobody@correo.com;Clave1!` is processed and no such user exists
 - **THEN** an error that the user was not found is printed
+
+#### Scenario: Active individual ticket
+- **WHEN** Marta has a ticket dated on or after the system date and `USER DELETE;marta@correo.com;Marta4%` is processed
+- **THEN** an error is printed and Marta is not deleted
+
+#### Scenario: Deletion allowed after deleting the future ticket
+- **WHEN** Marta's only ticket T002 is in the future, `TICKET DELETE;T002` succeeds and then `USER DELETE;marta@correo.com;Marta4%` is processed
+- **THEN** `USER DELETED` is printed
+
+#### Scenario: Member of an active group ticket
+- **WHEN** Ana's group G01 has a group ticket for today and Ana is deleted
+- **THEN** an error is printed and Ana is not deleted
+
+#### Scenario: Removed from unlocked groups
+- **WHEN** Pedro belongs to unlocked group G02, has only historical tickets, and is deleted
+- **THEN** `USER DELETED` is printed, Pedro is no longer a member of G02, and his historical tickets still exist
 
 ### Requirement: User modification
 `USER UPDATE;Email;Password;Field;NewValue` SHALL authenticate the user by current email and password, then change one field. Modifiable fields are exactly `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE` and `CARD` (field name matched ignoring case). The new value SHALL satisfy the same rules as on creation; a new email SHALL be valid and not used by another user. On success `USER UPDATED` is printed and persistent storage is updated.

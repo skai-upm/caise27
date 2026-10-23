@@ -2,7 +2,7 @@
 
 ## Amusement Park
 
-Java 21 / Maven application for managing an amusement park. Delivery 1 provides user management through a text command interface with file-based persistence.
+Java 21 / Maven application for managing an amusement park: users, groups, individual and group tickets, and attractions, driven by a text command interface with file-based persistence.
 
 ### Build
 
@@ -26,6 +26,13 @@ File mode (one command per line; blank lines are ignored; processing stops at `E
 java -jar target/amusement-park.jar input.txt
 ```
 
+Temporary mode (`--fly` as first argument, optionally followed by a command file): all data is kept in a fresh `tmp/<yyyyMMdd_HHmmss>/` directory that is deleted when the run ends, so permanent data is never touched:
+
+```text
+java -jar target/amusement-park.jar --fly
+java -jar target/amusement-park.jar --fly input_fase2.txt
+```
+
 A missing or unreadable command file prints an error and exits with status 1.
 
 ### Commands
@@ -37,6 +44,21 @@ Elements are separated by `;`. Command keywords are case-insensitive.
 | `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>` | Register a user |
 | `USER DELETE;<email>;<password>` | Delete a user after checking the password |
 | `USER UPDATE;<email>;<password>;<field>;<value>` | Change one field: `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD` (the DNI cannot be changed) |
+| `SYSTEM DATE;<yyyy-MM-dd>` | Set the current system date (initially today) |
+| `SYSTEM PRICE;<price>` | Set the base ticket price (initially 40.00 EUR each run) |
+| `GROUP CREATE;<identifier>;<name>` | Create an empty group |
+| `GROUP ADD;<identifier>;<email>` | Add a user to a group |
+| `GROUP REMOVE;<identifier>;<email>` | Remove a user from a group |
+| `GROUP DELETE;<identifier>` | Delete a group |
+| `TICKET CREATE;<identifier>;<email>;<date>` | Buy an individual ticket for today or a later date |
+| `TICKET DELETE;<identifier>` | Delete an individual ticket dated after today |
+| `GROUPTICKET CREATE;<identifier>;<group>;<date>` | Buy a ticket for every member of a group (ids `<identifier>:<dni>`) |
+| `GROUPTICKET DELETE;<identifier>` | Delete a group ticket dated after today, with its member tickets |
+| `ATTRACTION CREATE;<identifier>;<name>;<capacity>` | Create an attraction |
+| `ATTRACTION ENTER;<attraction>;<ticket>` | Enter with a ticket valid today (a group ticket admits all members or nobody) |
+| `ATTRACTION EXIT;<attraction>;<email>` | Leave an attraction |
+| `ATTRACTION LIST;<attraction>` | Show the emails of the users inside |
+| `ATTRACTION STATUS;<attraction>` | Show identifier, name, capacity, occupancy, free places and users inside |
 | `HELP` | Show the available commands |
 | `EXIT` | Terminate the application |
 
@@ -48,7 +70,16 @@ Validation rules:
 - **Card**: exactly 16 digits.
 - DNI and email must be unique among users.
 
-Successful operations print `USER CREATED`, `USER UPDATED` or `USER DELETED`; rejected ones print a line starting with `ERROR:`.
+Park rules:
+
+- A ticket is **active** when dated today (system date) or later, otherwise **historical**. Only tickets dated strictly after today can be deleted.
+- Group ticket discount per member ticket: fewer than 3 members 0%, 3–5 10%, 6–10 20%, more than 10 50%. The total is the sum of the member tickets (e.g. 6 members at 40.00 → 192.00 EUR).
+- A group with an active group ticket is locked: no `GROUP ADD`, `GROUP REMOVE` or `GROUP DELETE`.
+- `USER DELETE` is rejected while the user has an active ticket or belongs to a locked group; otherwise the user is also removed from their groups. Historical tickets are kept.
+- Ticket identifiers (individual, group and member tickets) share one identifier space.
+- A user can be inside only one attraction at a time.
+
+Successful operations print a confirmation (e.g. `USER CREATED`, `GROUP TICKET CREATED: ...`); rejected ones print a line starting with `ERROR:`.
 
 Example `input.txt`:
 
@@ -62,12 +93,19 @@ HELP
 EXIT
 ```
 
-### Data file
+### Data files
 
-Users are stored in `users.txt` in the working directory, one per line:
+Data is stored in the working directory (or the `--fly` temporary directory), loaded at start-up and rewritten after each successful change:
 
-```text
-Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456
-```
+| File | Line format |
+|---|---|
+| `users.txt` | `firstName;surnames;dni;email;password;phone;card` |
+| `groups.txt` | `id;name;dni1,dni2,...` |
+| `tickets.txt` | `INDIVIDUAL;id;date;basePrice;discount;A/F;dni;email;firstName;surnames`, `GROUP;id;date;groupId`, `MEMBER;groupTicketId;id;date;basePrice;discount;A/F;dni;email;firstName;surnames` |
+| `attractions.txt` | `id;name;capacity` |
 
-The file is loaded at start-up and rewritten after each successful change. Set the `park.users.file` system property to use another location, e.g. `java -Dpark.users.file=/tmp/users.txt -jar target/amusement-park.jar`.
+In `tickets.txt`, `A`/`F` marks whether the ticket's user was active or already deleted, so historical tickets survive user deletion. The users inside attractions are not stored: attractions start empty. Set the `park.data.dir` system property to use another directory, e.g. `java -Dpark.data.dir=/tmp/park -jar target/amusement-park.jar`.
+
+### Design
+
+The class model is documented in [`uml/model.puml`](uml/model.puml) (PlantUML).

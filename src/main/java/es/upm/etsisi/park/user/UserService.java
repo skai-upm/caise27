@@ -103,7 +103,8 @@ public class UserService {
         }
     }
 
-    private User authenticate(String email, String password) throws UserException {
+    /** Returns the user with that email if the password matches, otherwise throws. */
+    public User authenticate(String email, String password) throws UserException {
         User user = findByEmail(email);
         if (user == null) {
             throw new UserException("User with email " + email + " not found");
