@@ -14,8 +14,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
-import es.upm.etsisi.park.cli.CommandProcessor;
-import es.upm.etsisi.park.persistence.ParkStorage;
+import es.upm.etsisi.park.business.exception.PersistenceException;
+import es.upm.etsisi.park.business.security.BCryptPasswordHasher;
+import es.upm.etsisi.park.persistence.text.TextRepositories;
+import es.upm.etsisi.park.presentation.CommandProcessor;
 
 /**
  * Entry point of the amusement park application.
@@ -56,7 +58,7 @@ public class App {
             }
         }
         if (!fly) {
-            return execute(ParkStorage.fromSystemProperty(err), commandFile, in, out, err);
+            return execute(TextRepositories.defaultDirectory(), commandFile, in, out, err);
         }
 
         Path flyBase = Path.of(System.getProperty(FLY_DIR_PROPERTY, DEFAULT_FLY_DIR));
@@ -69,7 +71,7 @@ public class App {
             return 1;
         }
         try {
-            return execute(new ParkStorage(flyDir, err), commandFile, in, out, err);
+            return execute(flyDir, commandFile, in, out, err);
         } finally {
             deleteTree(flyDir, err);
             if (!baseExisted) {
@@ -78,16 +80,16 @@ public class App {
         }
     }
 
-    private static int execute(ParkStorage storage, String commandFile, InputStream in, PrintStream out,
+    /** Wires the application on the repositories of {@code dataDirectory} and processes the commands. */
+    private static int execute(Path dataDirectory, String commandFile, InputStream in, PrintStream out,
                                PrintStream err) {
-        Park park = Park.getInstance();
         try {
-            park.open(storage);
-        } catch (IOException e) {
-            err.println("ERROR: Could not load park data from " + storage.getDataDirectory() + ": " + e.getMessage());
+            ApplicationContext.initialize(TextRepositories.in(dataDirectory, err), new BCryptPasswordHasher());
+        } catch (PersistenceException e) {
+            err.println("ERROR: Could not load park data from " + dataDirectory + ": " + e.getMessage());
             return 1;
         }
-        CommandProcessor processor = new CommandProcessor(park, out);
+        CommandProcessor processor = ApplicationContext.commandProcessor(out);
 
         if (commandFile == null) {
             out.println("Amusement park - type HELP for the list of commands, EXIT to quit");

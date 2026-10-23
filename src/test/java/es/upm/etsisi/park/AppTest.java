@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import es.upm.etsisi.park.persistence.ParkStorage;
+import es.upm.etsisi.park.persistence.text.TextRepositories;
 
 class AppTest {
 
@@ -37,13 +37,13 @@ class AppTest {
     @BeforeEach
     void setUp() {
         usersFile = dir.resolve("users.txt");
-        System.setProperty(ParkStorage.DATA_DIR_PROPERTY, dir.toString());
+        System.setProperty(TextRepositories.DATA_DIR_PROPERTY, dir.toString());
         System.setProperty(App.FLY_DIR_PROPERTY, dir.resolve("tmp").toString());
     }
 
     @AfterEach
     void tearDown() {
-        System.clearProperty(ParkStorage.DATA_DIR_PROPERTY);
+        System.clearProperty(TextRepositories.DATA_DIR_PROPERTY);
         System.clearProperty(App.FLY_DIR_PROPERTY);
     }
 
@@ -68,10 +68,11 @@ class AppTest {
 
         String text = out.toString(StandardCharsets.UTF_8);
         assertEquals(List.of("USER CREATED", "USER CREATED", "USER UPDATED", "BYE"), text.lines().toList());
-        assertEquals(List.of(
-                "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
-                "Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"),
-                Files.readAllLines(usersFile));
+        List<String> stored = Files.readAllLines(usersFile);
+        assertEquals(2, stored.size());
+        assertTrue(stored.get(0).startsWith("Ana;Garcia Lopez;12345678Z;ana@correo.com;$2a$"));
+        assertTrue(stored.get(0).endsWith(";699999999;1234567890123456"));
+        assertTrue(stored.get(1).startsWith("Pedro;Lopez Martin;87654321X;pedro@correo.com;$2a$"));
     }
 
     @Test
@@ -192,5 +193,18 @@ class AppTest {
         assertTrue(text.contains("ERROR: User ana@correo.com already belongs to group G01"));
         assertTrue(text.contains("GROUP TICKET DELETED"));
         assertTrue(text.contains("Capacity: 20"));
+    }
+
+    @Test
+    void flyModeCoversPassesAndCleansUp() throws Exception {
+        Path input = dir.resolve("input_fase3.txt");
+        Files.write(input, List.of("SYSTEM DATE;2027-04-15", CREATE_ANA, "TICKET CREATE;T001;ana@correo.com;2027-04-15",
+                "SPEEDPASS CREATE;SP01;T001;1", "ATTRACTION CREATE;A01;Dragon Rojo;20;GENERAL",
+                "ATTRACTION ENTER;A01;T001;SPEED", "EXIT"));
+        assertEquals(0, run(noInput(), "--fly", input.toString()));
+        String text = out.toString(StandardCharsets.UTF_8);
+        assertTrue(text.contains("SPEEDPASS CONSUMED: SP01:1"));
+        assertFalse(Files.exists(dir.resolve("passes.txt")));
+        assertFalse(Files.exists(dir.resolve("tmp")));
     }
 }

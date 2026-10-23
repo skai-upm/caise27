@@ -36,7 +36,7 @@ A ticket SHALL be active when its date is on or after the current system date, a
 - **THEN** an error is printed and no ticket is created
 
 ### Requirement: Individual ticket deletion
-`TICKET DELETE;<identifier>` SHALL delete an individual ticket only when its date is strictly after the system date. Tickets dated today or earlier SHALL be kept as historical records. Individual tickets that belong to a group ticket, and group tickets themselves, SHALL NOT be deleted with this command.
+`TICKET DELETE;<identifier>` SHALL delete an individual ticket only when its date is strictly after the system date, together with all SpeedPasses and the Special Pass bought for it. Tickets dated today or earlier SHALL be kept as historical records. Individual tickets that belong to a group ticket, and group tickets themselves, SHALL NOT be deleted with this command.
 
 #### Scenario: Delete future ticket
 - **WHEN** the system date is 2027-04-15 and `TICKET DELETE;T002` is processed for a ticket dated 2027-04-20
@@ -49,6 +49,10 @@ A ticket SHALL be active when its date is on or after the current system date, a
 #### Scenario: Member of a group ticket
 - **WHEN** `TICKET DELETE;TG02:87654321X` is processed
 - **THEN** an error stating that it belongs to a group ticket is printed and nothing is deleted
+
+#### Scenario: Passes deleted with the ticket
+- **WHEN** future ticket T002 has SpeedPasses from two purchases and a Special Pass and `TICKET DELETE;T002` succeeds
+- **THEN** all those passes no longer exist
 
 ### Requirement: Group ticket creation
 `GROUPTICKET CREATE;<identifier>;<group>;<date>` SHALL, for an existing non-empty group and a date on or after the system date, create a group ticket composed of one new individual ticket per current member, identified `<identifier>:<dni>`. The group ticket and all member identifiers SHALL be checked against the shared identifier space before anything is created; on any conflict nothing is created. Later changes to the group SHALL NOT change the composition.
@@ -77,7 +81,7 @@ Each member ticket's price SHALL be the current base price minus a discount dete
 - **THEN** the displayed total is 91.00 EUR
 
 ### Requirement: Group ticket deletion
-`GROUPTICKET DELETE;<identifier>` SHALL delete a group ticket, together with all its member tickets, only when its date is strictly after the system date.
+`GROUPTICKET DELETE;<identifier>` SHALL delete a group ticket, together with all its member tickets and all passes bought for those member tickets, only when its date is strictly after the system date. If it cannot be deleted, nothing SHALL be deleted.
 
 #### Scenario: Delete future group ticket
 - **WHEN** the system date is 2027-04-15 and `GROUPTICKET DELETE;TG02` is processed for a group ticket dated 2027-04-20
@@ -86,3 +90,7 @@ Each member ticket's price SHALL be the current base price minus a discount dete
 #### Scenario: Group ticket for today
 - **WHEN** `GROUPTICKET DELETE;TG01` is processed for a group ticket dated on the system date
 - **THEN** an error is printed and TG01 still exists
+
+#### Scenario: Member passes deleted
+- **WHEN** a member ticket of future group ticket TG02 has a SpeedPass and TG02 is deleted
+- **THEN** that SpeedPass no longer exists

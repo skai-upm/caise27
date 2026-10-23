@@ -2,7 +2,7 @@
 
 ## Amusement Park
 
-Java 21 / Maven application for managing an amusement park: users, groups, individual and group tickets, and attractions, driven by a text command interface with file-based persistence.
+Java 21 / Maven application for managing an amusement park: users, groups, individual and group tickets, SpeedPasses and Special Passes, typed attractions and invoices, driven by a text command interface with file-based persistence.
 
 ### Build
 
@@ -10,7 +10,7 @@ Java 21 / Maven application for managing an amusement park: users, groups, indiv
 mvn package
 ```
 
-This runs the tests and produces `target/amusement-park.jar`. Only the Java standard library is used at runtime.
+This runs the tests and produces the self-contained `target/amusement-park.jar`. At runtime only the Java standard library and jBCrypt (bundled into the JAR by the shade plugin) are used.
 
 ### Run
 
@@ -54,12 +54,19 @@ Elements are separated by `;`. Command keywords are case-insensitive.
 | `TICKET DELETE;<identifier>` | Delete an individual ticket dated after today |
 | `GROUPTICKET CREATE;<identifier>;<group>;<date>` | Buy a ticket for every member of a group (ids `<identifier>:<dni>`) |
 | `GROUPTICKET DELETE;<identifier>` | Delete a group ticket dated after today, with its member tickets |
-| `ATTRACTION CREATE;<identifier>;<name>;<capacity>` | Create an attraction |
-| `ATTRACTION ENTER;<attraction>;<ticket>` | Enter with a ticket valid today (a group ticket admits all members or nobody) |
+| `ATTRACTION CREATE;<identifier>;<name>;<capacity>[;<type>]` | Create an attraction of type `GENERAL` (default), `INDIVIDUAL`, `GROUP` or `SPECIAL` |
+| `ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]` | Enter with a ticket valid today (a group ticket admits all members or nobody); `SPEED` uses one SpeedPass per ticket |
 | `ATTRACTION EXIT;<attraction>;<email>` | Leave an attraction |
 | `ATTRACTION LIST;<attraction>` | Show the emails of the users inside |
-| `ATTRACTION STATUS;<attraction>` | Show identifier, name, capacity, occupancy, free places and users inside |
+| `ATTRACTION STATUS;<attraction>` | Show identifier, name, type, capacity, occupancy, free places and users inside |
+| `SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>` | Buy 1 or 10 SpeedPasses (`<purchaseIdentifier>:1..n`), 20% of the ticket price each |
+| `SPEEDPASS DELETE;<speedPassIdentifier>` | Refund an unconsumed SpeedPass of a ticket dated after today |
+| `SPECIALPASS CREATE;<identifier>;<individualTicket>` | Buy the ticket's only Special Pass (same price as the ticket) |
+| `SPECIALPASS DELETE;<specialPassIdentifier>` | Refund an unconsumed Special Pass of a ticket dated after today |
+| `INVOICE CREATE;USER;<email>` | Invoice of a user's direct tickets and passes |
+| `INVOICE CREATE;GROUP;<groupIdentifier>` | Invoice of a group's group tickets |
 | `HELP` | Show the available commands |
+| `HELP EXTENDED` | Show the commands with a description of each |
 | `EXIT` | Terminate the application |
 
 Validation rules:
@@ -78,6 +85,10 @@ Park rules:
 - `USER DELETE` is rejected while the user has an active ticket or belongs to a locked group; otherwise the user is also removed from their groups. Historical tickets are kept.
 - Ticket identifiers (individual, group and member tickets) share one identifier space.
 - A user can be inside only one attraction at a time.
+- Attraction types: `GENERAL` accepts individual and group tickets, `INDIVIDUAL` and `SPECIAL` only individual tickets (member tickets of a group ticket included), `GROUP` only group tickets. `SPECIAL` entry consumes the ticket's Special Pass automatically and does not accept `SPEED`.
+- Passes belong to an individual ticket and keep the price computed at purchase; consumed passes stay recorded. Deleting a ticket (or group ticket) deletes its passes.
+- Invoices never count member tickets of a group ticket as personal purchases; members' passes appear on their user invoices, not on the group invoice.
+- Passwords are stored as BCrypt hashes. `users.txt` files from earlier versions (plain-text passwords) are not migrated and their users cannot authenticate.
 
 Successful operations print a confirmation (e.g. `USER CREATED`, `GROUP TICKET CREATED: ...`); rejected ones print a line starting with `ERROR:`.
 
@@ -99,13 +110,22 @@ Data is stored in the working directory (or the `--fly` temporary directory), lo
 
 | File | Line format |
 |---|---|
-| `users.txt` | `firstName;surnames;dni;email;password;phone;card` |
+| `users.txt` | `firstName;surnames;dni;email;bcryptHash;phone;card` |
 | `groups.txt` | `id;name;dni1,dni2,...` |
 | `tickets.txt` | `INDIVIDUAL;id;date;basePrice;discount;A/F;dni;email;firstName;surnames`, `GROUP;id;date;groupId`, `MEMBER;groupTicketId;id;date;basePrice;discount;A/F;dni;email;firstName;surnames` |
-| `attractions.txt` | `id;name;capacity` |
+| `passes.txt` | `SPEED` or `SPECIAL;id;ticketId;price;consumed` |
+| `attractions.txt` | `id;name;capacity;type` (lines without type load as `GENERAL`) |
 
 In `tickets.txt`, `A`/`F` marks whether the ticket's user was active or already deleted, so historical tickets survive user deletion. The users inside attractions are not stored: attractions start empty. Set the `park.data.dir` system property to use another directory, e.g. `java -Dpark.data.dir=/tmp/park -jar target/amusement-park.jar`.
 
 ### Design
+
+Code is organised in layers under `es.upm.etsisi.park`:
+
+- `presentation`: `CommandProcessor`, a `CommandRegistry` filled by command groups, and help generation with injected `HelpRenderer`s.
+- `business`: singleton controllers (`SystemController`, `UserController`, `GroupController`, `TicketController`, `PassController`, `AttractionController`, `InvoiceController`), the domain model (tickets with `Access`/`IndividualAccess`/`GroupAccess` capabilities, generic `Attraction<T extends Access>` types, passes, invoices built with `InvoiceBuilder`), the `ParkException` hierarchy and the `PasswordHasher`.
+- `persistence`: repository interfaces and their text-file implementations.
+
+`ApplicationContext` wires everything at start-up: the repositories (for the normal or `--fly` directory) and the controllers' collaborators are injected by hand; no DI framework is used.
 
 The class model is documented in [`uml/model.puml`](uml/model.puml) (PlantUML).
