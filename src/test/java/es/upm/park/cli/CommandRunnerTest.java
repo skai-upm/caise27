@@ -1,7 +1,7 @@
 package es.upm.park.cli;
 
-import es.upm.park.persistence.UserFileRepository;
-import es.upm.park.service.UserService;
+import es.upm.park.service.Park;
+import es.upm.park.service.ParkFixture;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -23,8 +23,8 @@ class CommandRunnerTest {
 
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-    private CommandRunner runner(UserService service) {
-        return new CommandRunner(new CommandProcessor(service),
+    private CommandRunner runner(Park park) {
+        return new CommandRunner(new CommandProcessor(park),
                 new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
@@ -34,7 +34,7 @@ class CommandRunnerTest {
 
     @Test
     void stopsAtExitAndSkipsBlankLines() throws Exception {
-        UserService service = new UserService(new UserFileRepository(dir.resolve("users.txt")));
+        Park park = ParkFixture.openEmpty(dir);
         String input = String.join("\n",
                 "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
                 "",
@@ -42,10 +42,10 @@ class CommandRunnerTest {
                 "EXIT",
                 "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
 
-        boolean exited = runner(service).run(new BufferedReader(new StringReader(input)));
+        boolean exited = runner(park).run(new BufferedReader(new StringReader(input)));
 
         assertTrue(exited);
-        assertEquals(1, service.getUsers().size());
+        assertEquals(1, park.users().getUsers().size());
         String[] lines = output().split(System.lineSeparator());
         assertEquals("USER CREATED", lines[0]);
         assertEquals("EXIT", lines[1]);
@@ -54,8 +54,8 @@ class CommandRunnerTest {
 
     @Test
     void endOfInputWithoutExit() throws Exception {
-        UserService service = new UserService(new UserFileRepository(dir.resolve("users.txt")));
-        boolean exited = runner(service).run(new BufferedReader(new StringReader("FOO\nHELP\n")));
+        Park park = ParkFixture.openEmpty(dir);
+        boolean exited = runner(park).run(new BufferedReader(new StringReader("FOO\nHELP\n")));
         assertFalse(exited);
         assertTrue(output().contains("ERROR: Unknown command"));
         assertTrue(output().contains("Available commands"));

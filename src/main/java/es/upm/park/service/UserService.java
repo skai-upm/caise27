@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * User management rules: creation, deletion and modification with
+ * User management rules: creation, removal and modification with
  * validation, uniqueness and credential checks. Every successful change is
  * persisted through the repository.
  */
@@ -46,21 +46,21 @@ public class UserService {
     }
 
     public User create(String firstName, String surnames, String dni, String email,
-                       String password, String phone, String card) throws UserOperationException {
+                       String password, String phone, String card) throws OperationException {
         requireNotBlank(firstName, "first name");
         requireNotBlank(surnames, "surnames");
         if (!UserValidator.isValidDni(dni)) {
-            throw new UserOperationException("Invalid DNI: " + dni);
+            throw new OperationException("Invalid DNI: " + dni);
         }
         requireValidEmail(email);
         requireValidPassword(password);
         requireNotBlank(phone, "phone");
         requireValidCard(card);
         if (findByDni(dni) != null) {
-            throw new UserOperationException("A user with DNI " + dni + " already exists");
+            throw new OperationException("A user with DNI " + dni + " already exists");
         }
         if (findByEmail(email) != null) {
-            throw new UserOperationException("A user with email " + email + " already exists");
+            throw new OperationException("A user with email " + email + " already exists");
         }
         User user = new User(firstName, surnames, dni, email, password, phone, card);
         users.add(user);
@@ -68,17 +68,20 @@ public class UserService {
         return user;
     }
 
-    public void delete(String email, String password) throws UserOperationException {
-        User user = authenticate(email, password);
+    /**
+     * Removes an already authenticated user. Callers are responsible for
+     * checking that the removal is allowed by the rest of the park state.
+     */
+    public void remove(User user) {
         users.remove(user);
         persist();
     }
 
     public void update(String email, String password, String fieldName, String newValue)
-            throws UserOperationException {
+            throws OperationException {
         UserField field = UserField.parse(fieldName);
         if (field == null) {
-            throw new UserOperationException("Field " + fieldName + " cannot be modified. Modifiable fields: "
+            throw new OperationException("Field " + fieldName + " cannot be modified. Modifiable fields: "
                     + UserField.listNames());
         }
         User user = authenticate(email, password);
@@ -95,7 +98,7 @@ public class UserService {
                 requireValidEmail(newValue);
                 User owner = findByEmail(newValue);
                 if (owner != null && owner != user) {
-                    throw new UserOperationException("A user with email " + newValue + " already exists");
+                    throw new OperationException("A user with email " + newValue + " already exists");
                 }
                 user.setEmail(newValue);
             }
@@ -115,43 +118,43 @@ public class UserService {
         persist();
     }
 
-    private User authenticate(String email, String password) throws UserOperationException {
+    public User authenticate(String email, String password) throws OperationException {
         User user = findByEmail(email);
         if (user == null) {
-            throw new UserOperationException("No user with email " + email);
+            throw new OperationException("No user with email " + email);
         }
         if (!user.hasPassword(password)) {
-            throw new UserOperationException("Incorrect password for " + email);
+            throw new OperationException("Incorrect password for " + email);
         }
         return user;
     }
 
-    private void persist() {
+    public void persist() {
         repository.saveAll(users);
     }
 
-    private static void requireNotBlank(String value, String fieldName) throws UserOperationException {
+    private static void requireNotBlank(String value, String fieldName) throws OperationException {
         if (!UserValidator.isNotBlank(value)) {
-            throw new UserOperationException("The " + fieldName + " must not be empty");
+            throw new OperationException("The " + fieldName + " must not be empty");
         }
     }
 
-    private static void requireValidEmail(String email) throws UserOperationException {
+    private static void requireValidEmail(String email) throws OperationException {
         if (!UserValidator.isValidEmail(email)) {
-            throw new UserOperationException("Invalid email: " + email);
+            throw new OperationException("Invalid email: " + email);
         }
     }
 
-    private static void requireValidPassword(String password) throws UserOperationException {
+    private static void requireValidPassword(String password) throws OperationException {
         if (!UserValidator.isValidPassword(password)) {
-            throw new UserOperationException(
+            throw new OperationException(
                     "Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol");
         }
     }
 
-    private static void requireValidCard(String card) throws UserOperationException {
+    private static void requireValidCard(String card) throws OperationException {
         if (!UserValidator.isValidCard(card)) {
-            throw new UserOperationException("Invalid card number: it must contain exactly 16 digits");
+            throw new OperationException("Invalid card number: it must contain exactly 16 digits");
         }
     }
 }

@@ -25,7 +25,7 @@ When started without arguments the application SHALL read commands from standard
 - **THEN** the application terminates normally
 
 ### Requirement: File mode
-When started with a file path as its first argument the application SHALL process the commands in that file in order, one per line, ignoring blank lines, using exactly the same command processing as interactive mode.
+When started with a file path as its first argument, or with `--fly` followed by a file path, the application SHALL process the commands in that file in order, one per line, ignoring blank lines, using exactly the same command processing as interactive mode.
 
 #### Scenario: Commands from a file
 - **WHEN** the JAR is run with a readable file containing `USER CREATE` and `USER UPDATE` commands
@@ -38,6 +38,10 @@ When started with a file path as its first argument the application SHALL proces
 #### Scenario: Missing or unreadable file
 - **WHEN** the JAR is run with a path that does not exist or cannot be read
 - **THEN** the application prints an error message identifying the file and terminates without a stack trace
+
+#### Scenario: File after --fly
+- **WHEN** the JAR is run as `--fly input.txt`
+- **THEN** the commands in `input.txt` are processed exactly as in normal file mode
 
 ### Requirement: Command syntax
 Commands SHALL consist of fields separated by the `;` character, the first field being the command name (`USER CREATE`, `USER DELETE`, `USER UPDATE`, `HELP`, `EXIT`). Command names SHALL be matched ignoring letter case and surrounding whitespace; field values SHALL be trimmed of surrounding whitespace.
@@ -58,11 +62,15 @@ An unknown command, a command with the wrong number of fields, or any rejected o
 - **THEN** an error message describing the expected syntax is printed and the application keeps running
 
 ### Requirement: HELP command
-The `HELP` command SHALL display the available commands and their basic syntax, covering at least `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `HELP` and `EXIT`.
+The `HELP` command SHALL display the available commands and their basic syntax, covering at least `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>`, `USER DELETE;<Email>;<Password>`, `USER UPDATE;<Email>;<Password>;<Field>;<NewValue>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `GROUPTICKET CREATE;<identifier>;<group>;<date>`, `GROUPTICKET DELETE;<identifier>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>`, `ATTRACTION ENTER;<attraction>;<ticket>`, `ATTRACTION EXIT;<attraction>;<email>`, `ATTRACTION LIST;<attraction>`, `ATTRACTION STATUS;<attractionIdentifier>`, `HELP` and `EXIT`.
 
 #### Scenario: Show help
 - **WHEN** `HELP` is processed
 - **THEN** the output lists the syntax of `USER CREATE`, `USER DELETE`, `USER UPDATE`, `HELP` and `EXIT`
+
+#### Scenario: Delivery 2 commands in help
+- **WHEN** `HELP` is processed
+- **THEN** the output also lists the syntax of every `SYSTEM`, `GROUP`, `TICKET`, `GROUPTICKET` and `ATTRACTION` command
 
 ### Requirement: EXIT command
 The `EXIT` command SHALL terminate the application in a controlled manner; no command after `EXIT` SHALL be executed, in either execution mode.

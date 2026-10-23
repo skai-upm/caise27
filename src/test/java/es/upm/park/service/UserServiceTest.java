@@ -31,12 +31,12 @@ class UserServiceTest {
         service = new UserService(new UserFileRepository(file));
     }
 
-    private void createAna() throws UserOperationException {
+    private void createAna() throws OperationException {
         service.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
     }
 
-    private void createPedro() throws UserOperationException {
+    private void createPedro() throws OperationException {
         service.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
                 "9876543210987654");
     }
@@ -54,17 +54,17 @@ class UserServiceTest {
 
     @Test
     void rejectsInvalidData() {
-        assertThrows(UserOperationException.class, () -> service.create("Ana", "Garcia", "12345678A",
+        assertThrows(OperationException.class, () -> service.create("Ana", "Garcia", "12345678A",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456"));
-        assertThrows(UserOperationException.class, () -> service.create("Ana", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> service.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.es", "Clave1!", "612345678", "1234567890123456"));
-        assertThrows(UserOperationException.class, () -> service.create("Ana", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> service.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.com", "clave1!", "612345678", "1234567890123456"));
-        assertThrows(UserOperationException.class, () -> service.create("Ana", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> service.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "123"));
-        assertThrows(UserOperationException.class, () -> service.create("", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> service.create("", "Garcia", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456"));
-        assertThrows(UserOperationException.class, () -> service.create("Ana", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> service.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.com", "Clave1!", " ", "1234567890123456"));
         assertTrue(service.getUsers().isEmpty());
         assertFalse(Files.exists(file));
@@ -73,7 +73,7 @@ class UserServiceTest {
     @Test
     void rejectsDuplicateDni() throws Exception {
         createAna();
-        UserOperationException e = assertThrows(UserOperationException.class, () -> service.create("Otra",
+        OperationException e = assertThrows(OperationException.class, () -> service.create("Otra",
                 "Persona", "12345678Z", "otra@correo.com", "Clave1!", "600000000", "1234567890123456"));
         assertTrue(e.getMessage().contains("DNI"));
     }
@@ -81,30 +81,30 @@ class UserServiceTest {
     @Test
     void rejectsDuplicateEmailIgnoringCase() throws Exception {
         createAna();
-        assertThrows(UserOperationException.class, () -> service.create("Otra", "Persona", "87654321X",
+        assertThrows(OperationException.class, () -> service.create("Otra", "Persona", "87654321X",
                 "ANA@correo.com", "Clave1!", "600000000", "1234567890123456"));
     }
 
     @Test
-    void deletesWithCorrectPassword() throws Exception {
+    void removesAuthenticatedUser() throws Exception {
         createAna();
         createPedro();
-        service.delete("pedro@correo.com", "Otra2#");
+        service.remove(service.authenticate("pedro@correo.com", "Otra2#"));
         assertNull(service.findByEmail("pedro@correo.com"));
         assertNull(reload().findByEmail("pedro@correo.com"));
         assertNotNull(reload().findByEmail("ana@correo.com"));
     }
 
     @Test
-    void wrongPasswordDoesNotDelete() throws Exception {
+    void wrongPasswordFailsAuthentication() throws Exception {
         createAna();
-        assertThrows(UserOperationException.class, () -> service.delete("ana@correo.com", "Wrong1!"));
+        assertThrows(OperationException.class, () -> service.authenticate("ana@correo.com", "Wrong1!"));
         assertNotNull(service.findByEmail("ana@correo.com"));
     }
 
     @Test
-    void deletingUnknownUserFails() {
-        assertThrows(UserOperationException.class, () -> service.delete("nobody@correo.com", "Clave1!"));
+    void unknownUserFailsAuthentication() {
+        assertThrows(OperationException.class, () -> service.authenticate("nobody@correo.com", "Clave1!"));
     }
 
     @Test
@@ -138,7 +138,7 @@ class UserServiceTest {
     void rejectsEmailInUseByAnotherUser() throws Exception {
         createAna();
         createPedro();
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "EMAIL", "pedro@correo.com"));
         assertNotNull(service.findByEmail("ana@correo.com"));
     }
@@ -146,13 +146,13 @@ class UserServiceTest {
     @Test
     void rejectsInvalidNewValues() throws Exception {
         createAna();
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "CARD", "1234"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "PASSWORD", "weak"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "NAME", ""));
         User ana = service.findByEmail("ana@correo.com");
         assertEquals("1234567890123456", ana.getCard());
@@ -162,7 +162,7 @@ class UserServiceTest {
     @Test
     void rejectsWrongCredentialsOnUpdate() throws Exception {
         createAna();
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Wrong1!", "PHONE", "699999999"));
         assertEquals("612345678", service.findByEmail("ana@correo.com").getPhone());
     }
@@ -170,7 +170,7 @@ class UserServiceTest {
     @Test
     void dniCannotBeUpdated() throws Exception {
         createAna();
-        UserOperationException e = assertThrows(UserOperationException.class,
+        OperationException e = assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "DNI", "87654321X"));
         assertTrue(e.getMessage().contains("NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD"));
         assertEquals("12345678Z", service.findByEmail("ana@correo.com").getDni());
