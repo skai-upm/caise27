@@ -19,10 +19,10 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import es.upm.parque.presentation.CommandProcessor;
+
 class AppTest {
 
-    static final String CREATE_PEDRO =
-            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
     static final String NL = System.lineSeparator();
 
     @TempDir
@@ -42,7 +42,7 @@ class AppTest {
     @Test
     void printsOneResponsePerNonBlankLine() throws IOException {
         CommandProcessor processor = new Park(dir, LocalDate.of(2026, 1, 1)).processor;
-        String input = CommandProcessorTest.CREATE_ANA + "\n\n   \n"
+        String input = Fixtures.CREATE_ANA + "\n\n   \n"
                 + "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\nUSER FLY\n";
         App.run(new BufferedReader(new StringReader(input)), out, processor);
         assertEquals(String.join(NL, "OK USER CREATED", "OK USER UPDATED", "ERROR UNKNOWN COMMAND", ""), output());
@@ -50,7 +50,7 @@ class AppTest {
 
     @Test
     void interactiveModeStopsAtExit() {
-        startWithStdin("HELP\nEXIT\n" + CommandProcessorTest.CREATE_ANA + "\n");
+        startWithStdin("HELP\nEXIT\n" + Fixtures.CREATE_ANA + "\n");
         assertTrue(output().contains("USER DELETE;Correo;Contraseña"));
         assertTrue(output().endsWith("OK EXIT" + NL));
         assertFalse(output().contains("OK USER CREATED"));
@@ -58,14 +58,14 @@ class AppTest {
 
     @Test
     void interactiveModeEndsWithInput() {
-        startWithStdin(CommandProcessorTest.CREATE_ANA + "\n");
+        startWithStdin(Fixtures.CREATE_ANA + "\n");
         assertEquals("OK USER CREATED" + NL, output());
     }
 
     @Test
     void fileModeRunsCommandsInOrderAndStopsAtExit() throws IOException {
         Path commands = dir.resolve("input_basico.txt");
-        Files.write(commands, List.of(CommandProcessorTest.CREATE_ANA, "", CREATE_PEDRO,
+        Files.write(commands, List.of(Fixtures.CREATE_ANA, "", Fixtures.CREATE_PEDRO,
                 "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999", "   ", "EXIT",
                 "USER DELETE;ana@correo.com;Clave1!"));
         startWithStdin("HELP\n", commands.toString());
@@ -78,7 +78,7 @@ class AppTest {
 
     @Test
     void groupsAreRestoredOnRestart() throws IOException {
-        startWithStdin(CommandProcessorTest.CREATE_ANA + "\nGROUP CREATE;G01;Familia Garcia\nGROUP ADD;G01;ana@correo.com\n");
+        startWithStdin(Fixtures.CREATE_ANA + "\nGROUP CREATE;G01;Familia Garcia\nGROUP ADD;G01;ana@correo.com\n");
         assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(dir.resolve("groups.txt")));
         bytes.reset();
         startWithStdin("GROUP ADD;G01;ana@correo.com\n");
@@ -87,7 +87,7 @@ class AppTest {
 
     @Test
     void ticketsAreRestoredOnRestart() throws IOException {
-        startWithStdin(CommandProcessorTest.CREATE_ANA + "\nTICKET CREATE;T001;ana@correo.com;2099-10-15\n");
+        startWithStdin(Fixtures.CREATE_ANA + "\nTICKET CREATE;T001;ana@correo.com;2099-10-15\n");
         assertEquals(List.of("T001;2099-10-15;12345678Z;40.00"), Files.readAllLines(dir.resolve("tickets.txt")));
         bytes.reset();
         startWithStdin("TICKET CREATE;T001;ana@correo.com;2099-10-16\nUSER DELETE;ana@correo.com;Clave1!\n");
@@ -96,7 +96,7 @@ class AppTest {
 
     @Test
     void groupTicketsAreRestoredOnRestart() throws IOException {
-        startWithStdin(CommandProcessorTest.CREATE_ANA + "\nGROUP CREATE;G01;Familia\nGROUP ADD;G01;ana@correo.com\n"
+        startWithStdin(Fixtures.CREATE_ANA + "\nGROUP CREATE;G01;Familia\nGROUP ADD;G01;ana@correo.com\n"
                 + "GROUPTICKET CREATE;TG01;G01;2099-10-15\n");
         assertEquals(List.of("TG01;2099-10-15;G01;0;12345678Z:40.00"),
                 Files.readAllLines(dir.resolve("grouptickets.txt")));
@@ -145,22 +145,22 @@ class AppTest {
 
     private void launch(String input, String... args) {
         App.launch(args, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)), out, data(), tmp(),
-                TemporaryDirectoryTest.START);
+                Fixtures.START);
     }
 
     @Test
     void normalLaunchUsesPermanentData() throws IOException {
-        launch(CommandProcessorTest.CREATE_ANA + "\n");
+        launch(Fixtures.CREATE_ANA + "\n");
         assertEquals(1, Files.readAllLines(data().resolve("users.txt")).size());
         assertFalse(Files.exists(tmp()));
     }
 
     @Test
     void flyModeIsolatesAndDeletesItsData() throws IOException {
-        launch(CommandProcessorTest.CREATE_ANA + "\n");
+        launch(Fixtures.CREATE_ANA + "\n");
         List<String> permanent = Files.readAllLines(data().resolve("users.txt"));
         bytes.reset();
-        launch(CommandProcessorTest.CREATE_ANA + "\n" + CREATE_PEDRO + "\nEXIT\n", "--fly");
+        launch(Fixtures.CREATE_ANA + "\n" + Fixtures.CREATE_PEDRO + "\nEXIT\n", "--fly");
         assertEquals("OK USER CREATED" + NL + "OK USER CREATED" + NL + "OK EXIT" + NL, output());
         assertEquals(permanent, Files.readAllLines(data().resolve("users.txt")));
         assertTrue(Files.isDirectory(tmp()));
@@ -172,7 +172,7 @@ class AppTest {
     @Test
     void flyModeWithCommandFile() throws IOException {
         Path commands = dir.resolve("input_fase2.txt");
-        Files.write(commands, List.of(CommandProcessorTest.CREATE_ANA, "USER DELETE;ana@correo.com;Clave1!"));
+        Files.write(commands, List.of(Fixtures.CREATE_ANA, "USER DELETE;ana@correo.com;Clave1!"));
         launch("", "--fly", commands.toString());
         assertEquals("OK USER CREATED" + NL + "OK USER DELETED" + NL, output());
         assertFalse(Files.exists(data()));

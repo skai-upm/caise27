@@ -5,19 +5,31 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import es.upm.parque.business.controller.AttractionManager;
+import es.upm.parque.business.controller.GroupManager;
+import es.upm.parque.business.controller.TicketManager;
+import es.upm.parque.business.controller.UserManager;
+import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.persistence.AttractionRepository;
+import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.GroupTicketRepository;
+import es.upm.parque.persistence.TicketRepository;
+import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.presentation.CommandProcessor;
+
 /**
  * Test fixture: the whole application wired over files in one directory.
  */
-final class Park {
+public final class Park {
 
-    final SystemDate date;
-    final UserManager users;
-    final GroupManager groups;
-    final TicketManager tickets;
-    final AttractionManager attractions;
-    final CommandProcessor processor;
+    public final SystemDate date;
+    public final UserManager users;
+    public final GroupManager groups;
+    public final TicketManager tickets;
+    public final AttractionManager attractions;
+    public final CommandProcessor processor;
 
-    Park(Path dir, LocalDate today) {
+    public Park(Path dir, LocalDate today) {
         try {
             date = new SystemDate(today);
             users = new UserManager(new UserRepository(dir.resolve("users.txt")));
@@ -32,7 +44,7 @@ final class Park {
         }
     }
 
-    String run(String command) {
+    public String run(String command) {
         return processor.process(command);
     }
 }

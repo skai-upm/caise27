@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 class UmlModelTest {
 
     private static final String PACKAGE = "es.upm.parque.";
+    private static final Pattern PACKAGE_BLOCK = Pattern.compile("^package ([\\w.]+) \\{$");
     private static final Pattern CLASS = Pattern.compile("^\\s*(?:abstract )?(class|enum) (\\w+)(?: \\{)?$");
     private static final Pattern ATTRIBUTE = Pattern.compile("^\\s*(\\w+) : (\\w+)$");
     private static final Pattern RELATION =
@@ -40,6 +41,9 @@ class UmlModelTest {
     private static final Pattern INHERITANCE = Pattern.compile("^(\\w+) --\\|> (\\w+)$");
     private static final Pattern USAGE = Pattern.compile("^(\\w+) \\.\\.> (\\w+) : .+$");
 
+    private static final Path SOURCES = Path.of("src", "main", "java");
+    private static final Map<String, String> qualifiedNames = new HashMap<>();
+    private static final Map<String, String> modelPackages = new HashMap<>();
     private static final Map<String, Map<String, String>> attributes = new HashMap<>();
     private static final Map<String, List<String>> enumValues = new HashMap<>();
     private static final List<String[]> relations = new ArrayList<>();
@@ -48,12 +52,26 @@ class UmlModelTest {
 
     @BeforeAll
     static void parseModel() throws IOException {
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                String name = file.getFileName().toString().replace(".java", "");
+                StringBuilder qualified = new StringBuilder();
+                for (Path part : SOURCES.relativize(file.getParent())) {
+                    qualified.append(part).append('.');
+                }
+                qualifiedNames.put(name, qualified + name);
+            }
+        }
         String current = null;
+        String currentPackage = null;
         boolean isEnum = false;
         for (String line : Files.readAllLines(Path.of("uml", "model.puml"))) {
             Matcher m;
-            if ((m = CLASS.matcher(line)).matches()) {
+            if ((m = PACKAGE_BLOCK.matcher(line)).matches()) {
+                currentPackage = m.group(1);
+            } else if ((m = CLASS.matcher(line)).matches()) {
                 current = m.group(2);
+                modelPackages.put(current, currentPackage);
                 isEnum = m.group(1).equals("enum");
                 attributes.put(current, new HashMap<>());
                 if (isEnum) {
@@ -80,7 +98,7 @@ class UmlModelTest {
 
     private static Class<?> modelClass(String name) {
         try {
-            return Class.forName(PACKAGE + name);
+            return Class.forName(qualifiedNames.getOrDefault(name, PACKAGE + name));
         } catch (ClassNotFoundException e) {
             throw new AssertionError("model element without class: " + name, e);
         }
@@ -113,13 +131,16 @@ class UmlModelTest {
     }
 
     @Test
-    void everyProductionClassIsInTheModelAndViceVersa() throws IOException {
-        Set<String> sources;
-        try (Stream<Path> files = Files.list(Path.of("src", "main", "java", "es", "upm", "parque"))) {
-            sources = files.map(p -> p.getFileName().toString().replace(".java", "")).collect(Collectors.toSet());
-        }
-        assertEquals(sources, attributes.keySet());
+    void everyProductionClassIsInTheModelAndViceVersa() {
+        assertEquals(qualifiedNames.keySet(), attributes.keySet());
         attributes.keySet().forEach(UmlModelTest::modelClass);
+    }
+
+    @Test
+    void classesAreDrawnInsideTheirPackage() {
+        for (Map.Entry<String, String> entry : modelPackages.entrySet()) {
+            assertEquals(qualifiedNames.get(entry.getKey()), entry.getValue() + "." + entry.getKey());
+        }
     }
 
     @Test

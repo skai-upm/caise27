@@ -16,6 +16,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import es.upm.parque.business.controller.AttractionManager;
+import es.upm.parque.business.controller.GroupManager;
+import es.upm.parque.business.controller.TicketManager;
+import es.upm.parque.business.controller.UserManager;
+import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.persistence.AttractionRepository;
+import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.GroupTicketRepository;
+import es.upm.parque.persistence.TemporaryDirectory;
+import es.upm.parque.persistence.TicketRepository;
+import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.presentation.CommandProcessor;
+
 /**
  * Starts the application. Without arguments commands are read from standard input;
  * with an argument they are read from the file it names. Both modes share the same processing.

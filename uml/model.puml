@@ -7,23 +7,18 @@ hide circle
 skinparam classAttributeIconSize 0
 
 package es.upm.parque {
-
   class App
+}
 
-  class TemporaryDirectory
-
+package es.upm.parque.presentation {
   class CommandProcessor {
     finished : boolean
   }
+}
 
+package es.upm.parque.business.model {
   class SystemDate {
     current : LocalDate
-  }
-
-  class UserManager
-
-  class UserRepository {
-    file : Path
   }
 
   class User {
@@ -47,27 +42,9 @@ package es.upm.parque {
 
   class UserValidator
 
-  class GroupManager
-
-  class GroupRepository {
-    file : Path
-  }
-
   class Group {
     id : String
     name : String
-  }
-
-  class TicketManager {
-    price : BigDecimal
-  }
-
-  class TicketRepository {
-    file : Path
-  }
-
-  class GroupTicketRepository {
-    file : Path
   }
 
   abstract class Ticket {
@@ -83,16 +60,46 @@ package es.upm.parque {
     discountPercent : int
   }
 
-  class AttractionManager
-
-  class AttractionRepository {
-    file : Path
-  }
-
   class Attraction {
     id : String
     name : String
     capacity : int
+  }
+}
+
+package es.upm.parque.business.controller {
+  class UserManager
+
+  class GroupManager
+
+  class TicketManager {
+    price : BigDecimal
+  }
+
+  class AttractionManager
+}
+
+package es.upm.parque.persistence {
+  class TemporaryDirectory
+
+  class UserRepository {
+    file : Path
+  }
+
+  class GroupRepository {
+    file : Path
+  }
+
+  class TicketRepository {
+    file : Path
+  }
+
+  class GroupTicketRepository {
+    file : Path
+  }
+
+  class AttractionRepository {
+    file : Path
   }
 }
 
