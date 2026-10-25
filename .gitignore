@@ -19,3 +19,13 @@ buildNumber.properties
 # OpenSpec
 .claude/
 .sddx/
+
+# Runtime data
+users.txt
+
+# SDDX run records (contain environment-specific data)
+experiments/
+
+# Sonar / SDDX analysis artifacts
+.scannerwork/
+sonar_metric_catalog.json
