@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
@@ -24,13 +23,16 @@ class CommandProcessorTest {
 
     private UserManager users;
     private GroupManager groups;
+    private TicketManager tickets;
     private CommandProcessor processor;
 
     @BeforeEach
-    void setUp() throws IOException {
-        users = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
-        processor = new CommandProcessor(users, groups, new SystemDate(LocalDate.of(2026, 1, 1)));
+    void setUp() {
+        Park park = new Park(dir, LocalDate.of(2026, 1, 1));
+        users = park.users;
+        groups = park.groups;
+        tickets = park.tickets;
+        processor = park.processor;
     }
 
     @Test
@@ -73,7 +75,7 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailuresBecomeErrors() {
-        CommandProcessor broken = new CommandProcessor(null, null, new SystemDate(LocalDate.of(2026, 1, 1)));
+        CommandProcessor broken = new CommandProcessor(null, null, null, new SystemDate(LocalDate.of(2026, 1, 1)));
         assertEquals(CommandProcessor.UNEXPECTED_ERROR, broken.process(CREATE_ANA));
     }
 
@@ -166,6 +168,41 @@ class CommandProcessorTest {
         String help = processor.process("HELP");
         for (String command : List.of("GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo",
                 "GROUP DELETE;Id")) {
+            assertTrue(help.lines().anyMatch(command::equals), command);
+        }
+    }
+
+    @Test
+    void runsTicketAndPriceCommands() {
+        processor.process(CREATE_ANA);
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertEquals("OK SYSTEM PRICE -> 60.00", processor.process("SYSTEM PRICE;60.00"));
+        assertEquals("OK TICKET CREATED -> 60.00", processor.process("ticket create;T002;ana@correo.com;2026-10-16"));
+        assertEquals("OK TICKET DELETED", processor.process("TICKET DELETE;T002"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("TICKET CREATE;T003;ana@correo.com"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("TICKET DELETE"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("SYSTEM PRICE"));
+        assertTrue(tickets.hasActiveTickets(users.findByEmail("ana@correo.com")));
+    }
+
+    @Test
+    void currentTicketsBlockUserDeletionUntilTheyArePast() {
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process(CREATE_ANA);
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertEquals("ERROR INVALID CREDENTIALS", processor.process("USER DELETE;ana@correo.com;Mala1!"));
+        assertEquals(CommandProcessor.ACTIVE_TICKETS, processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertEquals(CommandProcessor.ACTIVE_TICKETS, processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertEquals("OK USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals("12345678Z", tickets.find("T001").getHolder().getDni());
+    }
+
+    @Test
+    void helpListsTicketCommands() {
+        String help = processor.process("HELP");
+        for (String command : List.of("TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id", "SYSTEM PRICE;Precio")) {
             assertTrue(help.lines().anyMatch(command::equals), command);
         }
     }

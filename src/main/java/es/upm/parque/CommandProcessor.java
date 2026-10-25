@@ -15,6 +15,7 @@ public class CommandProcessor {
     static final String UNEXPECTED_ERROR = "ERROR UNEXPECTED FAILURE";
     static final String EXIT_RESPONSE = "OK EXIT";
     static final String INVALID_DATE = "ERROR INVALID DATE";
+    static final String ACTIVE_TICKETS = "ERROR USER HAS ACTIVE TICKETS";
     static final List<String> COMMAND_SYNTAX = List.of(
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
@@ -23,18 +24,23 @@ public class CommandProcessor {
             "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo",
             "GROUP DELETE;Id",
+            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
+            "TICKET DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
+            "SYSTEM PRICE;Precio",
             "HELP",
             "EXIT");
 
     private final UserManager users;
     private final GroupManager groups;
+    private final TicketManager tickets;
     private final SystemDate systemDate;
     private boolean finished;
 
-    public CommandProcessor(UserManager users, GroupManager groups, SystemDate systemDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets, SystemDate systemDate) {
         this.users = users;
         this.groups = groups;
+        this.tickets = tickets;
         this.systemDate = systemDate;
     }
 
@@ -49,11 +55,14 @@ public class CommandProcessor {
                 case "USER CREATE" -> createUser(parts);
                 case "USER DELETE" -> deleteUser(parts);
                 case "USER UPDATE" -> updateUser(parts);
-                case "GROUP CREATE" -> groupCommand(parts, 3, () -> groups.create(parts[1], parts[2]));
-                case "GROUP ADD" -> groupCommand(parts, 3, () -> groups.addMember(parts[1], parts[2]));
-                case "GROUP REMOVE" -> groupCommand(parts, 3, () -> groups.removeMember(parts[1], parts[2]));
-                case "GROUP DELETE" -> groupCommand(parts, 2, () -> groups.delete(parts[1]));
+                case "GROUP CREATE" -> withParameters(parts, 3, () -> groups.create(parts[1], parts[2]));
+                case "GROUP ADD" -> withParameters(parts, 3, () -> groups.addMember(parts[1], parts[2]));
+                case "GROUP REMOVE" -> withParameters(parts, 3, () -> groups.removeMember(parts[1], parts[2]));
+                case "GROUP DELETE" -> withParameters(parts, 2, () -> groups.delete(parts[1]));
+                case "TICKET CREATE" -> withParameters(parts, 4, () -> tickets.create(parts[1], parts[2], parts[3]));
+                case "TICKET DELETE" -> withParameters(parts, 2, () -> tickets.delete(parts[1]));
                 case "SYSTEM DATE" -> setDate(parts);
+                case "SYSTEM PRICE" -> withParameters(parts, 2, () -> tickets.setPrice(parts[1]));
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> UNKNOWN_COMMAND;
@@ -115,7 +124,10 @@ public class CommandProcessor {
         if (p.length != 3) {
             return WRONG_PARAMETERS;
         }
-        User user = users.findByEmail(p[1]);
+        User user = users.checkCredentials(p[1], p[2]);
+        if (user != null && tickets.hasActiveTickets(user)) {
+            return ACTIVE_TICKETS;
+        }
         String response = users.delete(p[1], p[2]);
         if (UserManager.USER_DELETED.equals(response)) {
             groups.removeUserFromAll(user);
@@ -123,7 +135,7 @@ public class CommandProcessor {
         return response;
     }
 
-    private static String groupCommand(String[] p, int expectedParts, Supplier<String> operation) {
+    private static String withParameters(String[] p, int expectedParts, Supplier<String> operation) {
         return p.length == expectedParts ? operation.get() : WRONG_PARAMETERS;
     }
 

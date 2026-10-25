@@ -127,6 +127,13 @@ public class UserManager {
         return owner == null || owner == user ? null : DUPLICATE_EMAIL;
     }
 
+    /**
+     * Returns the user with this email when the password matches, or null otherwise.
+     */
+    public User checkCredentials(String email, String password) {
+        return authenticate(email, password);
+    }
+
     private User authenticate(String email, String password) {
         User user = findByEmail(email);
         return user != null && user.getPassword().equals(password) ? user : null;

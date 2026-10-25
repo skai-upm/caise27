@@ -29,7 +29,10 @@ public class App {
         try {
             UserManager users = new UserManager(new UserRepository(dataDir.resolve("users.txt")));
             GroupManager groups = new GroupManager(new GroupRepository(dataDir.resolve("groups.txt")), users);
-            processor = new CommandProcessor(users, groups, new SystemDate(LocalDate.now()));
+            SystemDate systemDate = new SystemDate(LocalDate.now());
+            TicketManager tickets = new TicketManager(new TicketRepository(dataDir.resolve("tickets.txt")), users,
+                    systemDate);
+            processor = new CommandProcessor(users, groups, tickets, systemDate);
         } catch (IOException e) {
             out.println("ERROR " + e.getMessage());
             return;

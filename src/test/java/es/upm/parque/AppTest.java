@@ -41,9 +41,7 @@ class AppTest {
 
     @Test
     void printsOneResponsePerNonBlankLine() throws IOException {
-        UserManager users = new UserManager(new UserRepository(dir.resolve("u.txt")));
-        CommandProcessor processor = new CommandProcessor(users,
-                new GroupManager(new GroupRepository(dir.resolve("g.txt")), users), new SystemDate(LocalDate.of(2026, 1, 1)));
+        CommandProcessor processor = new Park(dir, LocalDate.of(2026, 1, 1)).processor;
         String input = CommandProcessorTest.CREATE_ANA + "\n\n   \n"
                 + "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\nUSER FLY\n";
         App.run(new BufferedReader(new StringReader(input)), out, processor);
@@ -85,6 +83,15 @@ class AppTest {
         bytes.reset();
         startWithStdin("GROUP ADD;G01;ana@correo.com\n");
         assertEquals("ERROR USER ALREADY IN GROUP" + NL, output());
+    }
+
+    @Test
+    void ticketsAreRestoredOnRestart() throws IOException {
+        startWithStdin(CommandProcessorTest.CREATE_ANA + "\nTICKET CREATE;T001;ana@correo.com;2099-10-15\n");
+        assertEquals(List.of("T001;2099-10-15;12345678Z;40.00"), Files.readAllLines(dir.resolve("tickets.txt")));
+        bytes.reset();
+        startWithStdin("TICKET CREATE;T001;ana@correo.com;2099-10-16\nUSER DELETE;ana@correo.com;Clave1!\n");
+        assertEquals("ERROR DUPLICATE TICKET" + NL + "ERROR USER HAS ACTIVE TICKETS" + NL, output());
     }
 
     @Test
