@@ -1,0 +1,96 @@
+{
+  "capturedAt": "2026-10-23T10:03:42.939308+00:00",
+  "agent": "claude-code",
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "e011f133-dd51-41ae-9583-eca9f71817df",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 42,
+    "outputTokens": 15567,
+    "cacheCreationTokens": 86265,
+    "cacheReadTokens": 1597997,
+    "totalTokens": 1699871,
+    "totalCost": 1.3212274
+  },
+  "git": {
+    "available": true,
+    "repo": "/Users/andreacimmino/Desktop/opendev/opus_2_description_nl",
+    "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+    "dirty": true,
+    "statusPorcelain": [
+      "?? .botl/",
+      "?? experiments/",
+      "?? openspec/changes/botl-0001-d1-description/"
+    ]
+  },
+  "artifacts": {
+    "available": true,
+    "files": 8,
+    "lines": 356,
+    "words": 3098,
+    "requirements": 20,
+    "scenarios": 37,
+    "tasks": 11,
+    "shallStatements": 32
+  },
+  "projectProfile": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "codeQuality": {
+    "common": {
+      "sonar": {
+        "available": false,
+        "error": "SonarQube preflight failed",
+        "preflight": {
+          "configured": true,
+          "url": "https://sonar-qube.skai.etsisi.upm.es/",
+          "host": "sonar-qube.skai.etsisi.upm.es",
+          "dnsResolved": false,
+          "reachable": false,
+          "dnsError": "[Errno 8] nodename nor servname provided, or not known"
+        }
+      }
+    },
+    "languageSpecific": {
+      "profile": {
+        "kind": "unknown",
+        "modules": []
+      },
+      "modules": []
+    },
+    "sonar": {
+      "available": false,
+      "error": "SonarQube preflight failed",
+      "preflight": {
+        "configured": true,
+        "url": "https://sonar-qube.skai.etsisi.upm.es/",
+        "host": "sonar-qube.skai.etsisi.upm.es",
+        "dnsResolved": false,
+        "reachable": false,
+        "dnsError": "[Errno 8] nodename nor servname provided, or not known"
+      }
+    },
+    "radon": {
+      "available": false
+    }
+  },
+  "sonar": {
+    "available": false,
+    "error": "SonarQube preflight failed",
+    "preflight": {
+      "configured": true,
+      "url": "https://sonar-qube.skai.etsisi.upm.es/",
+      "host": "sonar-qube.skai.etsisi.upm.es",
+      "dnsResolved": false,
+      "reachable": false,
+      "dnsError": "[Errno 8] nodename nor servname provided, or not known"
+    }
+  },
+  "radon": {
+    "available": false
+  }
+}
