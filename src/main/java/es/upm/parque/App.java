@@ -5,16 +5,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.stream.Stream;
+
+import es.upm.parque.business.security.BCryptPasswordEncoder;
+import es.upm.parque.business.security.PasswordEncoder;
+import es.upm.parque.persistence.StoragePaths;
+import es.upm.parque.presentation.CommandProcessor;
+import es.upm.parque.presentation.ConsoleRunner;
 
 /**
  * Entry point of the Amusement Park application. Without a file argument it reads commands from standard input;
@@ -40,6 +46,10 @@ public class App {
      * Runs the application with data directories relative to {@code baseDir} and returns the exit code.
      */
     static int run(String[] args, InputStream stdin, PrintStream out, Path baseDir) {
+        return run(args, stdin, out, baseDir, new BCryptPasswordEncoder());
+    }
+
+    static int run(String[] args, InputStream stdin, PrintStream out, Path baseDir, PasswordEncoder encoder) {
         boolean fly = false;
         String commandFile = null;
         for (String arg : args) {
@@ -53,7 +63,7 @@ public class App {
             }
         }
         if (!fly) {
-            return execute(commandFile, stdin, out, new StoragePaths(baseDir.resolve(DATA_DIRECTORY)));
+            return execute(commandFile, stdin, out, new StoragePaths(baseDir.resolve(DATA_DIRECTORY)), encoder);
         }
 
         Path flyDirectory;
@@ -67,7 +77,7 @@ public class App {
         Runtime.getRuntime().addShutdownHook(cleanup);
         try {
             out.println("Fly mode: using temporary directory " + flyDirectory);
-            return execute(commandFile, stdin, out, new StoragePaths(flyDirectory));
+            return execute(commandFile, stdin, out, new StoragePaths(flyDirectory), encoder);
         } finally {
             deleteRecursively(flyDirectory);
             try {
@@ -78,39 +88,25 @@ public class App {
         }
     }
 
-    private static int execute(String commandFile, InputStream stdin, PrintStream out, StoragePaths paths) {
+    private static int execute(String commandFile, InputStream stdin, PrintStream out, StoragePaths paths,
+            PasswordEncoder encoder) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new ParkController(paths));
+            processor = ParkApplication.start(paths, LocalDate.now(), encoder);
         } catch (IOException e) {
             out.println("ERROR Cannot load data from " + paths.getDirectory() + ": " + e.getMessage());
             return 1;
         }
+        ConsoleRunner runner = new ConsoleRunner(processor, out);
         if (commandFile == null) {
             out.println("Amusement Park - type HELP to see the available commands");
-            return processAll(new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8)), processor,
-                    out, "standard input");
+            return runner.run(new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8)),
+                    "standard input");
         }
         try (BufferedReader reader = Files.newBufferedReader(Path.of(commandFile), StandardCharsets.UTF_8)) {
-            return processAll(reader, processor, out, commandFile);
+            return runner.run(reader, commandFile);
         } catch (IOException | InvalidPathException e) {
             out.println("ERROR Cannot read command file: " + commandFile);
-            return 1;
-        }
-    }
-
-    private static int processAll(BufferedReader reader, CommandProcessor processor, PrintStream out, String source) {
-        try {
-            String line;
-            while (!processor.isFinished() && (line = reader.readLine()) != null) {
-                String result = processor.process(line);
-                if (result != null) {
-                    out.println(result);
-                }
-            }
-            return 0;
-        } catch (IOException | UncheckedIOException e) {
-            out.println("ERROR Cannot read commands from " + source);
             return 1;
         }
     }

@@ -1,0 +1,9 @@
+package es.upm.parque.business.model;
+
+import java.util.List;
+
+/**
+ * Outcome of a successful attraction entry: how many users entered and which passes were consumed.
+ */
+public record EntryResult(int users, List<Pass> consumedPasses) {
+}

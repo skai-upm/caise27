@@ -11,6 +11,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -37,7 +38,8 @@ public class AppTest {
     private String runApp(String[] args, String stdin, Path baseDir, int expectedCode) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(buffer, true, StandardCharsets.UTF_8);
-        int code = App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)), out, baseDir);
+        int code = App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)), out, baseDir,
+                TestContext.FAST_ENCODER);
         assertEquals(expectedCode, code);
         return buffer.toString(StandardCharsets.UTF_8);
     }
@@ -71,7 +73,20 @@ public class AppTest {
         String interactiveOutput = runApp(new String[0], COMMANDS, dir.resolve("b"), 0);
 
         assertTrue(interactiveOutput.endsWith(fileOutput));
-        assertEquals(Files.readAllLines(users(dir.resolve("a"))), Files.readAllLines(users(dir.resolve("b"))));
+        assertEquals(withoutPasswordHashes(users(dir.resolve("a"))), withoutPasswordHashes(users(dir.resolve("b"))));
+    }
+
+    /**
+     * User lines without the salted password hash, which differs between runs.
+     */
+    private static List<String> withoutPasswordHashes(Path file) throws IOException {
+        List<String> lines = new ArrayList<>();
+        for (String line : Files.readAllLines(file)) {
+            String[] fields = line.split(";");
+            fields[4] = "";
+            lines.add(String.join(";", fields));
+        }
+        return lines;
     }
 
     @Test

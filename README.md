@@ -1,6 +1,7 @@
 # caise27 — Amusement Park
 
-Terminal application for managing an amusement park, built with Maven and Java 21 (standard library only).
+Terminal application for managing an amusement park, built with Maven and Java 21. The only runtime dependency is
+jBCrypt, used to store passwords as BCrypt hashes; `mvn package` bundles it into the executable JAR.
 
 ## Build
 
@@ -33,7 +34,7 @@ java -jar target/parque.jar --fly input_fase2.txt
 ```
 
 Data is stored in `data/` (relative to the working directory) as `;`-separated text files — `users.txt`,
-`groups.txt`, `tickets.txt`, `grouptickets.txt` and `attractions.txt` — and is loaded again on every start.
+`groups.txt`, `tickets.txt`, `grouptickets.txt`, `passes.txt` and `attractions.txt` — and is loaded again on every start.
 The system date (initially today's date) and the ticket price (initially 40.00) are not stored.
 
 ## Commands
@@ -52,13 +53,28 @@ The system date (initially today's date) and the ticket price (initially 40.00) 
 | `TICKET DELETE;Id` | Delete a ticket dated after the system date |
 | `GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd` | Buy a group ticket: one ticket `<Id>-<DNI>` per member, with 0/10/20/50 % discount for <3, 3–5, 6–10, >10 members |
 | `GROUPTICKET DELETE;Id` | Delete a group ticket dated after the system date with its member tickets |
-| `ATTRACTION CREATE;Id;Nombre;Capacidad` / `ATTRACTION DELETE;Id` | Create or delete (when empty) an attraction |
-| `ATTRACTION ENTER;IdAtraccion;IdEntrada` | Enter with an individual or group ticket for the system date (all or nobody) |
+| `SPEEDPASS CREATE;IdEntrada;Cantidad` | Buy 1 or 10 SpeedPasses (`<IdEntrada>-SP<n>`, 20 % of the ticket price each) |
+| `SPEEDPASS DELETE;IdPase` | Refund an unused SpeedPass of a ticket dated after the system date |
+| `SPECIALPASS CREATE;IdEntrada` | Buy the only Special Pass (`<IdEntrada>-SPECIAL`) a ticket can ever have, at the ticket price |
+| `SPECIALPASS DELETE;IdPase` | Refund an unused Special Pass of a ticket dated after the system date |
+| `ATTRACTION CREATE;Id;Nombre;Capacidad[;Tipo]` / `ATTRACTION DELETE;Id` | Create (type `GENERAL` by default, `INDIVIDUAL`, `GROUP` or `SPECIAL`) or delete (when empty) an attraction |
+| `ATTRACTION ENTER;IdAtraccion;IdEntrada[;SPEED]` | Enter with a ticket for the system date admitted by the attraction type (all or nobody); `SPEED` consumes one SpeedPass per user; SPECIAL attractions consume the Special Pass |
 | `ATTRACTION EXIT;IdAtraccion;IdEntrada` | Leave an attraction |
 | `ATTRACTION STATUS;IdAtraccion` | Show capacity, occupancy, available places and users present |
-| `HELP` | Show the available commands |
+| `INVOICE CREATE;USER;Correo` / `INVOICE CREATE;GROUP;IdGrupo` | Show an invoice (user: direct tickets and personal passes; group: group tickets) |
+| `HELP` / `HELP EXTENDED` | Show the command syntax / syntax plus descriptions |
 | `EXIT` | Stop processing commands |
 
 Successful commands print `OK ...`; invalid commands or data print `ERROR ...` and the application keeps running.
+
+## Architecture
+
+- `es.upm.parque` — `App` (entry point, execution modes, `--fly`) and `ParkApplication` (composition root: creates
+  the repositories for `data/` or `tmp/<timestamp>/` and injects them and the collaborating controllers).
+- `es.upm.parque.presentation` — command processing (`CommandProcessor`, `ConsoleRunner`), the command registry and
+  help generation with injected formats.
+- `es.upm.parque.business` — `model` (users, groups, tickets, passes, generic attractions), `controller`
+  (Singleton controllers), `invoice` (Builder), `security` (BCrypt), `validation`.
+- `es.upm.parque.persistence` — repository interfaces and their text-file implementations.
 
 The class model is documented in [`uml/model.puml`](uml/model.puml).

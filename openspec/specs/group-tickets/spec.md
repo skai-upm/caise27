@@ -29,7 +29,7 @@ The total SHALL be the sum of the individual prices minus a discount by member c
 - **THEN** the totals are 80.00, 108.00, 180.00, 192.00, 320.00 and 220.00
 
 ### Requirement: Delete future group ticket
-`GROUPTICKET DELETE;id` SHALL delete a group ticket and all its internal individual tickets only when its date is strictly later than the system date.
+`GROUPTICKET DELETE;id` SHALL delete a group ticket only when its date is strictly later than the system date, deleting first the passes of each internal ticket, then the internal tickets and finally the group ticket. A rejected or failed deletion SHALL leave no partial deletions.
 
 #### Scenario: Future group ticket deleted
 - **WHEN** the system date is 2026-10-01 and `GROUPTICKET DELETE;TG01` is processed for a ticket dated 2026-10-15
@@ -38,6 +38,10 @@ The total SHALL be the sum of the individual prices minus a discount by member c
 #### Scenario: Current group ticket kept
 - **WHEN** the system date equals the group ticket date
 - **THEN** an `ERROR` is reported and nothing is deleted
+
+#### Scenario: Passes of internal tickets deleted
+- **WHEN** an internal ticket of future TG01 has SpeedPasses and `GROUPTICKET DELETE;TG01` is processed
+- **THEN** those passes, the internal tickets and TG01 no longer exist, also after a restart
 
 ### Requirement: Internal tickets protect their users
 Internal tickets dated on or after the system date SHALL prevent their users from being deleted, exactly like ordinary individual tickets.
