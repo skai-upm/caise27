@@ -38,6 +38,8 @@ public class TicketManager {
     public static final String GROUP_TICKET_DELETED = "OK GROUP TICKET DELETED";
     public static final String EMPTY_GROUP = "ERROR EMPTY GROUP";
 
+    private static TicketManager instance;
+
     private final TicketRepository repository;
     private final GroupTicketRepository groupRepository;
     private final UserManager users;
@@ -47,7 +49,27 @@ public class TicketManager {
     private final Map<String, GroupTicket> groupTicketsById = new LinkedHashMap<>();
     private BigDecimal price = INITIAL_PRICE;
 
-    public TicketManager(TicketRepository repository, GroupTicketRepository groupRepository, UserManager users,
+    /**
+     * Creates the unique TicketManager with its injected dependencies, replacing any previous instance.
+     * Called once at application startup.
+     */
+    public static TicketManager initialize(TicketRepository repository, GroupTicketRepository groupRepository,
+                    UserManager users, GroupManager groups, SystemDate systemDate) throws IOException {
+        instance = new TicketManager(repository, groupRepository, users, groups, systemDate);
+        return instance;
+    }
+
+    /**
+     * Returns the unique TicketManager; TicketManager.initialize must have been called first.
+     */
+    public static TicketManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("TicketManager not initialized");
+        }
+        return instance;
+    }
+
+    private TicketManager(TicketRepository repository, GroupTicketRepository groupRepository, UserManager users,
                          GroupManager groups, SystemDate systemDate) throws IOException {
         this.repository = repository;
         this.groupRepository = groupRepository;

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.parque.Fixtures;
 import es.upm.parque.business.model.User;
-import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.persistence.TextFileUserRepository;
 
 class UserManagerTest {
 
@@ -28,7 +28,7 @@ class UserManagerTest {
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        manager = new UserManager(new UserRepository(file));
+        manager = UserManager.initialize(new TextFileUserRepository(file));
     }
 
     @Test
@@ -76,7 +76,7 @@ class UserManagerTest {
         assertEquals(1, manager.count());
         assertEquals(UserManager.USER_DELETED, manager.delete("ana@correo.com", "Clave1!"));
         assertEquals(0, manager.count());
-        assertEquals(0, new UserManager(new UserRepository(file)).count());
+        assertEquals(0, UserManager.initialize(new TextFileUserRepository(file)).count());
     }
 
     @Test
@@ -91,7 +91,7 @@ class UserManagerTest {
                 manager.update("ana.nueva@correo.com", "Clave1!", "PASSWORD", "Nueva2#"));
         assertEquals(UserManager.USER_UPDATED,
                 manager.update("ana.nueva@correo.com", "Nueva2#", "card", "9999888877776666"));
-        User reloaded = new UserManager(new UserRepository(file)).findByEmail("ana.nueva@correo.com");
+        User reloaded = UserManager.initialize(new TextFileUserRepository(file)).findByEmail("ana.nueva@correo.com");
         assertNotNull(reloaded);
         assertEquals("Ana Maria", reloaded.getName());
         assertEquals("Ruiz", reloaded.getSurname());
@@ -125,7 +125,7 @@ class UserManagerTest {
     @Test
     void restartKeepsUsersForUniqueness() throws IOException {
         manager.create(Fixtures.ana());
-        UserManager restarted = new UserManager(new UserRepository(file));
+        UserManager restarted = UserManager.initialize(new TextFileUserRepository(file));
         assertEquals(UserManager.DUPLICATE_DNI, restarted.create(Fixtures.ana()));
         assertNull(restarted.findByEmail("pedro@correo.com"));
     }
@@ -134,7 +134,7 @@ class UserManagerTest {
     void reportsStorageFailure() throws IOException {
         Path blocked = dir.resolve("blocked");
         Files.createFile(blocked);
-        UserManager broken = new UserManager(new UserRepository(blocked.resolve("users.txt")));
+        UserManager broken = UserManager.initialize(new TextFileUserRepository(blocked.resolve("users.txt")));
         assertEquals(UserManager.STORAGE_FAILURE, broken.create(Fixtures.ana()));
     }
 

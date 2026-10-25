@@ -16,19 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import es.upm.parque.business.controller.AttractionManager;
-import es.upm.parque.business.controller.GroupManager;
-import es.upm.parque.business.controller.InvoiceManager;
-import es.upm.parque.business.controller.TicketManager;
-import es.upm.parque.business.controller.UserManager;
-import es.upm.parque.business.model.StandardInvoiceBuilder;
-import es.upm.parque.business.model.SystemDate;
-import es.upm.parque.persistence.AttractionRepository;
-import es.upm.parque.persistence.GroupRepository;
-import es.upm.parque.persistence.GroupTicketRepository;
 import es.upm.parque.persistence.TemporaryDirectory;
-import es.upm.parque.persistence.TicketRepository;
-import es.upm.parque.persistence.UserRepository;
 import es.upm.parque.presentation.CommandProcessor;
 
 /**
@@ -87,16 +75,7 @@ public class App {
     static void start(String[] args, InputStream stdin, PrintStream out, Path dataDir) {
         CommandProcessor processor;
         try {
-            UserManager users = new UserManager(new UserRepository(dataDir.resolve("users.txt")));
-            GroupManager groups = new GroupManager(new GroupRepository(dataDir.resolve("groups.txt")), users);
-            SystemDate systemDate = new SystemDate(LocalDate.now());
-            TicketManager tickets = new TicketManager(new TicketRepository(dataDir.resolve("tickets.txt")),
-                    new GroupTicketRepository(dataDir.resolve("grouptickets.txt")), users, groups, systemDate);
-            AttractionManager attractions = new AttractionManager(
-                    new AttractionRepository(dataDir.resolve("attractions.txt")), tickets, systemDate);
-            InvoiceManager invoices = new InvoiceManager(users, groups, tickets, systemDate,
-                    StandardInvoiceBuilder::new);
-            processor = new CommandProcessor(users, groups, tickets, attractions, invoices, systemDate);
+            processor = Bootstrap.configure(dataDir, LocalDate.now());
         } catch (IOException e) {
             out.println("ERROR " + e.getMessage());
             return;

@@ -16,7 +16,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.parque.Fixtures;
 import es.upm.parque.Park;
-import es.upm.parque.persistence.AttractionRepository;
+import es.upm.parque.persistence.TextFileAttractionRepository;
 
 class AttractionManagerTest {
 
@@ -146,7 +146,7 @@ class AttractionManagerTest {
     @Test
     void reportsStorageFailure() throws IOException {
         Path blocked = Files.createFile(dir.resolve("blocked"));
-        AttractionManager broken = new AttractionManager(new AttractionRepository(blocked.resolve("a.txt")),
+        AttractionManager broken = AttractionManager.initialize(new TextFileAttractionRepository(blocked.resolve("a.txt")),
                 park.tickets, park.date);
         assertEquals(UserManager.STORAGE_FAILURE, broken.create("A01", "Tornado", "20"));
     }

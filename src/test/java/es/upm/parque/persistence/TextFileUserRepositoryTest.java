@@ -13,20 +13,20 @@ import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.parque.business.model.User;
 
-class UserRepositoryTest {
+class TextFileUserRepositoryTest {
 
     @TempDir
     Path dir;
 
     @Test
     void missingFileMeansNoUsers() throws IOException {
-        assertTrue(new UserRepository(dir.resolve("users.txt")).load().isEmpty());
+        assertTrue(new TextFileUserRepository(dir.resolve("users.txt")).load().isEmpty());
     }
 
     @Test
     void savesOneSemicolonSeparatedLinePerUser() throws IOException {
         Path file = dir.resolve("data").resolve("users.txt");
-        UserRepository repository = new UserRepository(file);
+        UserRepository repository = new TextFileUserRepository(file);
         repository.save(List.of(
                 new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                         "1234567890123456"),
@@ -40,7 +40,7 @@ class UserRepositoryTest {
 
     @Test
     void loadsWhatWasSaved() throws IOException {
-        UserRepository repository = new UserRepository(dir.resolve("users.txt"));
+        UserRepository repository = new TextFileUserRepository(dir.resolve("users.txt"));
         repository.save(List.of(new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!",
                 "612345678", "1234567890123456")));
         List<User> users = repository.load();
@@ -60,6 +60,6 @@ class UserRepositoryTest {
         Path file = dir.resolve("users.txt");
         Files.write(file, List.of("", "solo;tres;campos",
                 "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"));
-        assertEquals(1, new UserRepository(file).load().size());
+        assertEquals(1, new TextFileUserRepository(file).load().size());
     }
 }

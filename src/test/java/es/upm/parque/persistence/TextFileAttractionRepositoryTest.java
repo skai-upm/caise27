@@ -14,7 +14,7 @@ import org.junit.jupiter.api.io.TempDir;
 import es.upm.parque.Fixtures;
 import es.upm.parque.business.model.Attraction;
 
-class AttractionRepositoryTest {
+class TextFileAttractionRepositoryTest {
 
     @TempDir
     Path dir;
@@ -22,7 +22,7 @@ class AttractionRepositoryTest {
     @Test
     void savesAndLoadsDefinitionsOnly() throws IOException {
         Path file = dir.resolve("data").resolve("attractions.txt");
-        AttractionRepository repository = new AttractionRepository(file);
+        AttractionRepository repository = new TextFileAttractionRepository(file);
         assertTrue(repository.load().isEmpty());
         Attraction tornado = new Attraction("A01", "Tornado", 20);
         tornado.admit(List.of(Fixtures.ana()));
@@ -38,6 +38,6 @@ class AttractionRepositoryTest {
     void ignoresMalformedLines() throws IOException {
         Path file = dir.resolve("attractions.txt");
         Files.write(file, List.of("roto", ";Sin id;5", "A02;Noria;0", "A03;Noria;x", "A04;Noria;8"));
-        assertEquals(1, new AttractionRepository(file).load().size());
+        assertEquals(1, new TextFileAttractionRepository(file).load().size());
     }
 }

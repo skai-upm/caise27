@@ -30,12 +30,34 @@ public class AttractionManager {
     public static final String CAPACITY_EXCEEDED = "ERROR CAPACITY EXCEEDED";
     public static final String NOT_INSIDE = "ERROR NOT INSIDE";
 
+    private static AttractionManager instance;
+
     private final AttractionRepository repository;
     private final TicketManager tickets;
     private final SystemDate systemDate;
     private final Map<String, Attraction> attractionsById = new LinkedHashMap<>();
 
-    public AttractionManager(AttractionRepository repository, TicketManager tickets, SystemDate systemDate)
+    /**
+     * Creates the unique AttractionManager with its injected dependencies, replacing any previous instance.
+     * Called once at application startup.
+     */
+    public static AttractionManager initialize(AttractionRepository repository, TicketManager tickets,
+                    SystemDate systemDate) throws IOException {
+        instance = new AttractionManager(repository, tickets, systemDate);
+        return instance;
+    }
+
+    /**
+     * Returns the unique AttractionManager; AttractionManager.initialize must have been called first.
+     */
+    public static AttractionManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("AttractionManager not initialized");
+        }
+        return instance;
+    }
+
+    private AttractionManager(AttractionRepository repository, TicketManager tickets, SystemDate systemDate)
             throws IOException {
         this.repository = repository;
         this.tickets = tickets;

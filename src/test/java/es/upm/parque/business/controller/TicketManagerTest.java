@@ -25,8 +25,8 @@ import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.User;
-import es.upm.parque.persistence.GroupTicketRepository;
-import es.upm.parque.persistence.TicketRepository;
+import es.upm.parque.persistence.TextFileGroupTicketRepository;
+import es.upm.parque.persistence.TextFileTicketRepository;
 
 class TicketManagerTest {
 
@@ -229,8 +229,8 @@ class TicketManagerTest {
     @Test
     void reportsStorageFailure() throws IOException {
         Path blocked = Files.createFile(dir.resolve("blocked"));
-        TicketManager broken = new TicketManager(new TicketRepository(blocked.resolve("t.txt")),
-                new GroupTicketRepository(blocked.resolve("g.txt")), users, park.groups, today);
+        TicketManager broken = TicketManager.initialize(new TextFileTicketRepository(blocked.resolve("t.txt")),
+                new TextFileGroupTicketRepository(blocked.resolve("g.txt")), users, park.groups, today);
         assertEquals(UserManager.STORAGE_FAILURE, broken.create("T001", "ana@correo.com", "2026-10-15"));
     }
 }

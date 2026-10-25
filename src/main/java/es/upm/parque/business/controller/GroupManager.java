@@ -24,11 +24,32 @@ public class GroupManager {
     public static final String ALREADY_MEMBER = "ERROR USER ALREADY IN GROUP";
     public static final String NOT_MEMBER = "ERROR USER NOT IN GROUP";
 
+    private static GroupManager instance;
+
     private final GroupRepository repository;
     private final UserManager users;
     private final Map<String, Group> groupsById = new LinkedHashMap<>();
 
-    public GroupManager(GroupRepository repository, UserManager users) throws IOException {
+    /**
+     * Creates the unique GroupManager with its injected dependencies, replacing any previous instance.
+     * Called once at application startup.
+     */
+    public static GroupManager initialize(GroupRepository repository, UserManager users) throws IOException {
+        instance = new GroupManager(repository, users);
+        return instance;
+    }
+
+    /**
+     * Returns the unique GroupManager; GroupManager.initialize must have been called first.
+     */
+    public static GroupManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("GroupManager not initialized");
+        }
+        return instance;
+    }
+
+    private GroupManager(GroupRepository repository, UserManager users) throws IOException {
         this.repository = repository;
         this.users = users;
         for (Group group : repository.load(users::findByDni)) {

@@ -8,6 +8,8 @@ skinparam classAttributeIconSize 0
 
 package es.upm.parque {
   class App
+
+  class Bootstrap
 }
 
 package es.upm.parque.presentation {
@@ -110,23 +112,33 @@ package es.upm.parque.business.controller {
 package es.upm.parque.persistence {
   class TemporaryDirectory
 
-  class UserRepository {
+  interface UserRepository
+
+  class TextFileUserRepository {
     file : Path
   }
 
-  class GroupRepository {
+  interface GroupRepository
+
+  class TextFileGroupRepository {
     file : Path
   }
 
-  class TicketRepository {
+  interface TicketRepository
+
+  class TextFileTicketRepository {
     file : Path
   }
 
-  class GroupTicketRepository {
+  interface GroupTicketRepository
+
+  class TextFileGroupTicketRepository {
     file : Path
   }
 
-  class AttractionRepository {
+  interface AttractionRepository
+
+  class TextFileAttractionRepository {
     file : Path
   }
 }
@@ -135,6 +147,11 @@ package es.upm.parque.persistence {
 IndividualTicket --|> Ticket
 GroupTicket --|> Ticket
 StandardInvoiceBuilder ..|> InvoiceBuilder
+TextFileUserRepository ..|> UserRepository
+TextFileGroupRepository ..|> GroupRepository
+TextFileTicketRepository ..|> TicketRepository
+TextFileGroupTicketRepository ..|> GroupTicketRepository
+TextFileAttractionRepository ..|> AttractionRepository
 
 ' Associations held by the command processor
 CommandProcessor "1" x--> "1" UserManager : users
@@ -186,7 +203,13 @@ StandardInvoiceBuilder "1" o--> "0..*" InvoiceSection : sections
 ' Usage of classes without incoming relationships
 App ..> CommandProcessor : creates and runs
 App ..> TemporaryDirectory : uses in --fly mode
-App ..> StandardInvoiceBuilder : supplies invoice builders
+App ..> Bootstrap : configures the application
+Bootstrap ..> StandardInvoiceBuilder : supplies invoice builders
+Bootstrap ..> TextFileUserRepository : creates
+Bootstrap ..> TextFileGroupRepository : creates
+Bootstrap ..> TextFileTicketRepository : creates
+Bootstrap ..> TextFileGroupTicketRepository : creates
+Bootstrap ..> TextFileAttractionRepository : creates
 StandardInvoiceBuilder ..> Invoice : builds
 UserManager ..> UserField : uses
 UserManager ..> UserValidator : uses

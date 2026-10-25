@@ -20,13 +20,35 @@ public class InvoiceManager {
     static final String USER = "USER";
     static final String GROUP = "GROUP";
 
+    private static InvoiceManager instance;
+
     private final UserManager users;
     private final GroupManager groups;
     private final TicketManager tickets;
     private final SystemDate systemDate;
     private final Supplier<InvoiceBuilder> builderFactory;
 
-    public InvoiceManager(UserManager users, GroupManager groups, TicketManager tickets, SystemDate systemDate,
+    /**
+     * Creates the unique InvoiceManager with its injected dependencies, replacing any previous instance.
+     * Called once at application startup.
+     */
+    public static InvoiceManager initialize(UserManager users, GroupManager groups,
+                    TicketManager tickets, SystemDate systemDate, Supplier<InvoiceBuilder> builderFactory) {
+        instance = new InvoiceManager(users, groups, tickets, systemDate, builderFactory);
+        return instance;
+    }
+
+    /**
+     * Returns the unique InvoiceManager; InvoiceManager.initialize must have been called first.
+     */
+    public static InvoiceManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("InvoiceManager not initialized");
+        }
+        return instance;
+    }
+
+    private InvoiceManager(UserManager users, GroupManager groups, TicketManager tickets, SystemDate systemDate,
                           Supplier<InvoiceBuilder> builderFactory) {
         this.users = users;
         this.groups = groups;

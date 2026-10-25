@@ -17,8 +17,8 @@ import org.junit.jupiter.api.io.TempDir;
 import es.upm.parque.Fixtures;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.User;
-import es.upm.parque.persistence.GroupRepository;
-import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.persistence.TextFileGroupRepository;
+import es.upm.parque.persistence.TextFileUserRepository;
 
 class GroupManagerTest {
 
@@ -30,10 +30,10 @@ class GroupManagerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        users = new UserManager(new UserRepository(dir.resolve("users.txt")));
+        users = UserManager.initialize(new TextFileUserRepository(dir.resolve("users.txt")));
         users.create(Fixtures.ana());
         users.create(Fixtures.pedro());
-        groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
+        groups = GroupManager.initialize(new TextFileGroupRepository(dir.resolve("groups.txt")), users);
     }
 
     @Test
@@ -92,8 +92,8 @@ class GroupManagerTest {
         groups.create("G01", "Familia Garcia");
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
-        UserManager restartedUsers = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        GroupManager restarted = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), restartedUsers);
+        UserManager restartedUsers = UserManager.initialize(new TextFileUserRepository(dir.resolve("users.txt")));
+        GroupManager restarted = GroupManager.initialize(new TextFileGroupRepository(dir.resolve("groups.txt")), restartedUsers);
         Group g01 = restarted.find("G01");
         assertEquals(2, g01.getMembers().size());
         assertSame(restartedUsers.findByEmail("ana@correo.com"), g01.getMembers().get(0));
@@ -118,7 +118,7 @@ class GroupManagerTest {
     @Test
     void reportsStorageFailure() throws IOException {
         Path blocked = Files.createFile(dir.resolve("blocked"));
-        GroupManager broken = new GroupManager(new GroupRepository(blocked.resolve("groups.txt")), users);
+        GroupManager broken = GroupManager.initialize(new TextFileGroupRepository(blocked.resolve("groups.txt")), users);
         assertEquals(UserManager.STORAGE_FAILURE, broken.create("G01", "Familia"));
     }
 }

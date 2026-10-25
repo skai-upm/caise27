@@ -28,10 +28,31 @@ public class UserManager {
     public static final String INVALID_CREDENTIALS = "ERROR INVALID CREDENTIALS";
     public static final String STORAGE_FAILURE = "ERROR STORAGE FAILURE";
 
+    private static UserManager instance;
+
     private final UserRepository repository;
     private final Map<String, User> usersByDni = new LinkedHashMap<>();
 
-    public UserManager(UserRepository repository) throws IOException {
+    /**
+     * Creates the unique UserManager with its injected dependencies, replacing any previous instance.
+     * Called once at application startup.
+     */
+    public static UserManager initialize(UserRepository repository) throws IOException {
+        instance = new UserManager(repository);
+        return instance;
+    }
+
+    /**
+     * Returns the unique UserManager; UserManager.initialize must have been called first.
+     */
+    public static UserManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("UserManager not initialized");
+        }
+        return instance;
+    }
+
+    private UserManager(UserRepository repository) throws IOException {
         this.repository = repository;
         for (User user : repository.load()) {
             usersByDni.put(user.getDni(), user);

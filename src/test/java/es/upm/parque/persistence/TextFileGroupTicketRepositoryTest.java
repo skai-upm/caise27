@@ -18,7 +18,7 @@ import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.User;
 
-class GroupTicketRepositoryTest {
+class TextFileGroupTicketRepositoryTest {
 
     @TempDir
     Path dir;
@@ -29,14 +29,14 @@ class GroupTicketRepositoryTest {
 
     @Test
     void missingFileMeansNoGroupTickets() throws IOException {
-        assertTrue(new GroupTicketRepository(dir.resolve("gt.txt")).load(groups::get, users::get).isEmpty());
+        assertTrue(new TextFileGroupTicketRepository(dir.resolve("gt.txt")).load(groups::get, users::get).isEmpty());
     }
 
     @Test
     void restoresDetachedGroupsAndHoldersAsHistory() throws IOException {
         Path file = dir.resolve("gt.txt");
         Files.write(file, List.of("TG09;2025-01-01;G77;10;12345678Z:40.00,99999999R:40.00,00000000T:40.00"));
-        GroupTicket loaded = new GroupTicketRepository(file).load(groups::get, users::get).get(0);
+        GroupTicket loaded = new TextFileGroupTicketRepository(file).load(groups::get, users::get).get(0);
         assertEquals("G77", loaded.getGroup().getId());
         assertEquals(ana, loaded.getTickets().get(0).getHolder());
         assertEquals("99999999R", loaded.getTickets().get(1).getHolder().getDni());
@@ -49,6 +49,6 @@ class GroupTicketRepositoryTest {
         Files.write(file, List.of("roto", ";2026-10-15;G01;0;12345678Z:40.00", "TG1;mal;G01;0;12345678Z:40.00",
                 "TG2;2026-10-15;G01;x;12345678Z:40.00", "TG3;2026-10-15;G01;0;12345678Z",
                 "TG4;2026-10-15;G01;0;12345678Z:gratis", "TG5;2026-10-15;G01;0;12345678Z:40.00"));
-        assertEquals(1, new GroupTicketRepository(file).load(groups::get, users::get).size());
+        assertEquals(1, new TextFileGroupTicketRepository(file).load(groups::get, users::get).size());
     }
 }

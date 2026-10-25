@@ -17,7 +17,7 @@ import es.upm.parque.Fixtures;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.User;
 
-class GroupRepositoryTest {
+class TextFileGroupRepositoryTest {
 
     @TempDir
     Path dir;
@@ -28,13 +28,13 @@ class GroupRepositoryTest {
 
     @Test
     void missingFileMeansNoGroups() throws IOException {
-        assertTrue(new GroupRepository(dir.resolve("groups.txt")).load(users::get).isEmpty());
+        assertTrue(new TextFileGroupRepository(dir.resolve("groups.txt")).load(users::get).isEmpty());
     }
 
     @Test
     void savesAndLoadsGroupsWithMemberReferences() throws IOException {
         Path file = dir.resolve("data").resolve("groups.txt");
-        GroupRepository repository = new GroupRepository(file);
+        GroupRepository repository = new TextFileGroupRepository(file);
         Group familia = new Group("G01", "Familia Garcia");
         familia.addMember(ana);
         familia.addMember(pedro);
@@ -52,7 +52,7 @@ class GroupRepositoryTest {
     void ignoresUnknownDnisAndMalformedLines() throws IOException {
         Path file = dir.resolve("groups.txt");
         Files.write(file, List.of("roto", ";sin id;", "G01;Familia;12345678Z,00000000T"));
-        List<Group> loaded = new GroupRepository(file).load(users::get);
+        List<Group> loaded = new TextFileGroupRepository(file).load(users::get);
         assertEquals(1, loaded.size());
         assertEquals(List.of(ana), loaded.get(0).getMembers());
     }
