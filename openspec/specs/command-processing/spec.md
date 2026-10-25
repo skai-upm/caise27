@@ -7,7 +7,7 @@ Defines how the application receives text commands with an API-like format, spli
 ## Requirements
 
 ### Requirement: Terminal command input
-The application SHALL read commands one per line from its command source (standard input in interactive mode, a file in file mode) and SHALL print one response per processed command; the `HELP` and `ATTRACTION STATUS` responses span several lines. It SHALL keep reading until it processes `EXIT` or the source ends.
+The application SHALL read commands one per line from its command source (standard input in interactive mode, a file in file mode) and SHALL print one response per processed command; some responses, such as `HELP`, `ATTRACTION STATUS` and invoices, span several lines. It SHALL keep reading until it processes `EXIT` or the source ends.
 
 #### Scenario: Several commands in sequence
 - **WHEN** two valid `USER CREATE` lines are entered followed by end of input
@@ -78,6 +78,10 @@ In file mode the application SHALL read the file line by line, interpret each no
 #### Scenario: Help lists the attraction commands
 - **WHEN** `HELP` is processed
 - **THEN** the output also contains `ATTRACTION CREATE;Id;Nombre;Aforo`, `ATTRACTION DELETE;Id`, `ATTRACTION ENTER;IdAtraccion;IdEntrada`, `ATTRACTION EXIT;IdAtraccion;IdEntrada` and `ATTRACTION STATUS;IdAtraccion`
+
+#### Scenario: Help lists the invoice commands
+- **WHEN** `HELP` is processed
+- **THEN** the output also contains `INVOICE CREATE;USER;Correo` and `INVOICE CREATE;GROUP;IdGrupo`
 
 ### Requirement: EXIT command
 `EXIT` SHALL terminate the application in a controlled manner after printing `OK EXIT`. No command after `EXIT` SHALL be read or executed, in either mode.

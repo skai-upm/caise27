@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 
 import es.upm.parque.business.controller.AttractionManager;
 import es.upm.parque.business.controller.GroupManager;
+import es.upm.parque.business.controller.InvoiceManager;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
 import es.upm.parque.business.model.Group;
@@ -42,6 +43,8 @@ public class CommandProcessor {
             "ATTRACTION ENTER;IdAtraccion;IdEntrada",
             "ATTRACTION EXIT;IdAtraccion;IdEntrada",
             "ATTRACTION STATUS;IdAtraccion",
+            "INVOICE CREATE;USER;Correo",
+            "INVOICE CREATE;GROUP;IdGrupo",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -51,15 +54,17 @@ public class CommandProcessor {
     private final GroupManager groups;
     private final TicketManager tickets;
     private final AttractionManager attractions;
+    private final InvoiceManager invoices;
     private final SystemDate systemDate;
     private boolean finished;
 
     public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
-                            AttractionManager attractions, SystemDate systemDate) {
+                            AttractionManager attractions, InvoiceManager invoices, SystemDate systemDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
+        this.invoices = invoices;
         this.systemDate = systemDate;
     }
 
@@ -92,6 +97,7 @@ public class CommandProcessor {
                 case "ATTRACTION ENTER" -> withParameters(parts, 3, () -> attractions.enter(parts[1], parts[2]));
                 case "ATTRACTION EXIT" -> withParameters(parts, 3, () -> attractions.exit(parts[1], parts[2]));
                 case "ATTRACTION STATUS" -> withParameters(parts, 2, () -> attractions.status(parts[1]));
+                case "INVOICE CREATE" -> withParameters(parts, 3, () -> invoices.create(parts[1], parts[2]));
                 case "SYSTEM DATE" -> setDate(parts);
                 case "SYSTEM PRICE" -> withParameters(parts, 2, () -> tickets.setPrice(parts[1]));
                 case "HELP" -> help(parts);

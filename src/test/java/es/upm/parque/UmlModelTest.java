@@ -34,11 +34,12 @@ class UmlModelTest {
 
     private static final String PACKAGE = "es.upm.parque.";
     private static final Pattern PACKAGE_BLOCK = Pattern.compile("^package ([\\w.]+) \\{$");
-    private static final Pattern CLASS = Pattern.compile("^\\s*(?:abstract )?(class|enum) (\\w+)(?: \\{)?$");
+    private static final Pattern CLASS = Pattern.compile("^\\s*(?:abstract )?(class|enum|interface) (\\w+)(?: \\{)?$");
     private static final Pattern ATTRIBUTE = Pattern.compile("^\\s*(\\w+) : (\\w+)$");
     private static final Pattern RELATION =
             Pattern.compile("^(\\w+) \"([^\"]+)\" (x-->|o-->|\\*-->) \"([^\"]+)\" (\\w+) : (\\w+)$");
     private static final Pattern INHERITANCE = Pattern.compile("^(\\w+) --\\|> (\\w+)$");
+    private static final Pattern REALIZATION = Pattern.compile("^(\\w+) \\.\\.\\|> (\\w+)$");
     private static final Pattern USAGE = Pattern.compile("^(\\w+) \\.\\.> (\\w+) : .+$");
 
     private static final Path SOURCES = Path.of("src", "main", "java");
@@ -48,6 +49,7 @@ class UmlModelTest {
     private static final Map<String, List<String>> enumValues = new HashMap<>();
     private static final List<String[]> relations = new ArrayList<>();
     private static final List<String[]> inheritances = new ArrayList<>();
+    private static final List<String[]> realizations = new ArrayList<>();
     private static final List<String[]> usages = new ArrayList<>();
 
     @BeforeAll
@@ -90,6 +92,8 @@ class UmlModelTest {
                 relations.add(new String[] {m.group(1), m.group(5), m.group(6)});
             } else if ((m = INHERITANCE.matcher(line)).matches()) {
                 inheritances.add(new String[] {m.group(1), m.group(2)});
+            } else if ((m = REALIZATION.matcher(line)).matches()) {
+                realizations.add(new String[] {m.group(1), m.group(2)});
             } else if ((m = USAGE.matcher(line)).matches()) {
                 usages.add(new String[] {m.group(1), m.group(2)});
             }
@@ -195,6 +199,20 @@ class UmlModelTest {
     }
 
     @Test
+    void realizationsMatchTheCode() {
+        Set<String> modelled = realizations.stream().map(r -> r[0] + ">" + r[1]).collect(Collectors.toSet());
+        Set<String> actual = new HashSet<>();
+        for (String name : attributes.keySet()) {
+            for (Class<?> implemented : modelClass(name).getInterfaces()) {
+                if (isModelType(implemented)) {
+                    actual.add(name + ">" + implemented.getSimpleName());
+                }
+            }
+        }
+        assertEquals(actual, modelled);
+    }
+
+    @Test
     void enumerationsListTheirConstants() {
         for (Map.Entry<String, List<String>> entry : enumValues.entrySet()) {
             List<String> constants = Arrays.stream(modelClass(entry.getKey()).getEnumConstants())
@@ -213,7 +231,8 @@ class UmlModelTest {
         }
         for (String name : attributes.keySet()) {
             boolean isolated = !withIncoming.contains(name)
-                    && inheritances.stream().noneMatch(i -> i[1].equals(name));
+                    && inheritances.stream().noneMatch(i -> i[1].equals(name))
+                    && realizations.stream().noneMatch(r -> r[1].equals(name));
             if (isolated) {
                 assertTrue(usages.stream().anyMatch(u -> u[0].equals(name) || u[1].equals(name)), name);
             }

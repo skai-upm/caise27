@@ -7,8 +7,10 @@ import java.time.LocalDate;
 
 import es.upm.parque.business.controller.AttractionManager;
 import es.upm.parque.business.controller.GroupManager;
+import es.upm.parque.business.controller.InvoiceManager;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
+import es.upm.parque.business.model.StandardInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
@@ -27,6 +29,7 @@ public final class Park {
     public final GroupManager groups;
     public final TicketManager tickets;
     public final AttractionManager attractions;
+    public final InvoiceManager invoices;
     public final CommandProcessor processor;
 
     public Park(Path dir, LocalDate today) {
@@ -38,7 +41,8 @@ public final class Park {
                     new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups, date);
             attractions = new AttractionManager(new AttractionRepository(dir.resolve("attractions.txt")), tickets,
                     date);
-            processor = new CommandProcessor(users, groups, tickets, attractions, date);
+            invoices = new InvoiceManager(users, groups, tickets, date, StandardInvoiceBuilder::new);
+            processor = new CommandProcessor(users, groups, tickets, attractions, invoices, date);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

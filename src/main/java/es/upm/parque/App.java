@@ -18,8 +18,10 @@ import java.util.List;
 
 import es.upm.parque.business.controller.AttractionManager;
 import es.upm.parque.business.controller.GroupManager;
+import es.upm.parque.business.controller.InvoiceManager;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
+import es.upm.parque.business.model.StandardInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
@@ -92,7 +94,9 @@ public class App {
                     new GroupTicketRepository(dataDir.resolve("grouptickets.txt")), users, groups, systemDate);
             AttractionManager attractions = new AttractionManager(
                     new AttractionRepository(dataDir.resolve("attractions.txt")), tickets, systemDate);
-            processor = new CommandProcessor(users, groups, tickets, attractions, systemDate);
+            InvoiceManager invoices = new InvoiceManager(users, groups, tickets, systemDate,
+                    StandardInvoiceBuilder::new);
+            processor = new CommandProcessor(users, groups, tickets, attractions, invoices, systemDate);
         } catch (IOException e) {
             out.println("ERROR " + e.getMessage());
             return;

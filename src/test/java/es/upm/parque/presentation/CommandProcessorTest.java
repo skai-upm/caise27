@@ -79,7 +79,7 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailuresBecomeErrors() {
-        CommandProcessor broken = new CommandProcessor(null, null, null, null, new SystemDate(LocalDate.of(2026, 1, 1)));
+        CommandProcessor broken = new CommandProcessor(null, null, null, null, null, new SystemDate(LocalDate.of(2026, 1, 1)));
         assertEquals(CommandProcessor.UNEXPECTED_ERROR, broken.process(Fixtures.CREATE_ANA));
     }
 
@@ -279,5 +279,21 @@ class CommandProcessorTest {
                 "ATTRACTION STATUS;IdAtraccion")) {
             assertTrue(help.lines().anyMatch(command::equals), command);
         }
+    }
+
+    @Test
+    void runsInvoiceCommands() {
+        familyWithTicketFor("2026-10-15");
+        assertTrue(processor.process("INVOICE CREATE;GROUP;G01").endsWith("TOTAL: 80.00"));
+        assertTrue(processor.process("invoice create;user;ana@correo.com").contains("No purchases"));
+        assertEquals("ERROR INVALID INVOICE TYPE", processor.process("INVOICE CREATE;FAMILY;G01"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("INVOICE CREATE;USER"));
+    }
+
+    @Test
+    void helpListsInvoiceCommands() {
+        String help = processor.process("HELP");
+        assertTrue(help.lines().anyMatch("INVOICE CREATE;USER;Correo"::equals));
+        assertTrue(help.lines().anyMatch("INVOICE CREATE;GROUP;IdGrupo"::equals));
     }
 }

@@ -65,9 +65,37 @@ package es.upm.parque.business.model {
     name : String
     capacity : int
   }
+
+  class Invoice {
+    recipientKind : String
+    recipientId : String
+    recipientName : String
+    issueDate : LocalDate
+    total : BigDecimal
+  }
+
+  class InvoiceSection {
+    title : String
+  }
+
+  class InvoiceLine {
+    description : String
+    amount : BigDecimal
+  }
+
+  interface InvoiceBuilder
+
+  class StandardInvoiceBuilder {
+    recipientKind : String
+    recipientId : String
+    recipientName : String
+    issueDate : LocalDate
+  }
 }
 
 package es.upm.parque.business.controller {
+  class InvoiceManager
+
   class UserManager
 
   class GroupManager
@@ -106,12 +134,14 @@ package es.upm.parque.persistence {
 ' Inheritance
 IndividualTicket --|> Ticket
 GroupTicket --|> Ticket
+StandardInvoiceBuilder ..|> InvoiceBuilder
 
 ' Associations held by the command processor
 CommandProcessor "1" x--> "1" UserManager : users
 CommandProcessor "1" x--> "1" GroupManager : groups
 CommandProcessor "1" x--> "1" TicketManager : tickets
 CommandProcessor "1" x--> "1" AttractionManager : attractions
+CommandProcessor "1" x--> "1" InvoiceManager : invoices
 CommandProcessor "1" x--> "1" SystemDate : systemDate
 
 ' Users
@@ -143,9 +173,21 @@ AttractionManager "1" x--> "1" SystemDate : systemDate
 AttractionManager "1" o--> "0..*" Attraction : attractionsById
 Attraction "0..*" o--> "0..*" User : present
 
+' Invoices
+InvoiceManager "1" x--> "1" UserManager : users
+InvoiceManager "1" x--> "1" GroupManager : groups
+InvoiceManager "1" x--> "1" TicketManager : tickets
+InvoiceManager "1" x--> "1" SystemDate : systemDate
+InvoiceManager "1" x--> "1" InvoiceBuilder : builderFactory
+Invoice "1" *--> "0..*" InvoiceSection : sections
+InvoiceSection "1" *--> "0..*" InvoiceLine : lines
+StandardInvoiceBuilder "1" o--> "0..*" InvoiceSection : sections
+
 ' Usage of classes without incoming relationships
 App ..> CommandProcessor : creates and runs
 App ..> TemporaryDirectory : uses in --fly mode
+App ..> StandardInvoiceBuilder : supplies invoice builders
+StandardInvoiceBuilder ..> Invoice : builds
 UserManager ..> UserField : uses
 UserManager ..> UserValidator : uses
 GroupManager ..> UserValidator : uses
