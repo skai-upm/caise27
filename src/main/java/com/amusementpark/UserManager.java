@@ -148,7 +148,10 @@ public class UserManager {
         }
     }
 
-    private User authenticate(String email, String password) {
+    /**
+     * Returns the user with that email and password, or null.
+     */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null || !user.getPassword().equals(password)) {
             return null;
@@ -156,7 +159,7 @@ public class UserManager {
         return user;
     }
 
-    private User findByEmail(String email) {
+    public User findByEmail(String email) {
         for (User user : users) {
             if (user.getEmail().equals(email)) {
                 return user;
@@ -165,7 +168,7 @@ public class UserManager {
         return null;
     }
 
-    private User findByDni(String dni) {
+    public User findByDni(String dni) {
         for (User user : users) {
             if (user.getDni().equalsIgnoreCase(dni)) {
                 return user;

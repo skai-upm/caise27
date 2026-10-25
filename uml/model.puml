@@ -1,0 +1,104 @@
+@startuml model
+' Class model of the Amusement Park application (package com.amusementpark).
+' Derived from the current source code: only simple-typed attributes are listed;
+' fields that reference other classes are drawn as relationships named after the field,
+' with a cross at the holder's (non-navigable) end.
+hide empty members
+skinparam classAttributeIconSize 0
+
+class App
+
+class CommandProcessor
+
+class Park {
+  currentDate : LocalDate
+  ticketPrice : BigDecimal
+}
+
+class UserManager
+
+class User {
+  name : String
+  surname : String
+  dni : String
+  email : String
+  password : String
+  phone : String
+  card : String
+}
+
+enum UserField {
+  NAME
+  SURNAME
+  EMAIL
+  PASSWORD
+  PHONE
+  CARD
+}
+
+class Validator
+
+class Group {
+  id : String
+  name : String
+}
+
+abstract class Ticket {
+  id : String
+  date : LocalDate
+  price : BigDecimal
+}
+
+class IndividualTicket
+
+class GroupTicket
+
+class Attraction {
+  id : String
+  name : String
+  capacity : int
+}
+
+class UserRepository
+class GroupRepository
+class TicketRepository
+class GroupTicketRepository
+class AttractionRepository
+class Repositories
+
+' Inheritance
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' Associations, aggregations and compositions (navigable from the holder)
+CommandProcessor "1" x--> "1" Park : park
+Park "1" x--> "1" UserManager : userManager
+Park "1" x--> "1" GroupRepository : groupRepository
+Park "1" x--> "1" TicketRepository : ticketRepository
+Park "1" x--> "1" GroupTicketRepository : groupTicketRepository
+Park "1" x--> "1" AttractionRepository : attractionRepository
+Park "1" x--> "*" Group : groups
+Park "1" x--> "*" IndividualTicket : tickets
+Park "1" x--> "*" GroupTicket : groupTickets
+Park "1" x--> "*" Attraction : attractions
+UserManager "1" x--> "1" UserRepository : repository
+UserManager "1" x--> "*" User : users
+Group "*" x--> "*" User : members
+IndividualTicket "*" x--> "1" User : user
+GroupTicket "*" o--> "1" Group : group
+GroupTicket "1" *--> "1..*" IndividualTicket : tickets
+Attraction "*" x--> "*" User : present
+
+' Usage of classes that have no incoming relationship
+App ..> CommandProcessor
+App ..> Park
+UserManager ..> UserField
+UserManager ..> Validator
+Park ..> Validator
+TicketRepository ..> Validator
+GroupTicketRepository ..> Validator
+AttractionRepository ..> Validator
+GroupRepository ..> Repositories
+TicketRepository ..> Repositories
+GroupTicketRepository ..> Repositories
+@enduml

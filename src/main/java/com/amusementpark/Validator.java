@@ -1,10 +1,18 @@
 package com.amusementpark;
 
+import java.math.BigDecimal;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
+
 /**
  * Validation rules for user data, implemented without regular expressions.
  */
 public final class Validator {
     private static final String DNI_LETTERS = "TRWAGMYFPDXBNJZSQVHLCKE";
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private Validator() {
     }
@@ -71,6 +79,74 @@ public final class Validator {
         }
         for (int i = 0; i < card.length(); i++) {
             if (!isAsciiDigit(card.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Identifiers of groups, tickets and attractions: letters, digits, '-' and '_'.
+     */
+    public static boolean isValidId(String id) {
+        if (id == null || id.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < id.length(); i++) {
+            char c = id.charAt(i);
+            if (!isAsciiDigit(c) && !Character.isLetter(c) && c != '-' && c != '_') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Parses a strict yyyy-MM-dd date, returning null when it is not valid.
+     */
+    public static LocalDate parseDate(String text) {
+        if (text == null || text.length() != 10) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(text, DATE_FORMAT);
+        } catch (DateTimeException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Parses a positive amount with at most two decimals, returning null when it is not valid.
+     */
+    public static BigDecimal parsePrice(String text) {
+        if (text == null || text.isEmpty()) {
+            return null;
+        }
+        int dot = text.indexOf('.');
+        String integerPart = dot < 0 ? text : text.substring(0, dot);
+        String decimalPart = dot < 0 ? "" : text.substring(dot + 1);
+        if (integerPart.isEmpty() || decimalPart.length() > 2 || (dot >= 0 && decimalPart.isEmpty())
+                || !allDigits(integerPart) || !allDigits(decimalPart)) {
+            return null;
+        }
+        BigDecimal price = new BigDecimal(text);
+        return price.signum() > 0 ? price : null;
+    }
+
+    /**
+     * Parses a positive integer capacity, returning -1 when it is not valid.
+     */
+    public static int parseCapacity(String text) {
+        if (text == null || text.isEmpty() || text.length() > 9 || !allDigits(text)) {
+            return -1;
+        }
+        int capacity = Integer.parseInt(text);
+        return capacity > 0 ? capacity : -1;
+    }
+
+    private static boolean allDigits(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            if (!isAsciiDigit(text.charAt(i))) {
                 return false;
             }
         }

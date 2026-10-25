@@ -30,7 +30,7 @@ public class AppTest {
 
     private int run(String[] args, String stdin) {
         return App.run(args, new BufferedReader(new StringReader(stdin)),
-                new PrintStream(buffer, true, StandardCharsets.UTF_8), dir.resolve("users.txt"));
+                new PrintStream(buffer, true, StandardCharsets.UTF_8), dir);
     }
 
     private String output() {
@@ -94,6 +94,51 @@ public class AppTest {
     public void unreadableDirectoryIsReported() {
         assertEquals(1, run(new String[] {dir.toString()}, ""));
         assertTrue(output().contains("ERROR"));
+    }
+
+    @Test
+    public void flyModeKeepsNormalDataUntouchedAndCleansUp() throws Exception {
+        run(new String[0], CREATE_ANA + "\nEXIT\n");
+        List<String> before = storedUsers();
+        buffer.reset();
+        assertEquals(0, run(new String[] {"--fly"}, CREATE_PEDRO + "\nUSER DELETE;ana@correo.com;Clave1!\nEXIT\n"));
+        assertTrue(output().contains("Fly mode"), output());
+        assertTrue(output().contains("OK: user created"), output());
+        assertTrue(output().contains("ERROR: unknown email"), output());
+        assertEquals(before, storedUsers());
+        assertTempDirEmpty();
+    }
+
+    @Test
+    public void flyModeWithCommandFileAndEndOfInput() throws Exception {
+        Path commands = dir.resolve("input_fase2.txt");
+        Files.write(commands, List.of(CREATE_ANA, "GROUP CREATE;G01;Familia", "GROUP ADD;G01;ana@correo.com"));
+        assertEquals(0, run(new String[] {"--fly", commands.toString()}, ""));
+        assertFalse(output().contains("ERROR"), output());
+        assertFalse(Files.exists(dir.resolve("users.txt")));
+        assertFalse(Files.exists(dir.resolve("groups.txt")));
+        assertTempDirEmpty();
+    }
+
+    @Test
+    public void flyModeCleansUpAfterFileError() throws Exception {
+        assertEquals(1, run(new String[] {"--fly", dir.resolve("missing.txt").toString()}, ""));
+        assertTempDirEmpty();
+    }
+
+    @Test
+    public void flyDirectoriesAreUnique() throws Exception {
+        Path first = App.createFlyDirectory(dir);
+        Path second = App.createFlyDirectory(dir);
+        assertTrue(Files.isDirectory(first) && Files.isDirectory(second));
+        assertFalse(first.equals(second));
+        assertTrue(first.getFileName().toString().matches("\\d{8}_\\d{6}(_\\d+)?"));
+    }
+
+    private void assertTempDirEmpty() throws Exception {
+        try (var entries = Files.list(dir.resolve("tmp"))) {
+            assertEquals(0, entries.count());
+        }
     }
 
     @Test

@@ -22,3 +22,8 @@ buildNumber.properties
 
 # Application runtime data
 users.txt
+tmp/
+groups.txt
+tickets.txt
+group_tickets.txt
+attractions.txt
