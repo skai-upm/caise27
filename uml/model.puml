@@ -1,104 +1,233 @@
 @startuml model
-' Class model of the Amusement Park application (package com.amusementpark).
+' Class model of the Amusement Park application, Delivery 3.
 ' Derived from the current source code: only simple-typed attributes are listed;
 ' fields that reference other classes are drawn as relationships named after the field,
-' with a cross at the holder's (non-navigable) end.
+' with a cross at the holder's (non-navigable) end. Controllers marked <<Singleton>> keep their
+' single instance in a static INSTANCE field (not drawn as a self-association).
+' Dashed usage arrows are shown only for classes that have no incoming relationship.
 hide empty members
 skinparam classAttributeIconSize 0
 
-class App
-
-class CommandProcessor
-
-class Park {
-  currentDate : LocalDate
-  ticketPrice : BigDecimal
+package com.amusementpark.presentation {
+  class App
+  class Bootstrap
+  class CommandProcessor
+  package help {
+    class HelpGenerator
+    interface HelpFormat
+    class SyntaxHelpFormat
+    class ExtendedHelpFormat
+    class CommandCatalog
+    class CommandInfo <<record>> {
+      syntax : String
+      description : String
+    }
+  }
 }
 
-class UserManager
-
-class User {
-  name : String
-  surname : String
-  dni : String
-  email : String
-  password : String
-  phone : String
-  card : String
+package com.amusementpark.business {
+  package controller {
+    class ParkController <<Singleton>> {
+      currentDate : LocalDate
+      ticketPrice : BigDecimal
+    }
+    class UserController <<Singleton>>
+    class GroupController <<Singleton>>
+    class TicketController <<Singleton>>
+    class AttractionController <<Singleton>>
+    class InvoiceController <<Singleton>>
+  }
+  package model {
+    class User {
+      name : String
+      surname : String
+      dni : String
+      email : String
+      password : String
+      phone : String
+      card : String
+    }
+    enum UserField {
+      NAME
+      SURNAME
+      EMAIL
+      PASSWORD
+      PHONE
+      CARD
+    }
+    class Group {
+      id : String
+      name : String
+    }
+    interface Admission
+    abstract class Ticket {
+      id : String
+      date : LocalDate
+      price : BigDecimal
+    }
+    class IndividualTicket
+    class GroupTicket
+    abstract class Pass {
+      id : String
+      price : BigDecimal
+      consumed : boolean
+    }
+    class SpeedPass
+    class SpecialPass
+    abstract class "Attraction<T extends Ticket>" as Attraction {
+      id : String
+      name : String
+      capacity : int
+    }
+    class GeneralAttraction
+    class IndividualAttraction
+    class GroupAttraction
+    class SpecialAttraction
+    enum AttractionType {
+      GENERAL
+      INDIVIDUAL
+      GROUP
+      SPECIAL
+    }
+  }
+  package invoice {
+    interface InvoiceBuilder
+    class StandardInvoiceBuilder {
+      recipient : String
+    }
+    class Invoice {
+      recipient : String
+      total : BigDecimal
+    }
+    class InvoiceSection <<record>> {
+      title : String
+    }
+    class InvoiceLine <<record>> {
+      description : String
+      amount : BigDecimal
+    }
+  }
+  package validation {
+    class Validator
+  }
+  package security {
+    class PasswordHasher {
+      logRounds : int
+    }
+  }
 }
 
-enum UserField {
-  NAME
-  SURNAME
-  EMAIL
-  PASSWORD
-  PHONE
-  CARD
+package com.amusementpark.persistence {
+  interface UserRepository
+  interface GroupRepository
+  interface TicketRepository
+  interface GroupTicketRepository
+  interface PassRepository
+  interface AttractionRepository
+  class FileUserRepository
+  class FileGroupRepository
+  class FileTicketRepository
+  class FileGroupTicketRepository
+  class FilePassRepository
+  class FileAttractionRepository
+  class References
 }
 
-class Validator
-
-class Group {
-  id : String
-  name : String
-}
-
-abstract class Ticket {
-  id : String
-  date : LocalDate
-  price : BigDecimal
-}
-
-class IndividualTicket
-
-class GroupTicket
-
-class Attraction {
-  id : String
-  name : String
-  capacity : int
-}
-
-class UserRepository
-class GroupRepository
-class TicketRepository
-class GroupTicketRepository
-class AttractionRepository
-class Repositories
-
-' Inheritance
+' ---- Inheritance and implementation ----
+Admission <|.. Ticket
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Attraction <|-- GeneralAttraction : T = Ticket
+Attraction <|-- IndividualAttraction : T = IndividualTicket
+Attraction <|-- GroupAttraction : T = GroupTicket
+Attraction <|-- SpecialAttraction : T = IndividualTicket
+HelpFormat <|.. SyntaxHelpFormat
+HelpFormat <|.. ExtendedHelpFormat
+InvoiceBuilder <|.. StandardInvoiceBuilder
+UserRepository <|.. FileUserRepository
+GroupRepository <|.. FileGroupRepository
+TicketRepository <|.. FileTicketRepository
+GroupTicketRepository <|.. FileGroupTicketRepository
+PassRepository <|.. FilePassRepository
+AttractionRepository <|.. FileAttractionRepository
 
-' Associations, aggregations and compositions (navigable from the holder)
-CommandProcessor "1" x--> "1" Park : park
-Park "1" x--> "1" UserManager : userManager
-Park "1" x--> "1" GroupRepository : groupRepository
-Park "1" x--> "1" TicketRepository : ticketRepository
-Park "1" x--> "1" GroupTicketRepository : groupTicketRepository
-Park "1" x--> "1" AttractionRepository : attractionRepository
-Park "1" x--> "*" Group : groups
-Park "1" x--> "*" IndividualTicket : tickets
-Park "1" x--> "*" GroupTicket : groupTickets
-Park "1" x--> "*" Attraction : attractions
-UserManager "1" x--> "1" UserRepository : repository
-UserManager "1" x--> "*" User : users
+' ---- Presentation ----
+CommandProcessor "1" x--> "1" ParkController : park
+CommandProcessor "1" x--> "1" UserController : users
+CommandProcessor "1" x--> "1" GroupController : groups
+CommandProcessor "1" x--> "1" TicketController : tickets
+CommandProcessor "1" x--> "1" AttractionController : attractions
+CommandProcessor "1" x--> "1" InvoiceController : invoices
+CommandProcessor "1" x--> "1" HelpGenerator : help
+HelpGenerator "*" x--> "*" CommandInfo : commands
+HelpGenerator "*" x--> "*" HelpFormat : formats
+CommandCatalog "1" x--> "*" CommandInfo : COMMANDS
+
+' ---- Controllers ----
+UserController "1" x--> "1" UserRepository : repository
+UserController "1" x--> "1" PasswordHasher : hasher
+UserController "1" x--> "1" TicketController : ticketController
+UserController "1" x--> "1" GroupController : groupController
+UserController "1" x--> "*" User : users
+GroupController "1" x--> "1" GroupRepository : repository
+GroupController "1" x--> "1" UserController : userController
+GroupController "1" x--> "1" TicketController : ticketController
+GroupController "1" x--> "*" Group : groups
+TicketController "1" x--> "1" TicketRepository : ticketRepository
+TicketController "1" x--> "1" GroupTicketRepository : groupTicketRepository
+TicketController "1" x--> "1" PassRepository : passRepository
+TicketController "1" x--> "1" ParkController : parkController
+TicketController "1" x--> "1" UserController : userController
+TicketController "1" x--> "1" GroupController : groupController
+TicketController "1" x--> "*" IndividualTicket : tickets
+TicketController "1" x--> "*" GroupTicket : groupTickets
+AttractionController "1" x--> "1" AttractionRepository : repository
+AttractionController "1" x--> "1" ParkController : parkController
+AttractionController "1" x--> "1" TicketController : ticketController
+AttractionController "1" x--> "*" Attraction : attractions
+InvoiceController "1" x--> "1" UserController : userController
+InvoiceController "1" x--> "1" GroupController : groupController
+InvoiceController "1" x--> "1" TicketController : ticketController
+InvoiceController "1" x--> "1" InvoiceBuilder : builders
+
+' ---- Domain model ----
 Group "*" x--> "*" User : members
 IndividualTicket "*" x--> "1" User : user
+IndividualTicket "1" *--> "0..*" SpeedPass : speedPasses
+IndividualTicket "1" *--> "0..1" SpecialPass : specialPass
 GroupTicket "*" o--> "1" Group : group
 GroupTicket "1" *--> "1..*" IndividualTicket : tickets
 Attraction "*" x--> "*" User : present
 
-' Usage of classes that have no incoming relationship
+' ---- Invoices ----
+StandardInvoiceBuilder "1" x--> "*" InvoiceSection : sections
+Invoice "1" x--> "*" InvoiceSection : sections
+InvoiceSection "1" x--> "1..*" InvoiceLine : lines
+
+' ---- Usage of classes without incoming relationships ----
+App ..> Bootstrap
 App ..> CommandProcessor
-App ..> Park
-UserManager ..> UserField
-UserManager ..> Validator
-Park ..> Validator
-TicketRepository ..> Validator
-GroupTicketRepository ..> Validator
-AttractionRepository ..> Validator
-GroupRepository ..> Repositories
-TicketRepository ..> Repositories
-GroupTicketRepository ..> Repositories
+Bootstrap ..> CommandCatalog
+Bootstrap ..> SyntaxHelpFormat
+Bootstrap ..> ExtendedHelpFormat
+Bootstrap ..> StandardInvoiceBuilder
+Bootstrap ..> FileUserRepository
+Bootstrap ..> FileGroupRepository
+Bootstrap ..> FileTicketRepository
+Bootstrap ..> FileGroupTicketRepository
+Bootstrap ..> FilePassRepository
+Bootstrap ..> FileAttractionRepository
+InvoiceController ..> Invoice
+UserController ..> UserField
+UserController ..> Validator
+AttractionController ..> AttractionType
+AttractionType ..> GeneralAttraction
+AttractionType ..> IndividualAttraction
+AttractionType ..> GroupAttraction
+AttractionType ..> SpecialAttraction
+FileGroupRepository ..> References
+FileTicketRepository ..> References
+FileGroupTicketRepository ..> References
 @enduml

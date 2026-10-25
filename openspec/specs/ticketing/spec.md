@@ -29,7 +29,7 @@ Every ticket SHALL have an identifier unique among all tickets (individual, grou
 - **THEN** an error is shown and no ticket is created
 
 ### Requirement: Delete individual ticket
-`TICKET DELETE;Id` SHALL delete an individual ticket only when its date is strictly after the system date. Tickets dated on or before the system date, unknown identifiers, and tickets generated inside a group ticket SHALL be rejected.
+`TICKET DELETE;Id` SHALL delete an individual ticket only when its date is strictly after the system date. Tickets dated on or before the system date, unknown identifiers, and tickets generated inside a group ticket SHALL be rejected. Deleting a ticket SHALL also delete all its SpeedPasses and its Special Pass; a rejected deletion SHALL delete nothing.
 
 #### Scenario: Future ticket deleted
 - **WHEN** the system date is 2026-10-01 and `TICKET DELETE;T001` is executed for a ticket dated 2026-10-15
@@ -38,6 +38,10 @@ Every ticket SHALL have an identifier unique among all tickets (individual, grou
 #### Scenario: Ticket for today
 - **WHEN** the system date is 2026-10-15 and `TICKET DELETE;T001` is executed for a ticket dated 2026-10-15
 - **THEN** an error is shown and T001 remains
+
+#### Scenario: Passes cascade
+- **WHEN** T001 has SpeedPasses and a Special Pass and is deleted
+- **THEN** its passes no longer exist, also after a restart
 
 ### Requirement: Buy group ticket
 `GROUPTICKET CREATE;Id;GroupId;yyyy-MM-dd` SHALL generate one individual ticket at the current price for each user in the group at that moment, compose them into a group ticket that references the group, and reply `OK GROUP TICKET CREATED -> <price>`. The group ticket price SHALL be the sum of the individual prices minus a discount by member count: fewer than 3 → 0%, 3–5 → 10%, 6–10 → 20%, more than 10 → 50%. Unknown or empty groups, invalid dates and dates before the system date SHALL be rejected.
@@ -51,11 +55,19 @@ Every ticket SHALL have an identifier unique among all tickets (individual, grou
 - **THEN** the group ticket still contains exactly the individual tickets of Ana and Pedro
 
 ### Requirement: Delete group ticket
-`GROUPTICKET DELETE;Id` SHALL delete a group ticket and all its generated individual tickets only when its date is strictly after the system date. Otherwise, or for unknown identifiers, it SHALL be rejected.
+`GROUPTICKET DELETE;Id` SHALL delete a group ticket and all its generated individual tickets only when its date is strictly after the system date. Otherwise, or for unknown identifiers, it SHALL be rejected. The passes of each generated ticket SHALL be deleted first, then the generated tickets, then the group ticket; a rejected deletion SHALL delete nothing.
 
 #### Scenario: Future group ticket deleted
 - **WHEN** the system date is 2026-10-01 and `GROUPTICKET DELETE;TG01` is executed for a group ticket dated 2026-10-15
 - **THEN** TG01 and its individual tickets no longer exist
+
+#### Scenario: Member passes cascade
+- **WHEN** a generated ticket of TG01 has passes and TG01 is deleted
+- **THEN** those passes no longer exist
+
+#### Scenario: Rejected deletion keeps everything
+- **WHEN** `GROUPTICKET DELETE;TG01` is rejected because TG01 is dated on the system date
+- **THEN** TG01, its generated tickets and their passes all remain
 
 ### Requirement: Ticket history
 Tickets dated before the system date SHALL be retained as historical records, including tickets of users or groups deleted later.
