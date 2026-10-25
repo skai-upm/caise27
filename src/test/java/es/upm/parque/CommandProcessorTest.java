@@ -1,6 +1,9 @@
 package es.upm.parque;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -68,5 +71,37 @@ class CommandProcessorTest {
     void unexpectedFailuresBecomeErrors() {
         CommandProcessor broken = new CommandProcessor(null);
         assertEquals(CommandProcessor.UNEXPECTED_ERROR, broken.process(CREATE_ANA));
+    }
+
+    @Test
+    void helpListsAllCommands() {
+        String help = processor.process("HELP");
+        assertTrue(help.contains("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta"));
+        assertTrue(help.contains("USER DELETE;Correo;Contraseña"));
+        assertTrue(help.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
+        assertTrue(help.lines().anyMatch("HELP"::equals));
+        assertTrue(help.lines().anyMatch("EXIT"::equals));
+        assertFalse(processor.isFinished());
+    }
+
+    @Test
+    void everyDocumentedCommandIsRecognized() {
+        for (String syntax : CommandProcessor.COMMAND_SYNTAX) {
+            assertNotEquals(CommandProcessor.UNKNOWN_COMMAND, processor.process(syntax));
+        }
+    }
+
+    @Test
+    void exitFinishesProcessing() {
+        assertFalse(processor.isFinished());
+        assertEquals("OK EXIT", processor.process(" exit "));
+        assertTrue(processor.isFinished());
+    }
+
+    @Test
+    void helpAndExitTakeNoParameters() {
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("HELP;x"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("EXIT;x"));
+        assertFalse(processor.isFinished());
     }
 }

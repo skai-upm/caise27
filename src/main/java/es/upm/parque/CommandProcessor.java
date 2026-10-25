@@ -1,5 +1,6 @@
 package es.upm.parque;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -10,8 +11,16 @@ public class CommandProcessor {
     static final String UNKNOWN_COMMAND = "ERROR UNKNOWN COMMAND";
     static final String WRONG_PARAMETERS = "ERROR WRONG NUMBER OF PARAMETERS";
     static final String UNEXPECTED_ERROR = "ERROR UNEXPECTED FAILURE";
+    static final String EXIT_RESPONSE = "OK EXIT";
+    static final List<String> COMMAND_SYNTAX = List.of(
+            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+            "USER DELETE;Correo;Contraseña",
+            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "HELP",
+            "EXIT");
 
     private final UserManager users;
+    private boolean finished;
 
     public CommandProcessor(UserManager users) {
         this.users = users;
@@ -28,11 +37,35 @@ public class CommandProcessor {
                 case "USER CREATE" -> createUser(parts);
                 case "USER DELETE" -> deleteUser(parts);
                 case "USER UPDATE" -> updateUser(parts);
+                case "HELP" -> help(parts);
+                case "EXIT" -> exit(parts);
                 default -> UNKNOWN_COMMAND;
             };
         } catch (RuntimeException e) {
             return UNEXPECTED_ERROR;
         }
+    }
+
+    /**
+     * True once EXIT has been processed; no further commands should be read.
+     */
+    public boolean isFinished() {
+        return finished;
+    }
+
+    private String help(String[] p) {
+        if (p.length != 1) {
+            return WRONG_PARAMETERS;
+        }
+        return String.join(System.lineSeparator(), COMMAND_SYNTAX);
+    }
+
+    private String exit(String[] p) {
+        if (p.length != 1) {
+            return WRONG_PARAMETERS;
+        }
+        finished = true;
+        return EXIT_RESPONSE;
     }
 
     private String createUser(String[] p) {
