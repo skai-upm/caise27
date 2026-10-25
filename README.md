@@ -23,7 +23,13 @@ File mode (first argument is a file with one command per line; blank lines are i
 java -jar target/parque.jar input_basico.txt
 ```
 
-Users are stored in `data/users.txt`, relative to the working directory.
+Temporary mode: add `--fly` (with or without a command file) to keep every persistence file in a new `tmp/<yyyyMMdd_HHmmss>/` directory that is deleted when the application ends; the permanent data is not touched:
+
+```bash
+java -jar target/parque.jar --fly input_fase2.txt
+```
+
+Data is stored in `data/` (relative to the working directory): `users.txt`, `groups.txt`, `tickets.txt`, `group_tickets.txt` and `attractions.txt`. The system date (initially today) and the ticket price (initially 40.00) are not stored.
 
 ## Commands
 
@@ -32,5 +38,18 @@ Users are stored in `data/users.txt`, relative to the working directory.
 | `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta` | Register a user |
 | `USER DELETE;Correo;Contraseña` | Delete a user |
 | `USER UPDATE;Correo;Contraseña;Campo;NuevoValor` | Update `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE` or `CARD` |
+| `SYSTEM DATE;yyyy-MM-dd` | Set the current date used by every date rule |
+| `SYSTEM PRICE;Precio` | Set the individual ticket price |
+| `GROUP CREATE;IdGrupo;Nombre` | Create a group |
+| `GROUP ADD;IdGrupo;Correo` / `GROUP REMOVE;IdGrupo;Correo` | Add / remove a member (not while the group has a current or future group ticket) |
+| `GROUP DELETE;IdGrupo` | Delete a group (same lock) |
+| `TICKET CREATE;IdEntrada;Correo;yyyy-MM-dd` | Buy an individual ticket |
+| `TICKET DELETE;IdEntrada` | Cancel an individual ticket dated after the current date |
+| `GROUPTICKET CREATE;IdEntrada;IdGrupo;yyyy-MM-dd` | Buy a group ticket (one ticket per member, 0/10/20/50% discount for <3/3–5/6–10/>10 members) |
+| `GROUPTICKET DELETE;IdEntrada` | Cancel a group ticket dated after the current date, with its member tickets |
+| `ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad` / `ATTRACTION DELETE;IdAtraccion` | Create / delete (when empty) an attraction |
+| `ATTRACTION ENTER;IdAtraccion;IdEntrada` | Enter with an individual or group ticket for the current date (all or nothing) |
+| `ATTRACTION EXIT;IdAtraccion;IdEntrada` | Leave the attraction |
+| `ATTRACTION STATUS;IdAtraccion` | Show capacity, occupancy and users present |
 | `HELP` | List the available commands |
 | `EXIT` | Terminate the application |

@@ -4,38 +4,66 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
  * Amusement park application entry point.
- * Without arguments it reads commands from standard input; with one argument it reads
- * them from the given file. Both modes share the same command processing.
+ * Without a file argument it reads commands from standard input; otherwise it reads them from the
+ * given file. Both modes share the same command processing. With {@code --fly}, all persistence
+ * files live in a temporary directory that is deleted when the application ends.
  */
 public class App {
 
-    public static void main(String[] args) {
-        UserManager userManager;
-        try {
-            userManager = new UserManager(new UserRepository());
-        } catch (RuntimeException e) {
-            System.out.println("ERROR: cannot load stored users: " + e.getMessage());
-            return;
-        }
-        CommandProcessor processor = new CommandProcessor(userManager);
+    public static final String FLY_OPTION = "--fly";
+    public static final Path DATA_DIRECTORY = Path.of("data");
+    public static final Path TEMPORARY_BASE = Path.of("tmp");
 
-        if (args.length == 0) {
+    public static void main(String[] args) {
+        boolean fly = false;
+        String commandFile = null;
+        for (String arg : args) {
+            if (FLY_OPTION.equals(arg)) {
+                fly = true;
+            } else if (commandFile == null) {
+                commandFile = arg;
+            }
+        }
+
+        TemporaryStorage temporary = null;
+        Thread cleanup = null;
+        Path dataDirectory = DATA_DIRECTORY;
+        try {
+            if (fly) {
+                temporary = TemporaryStorage.create(TEMPORARY_BASE);
+                cleanup = new Thread(temporary::delete);
+                Runtime.getRuntime().addShutdownHook(cleanup);
+                dataDirectory = temporary.getDirectory();
+            }
+            run(dataDirectory, commandFile);
+        } catch (UncheckedIOException e) {
+            System.out.println("ERROR: " + e.getMessage());
+        } finally {
+            if (temporary != null) {
+                removeHook(cleanup);
+                temporary.delete();
+            }
+        }
+    }
+
+    private static void run(Path dataDirectory, String commandFile) {
+        CommandProcessor processor = new CommandProcessor(ParkController.load(dataDirectory));
+        if (commandFile == null) {
             BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
             run(stdin, processor, System.out, false);
             return;
         }
-
-        Path file = Path.of(args[0]);
-        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+        try (BufferedReader reader = Files.newBufferedReader(Path.of(commandFile), StandardCharsets.UTF_8)) {
             run(reader, processor, System.out, true);
         } catch (IOException e) {
-            System.out.println("ERROR: cannot read command file '" + args[0] + "': " + describe(e));
+            System.out.println("ERROR: cannot read command file '" + commandFile + "': " + describe(e));
         }
     }
 
@@ -63,6 +91,14 @@ public class App {
             }
         } catch (IOException e) {
             out.println("ERROR: cannot read commands: " + describe(e));
+        }
+    }
+
+    private static void removeHook(Thread hook) {
+        try {
+            Runtime.getRuntime().removeShutdownHook(hook);
+        } catch (IllegalStateException e) {
+            // The JVM is already shutting down; the hook performs the deletion.
         }
     }
 

@@ -25,8 +25,9 @@ public class CommandProcessorTest {
 
     @BeforeEach
     public void setUp() {
-        manager = new UserManager(new UserRepository(tempDir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        ParkController controller = ParkController.load(tempDir);
+        manager = controller.getUserManager();
+        processor = new CommandProcessor(controller);
     }
 
     private void assertError(CommandProcessor.Result result) {
@@ -104,6 +105,17 @@ public class CommandProcessorTest {
         assertTrue(result.output().contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
         assertTrue(result.output().contains("HELP"));
         assertTrue(result.output().contains("EXIT"));
+    }
+
+    @Test
+    public void helpListsDeliveryTwoCommands() {
+        String help = processor.process("HELP").output();
+        for (String syntax : new String[] {
+            "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;", "GROUP CREATE;", "GROUP ADD;", "GROUP REMOVE;",
+            "GROUP DELETE;", "TICKET CREATE;", "TICKET DELETE;", "GROUPTICKET CREATE;", "GROUPTICKET DELETE;",
+            "ATTRACTION CREATE;", "ATTRACTION DELETE;", "ATTRACTION ENTER;", "ATTRACTION EXIT;", "ATTRACTION STATUS;"}) {
+            assertTrue(help.contains(syntax), syntax + " missing from HELP");
+        }
     }
 
     @Test

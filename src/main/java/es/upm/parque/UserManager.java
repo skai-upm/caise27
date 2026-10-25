@@ -65,7 +65,10 @@ public class UserManager {
     }
 
     public void delete(String email, String password) {
-        User user = authenticate(email, password);
+        remove(authenticate(email, password));
+    }
+
+    public void remove(User user) {
         users.remove(user);
         repository.saveAll(users);
     }
@@ -105,7 +108,10 @@ public class UserManager {
         repository.saveAll(users);
     }
 
-    private User authenticate(String email, String password) {
+    /**
+     * Returns the user with the given email if the password matches.
+     */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null) {
             throw new UserException("no user with email " + email);

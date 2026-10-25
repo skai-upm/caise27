@@ -39,8 +39,9 @@ public class AppTest {
 
     @BeforeEach
     public void setUp() {
-        manager = new UserManager(new UserRepository(tempDir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        ParkController controller = ParkController.load(tempDir);
+        manager = controller.getUserManager();
+        processor = new CommandProcessor(controller);
         buffer = new ByteArrayOutputStream();
         out = new PrintStream(buffer, true, StandardCharsets.UTF_8);
     }
@@ -87,9 +88,10 @@ public class AppTest {
         assertNotNull(manager.findByEmail("pedro@correo.com"), "commands after EXIT must not run");
         assertTrue(output().contains("> " + CREATE_ANA));
 
-        UserManager interactiveManager = new UserManager(new UserRepository(tempDir.resolve("other.txt")));
+        ParkController interactive = ParkController.load(tempDir.resolve("other"));
+        UserManager interactiveManager = interactive.getUserManager();
         App.run(new BufferedReader(new StringReader(String.join("\n", Files.readAllLines(commands)))),
-                new CommandProcessor(interactiveManager), new PrintStream(new ByteArrayOutputStream()), false);
+                new CommandProcessor(interactive), new PrintStream(new ByteArrayOutputStream()), false);
         assertEquals(manager.getUsers().size(), interactiveManager.getUsers().size());
         assertEquals("699999999", interactiveManager.findByEmail("ana@correo.com").getPhone());
     }
