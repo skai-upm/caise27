@@ -1,0 +1,201 @@
+package es.upm.parque;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Checks that uml/model.puml mirrors the production classes: elements, attributes,
+ * relationships named after fields, inheritance and usage lines.
+ */
+class UmlModelTest {
+
+    private static final String PACKAGE = "es.upm.parque.";
+    private static final Pattern CLASS = Pattern.compile("^\\s*(?:abstract )?(class|enum) (\\w+)(?: \\{)?$");
+    private static final Pattern ATTRIBUTE = Pattern.compile("^\\s*(\\w+) : (\\w+)$");
+    private static final Pattern RELATION =
+            Pattern.compile("^(\\w+) \"([^\"]+)\" (x-->|o-->|\\*-->) \"([^\"]+)\" (\\w+) : (\\w+)$");
+    private static final Pattern INHERITANCE = Pattern.compile("^(\\w+) --\\|> (\\w+)$");
+    private static final Pattern USAGE = Pattern.compile("^(\\w+) \\.\\.> (\\w+) : .+$");
+
+    private static final Map<String, Map<String, String>> attributes = new HashMap<>();
+    private static final Map<String, List<String>> enumValues = new HashMap<>();
+    private static final List<String[]> relations = new ArrayList<>();
+    private static final List<String[]> inheritances = new ArrayList<>();
+    private static final List<String[]> usages = new ArrayList<>();
+
+    @BeforeAll
+    static void parseModel() throws IOException {
+        String current = null;
+        boolean isEnum = false;
+        for (String line : Files.readAllLines(Path.of("uml", "model.puml"))) {
+            Matcher m;
+            if ((m = CLASS.matcher(line)).matches()) {
+                current = m.group(2);
+                isEnum = m.group(1).equals("enum");
+                attributes.put(current, new HashMap<>());
+                if (isEnum) {
+                    enumValues.put(current, new ArrayList<>());
+                }
+                if (!line.trim().endsWith("{")) {
+                    current = null;
+                }
+            } else if (line.trim().equals("}")) {
+                current = null;
+            } else if (current != null && isEnum && !line.isBlank()) {
+                enumValues.get(current).add(line.trim());
+            } else if (current != null && (m = ATTRIBUTE.matcher(line)).matches()) {
+                attributes.get(current).put(m.group(1), m.group(2));
+            } else if ((m = RELATION.matcher(line)).matches()) {
+                relations.add(new String[] {m.group(1), m.group(5), m.group(6)});
+            } else if ((m = INHERITANCE.matcher(line)).matches()) {
+                inheritances.add(new String[] {m.group(1), m.group(2)});
+            } else if ((m = USAGE.matcher(line)).matches()) {
+                usages.add(new String[] {m.group(1), m.group(2)});
+            }
+        }
+    }
+
+    private static Class<?> modelClass(String name) {
+        try {
+            return Class.forName(PACKAGE + name);
+        } catch (ClassNotFoundException e) {
+            throw new AssertionError("model element without class: " + name, e);
+        }
+    }
+
+    private static boolean isModelType(Class<?> type) {
+        return type.getName().startsWith(PACKAGE);
+    }
+
+    /** Model classes referenced by a field, directly or as List/Map element types. */
+    private static Set<String> referencedModelTypes(Field field) {
+        Set<String> referenced = new HashSet<>();
+        if (isModelType(field.getType())) {
+            referenced.add(field.getType().getSimpleName());
+        }
+        if (field.getGenericType() instanceof ParameterizedType parameterized) {
+            for (Type argument : parameterized.getActualTypeArguments()) {
+                if (argument instanceof Class<?> c && isModelType(c)) {
+                    referenced.add(c.getSimpleName());
+                }
+            }
+        }
+        return referenced;
+    }
+
+    private static List<Field> instanceFields(Class<?> type) {
+        return Arrays.stream(type.getDeclaredFields())
+                .filter(f -> !Modifier.isStatic(f.getModifiers()) && !f.isSynthetic())
+                .toList();
+    }
+
+    @Test
+    void everyProductionClassIsInTheModelAndViceVersa() throws IOException {
+        Set<String> sources;
+        try (Stream<Path> files = Files.list(Path.of("src", "main", "java", "es", "upm", "parque"))) {
+            sources = files.map(p -> p.getFileName().toString().replace(".java", "")).collect(Collectors.toSet());
+        }
+        assertEquals(sources, attributes.keySet());
+        attributes.keySet().forEach(UmlModelTest::modelClass);
+    }
+
+    @Test
+    void attributesAreValueFieldsOfTheClass() throws NoSuchFieldException {
+        for (Map.Entry<String, Map<String, String>> entry : attributes.entrySet()) {
+            Class<?> type = modelClass(entry.getKey());
+            for (Map.Entry<String, String> attribute : entry.getValue().entrySet()) {
+                Field field = type.getDeclaredField(attribute.getKey());
+                assertEquals(field.getType().getSimpleName(), attribute.getValue(),
+                        entry.getKey() + "." + field.getName());
+                assertTrue(referencedModelTypes(field).isEmpty() || field.getType().isEnum(), field.toString());
+            }
+        }
+    }
+
+    @Test
+    void relationshipsAreFieldsReferencingTheTarget() throws NoSuchFieldException {
+        for (String[] relation : relations) {
+            Field field = modelClass(relation[0]).getDeclaredField(relation[2]);
+            assertTrue(referencedModelTypes(field).contains(relation[1]), String.join(" ", relation));
+        }
+    }
+
+    @Test
+    void everyFieldIsShownAsAttributeOrRelationship() {
+        for (String name : attributes.keySet()) {
+            Class<?> type = modelClass(name);
+            if (type.isEnum()) {
+                continue;
+            }
+            for (Field field : instanceFields(type)) {
+                boolean asRelation = relations.stream()
+                        .anyMatch(r -> r[0].equals(name) && r[2].equals(field.getName()));
+                boolean asAttribute = attributes.get(name).containsKey(field.getName());
+                assertTrue(asRelation ^ asAttribute, name + "." + field.getName());
+                assertEquals(!referencedModelTypes(field).isEmpty(), asRelation, name + "." + field.getName());
+            }
+        }
+    }
+
+    @Test
+    void inheritanceMatchesTheCode() {
+        Set<String> modelled = inheritances.stream().map(i -> i[0] + ">" + i[1]).collect(Collectors.toSet());
+        Set<String> actual = new HashSet<>();
+        for (String name : attributes.keySet()) {
+            Class<?> superclass = modelClass(name).getSuperclass();
+            if (superclass != null && isModelType(superclass)) {
+                actual.add(name + ">" + superclass.getSimpleName());
+            }
+        }
+        assertEquals(actual, modelled);
+    }
+
+    @Test
+    void enumerationsListTheirConstants() {
+        for (Map.Entry<String, List<String>> entry : enumValues.entrySet()) {
+            List<String> constants = Arrays.stream(modelClass(entry.getKey()).getEnumConstants())
+                    .map(c -> ((Enum<?>) c).name()).toList();
+            assertEquals(constants, entry.getValue());
+        }
+    }
+
+    @Test
+    void usageOnlyForClassesWithoutIncomingRelationships() {
+        Set<String> withIncoming = relations.stream().map(r -> r[1]).collect(Collectors.toSet());
+        assertFalse(usages.isEmpty());
+        for (String[] usage : usages) {
+            assertTrue(!withIncoming.contains(usage[0]) || !withIncoming.contains(usage[1]),
+                    usage[0] + " ..> " + usage[1]);
+        }
+        for (String name : attributes.keySet()) {
+            boolean isolated = !withIncoming.contains(name)
+                    && inheritances.stream().noneMatch(i -> i[1].equals(name));
+            if (isolated) {
+                assertTrue(usages.stream().anyMatch(u -> u[0].equals(name) || u[1].equals(name)), name);
+            }
+        }
+    }
+}

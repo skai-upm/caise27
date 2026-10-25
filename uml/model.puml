@@ -1,36 +1,37 @@
 @startuml model
-' Class model of the amusement park application (current implementation).
+' Class model of the amusement park application, derived from the current implementation.
+' Attributes: primitive, value and enumeration fields only. Relationships are named after the
+' holding field; the holder end carries a cross (association) or a diamond (aggregation/composition).
 hide empty members
+hide circle
 skinparam classAttributeIconSize 0
 
 package es.upm.parque {
 
-  class App {
-  }
+  class App
 
   class CommandProcessor {
-    - finished : boolean
+    finished : boolean
   }
 
   class SystemDate {
-    - current : LocalDate
+    current : LocalDate
   }
 
-  class UserManager {
-  }
+  class UserManager
 
   class UserRepository {
-    - file : Path
+    file : Path
   }
 
   class User {
-    - name : String
-    - surname : String
-    - dni : String {readOnly}
-    - email : String
-    - password : String
-    - phone : String
-    - card : String
+    name : String
+    surname : String
+    dni : String
+    email : String
+    password : String
+    phone : String
+    card : String
   }
 
   enum UserField {
@@ -42,90 +43,102 @@ package es.upm.parque {
     CARD
   }
 
-  class UserValidator <<utility>> {
-  }
+  class UserValidator
 
-  class GroupManager {
-  }
+  class GroupManager
 
   class GroupRepository {
-    - file : Path
+    file : Path
   }
 
   class Group {
-    - id : String {readOnly}
-    - name : String
+    id : String
+    name : String
   }
 
   class TicketManager {
-    - price : BigDecimal
+    price : BigDecimal
   }
 
   class TicketRepository {
-    - file : Path
-  }
-
-  abstract class Ticket {
-    - id : String {readOnly}
-    - date : LocalDate {readOnly}
-  }
-
-  class IndividualTicket {
-    - price : BigDecimal {readOnly}
-  }
-
-  class GroupTicket {
-    - discountPercent : int {readOnly}
+    file : Path
   }
 
   class GroupTicketRepository {
-    - file : Path
+    file : Path
   }
 
-  class AttractionManager {
+  abstract class Ticket {
+    id : String
+    date : LocalDate
   }
+
+  class IndividualTicket {
+    price : BigDecimal
+  }
+
+  class GroupTicket {
+    discountPercent : int
+  }
+
+  class AttractionManager
 
   class AttractionRepository {
-    - file : Path
+    file : Path
   }
 
   class Attraction {
-    - id : String {readOnly}
-    - name : String {readOnly}
-    - capacity : int {readOnly}
+    id : String
+    name : String
+    capacity : int
   }
 }
 
-CommandProcessor "1" --> "1" UserManager : users
-CommandProcessor "1" --> "1" GroupManager : groups
-CommandProcessor "1" --> "1" TicketManager : tickets
-CommandProcessor "1" --> "1" AttractionManager : attractions
-CommandProcessor "1" --> "1" SystemDate : systemDate
-UserManager "1" --> "1" UserRepository : repository
-UserManager "1" o--> "0..*" User : usersByDni
-GroupManager "1" --> "1" GroupRepository : repository
-GroupManager "1" --> "1" UserManager : users
-GroupManager "1" o--> "0..*" Group : groupsById
-Group "0..*" o--> "0..*" User : members
-TicketManager "1" --> "1" TicketRepository : repository
-TicketManager "1" --> "1" UserManager : users
-TicketManager "1" --> "1" SystemDate : systemDate
-TicketManager "1" --> "1" GroupTicketRepository : groupRepository
-TicketManager "1" --> "1" GroupManager : groups
-TicketManager "1" o--> "0..*" IndividualTicket : ticketsById
-TicketManager "1" o--> "0..*" GroupTicket : groupTicketsById
+' Inheritance
 IndividualTicket --|> Ticket
 GroupTicket --|> Ticket
-IndividualTicket "0..*" --> "1" User : holder
+
+' Associations held by the command processor
+CommandProcessor "1" x--> "1" UserManager : users
+CommandProcessor "1" x--> "1" GroupManager : groups
+CommandProcessor "1" x--> "1" TicketManager : tickets
+CommandProcessor "1" x--> "1" AttractionManager : attractions
+CommandProcessor "1" x--> "1" SystemDate : systemDate
+
+' Users
+UserManager "1" x--> "1" UserRepository : repository
+UserManager "1" o--> "0..*" User : usersByDni
+
+' Groups
+GroupManager "1" x--> "1" GroupRepository : repository
+GroupManager "1" x--> "1" UserManager : users
+GroupManager "1" o--> "0..*" Group : groupsById
+Group "0..*" o--> "0..*" User : members
+
+' Tickets
+TicketManager "1" x--> "1" TicketRepository : repository
+TicketManager "1" x--> "1" GroupTicketRepository : groupRepository
+TicketManager "1" x--> "1" UserManager : users
+TicketManager "1" x--> "1" GroupManager : groups
+TicketManager "1" x--> "1" SystemDate : systemDate
+TicketManager "1" o--> "0..*" IndividualTicket : ticketsById
+TicketManager "1" o--> "0..*" GroupTicket : groupTicketsById
+IndividualTicket "0..*" x--> "1" User : holder
 GroupTicket "0..*" o--> "1" Group : group
 GroupTicket "1" *--> "1..*" IndividualTicket : tickets
-AttractionManager "1" --> "1" AttractionRepository : repository
-AttractionManager "1" --> "1" TicketManager : tickets
-AttractionManager "1" --> "1" SystemDate : systemDate
+
+' Attractions
+AttractionManager "1" x--> "1" AttractionRepository : repository
+AttractionManager "1" x--> "1" TicketManager : tickets
+AttractionManager "1" x--> "1" SystemDate : systemDate
 AttractionManager "1" o--> "0..*" Attraction : attractionsById
 Attraction "0..*" o--> "0..*" User : present
 
-App ..> CommandProcessor : creates
-UserManager ..> UserValidator : validates with
-UserManager ..> UserField : updates
+' Usage of classes without incoming relationships
+App ..> CommandProcessor : creates and runs
+UserManager ..> UserField : uses
+UserManager ..> UserValidator : uses
+GroupManager ..> UserValidator : uses
+TicketManager ..> UserValidator : uses
+AttractionManager ..> UserValidator : uses
 @enduml
