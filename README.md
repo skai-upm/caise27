@@ -1,7 +1,7 @@
 # caise27 — Amusement Park
 
-Java 21 / Maven command-line application for managing an amusement park.
-Delivery 1 provides user management and the execution infrastructure.
+Java 21 / Maven command-line application for managing an amusement park:
+users, groups, individual and group tickets, and attractions.
 
 ## Build
 
@@ -13,57 +13,64 @@ This produces the executable JAR `target/amusement-park.jar`.
 
 ## Run
 
-Interactive mode (commands read from standard input):
-
 ```text
-java -jar target/amusement-park.jar
+java -jar target/amusement-park.jar                       # interactive
+java -jar target/amusement-park.jar input_fase2.txt       # command file
+java -jar target/amusement-park.jar --fly                 # interactive, temporary data
+java -jar target/amusement-park.jar --fly input_fase2.txt # command file, temporary data
 ```
 
-File mode (one command per line, blank lines ignored, processing stops at `EXIT`):
+In file mode there is one command per line; blank lines are ignored and processing stops at `EXIT`.
 
-```text
-java -jar target/amusement-park.jar input.txt
-```
-
-Users are stored in `users.txt` in the working directory. Another location can be
-chosen with `-Dpark.users.file=<path>`:
-
-```text
-java -Dpark.users.file=/tmp/users.txt -jar target/amusement-park.jar input.txt
-```
+Data is stored in `users.txt`, `groups.txt`, `tickets.txt` and `attractions.txt` in the working
+directory (another directory can be chosen with `-Dpark.data.dir=<path>`). With `--fly` the same
+files are written to a new `tmp/<yyyyMMdd_HHmmss>/` directory that is deleted when the run ends,
+so permanent data is neither read nor modified. Attraction occupancy, the system date and the
+system price are never persisted.
 
 ## Commands
 
 Elements are separated by `;`. Command keywords are case-insensitive.
 
 ```text
-USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>
-USER DELETE;<email>;<password>
-USER UPDATE;<email>;<password>;<field>;<value>
+USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>
+USER DELETE;<Email>;<Password>
+USER UPDATE;<Email>;<Password>;<Field>;<NewValue>
+SYSTEM DATE;<yyyy-MM-dd>
+SYSTEM PRICE;<Price>
+GROUP CREATE;<Identifier>;<Name>
+GROUP ADD;<Identifier>;<Email>
+GROUP REMOVE;<Identifier>;<Email>
+GROUP DELETE;<Identifier>
+TICKET CREATE;<identifier>;<email>;<date>
+TICKET DELETE;<identifier>
+GROUPTICKET CREATE;<identifier>;<group>;<date>
+GROUPTICKET DELETE;<identifier>
+ATTRACTION CREATE;<identifier>;<name>;<capacity>
+ATTRACTION ENTER;<attraction>;<ticket>
+ATTRACTION EXIT;<attraction>;<email>
+ATTRACTION LIST;<attraction>
+ATTRACTION STATUS;<attractionIdentifier>
 HELP
 EXIT
 ```
 
-`<field>` is one of `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD` (the DNI cannot be changed).
+`<Field>` is one of `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD` (the DNI cannot be changed).
 
-Validation rules:
+### Rules
 
-- DNI: eight digits plus the matching control letter (e.g. `12345678Z`).
-- Email: `text@text.xxx` with an extension of exactly three characters.
-- Password: at least one uppercase letter, one lowercase letter, one digit and one symbol.
-- Card: exactly 16 digits.
+- User data: DNI with a valid control letter, email `text@text.xxx`, password with uppercase,
+  lowercase, digit and symbol, card of exactly 16 digits.
+- The system date starts as today and the base price as 40.00 EUR in every run.
+- A ticket is *active* when its date is on or after the system date. Tickets can only be
+  deleted when dated strictly after the system date; older ones are kept as historical records.
+- Group tickets contain one individual ticket `<id>:<dni>` per member at purchase time, with a
+  discount per ticket: fewer than 3 members 0 %, 3–5 10 %, 6–10 20 %, more than 10 50 %.
+- A group with an active group ticket cannot be modified or deleted. A user with an active ticket,
+  or belonging to such a group, cannot be deleted.
+- `ATTRACTION ENTER` needs a ticket dated exactly the system date; group tickets enter everybody
+  or nobody, within the attraction capacity.
 
-Successful operations print `USER CREATED`, `USER DELETED` or `USER UPDATED`;
-rejected ones print a line starting with `ERROR`.
+## Design
 
-Example `input.txt`:
-
-```text
-USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456
-USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654
-USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999
-USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com
-USER DELETE;pedro@correo.com;Otra2#
-HELP
-EXIT
-```
+The class model is documented in [`uml/model.puml`](uml/model.puml) (PlantUML).

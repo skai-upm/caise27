@@ -1,0 +1,105 @@
+@startuml model
+' Amusement Park — Delivery 2 class model (es.upm.etsisi.park)
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package controller {
+  class ParkController <<Singleton>> {
+    - {static} instance : ParkController
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+  }
+}
+
+package model {
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    - id : String
+    - name : String
+  }
+
+  abstract class Ticket {
+    - id : String
+    - date : LocalDate
+    - basePrice : BigDecimal
+    + {abstract} getPrice() : BigDecimal
+    + {abstract} getHolders() : List<User>
+  }
+
+  class IndividualTicket {
+    - discountPercent : int
+  }
+
+  class GroupTicket
+
+  enum GroupDiscount {
+    NONE
+    SMALL_GROUP
+    MEDIUM_GROUP
+    LARGE_GROUP
+    - percent : int
+  }
+
+  class Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+  }
+}
+
+package service {
+  class UserService
+}
+
+package persistence {
+  class ParkStorage
+  interface UserRepository
+  class UserFileRepository
+  class GroupFileRepository
+  class TicketFileRepository
+  class AttractionFileRepository
+}
+
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+UserRepository <|.. UserFileRepository
+
+IndividualTicket "*" --> "1" User : user
+GroupTicket "1" *-- "1..*" IndividualTicket : tickets
+GroupTicket "*" --> "0..1" Group : group
+GroupTicket "*" --> "1" GroupDiscount : discount
+Group "*" o--> "*" User : members
+Attraction "*" o--> "*" User : occupants
+
+ParkController "1" --> "1" UserService : users
+ParkController "1" o--> "*" Group : groups
+ParkController "1" o--> "*" Ticket : tickets
+ParkController "1" o--> "*" Attraction : attractions
+ParkController "1" --> "1" ParkStorage : storage
+UserService "1" o--> "*" User : users
+UserService --> UserRepository
+UserService ..> UserField
+
+ParkStorage --> UserRepository
+ParkStorage --> GroupFileRepository
+ParkStorage --> TicketFileRepository
+ParkStorage --> AttractionFileRepository
+@enduml

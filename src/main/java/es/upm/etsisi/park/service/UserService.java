@@ -47,7 +47,13 @@ public class UserService {
     }
 
     public void delete(String email, String password) {
-        User user = authenticate(email, password);
+        remove(authenticate(email, password));
+    }
+
+    /**
+     * Removes an already authenticated user and persists the change.
+     */
+    public void remove(User user) {
         usersByEmail.remove(user.getEmail());
         persist();
     }
@@ -116,7 +122,12 @@ public class UserService {
         usersByEmail.put(newEmail, user);
     }
 
-    private User authenticate(String email, String password) {
+    /**
+     * Returns the user with the given email after checking the password.
+     *
+     * @throws UserException if the user does not exist or the password is wrong
+     */
+    public User authenticate(String email, String password) {
         User user = usersByEmail.get(email);
         if (user == null) {
             throw new UserException("User with email " + email + " does not exist");

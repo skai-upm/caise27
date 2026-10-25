@@ -1,12 +1,8 @@
 package es.upm.etsisi.park.persistence;
 
 import es.upm.etsisi.park.model.User;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -17,7 +13,6 @@ import java.util.List;
  */
 public class UserFileRepository implements UserRepository {
 
-    private static final String SEPARATOR = ";";
     private static final int FIELD_COUNT = 7;
 
     private final Path file;
@@ -35,22 +30,13 @@ public class UserFileRepository implements UserRepository {
     @Override
     public List<User> loadAll() {
         List<User> users = new ArrayList<>();
-        if (!Files.exists(file)) {
-            return users;
-        }
-        List<String> lines;
-        try {
-            lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new PersistenceException("Cannot read user file " + file, e);
-        }
         int lineNumber = 0;
-        for (String line : lines) {
+        for (String line : TextFiles.readLines(file)) {
             lineNumber++;
             if (line.isBlank()) {
                 continue;
             }
-            String[] parts = line.split(SEPARATOR, -1);
+            String[] parts = TextFiles.fields(line);
             if (parts.length != FIELD_COUNT) {
                 warnings.println("WARNING: skipping malformed line " + lineNumber + " in " + file);
                 continue;
@@ -66,21 +52,11 @@ public class UserFileRepository implements UserRepository {
         for (User user : users) {
             lines.add(toLine(user));
         }
-        try {
-            Path parent = file.toAbsolutePath().getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temp = file.resolveSibling(file.getFileName() + ".tmp");
-            Files.write(temp, lines, StandardCharsets.UTF_8);
-            Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new PersistenceException("Cannot write user file " + file, e);
-        }
+        TextFiles.writeLines(file, lines);
     }
 
     static String toLine(User user) {
-        return String.join(SEPARATOR,
+        return String.join(TextFiles.SEPARATOR,
                 user.getFirstName(),
                 user.getSurnames(),
                 user.getDni(),
