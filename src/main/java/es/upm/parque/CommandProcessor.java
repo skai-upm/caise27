@@ -3,6 +3,7 @@ package es.upm.parque;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Supplier;
 
 /**
  * Interprets one text command, split by ';' into operation and parameters, and returns its response.
@@ -18,16 +19,22 @@ public class CommandProcessor {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "GROUP CREATE;Id;Nombre",
+            "GROUP ADD;Id;Correo",
+            "GROUP REMOVE;Id;Correo",
+            "GROUP DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
 
     private final UserManager users;
+    private final GroupManager groups;
     private final SystemDate systemDate;
     private boolean finished;
 
-    public CommandProcessor(UserManager users, SystemDate systemDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, SystemDate systemDate) {
         this.users = users;
+        this.groups = groups;
         this.systemDate = systemDate;
     }
 
@@ -42,6 +49,10 @@ public class CommandProcessor {
                 case "USER CREATE" -> createUser(parts);
                 case "USER DELETE" -> deleteUser(parts);
                 case "USER UPDATE" -> updateUser(parts);
+                case "GROUP CREATE" -> groupCommand(parts, 3, () -> groups.create(parts[1], parts[2]));
+                case "GROUP ADD" -> groupCommand(parts, 3, () -> groups.addMember(parts[1], parts[2]));
+                case "GROUP REMOVE" -> groupCommand(parts, 3, () -> groups.removeMember(parts[1], parts[2]));
+                case "GROUP DELETE" -> groupCommand(parts, 2, () -> groups.delete(parts[1]));
                 case "SYSTEM DATE" -> setDate(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
@@ -104,7 +115,16 @@ public class CommandProcessor {
         if (p.length != 3) {
             return WRONG_PARAMETERS;
         }
-        return users.delete(p[1], p[2]);
+        User user = users.findByEmail(p[1]);
+        String response = users.delete(p[1], p[2]);
+        if (UserManager.USER_DELETED.equals(response)) {
+            groups.removeUserFromAll(user);
+        }
+        return response;
+    }
+
+    private static String groupCommand(String[] p, int expectedParts, Supplier<String> operation) {
+        return p.length == expectedParts ? operation.get() : WRONG_PARAMETERS;
     }
 
     private String updateUser(String[] p) {

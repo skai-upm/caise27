@@ -102,6 +102,10 @@ public class UserManager {
         return null;
     }
 
+    public User findByDni(String dni) {
+        return usersByDni.get(dni);
+    }
+
     public int count() {
         return usersByDni.size();
     }

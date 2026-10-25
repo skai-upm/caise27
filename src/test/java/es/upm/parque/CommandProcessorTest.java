@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,12 +23,14 @@ class CommandProcessorTest {
     Path dir;
 
     private UserManager users;
+    private GroupManager groups;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws IOException {
         users = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(users, new SystemDate(LocalDate.of(2026, 1, 1)));
+        groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
+        processor = new CommandProcessor(users, groups, new SystemDate(LocalDate.of(2026, 1, 1)));
     }
 
     @Test
@@ -70,7 +73,7 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailuresBecomeErrors() {
-        CommandProcessor broken = new CommandProcessor(null, new SystemDate(LocalDate.of(2026, 1, 1)));
+        CommandProcessor broken = new CommandProcessor(null, null, new SystemDate(LocalDate.of(2026, 1, 1)));
         assertEquals(CommandProcessor.UNEXPECTED_ERROR, broken.process(CREATE_ANA));
     }
 
@@ -125,5 +128,45 @@ class CommandProcessorTest {
     @Test
     void helpListsSystemDate() {
         assertTrue(processor.process("HELP").lines().anyMatch("SYSTEM DATE;yyyy-MM-dd"::equals));
+    }
+
+    @Test
+    void runsGroupCommands() {
+        processor.process(CREATE_ANA);
+        assertEquals("OK GROUP CREATED", processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertEquals("OK USER ADDED TO GROUP", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertEquals("ERROR USER ALREADY IN GROUP", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertEquals("ERROR USER NOT FOUND", processor.process("GROUP ADD;G01;nadie@correo.com"));
+        assertEquals("OK USER REMOVED FROM GROUP", processor.process("group remove;G01;ana@correo.com"));
+        assertEquals("OK GROUP DELETED", processor.process("GROUP DELETE;G01"));
+        assertEquals("ERROR GROUP NOT FOUND", processor.process("GROUP DELETE;G01"));
+    }
+
+    @Test
+    void groupCommandsCheckParameterCounts() {
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("GROUP CREATE;G01"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("GROUP ADD;G01"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("GROUP REMOVE;G01;a;b"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("GROUP DELETE"));
+    }
+
+    @Test
+    void deletingUserRemovesItFromGroups() {
+        processor.process(CREATE_ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertEquals("ERROR INVALID CREDENTIALS", processor.process("USER DELETE;ana@correo.com;Mala1!"));
+        assertEquals(1, groups.find("G01").getMembers().size());
+        assertEquals("OK USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(groups.find("G01").getMembers().isEmpty());
+    }
+
+    @Test
+    void helpListsGroupCommands() {
+        String help = processor.process("HELP");
+        for (String command : List.of("GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo",
+                "GROUP DELETE;Id")) {
+            assertTrue(help.lines().anyMatch(command::equals), command);
+        }
     }
 }

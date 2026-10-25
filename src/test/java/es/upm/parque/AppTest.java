@@ -36,14 +36,14 @@ class AppTest {
     }
 
     private void startWithStdin(String input, String... args) {
-        App.start(args, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)), out,
-                dir.resolve("users.txt"));
+        App.start(args, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)), out, dir);
     }
 
     @Test
     void printsOneResponsePerNonBlankLine() throws IOException {
-        CommandProcessor processor = new CommandProcessor(new UserManager(new UserRepository(dir.resolve("u.txt"))),
-                new SystemDate(LocalDate.of(2026, 1, 1)));
+        UserManager users = new UserManager(new UserRepository(dir.resolve("u.txt")));
+        CommandProcessor processor = new CommandProcessor(users,
+                new GroupManager(new GroupRepository(dir.resolve("g.txt")), users), new SystemDate(LocalDate.of(2026, 1, 1)));
         String input = CommandProcessorTest.CREATE_ANA + "\n\n   \n"
                 + "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\nUSER FLY\n";
         App.run(new BufferedReader(new StringReader(input)), out, processor);
@@ -79,6 +79,15 @@ class AppTest {
     }
 
     @Test
+    void groupsAreRestoredOnRestart() throws IOException {
+        startWithStdin(CommandProcessorTest.CREATE_ANA + "\nGROUP CREATE;G01;Familia Garcia\nGROUP ADD;G01;ana@correo.com\n");
+        assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(dir.resolve("groups.txt")));
+        bytes.reset();
+        startWithStdin("GROUP ADD;G01;ana@correo.com\n");
+        assertEquals("ERROR USER ALREADY IN GROUP" + NL, output());
+    }
+
+    @Test
     void missingFileIsReportedWithoutException() {
         String missing = dir.resolve("no_existe.txt").toString();
         startWithStdin("", missing);
@@ -94,7 +103,7 @@ class AppTest {
 
     @Test
     void invalidUsersFileLocationIsReported() throws IOException {
-        Path blocked = Files.createDirectory(dir.resolve("users-as-dir"));
+        Path blocked = Files.createDirectories(dir.resolve("blocked").resolve("users.txt")).getParent();
         App.start(new String[0], new ByteArrayInputStream(new byte[0]), out, blocked);
         assertTrue(output().startsWith("ERROR "));
     }

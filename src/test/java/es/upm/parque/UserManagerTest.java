@@ -143,4 +143,11 @@ class UserManagerTest {
         UserManager broken = new UserManager(new UserRepository(blocked.resolve("users.txt")));
         assertEquals(UserManager.STORAGE_FAILURE, broken.create(ana()));
     }
+
+    @Test
+    void findsUsersByDni() {
+        manager.create(ana());
+        assertEquals("ana@correo.com", manager.findByDni("12345678Z").getEmail());
+        assertNull(manager.findByDni("87654321X"));
+    }
 }

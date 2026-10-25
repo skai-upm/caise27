@@ -18,17 +18,18 @@ import java.time.LocalDate;
  */
 public class App {
 
-    static final Path USERS_FILE = Path.of("data", "users.txt");
+    static final Path DATA_DIR = Path.of("data");
 
     public static void main(String[] args) {
-        start(args, System.in, System.out, USERS_FILE);
+        start(args, System.in, System.out, DATA_DIR);
     }
 
-    static void start(String[] args, InputStream stdin, PrintStream out, Path usersFile) {
+    static void start(String[] args, InputStream stdin, PrintStream out, Path dataDir) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new UserManager(new UserRepository(usersFile)),
-                    new SystemDate(LocalDate.now()));
+            UserManager users = new UserManager(new UserRepository(dataDir.resolve("users.txt")));
+            GroupManager groups = new GroupManager(new GroupRepository(dataDir.resolve("groups.txt")), users);
+            processor = new CommandProcessor(users, groups, new SystemDate(LocalDate.now()));
         } catch (IOException e) {
             out.println("ERROR " + e.getMessage());
             return;
