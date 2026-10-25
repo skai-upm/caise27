@@ -1,8 +1,8 @@
 package es.upm.parque.presentation;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import es.upm.parque.business.controller.AttractionManager;
@@ -26,29 +26,6 @@ public class CommandProcessor {
     static final String INVALID_DATE = "ERROR INVALID DATE";
     static final String ACTIVE_TICKETS = "ERROR USER HAS ACTIVE TICKETS";
     static final String GROUP_LOCKED = "ERROR GROUP LOCKED";
-    static final List<String> COMMAND_SYNTAX = List.of(
-            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "USER DELETE;Correo;Contraseña",
-            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
-            "GROUP CREATE;Id;Nombre",
-            "GROUP ADD;Id;Correo",
-            "GROUP REMOVE;Id;Correo",
-            "GROUP DELETE;Id",
-            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
-            "TICKET DELETE;Id",
-            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
-            "GROUPTICKET DELETE;Id",
-            "ATTRACTION CREATE;Id;Nombre;Aforo",
-            "ATTRACTION DELETE;Id",
-            "ATTRACTION ENTER;IdAtraccion;IdEntrada",
-            "ATTRACTION EXIT;IdAtraccion;IdEntrada",
-            "ATTRACTION STATUS;IdAtraccion",
-            "INVOICE CREATE;USER;Correo",
-            "INVOICE CREATE;GROUP;IdGrupo",
-            "SYSTEM DATE;yyyy-MM-dd",
-            "SYSTEM PRICE;Precio",
-            "HELP",
-            "EXIT");
 
     private final UserManager users;
     private final GroupManager groups;
@@ -56,16 +33,19 @@ public class CommandProcessor {
     private final AttractionManager attractions;
     private final InvoiceManager invoices;
     private final SystemDate systemDate;
+    private final Map<String, HelpGenerator> helpModes;
     private boolean finished;
 
     public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
-                            AttractionManager attractions, InvoiceManager invoices, SystemDate systemDate) {
+                            AttractionManager attractions, InvoiceManager invoices, SystemDate systemDate,
+                            Map<String, HelpGenerator> helpModes) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
         this.invoices = invoices;
         this.systemDate = systemDate;
+        this.helpModes = helpModes;
     }
 
     public String process(String line) {
@@ -74,6 +54,10 @@ public class CommandProcessor {
             parts[i] = parts[i].trim();
         }
         String operation = parts[0].toUpperCase(Locale.ROOT);
+        HelpGenerator help = helpModes.get(operation);
+        if (help != null) {
+            return parts.length == 1 ? help.generate() : WRONG_PARAMETERS;
+        }
         try {
             return switch (operation) {
                 case "USER CREATE" -> createUser(parts);
@@ -100,7 +84,6 @@ public class CommandProcessor {
                 case "INVOICE CREATE" -> withParameters(parts, 3, () -> invoices.create(parts[1], parts[2]));
                 case "SYSTEM DATE" -> setDate(parts);
                 case "SYSTEM PRICE" -> withParameters(parts, 2, () -> tickets.setPrice(parts[1]));
-                case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> UNKNOWN_COMMAND;
             };
@@ -133,13 +116,6 @@ public class CommandProcessor {
         }
         systemDate.set(date);
         return "OK SYSTEM DATE -> " + SystemDate.format(date);
-    }
-
-    private String help(String[] p) {
-        if (p.length != 1) {
-            return WRONG_PARAMETERS;
-        }
-        return String.join(System.lineSeparator(), COMMAND_SYNTAX);
     }
 
     private String exit(String[] p) {

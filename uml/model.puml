@@ -16,6 +16,21 @@ package es.upm.parque.presentation {
   class CommandProcessor {
     finished : boolean
   }
+
+  class CommandInfo {
+    syntax : String
+    description : String
+  }
+
+  class CommandRegistry
+
+  class HelpGenerator
+
+  interface HelpFormat
+
+  class SyntaxHelpFormat
+
+  class ExtendedHelpFormat
 }
 
 package es.upm.parque.business.model {
@@ -147,6 +162,8 @@ package es.upm.parque.persistence {
 IndividualTicket --|> Ticket
 GroupTicket --|> Ticket
 StandardInvoiceBuilder ..|> InvoiceBuilder
+SyntaxHelpFormat ..|> HelpFormat
+ExtendedHelpFormat ..|> HelpFormat
 TextFileUserRepository ..|> UserRepository
 TextFileGroupRepository ..|> GroupRepository
 TextFileTicketRepository ..|> TicketRepository
@@ -160,6 +177,12 @@ CommandProcessor "1" x--> "1" TicketManager : tickets
 CommandProcessor "1" x--> "1" AttractionManager : attractions
 CommandProcessor "1" x--> "1" InvoiceManager : invoices
 CommandProcessor "1" x--> "1" SystemDate : systemDate
+CommandProcessor "1" o--> "1..*" HelpGenerator : helpModes
+
+' Help
+HelpGenerator "0..*" x--> "1" CommandRegistry : registry
+HelpGenerator "0..*" x--> "1" HelpFormat : format
+CommandRegistry "1" *--> "0..*" CommandInfo : commands
 
 ' Users
 UserManager "1" x--> "1" UserRepository : repository
@@ -205,6 +228,8 @@ App ..> CommandProcessor : creates and runs
 App ..> TemporaryDirectory : uses in --fly mode
 App ..> Bootstrap : configures the application
 Bootstrap ..> StandardInvoiceBuilder : supplies invoice builders
+Bootstrap ..> SyntaxHelpFormat : injects into HELP
+Bootstrap ..> ExtendedHelpFormat : injects into HELP EXTENDED
 Bootstrap ..> TextFileUserRepository : creates
 Bootstrap ..> TextFileGroupRepository : creates
 Bootstrap ..> TextFileTicketRepository : creates

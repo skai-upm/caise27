@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,8 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailuresBecomeErrors() {
-        CommandProcessor broken = new CommandProcessor(null, null, null, null, null, new SystemDate(LocalDate.of(2026, 1, 1)));
+        CommandProcessor broken = new CommandProcessor(null, null, null, null, null,
+                new SystemDate(LocalDate.of(2026, 1, 1)), Map.of());
         assertEquals(CommandProcessor.UNEXPECTED_ERROR, broken.process(Fixtures.CREATE_ANA));
     }
 
@@ -96,8 +98,8 @@ class CommandProcessorTest {
 
     @Test
     void everyDocumentedCommandIsRecognized() {
-        for (String syntax : CommandProcessor.COMMAND_SYNTAX) {
-            assertNotEquals(CommandProcessor.UNKNOWN_COMMAND, processor.process(syntax));
+        for (CommandInfo command : CommandRegistry.standard().getCommands()) {
+            assertNotEquals(CommandProcessor.UNKNOWN_COMMAND, processor.process(command.getSyntax()));
         }
     }
 
@@ -295,5 +297,26 @@ class CommandProcessorTest {
         String help = processor.process("HELP");
         assertTrue(help.lines().anyMatch("INVOICE CREATE;USER;Correo"::equals));
         assertTrue(help.lines().anyMatch("INVOICE CREATE;GROUP;IdGrupo"::equals));
+    }
+
+    @Test
+    void helpExtendedShowsSyntaxAndDescriptions() {
+        List<String> extended = processor.process("help extended").lines().toList();
+        int delete = extended.indexOf("USER DELETE;Correo;Contraseña");
+        assertTrue(extended.get(delete + 1).startsWith("    Deletes the user after checking email and password"));
+        List<String> concise = processor.process("HELP").lines().toList();
+        assertEquals(concise, extended.stream().filter(l -> !l.startsWith(" ")).toList());
+        assertTrue(concise.contains("HELP EXTENDED"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("HELP EXTENDED;x"));
+    }
+
+    @Test
+    void newHelpFormatNeedsNoProcessorChange() {
+        CommandRegistry registry = new CommandRegistry().register("EXIT", "Ends.");
+        CommandProcessor custom = new CommandProcessor(null, null, null, null, null,
+                new SystemDate(LocalDate.of(2026, 1, 1)),
+                Map.of("HELP COUNT", new HelpGenerator(registry, commands -> commands.size() + " commands")));
+        assertEquals("1 commands", custom.process("HELP COUNT"));
+        assertEquals(CommandProcessor.UNKNOWN_COMMAND, custom.process("HELP"));
     }
 }

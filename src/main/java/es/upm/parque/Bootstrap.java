@@ -3,6 +3,8 @@ package es.upm.parque;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import es.upm.parque.business.controller.AttractionManager;
 import es.upm.parque.business.controller.GroupManager;
@@ -17,6 +19,10 @@ import es.upm.parque.persistence.TextFileGroupTicketRepository;
 import es.upm.parque.persistence.TextFileTicketRepository;
 import es.upm.parque.persistence.TextFileUserRepository;
 import es.upm.parque.presentation.CommandProcessor;
+import es.upm.parque.presentation.CommandRegistry;
+import es.upm.parque.presentation.ExtendedHelpFormat;
+import es.upm.parque.presentation.HelpGenerator;
+import es.upm.parque.presentation.SyntaxHelpFormat;
 
 /**
  * Startup configuration: creates the repositories for a data directory and initialises the
@@ -39,6 +45,17 @@ public final class Bootstrap {
                 new TextFileAttractionRepository(dataDir.resolve("attractions.txt")), tickets, systemDate);
         InvoiceManager invoices = InvoiceManager.initialize(users, groups, tickets, systemDate,
                 StandardInvoiceBuilder::new);
-        return new CommandProcessor(users, groups, tickets, attractions, invoices, systemDate);
+        return new CommandProcessor(users, groups, tickets, attractions, invoices, systemDate,
+                helpModes(CommandRegistry.standard()));
+    }
+
+    /**
+     * Help commands and the presentation format injected into each help generator.
+     */
+    static Map<String, HelpGenerator> helpModes(CommandRegistry registry) {
+        Map<String, HelpGenerator> modes = new LinkedHashMap<>();
+        modes.put("HELP", new HelpGenerator(registry, new SyntaxHelpFormat()));
+        modes.put("HELP EXTENDED", new HelpGenerator(registry, new ExtendedHelpFormat()));
+        return modes;
     }
 }

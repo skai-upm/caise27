@@ -69,7 +69,7 @@ In file mode the application SHALL read the file line by line, interpret each no
 - **THEN** the blank lines are ignored and the other commands are processed normally
 
 ### Requirement: HELP command
-`HELP` SHALL display every command currently available with its basic syntax, one per line. The list SHALL be extended whenever new commands are added.
+`HELP` SHALL display every command currently registered in the application with its basic syntax, one per line, generated from the registry of available commands. The registry SHALL be extended whenever new commands are added.
 
 #### Scenario: Help lists the commands
 - **WHEN** `HELP` is processed
@@ -82,6 +82,10 @@ In file mode the application SHALL read the file line by line, interpret each no
 #### Scenario: Help lists the invoice commands
 - **WHEN** `HELP` is processed
 - **THEN** the output also contains `INVOICE CREATE;USER;Correo` and `INVOICE CREATE;GROUP;IdGrupo`
+
+#### Scenario: Help lists the help modes
+- **WHEN** `HELP` is processed
+- **THEN** the output also contains `HELP EXTENDED`
 
 ### Requirement: EXIT command
 `EXIT` SHALL terminate the application in a controlled manner after printing `OK EXIT`. No command after `EXIT` SHALL be read or executed, in either mode.
@@ -100,3 +104,21 @@ If the command file does not exist, cannot be opened or cannot be read, the appl
 #### Scenario: Missing file
 - **WHEN** the application is started with argument `no_existe.txt` and that file does not exist
 - **THEN** it prints `ERROR CANNOT READ FILE no_existe.txt` and terminates without a stack trace
+
+### Requirement: HELP EXTENDED command
+`HELP EXTENDED` SHALL display, for every registered command, its syntax followed on the next line by a brief explanation of its behavior, indented by four spaces. It uses the same registry of commands as `HELP`, so both list exactly the same commands in the same order.
+
+#### Scenario: Syntax and description
+- **WHEN** `HELP EXTENDED` is processed
+- **THEN** the output contains the line `USER DELETE;Correo;Contraseña` followed by an indented line describing that it deletes the user after checking email and password
+
+#### Scenario: Same commands as HELP
+- **WHEN** `HELP` and `HELP EXTENDED` are processed
+- **THEN** every syntax line of `HELP` appears in `HELP EXTENDED` in the same order
+
+### Requirement: Injected help format
+The component that builds help texts SHALL receive the formatting behavior through dependency injection at startup and SHALL NOT instantiate its formats internally. Help modes SHALL be registered by command name, so a new presentation format can be added by configuration without changing general command processing.
+
+#### Scenario: Alternative format
+- **WHEN** a help generator is configured with a different format implementation and registered under a new help command name
+- **THEN** that command produces the new presentation using the same registered commands, without changes to the command processor
