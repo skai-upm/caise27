@@ -1,0 +1,133 @@
+# user-management Specification
+
+## Purpose
+
+Manages park users: their data model, validation of personal data, uniqueness rules, and the create, delete and update operations exposed through text commands.
+
+## Requirements
+
+### Requirement: User data
+Each user SHALL hold a first name, surname(s), DNI, email address, password, telephone number and card number. The DNI SHALL NOT change after the user has been created.
+
+#### Scenario: DNI is immutable
+- **WHEN** any update is attempted on an existing user
+- **THEN** the user's DNI remains the value given at creation
+
+### Requirement: DNI validation
+A DNI SHALL be accepted only if it consists of exactly eight digits followed by one letter, and the letter matches the standard Spanish check letter (the eight-digit number modulo 23 indexed into `TRWAGMYFPDXBNJZSQVHLCKE`). Checking only the format SHALL NOT be sufficient.
+
+#### Scenario: Valid DNI
+- **WHEN** the DNI `12345678Z` is validated
+- **THEN** it is accepted
+
+#### Scenario: Wrong check letter
+- **WHEN** the DNI `12345678A` is validated
+- **THEN** it is rejected
+
+#### Scenario: Wrong format
+- **WHEN** a DNI with fewer than eight digits, non-digit characters in the number part, or no final letter is validated
+- **THEN** it is rejected
+
+### Requirement: Email validation
+An email SHALL be accepted only if it has the form `text@text.xxx`: exactly one `@`, a non-empty part before `@`, a part after `@` containing a period, a non-empty domain before the last period, and an extension of exactly three characters after the last period. Validation SHALL NOT use regular expressions.
+
+#### Scenario: Valid email
+- **WHEN** `ana@correo.com` is validated
+- **THEN** it is accepted
+
+#### Scenario: Invalid emails
+- **WHEN** any of `ana`, `ana@correo`, `@correo.com`, `ana@.com` or `ana@correo.es` is validated
+- **THEN** it is rejected
+
+### Requirement: Password validation
+A password SHALL be accepted only if it contains at least one uppercase letter, one lowercase letter, one digit and one symbol (a character that is neither a letter, a digit nor whitespace). Validation SHALL NOT use regular expressions.
+
+#### Scenario: Valid password
+- **WHEN** `Clave1!` is validated
+- **THEN** it is accepted
+
+#### Scenario: Missing character class
+- **WHEN** any of `clave1!`, `CLAVE1!`, `Clave!!` or `Clave12` is validated
+- **THEN** it is rejected
+
+### Requirement: Card number validation
+A card number SHALL be accepted only if it consists of exactly 16 consecutive digits, with no spaces, letters or symbols.
+
+#### Scenario: Valid card
+- **WHEN** `1234567890123456` is validated
+- **THEN** it is accepted
+
+#### Scenario: Invalid cards
+- **WHEN** any of `1234 5678 9012 3456`, `123456789012345` or `12345678901234567` is validated
+- **THEN** it is rejected
+
+### Requirement: Telephone storage
+The telephone number SHALL be stored as provided, without encryption or format validation beyond being present.
+
+#### Scenario: Telephone stored as given
+- **WHEN** a user is created with telephone `612345678`
+- **THEN** the stored user has telephone `612345678`
+
+### Requirement: Create user
+The command `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta` SHALL create and persist a user only when all fields are present and valid and neither the DNI nor the email belongs to an existing user. Otherwise no user SHALL be stored and an error message SHALL be reported.
+
+#### Scenario: Successful creation
+- **WHEN** `USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456` is executed with no existing users
+- **THEN** the user is created, persisted, and a success message is shown
+
+#### Scenario: Invalid field
+- **WHEN** a create command contains an invalid DNI, email, password or card number, or an empty field
+- **THEN** no user is created and an error message is shown
+
+#### Scenario: Duplicate DNI
+- **WHEN** a user with DNI `12345678Z` and email `ana@correo.com` exists and `USER CREATE` is executed with DNI `12345678Z` and email `otro@correo.com`
+- **THEN** no user is created and an error message is shown
+
+#### Scenario: Duplicate email
+- **WHEN** a user with DNI `12345678Z` and email `ana@correo.com` exists and `USER CREATE` is executed with DNI `87654321X` and email `ana@correo.com`
+- **THEN** no user is created and an error message is shown
+
+### Requirement: Delete user
+The command `USER DELETE;Correo;Contraseña` SHALL delete the user with that email only if it exists and the password matches the stored password, and SHALL then update the persistent file. Otherwise no user SHALL be deleted and an error message SHALL be reported.
+
+#### Scenario: Successful deletion
+- **WHEN** user `ana@correo.com` with password `Clave1!` exists and `USER DELETE;ana@correo.com;Clave1!` is executed
+- **THEN** the user is removed from memory and from the persistent file
+
+#### Scenario: Unknown email or wrong password
+- **WHEN** `USER DELETE` is executed with an email that does not exist or a password that does not match
+- **THEN** no user is deleted and an error message is shown
+
+### Requirement: Update user
+The command `USER UPDATE;Correo;Contraseña;Campo;NuevoValor` SHALL update one field of the user identified by the current email after verifying the current password. `Campo` SHALL be one of `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD`. After a successful update the persistent file SHALL reflect the new state.
+
+#### Scenario: Update first name
+- **WHEN** `USER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria` is executed for an existing user with matching password
+- **THEN** the user's first name becomes `Ana Maria` and is persisted
+
+#### Scenario: Update email
+- **WHEN** `USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com` is executed
+- **THEN** the user is afterwards identified by `ana.nueva@correo.com`
+
+#### Scenario: Update password and card
+- **WHEN** `USER UPDATE;ana.nueva@correo.com;Clave1!;PASSWORD;Nueva2#` and then `USER UPDATE;ana.nueva@correo.com;Nueva2#;CARD;9999888877776666` are executed
+- **THEN** both updates succeed and are persisted
+
+#### Scenario: Wrong credentials
+- **WHEN** `USER UPDATE` is executed with an unknown email or a non-matching password
+- **THEN** no data changes and an error message is shown
+
+### Requirement: Update validation
+When updating, a new email SHALL satisfy email validation and SHALL NOT belong to another user; a new password SHALL satisfy password validation; a new card number SHALL satisfy card validation. An unknown field name, including `DNI`, SHALL be rejected. A rejected update SHALL leave the user unchanged.
+
+#### Scenario: DNI cannot be updated
+- **WHEN** `USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X` is executed
+- **THEN** the update is rejected and the DNI is unchanged
+
+#### Scenario: New email taken
+- **WHEN** an update sets EMAIL to an address that belongs to another user
+- **THEN** the update is rejected
+
+#### Scenario: Invalid new value
+- **WHEN** an update sets PASSWORD to `clave1!` or CARD to `123456789012345` or EMAIL to `ana@correo`
+- **THEN** the update is rejected and the user is unchanged
