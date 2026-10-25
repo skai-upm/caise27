@@ -134,4 +134,62 @@ class AppTest {
         App.start(new String[0], new ByteArrayInputStream(new byte[0]), out, blocked);
         assertTrue(output().startsWith("ERROR "));
     }
+
+    private Path data() {
+        return dir.resolve("data");
+    }
+
+    private Path tmp() {
+        return dir.resolve("tmp");
+    }
+
+    private void launch(String input, String... args) {
+        App.launch(args, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)), out, data(), tmp(),
+                TemporaryDirectoryTest.START);
+    }
+
+    @Test
+    void normalLaunchUsesPermanentData() throws IOException {
+        launch(CommandProcessorTest.CREATE_ANA + "\n");
+        assertEquals(1, Files.readAllLines(data().resolve("users.txt")).size());
+        assertFalse(Files.exists(tmp()));
+    }
+
+    @Test
+    void flyModeIsolatesAndDeletesItsData() throws IOException {
+        launch(CommandProcessorTest.CREATE_ANA + "\n");
+        List<String> permanent = Files.readAllLines(data().resolve("users.txt"));
+        bytes.reset();
+        launch(CommandProcessorTest.CREATE_ANA + "\n" + CREATE_PEDRO + "\nEXIT\n", "--fly");
+        assertEquals("OK USER CREATED" + NL + "OK USER CREATED" + NL + "OK EXIT" + NL, output());
+        assertEquals(permanent, Files.readAllLines(data().resolve("users.txt")));
+        assertTrue(Files.isDirectory(tmp()));
+        try (var children = Files.list(tmp())) {
+            assertEquals(0, children.count());
+        }
+    }
+
+    @Test
+    void flyModeWithCommandFile() throws IOException {
+        Path commands = dir.resolve("input_fase2.txt");
+        Files.write(commands, List.of(CommandProcessorTest.CREATE_ANA, "USER DELETE;ana@correo.com;Clave1!"));
+        launch("", "--fly", commands.toString());
+        assertEquals("OK USER CREATED" + NL + "OK USER DELETED" + NL, output());
+        assertFalse(Files.exists(data()));
+        assertFalse(Files.exists(tmp().resolve("20260826_190315")));
+    }
+
+    @Test
+    void flyModeCleansUpAfterFileErrors() {
+        launch("", "no_existe.txt", "--fly");
+        assertEquals("ERROR CANNOT READ FILE no_existe.txt" + NL, output());
+        assertFalse(Files.exists(tmp().resolve("20260826_190315")));
+    }
+
+    @Test
+    void reportsTemporaryDirectoryFailure() throws IOException {
+        Files.createFile(tmp());
+        launch("", "--fly");
+        assertEquals("ERROR CANNOT CREATE TEMPORARY DIRECTORY" + NL, output());
+    }
 }

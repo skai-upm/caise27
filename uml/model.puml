@@ -10,6 +10,8 @@ package es.upm.parque {
 
   class App
 
+  class TemporaryDirectory
+
   class CommandProcessor {
     finished : boolean
   }
@@ -136,6 +138,7 @@ Attraction "0..*" o--> "0..*" User : present
 
 ' Usage of classes without incoming relationships
 App ..> CommandProcessor : creates and runs
+App ..> TemporaryDirectory : uses in --fly mode
 UserManager ..> UserField : uses
 UserManager ..> UserValidator : uses
 GroupManager ..> UserValidator : uses

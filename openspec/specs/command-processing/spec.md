@@ -43,7 +43,7 @@ An unknown operation, or a known operation with fewer or more parameters than it
 - **THEN** the response is `ERROR WRONG NUMBER OF PARAMETERS` and no user is created
 
 ### Requirement: Execution mode selection
-The application SHALL run in interactive mode, reading standard input, when started without arguments, and in file mode, reading the file whose path is the first argument, when started with at least one argument.
+The application SHALL run in interactive mode, reading standard input, when started without arguments, and in file mode, reading the file whose path is the first argument, when started with at least one argument. The option `--fly` (temporary persistence) is not a file path: it is removed from the arguments before this selection, so `--fly` alone means interactive mode and `--fly <file>` means file mode.
 
 #### Scenario: No arguments
 - **WHEN** the application is started without arguments and receives `HELP` and `EXIT` on standard input
@@ -52,6 +52,10 @@ The application SHALL run in interactive mode, reading standard input, when star
 #### Scenario: File argument
 - **WHEN** the application is started with argument `input_basico.txt`
 - **THEN** it processes the commands contained in that file instead of standard input
+
+#### Scenario: Fly option is not a file
+- **WHEN** the application is started with the single argument `--fly`
+- **THEN** it runs in interactive mode with temporary persistence
 
 ### Requirement: Command file execution
 In file mode the application SHALL read the file line by line, interpret each non-blank line as a command and execute the commands in the order they appear, using exactly the same command processing as interactive mode, so the same command yields the same result from the terminal or from a file.
