@@ -32,7 +32,7 @@ class AppTest {
     private String run(String[] args, String stdin) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         InputStream in = new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8));
-        App.run(args, dir.resolve("users.txt"), in, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        App.run(args, dir, dir.resolve("tmp"), in, new PrintStream(buffer, true, StandardCharsets.UTF_8));
         return buffer.toString(StandardCharsets.UTF_8);
     }
 
@@ -96,6 +96,62 @@ class AppTest {
         run(new String[0], CREATE_ANA + "\nEXIT\n");
         String out = run(new String[0], "USER DELETE;ana@correo.com;Clave1!\nEXIT\n");
         assertTrue(out.startsWith("OK USER DELETED"));
+        assertTrue(storedUsers().isEmpty());
+    }
+
+    @Test
+    void flyModeUsesTemporaryDirectoryAndDeletesItAfterExit() throws IOException {
+        run(new String[0], CREATE_ANA + "\nEXIT\n");
+        String before = Files.readString(dir.resolve("users.txt"));
+        Path commands = dir.resolve("input_fase2.txt");
+        Files.writeString(commands, CREATE_PEDRO + "\nUSER DELETE;ana@correo.com;Clave1!\nEXIT\n");
+
+        String out = run(new String[] {"--fly", commands.toString()}, "");
+
+        assertEquals(String.join(System.lineSeparator(), "ERROR User not found: ana@correo.com", "OK EXIT", ""),
+                out.substring(out.indexOf(System.lineSeparator()) + System.lineSeparator().length()));
+        assertTrue(out.startsWith("OK USER CREATED"));
+        assertEquals(before, Files.readString(dir.resolve("users.txt")));
+        try (var entries = Files.list(dir.resolve("tmp"))) {
+            assertEquals(0, entries.count());
+        }
+    }
+
+    @Test
+    void flyModeInteractiveKeepsDataWithinTheRun() throws IOException {
+        String out = run(new String[] {"--fly"}, CREATE_ANA + "\nUSER DELETE;ana@correo.com;Clave1!\n");
+        assertEquals(String.join(System.lineSeparator(), "OK USER CREATED", "OK USER DELETED", ""), out);
+        assertTrue(Files.notExists(dir.resolve("users.txt")));
+        try (var entries = Files.list(dir.resolve("tmp"))) {
+            assertEquals(0, entries.count());
+        }
+    }
+
+    @Test
+    void flyDirectoryIsTimestampedAndUnique() throws IOException {
+        Path first = App.createTempDataDir(dir.resolve("tmp"));
+        Path second = App.createTempDataDir(dir.resolve("tmp"));
+        assertTrue(first.getFileName().toString().matches("\\d{8}_\\d{6}(_\\d+)?"));
+        assertTrue(Files.isDirectory(first) && Files.isDirectory(second));
+        assertTrue(!first.equals(second));
+        Files.writeString(first.resolve("users.txt"), "x");
+        App.deleteRecursively(first);
+        assertTrue(Files.notExists(first));
+    }
+
+    @Test
+    void flyCleanupHappensAlsoWhenTheFileCannotBeRead() throws IOException {
+        String out = run(new String[] {"--fly", dir.resolve("missing.txt").toString()}, "");
+        assertTrue(out.startsWith("ERROR Cannot read command file"));
+        try (var entries = Files.list(dir.resolve("tmp"))) {
+            assertEquals(0, entries.count());
+        }
+    }
+
+    @Test
+    void invalidArgumentsAreReported() {
+        assertTrue(run(new String[] {"--foo"}, CREATE_ANA).startsWith("ERROR Unknown option: --foo"));
+        assertTrue(run(new String[] {"a.txt", "b.txt"}, CREATE_ANA).startsWith("ERROR Only one command file"));
         assertTrue(storedUsers().isEmpty());
     }
 }

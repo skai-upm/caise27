@@ -62,8 +62,10 @@ public class UserManager {
         return user;
     }
 
-    public void delete(String email, String password) {
-        User user = authenticate(email, password);
+    /**
+     * Removes an already authenticated user. Rules involving other entities are checked by the caller.
+     */
+    public void remove(User user) {
         users.remove(user);
         repository.save(users);
     }
@@ -96,7 +98,7 @@ public class UserManager {
         repository.save(users);
     }
 
-    private User authenticate(String email, String password) {
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null) {
             throw new IllegalArgumentException("User not found: " + email);

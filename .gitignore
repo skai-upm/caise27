@@ -29,3 +29,6 @@ data/
 # SDDX metrics output (run records embed the Sonar token; never commit)
 experiments/
 sonar_metric_catalog.json
+
+# Temporary --fly execution data
+tmp/

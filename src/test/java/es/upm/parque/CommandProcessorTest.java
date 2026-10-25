@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,8 +29,9 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() {
         buffer = new ByteArrayOutputStream();
-        manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        ParkController park = new ParkController(dir, LocalDate.of(2026, 10, 1));
+        manager = park.getUsers();
+        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     private String output() {
@@ -89,8 +91,15 @@ class CommandProcessorTest {
         assertTrue(help.contains("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta"));
         assertTrue(help.contains("USER DELETE;Correo;Contraseña"));
         assertTrue(help.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
-        assertTrue(help.contains("HELP"));
-        assertTrue(help.contains("EXIT"));
+        for (String syntax : new String[] {"SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Precio",
+                "GROUP CREATE;IdGrupo;Nombre", "GROUP ADD;IdGrupo;Correo", "GROUP REMOVE;IdGrupo;Correo",
+                "GROUP DELETE;IdGrupo", "TICKET CREATE;IdEntrada;Correo;Fecha", "TICKET DELETE;IdEntrada",
+                "GROUPTICKET CREATE;IdEntrada;IdGrupo;Fecha", "GROUPTICKET DELETE;IdEntrada",
+                "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad", "ATTRACTION DELETE;IdAtraccion",
+                "ATTRACTION ENTER;IdAtraccion;IdEntrada", "ATTRACTION EXIT;IdAtraccion;IdEntrada",
+                "ATTRACTION STATUS;IdAtraccion", "HELP", "EXIT"}) {
+            assertTrue(help.contains("  " + syntax + System.lineSeparator()), syntax);
+        }
     }
 
     @Test

@@ -64,11 +64,11 @@ class UserManagerTest {
 
     @Test
     void deleteRequiresExistingEmailAndCorrectPassword() throws IOException {
-        assertThrows(IllegalArgumentException.class, () -> manager.delete("nadie@correo.com", "Clave1!"));
-        assertThrows(IllegalArgumentException.class, () -> manager.delete("ana@correo.com", "Mala1!"));
+        assertThrows(IllegalArgumentException.class, () -> manager.authenticate("nadie@correo.com", "Clave1!"));
+        assertThrows(IllegalArgumentException.class, () -> manager.authenticate("ana@correo.com", "Mala1!"));
         assertEquals(1, manager.getUsers().size());
 
-        manager.delete("ana@correo.com", "Clave1!");
+        manager.remove(manager.authenticate("ana@correo.com", "Clave1!"));
         assertTrue(manager.getUsers().isEmpty());
         assertEquals("", Files.readString(file));
     }
@@ -129,7 +129,7 @@ class UserManagerTest {
     void usersAreRestoredByANewManager() {
         UserManager restarted = new UserManager(new UserRepository(file));
         assertNotNull(restarted.findByDni("12345678Z"));
-        restarted.delete("ana@correo.com", "Clave1!");
+        restarted.remove(restarted.authenticate("ana@correo.com", "Clave1!"));
         assertTrue(new UserManager(new UserRepository(file)).getUsers().isEmpty());
     }
 }

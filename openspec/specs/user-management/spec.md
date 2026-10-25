@@ -95,7 +95,7 @@ The system SHALL reject creating a user whose DNI or email already belongs to an
 - **THEN** the user is not created and an `ERROR` result is printed
 
 ### Requirement: Delete user
-The command `USER DELETE;Correo;Contraseña` SHALL delete the user with that email only if the user exists and the supplied password matches the stored password; the stored data SHALL then be updated.
+The command `USER DELETE;Correo;Contraseña` SHALL delete the user with that email only if the user exists, the supplied password matches the stored password, and the user has no ticket (individual or part of a group ticket) dated on or after the system date. On deletion the user SHALL also be removed from every group it belonged to, and the stored data SHALL then be updated.
 
 #### Scenario: Successful deletion
 - **WHEN** `USER DELETE;ana@correo.com;Clave1!` is processed and the user exists with that password
@@ -108,6 +108,18 @@ The command `USER DELETE;Correo;Contraseña` SHALL delete the user with that ema
 #### Scenario: Wrong password
 - **WHEN** `USER DELETE` is processed with an existing email and a wrong password
 - **THEN** the user is not deleted and an `ERROR` result is printed
+
+#### Scenario: Current or future ticket blocks deletion
+- **WHEN** the system date is 2026-10-01, Ana has ticket T001 dated 2026-10-15 and `USER DELETE;ana@correo.com;Clave1!` is processed
+- **THEN** the user is not deleted and an `ERROR` result is printed
+
+#### Scenario: Past ticket does not block deletion
+- **WHEN** the system date is 2026-10-16 and Ana's only ticket is dated 2026-10-15
+- **THEN** `USER DELETE;ana@correo.com;Clave1!` deletes the user and the ticket is kept as history
+
+#### Scenario: Deleted user leaves its groups
+- **WHEN** Ana is a member of an unlocked group G01 and is deleted
+- **THEN** G01 no longer contains Ana
 
 ### Requirement: Update user
 The command `USER UPDATE;Correo;Contraseña;Campo;NuevoValor` SHALL update one field of the user identified by the current email after verifying the current password. `Campo` SHALL be one of `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD` (case-insensitive). After a successful update the stored data SHALL reflect the new state.

@@ -1,0 +1,129 @@
+@startuml model
+' Amusement Park - class model derived from the current implementation (package es.upm.parque).
+' Conventions: relationships are drawn from the class holding the attribute and named like it;
+' the cross marks the non-navigable end. Usage arrows only for classes without incoming relationships.
+
+hide empty members
+hide circle
+skinparam classAttributeIconSize 0
+
+class App
+class CommandProcessor
+class "CommandProcessor.Command" as Command {
+  syntax : String
+  params : int
+}
+interface "CommandProcessor.Handler" as Handler
+
+class ParkController {
+  systemDate : LocalDate
+  ticketPrice : BigDecimal
+}
+
+class UserManager
+class GroupManager
+class TicketManager
+class AttractionManager
+
+class UserRepository
+class GroupRepository
+class TicketRepository
+class AttractionRepository
+class TextFile
+
+class UserValidator
+class Identifiers
+
+class User {
+  name : String
+  surname : String
+  dni : String
+  email : String
+  password : String
+  phone : String
+  card : String
+}
+
+enum UserField {
+  NAME
+  SURNAME
+  EMAIL
+  PASSWORD
+  PHONE
+  CARD
+}
+
+class Group {
+  id : String
+  name : String
+}
+
+abstract class Ticket {
+  id : String
+  date : LocalDate
+  price : BigDecimal
+}
+
+class IndividualTicket {
+  ownerDni : String
+}
+
+class GroupTicket {
+  groupId : String
+}
+
+class Attraction {
+  id : String
+  name : String
+  capacity : int
+}
+
+' ---- inheritance ----
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' ---- command processing ----
+CommandProcessor "1" x--> "1" ParkController : park
+CommandProcessor "1" x--> "0..*" Command : commands
+Command "0..*" x--> "1" Handler : handler
+
+' ---- controller and managers ----
+ParkController "1" x--> "1" UserManager : users
+ParkController "1" x--> "1" GroupManager : groups
+ParkController "1" x--> "1" TicketManager : tickets
+ParkController "1" x--> "1" AttractionManager : attractions
+
+UserManager "1" x--> "1" UserRepository : repository
+GroupManager "1" x--> "1" GroupRepository : repository
+TicketManager "1" x--> "1" TicketRepository : repository
+AttractionManager "1" x--> "1" AttractionRepository : repository
+
+UserManager "1" x--> "0..*" User : users
+GroupManager "1" x--> "0..*" Group : groups
+TicketManager "1" x--> "0..*" Ticket : tickets
+AttractionManager "1" x--> "0..*" Attraction : attractions
+
+' ---- domain ----
+Group "0..*" x--> "0..*" User : members
+Attraction "0..*" x--> "0..*" User : present
+IndividualTicket "0..*" x--> "0..1" User : user
+IndividualTicket "0..*" x--> "0..1" GroupTicket : groupTicket
+GroupTicket "1" *--> "1..*" IndividualTicket : tickets
+GroupTicket "0..*" o--> "0..1" Group : group
+
+' ---- usage of classes without incoming relationships ----
+App ..> ParkController : <<use>>
+App ..> CommandProcessor : <<use>>
+UserManager ..> UserField : <<use>>
+UserManager ..> UserValidator : <<use>>
+GroupManager ..> UserValidator : <<use>>
+AttractionManager ..> UserValidator : <<use>>
+GroupManager ..> Identifiers : <<use>>
+TicketManager ..> Identifiers : <<use>>
+AttractionManager ..> Identifiers : <<use>>
+UserRepository ..> TextFile : <<use>>
+GroupRepository ..> TextFile : <<use>>
+TicketRepository ..> TextFile : <<use>>
+AttractionRepository ..> TextFile : <<use>>
+
+@enduml
