@@ -1,5 +1,6 @@
 package es.upm.parque;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 
@@ -12,18 +13,22 @@ public class CommandProcessor {
     static final String WRONG_PARAMETERS = "ERROR WRONG NUMBER OF PARAMETERS";
     static final String UNEXPECTED_ERROR = "ERROR UNEXPECTED FAILURE";
     static final String EXIT_RESPONSE = "OK EXIT";
+    static final String INVALID_DATE = "ERROR INVALID DATE";
     static final List<String> COMMAND_SYNTAX = List.of(
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
 
     private final UserManager users;
+    private final SystemDate systemDate;
     private boolean finished;
 
-    public CommandProcessor(UserManager users) {
+    public CommandProcessor(UserManager users, SystemDate systemDate) {
         this.users = users;
+        this.systemDate = systemDate;
     }
 
     public String process(String line) {
@@ -37,6 +42,7 @@ public class CommandProcessor {
                 case "USER CREATE" -> createUser(parts);
                 case "USER DELETE" -> deleteUser(parts);
                 case "USER UPDATE" -> updateUser(parts);
+                case "SYSTEM DATE" -> setDate(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> UNKNOWN_COMMAND;
@@ -51,6 +57,25 @@ public class CommandProcessor {
      */
     public boolean isFinished() {
         return finished;
+    }
+
+    /**
+     * The application's single current date, shared with every component that needs it.
+     */
+    public SystemDate getSystemDate() {
+        return systemDate;
+    }
+
+    private String setDate(String[] p) {
+        if (p.length != 2) {
+            return WRONG_PARAMETERS;
+        }
+        LocalDate date = SystemDate.parse(p[1]);
+        if (date == null) {
+            return INVALID_DATE;
+        }
+        systemDate.set(date);
+        return "OK SYSTEM DATE -> " + SystemDate.format(date);
     }
 
     private String help(String[] p) {

@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 /**
  * Starts the application. Without arguments commands are read from standard input;
@@ -26,7 +27,8 @@ public class App {
     static void start(String[] args, InputStream stdin, PrintStream out, Path usersFile) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new UserManager(new UserRepository(usersFile)));
+            processor = new CommandProcessor(new UserManager(new UserRepository(usersFile)),
+                    new SystemDate(LocalDate.now()));
         } catch (IOException e) {
             out.println("ERROR " + e.getMessage());
             return;

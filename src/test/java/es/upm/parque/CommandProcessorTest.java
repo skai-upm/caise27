@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,7 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() throws IOException {
         users = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(users);
+        processor = new CommandProcessor(users, new SystemDate(LocalDate.of(2026, 1, 1)));
     }
 
     @Test
@@ -69,7 +70,7 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailuresBecomeErrors() {
-        CommandProcessor broken = new CommandProcessor(null);
+        CommandProcessor broken = new CommandProcessor(null, new SystemDate(LocalDate.of(2026, 1, 1)));
         assertEquals(CommandProcessor.UNEXPECTED_ERROR, broken.process(CREATE_ANA));
     }
 
@@ -103,5 +104,26 @@ class CommandProcessorTest {
         assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("HELP;x"));
         assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("EXIT;x"));
         assertFalse(processor.isFinished());
+    }
+
+    @Test
+    void setsSystemDateBackwardsAndForwards() {
+        assertEquals("OK SYSTEM DATE -> 2026-09-15", processor.process("SYSTEM DATE;2026-09-15"));
+        assertEquals(LocalDate.of(2026, 9, 15), processor.getSystemDate().get());
+        assertEquals("OK SYSTEM DATE -> 2025-01-01", processor.process("system date; 2025-01-01 "));
+        assertEquals(LocalDate.of(2025, 1, 1), processor.getSystemDate().get());
+    }
+
+    @Test
+    void rejectsInvalidSystemDate() {
+        assertEquals(CommandProcessor.INVALID_DATE, processor.process("SYSTEM DATE;15/09/2026"));
+        assertEquals(CommandProcessor.INVALID_DATE, processor.process("SYSTEM DATE;2026-02-30"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("SYSTEM DATE"));
+        assertEquals(LocalDate.of(2026, 1, 1), processor.getSystemDate().get());
+    }
+
+    @Test
+    void helpListsSystemDate() {
+        assertTrue(processor.process("HELP").lines().anyMatch("SYSTEM DATE;yyyy-MM-dd"::equals));
     }
 }

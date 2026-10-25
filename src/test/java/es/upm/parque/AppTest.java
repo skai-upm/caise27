@@ -13,6 +13,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,8 @@ class AppTest {
 
     @Test
     void printsOneResponsePerNonBlankLine() throws IOException {
-        CommandProcessor processor = new CommandProcessor(new UserManager(new UserRepository(dir.resolve("u.txt"))));
+        CommandProcessor processor = new CommandProcessor(new UserManager(new UserRepository(dir.resolve("u.txt"))),
+                new SystemDate(LocalDate.of(2026, 1, 1)));
         String input = CommandProcessorTest.CREATE_ANA + "\n\n   \n"
                 + "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\nUSER FLY\n";
         App.run(new BufferedReader(new StringReader(input)), out, processor);
