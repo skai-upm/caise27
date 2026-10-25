@@ -124,6 +124,14 @@ package es.upm.parque.business.controller {
   class AttractionManager
 }
 
+package es.upm.parque.business.security {
+  interface PasswordHasher
+
+  class BCryptPasswordHasher {
+    logRounds : int
+  }
+}
+
 package es.upm.parque.persistence {
   class TemporaryDirectory
 
@@ -163,6 +171,7 @@ IndividualTicket --|> Ticket
 GroupTicket --|> Ticket
 StandardInvoiceBuilder ..|> InvoiceBuilder
 SyntaxHelpFormat ..|> HelpFormat
+BCryptPasswordHasher ..|> PasswordHasher
 ExtendedHelpFormat ..|> HelpFormat
 TextFileUserRepository ..|> UserRepository
 TextFileGroupRepository ..|> GroupRepository
@@ -187,6 +196,7 @@ CommandRegistry "1" *--> "0..*" CommandInfo : commands
 ' Users
 UserManager "1" x--> "1" UserRepository : repository
 UserManager "1" o--> "0..*" User : usersByDni
+UserManager "1" x--> "1" PasswordHasher : hasher
 
 ' Groups
 GroupManager "1" x--> "1" GroupRepository : repository
@@ -228,6 +238,7 @@ App ..> CommandProcessor : creates and runs
 App ..> TemporaryDirectory : uses in --fly mode
 App ..> Bootstrap : configures the application
 Bootstrap ..> StandardInvoiceBuilder : supplies invoice builders
+Bootstrap ..> BCryptPasswordHasher : injects into UserManager
 Bootstrap ..> SyntaxHelpFormat : injects into HELP
 Bootstrap ..> ExtendedHelpFormat : injects into HELP EXTENDED
 Bootstrap ..> TextFileUserRepository : creates

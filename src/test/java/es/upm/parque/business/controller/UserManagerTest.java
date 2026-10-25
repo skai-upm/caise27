@@ -1,8 +1,10 @@
 package es.upm.parque.business.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import es.upm.parque.Park;
 import es.upm.parque.Fixtures;
 import es.upm.parque.business.model.User;
 import es.upm.parque.persistence.TextFileUserRepository;
@@ -28,14 +31,19 @@ class UserManagerTest {
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        manager = UserManager.initialize(new TextFileUserRepository(file));
+        manager = UserManager.initialize(new TextFileUserRepository(file), Park.HASHER);
     }
 
     @Test
     void createsAndPersistsValidUser() throws IOException {
         assertEquals(UserManager.USER_CREATED, manager.create(Fixtures.ana()));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
-                Files.readAllLines(file));
+        List<String> lines = Files.readAllLines(file);
+        assertEquals(1, lines.size());
+        String[] fields = lines.get(0).split(";");
+        assertEquals(List.of("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com"), List.of(fields).subList(0, 4));
+        assertEquals(List.of("612345678", "1234567890123456"), List.of(fields).subList(5, 7));
+        assertTrue(Park.HASHER.matches("Clave1!", fields[4]));
+        assertFalse(lines.get(0).contains("Clave1!"));
     }
 
     @Test
@@ -76,7 +84,7 @@ class UserManagerTest {
         assertEquals(1, manager.count());
         assertEquals(UserManager.USER_DELETED, manager.delete("ana@correo.com", "Clave1!"));
         assertEquals(0, manager.count());
-        assertEquals(0, UserManager.initialize(new TextFileUserRepository(file)).count());
+        assertEquals(0, UserManager.initialize(new TextFileUserRepository(file), Park.HASHER).count());
     }
 
     @Test
@@ -91,12 +99,12 @@ class UserManagerTest {
                 manager.update("ana.nueva@correo.com", "Clave1!", "PASSWORD", "Nueva2#"));
         assertEquals(UserManager.USER_UPDATED,
                 manager.update("ana.nueva@correo.com", "Nueva2#", "card", "9999888877776666"));
-        User reloaded = UserManager.initialize(new TextFileUserRepository(file)).findByEmail("ana.nueva@correo.com");
+        User reloaded = UserManager.initialize(new TextFileUserRepository(file), Park.HASHER).findByEmail("ana.nueva@correo.com");
         assertNotNull(reloaded);
         assertEquals("Ana Maria", reloaded.getName());
         assertEquals("Ruiz", reloaded.getSurname());
         assertEquals("699999999", reloaded.getPhone());
-        assertEquals("Nueva2#", reloaded.getPassword());
+        assertTrue(Park.HASHER.matches("Nueva2#", reloaded.getPassword()));
         assertEquals("9999888877776666", reloaded.getCard());
         assertEquals("12345678Z", reloaded.getDni());
     }
@@ -118,14 +126,14 @@ class UserManagerTest {
                 manager.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo.com"));
         User ana = manager.findByEmail("ana@correo.com");
         assertEquals("Ana", ana.getName());
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(Park.HASHER.matches("Clave1!", ana.getPassword()));
         assertEquals("1234567890123456", ana.getCard());
     }
 
     @Test
     void restartKeepsUsersForUniqueness() throws IOException {
         manager.create(Fixtures.ana());
-        UserManager restarted = UserManager.initialize(new TextFileUserRepository(file));
+        UserManager restarted = UserManager.initialize(new TextFileUserRepository(file), Park.HASHER);
         assertEquals(UserManager.DUPLICATE_DNI, restarted.create(Fixtures.ana()));
         assertNull(restarted.findByEmail("pedro@correo.com"));
     }
@@ -134,7 +142,7 @@ class UserManagerTest {
     void reportsStorageFailure() throws IOException {
         Path blocked = dir.resolve("blocked");
         Files.createFile(blocked);
-        UserManager broken = UserManager.initialize(new TextFileUserRepository(blocked.resolve("users.txt")));
+        UserManager broken = UserManager.initialize(new TextFileUserRepository(blocked.resolve("users.txt")), Park.HASHER);
         assertEquals(UserManager.STORAGE_FAILURE, broken.create(Fixtures.ana()));
     }
 
@@ -143,5 +151,34 @@ class UserManagerTest {
         manager.create(Fixtures.ana());
         assertEquals("ana@correo.com", manager.findByDni("12345678Z").getEmail());
         assertNull(manager.findByDni("87654321X"));
+    }
+
+    @Test
+    void passwordChangeStoresNewHashAndOnlyNewPasswordWorks() throws IOException {
+        manager.create(Fixtures.ana());
+        String oldHash = manager.findByEmail("ana@correo.com").getPassword();
+        assertEquals(UserManager.INVALID_PASSWORD, manager.update("ana@correo.com", "Clave1!", "PASSWORD", "debil"));
+        assertEquals(UserManager.USER_UPDATED, manager.update("ana@correo.com", "Clave1!", "PASSWORD", "Nueva2#"));
+        assertFalse(oldHash.equals(manager.findByEmail("ana@correo.com").getPassword()));
+        UserManager restarted = UserManager.initialize(new TextFileUserRepository(file), Park.HASHER);
+        assertEquals(UserManager.INVALID_CREDENTIALS, restarted.delete("ana@correo.com", "Clave1!"));
+        assertEquals(UserManager.USER_DELETED, restarted.delete("ana@correo.com", "Nueva2#"));
+    }
+
+    @Test
+    void plaintextPasswordsAreMigratedOnLoad() throws IOException {
+        Files.write(file, List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"));
+        UserManager migrated = UserManager.initialize(new TextFileUserRepository(file), Park.HASHER);
+        String stored = Files.readAllLines(file).get(0).split(";")[4];
+        assertTrue(Park.HASHER.isHash(stored));
+        assertEquals(UserManager.USER_DELETED, migrated.delete("ana@correo.com", "Clave1!"));
+    }
+
+    @Test
+    void hashedFilesAreNotRewrittenOnLoad() throws IOException {
+        manager.create(Fixtures.ana());
+        List<String> before = Files.readAllLines(file);
+        UserManager.initialize(new TextFileUserRepository(file), Park.HASHER);
+        assertEquals(before, Files.readAllLines(file));
     }
 }

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import es.upm.parque.Park;
 import es.upm.parque.Fixtures;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.User;
@@ -30,7 +31,7 @@ class GroupManagerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        users = UserManager.initialize(new TextFileUserRepository(dir.resolve("users.txt")));
+        users = UserManager.initialize(new TextFileUserRepository(dir.resolve("users.txt")), Park.HASHER);
         users.create(Fixtures.ana());
         users.create(Fixtures.pedro());
         groups = GroupManager.initialize(new TextFileGroupRepository(dir.resolve("groups.txt")), users);
@@ -92,7 +93,7 @@ class GroupManagerTest {
         groups.create("G01", "Familia Garcia");
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
-        UserManager restartedUsers = UserManager.initialize(new TextFileUserRepository(dir.resolve("users.txt")));
+        UserManager restartedUsers = UserManager.initialize(new TextFileUserRepository(dir.resolve("users.txt")), Park.HASHER);
         GroupManager restarted = GroupManager.initialize(new TextFileGroupRepository(dir.resolve("groups.txt")), restartedUsers);
         Group g01 = restarted.find("G01");
         assertEquals(2, g01.getMembers().size());

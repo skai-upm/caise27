@@ -7,6 +7,7 @@ import java.util.Map;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
 import es.upm.parque.business.model.UserValidator;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.UserRepository;
 
 /**
@@ -31,14 +32,15 @@ public class UserManager {
     private static UserManager instance;
 
     private final UserRepository repository;
+    private final PasswordHasher hasher;
     private final Map<String, User> usersByDni = new LinkedHashMap<>();
 
     /**
      * Creates the unique UserManager with its injected dependencies, replacing any previous instance.
      * Called once at application startup.
      */
-    public static UserManager initialize(UserRepository repository) throws IOException {
-        instance = new UserManager(repository);
+    public static UserManager initialize(UserRepository repository, PasswordHasher hasher) throws IOException {
+        instance = new UserManager(repository, hasher);
         return instance;
     }
 
@@ -52,10 +54,19 @@ public class UserManager {
         return instance;
     }
 
-    private UserManager(UserRepository repository) throws IOException {
+    private UserManager(UserRepository repository, PasswordHasher hasher) throws IOException {
         this.repository = repository;
+        this.hasher = hasher;
+        boolean migrated = false;
         for (User user : repository.load()) {
+            if (!hasher.isHash(user.getPassword())) {
+                user.setPassword(hasher.hash(user.getPassword()));
+                migrated = true;
+            }
             usersByDni.put(user.getDni(), user);
+        }
+        if (migrated) {
+            repository.save(usersByDni.values());
         }
     }
 
@@ -82,6 +93,7 @@ public class UserManager {
         if (findByEmail(user.getEmail()) != null) {
             return DUPLICATE_EMAIL;
         }
+        user.setPassword(hasher.hash(user.getPassword()));
         usersByDni.put(user.getDni(), user);
         return persist(USER_CREATED);
     }
@@ -112,7 +124,7 @@ public class UserManager {
             case NAME -> user.setName(value);
             case SURNAME -> user.setSurname(value);
             case EMAIL -> user.setEmail(value);
-            case PASSWORD -> user.setPassword(value);
+            case PASSWORD -> user.setPassword(hasher.hash(value));
             case PHONE -> user.setPhone(value);
             case CARD -> user.setCard(value);
         }
@@ -162,7 +174,7 @@ public class UserManager {
 
     private User authenticate(String email, String password) {
         User user = findByEmail(email);
-        return user != null && user.getPassword().equals(password) ? user : null;
+        return user != null && hasher.matches(password, user.getPassword()) ? user : null;
     }
 
     private String persist(String success) {

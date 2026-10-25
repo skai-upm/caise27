@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import es.upm.parque.Park;
 import es.upm.parque.Fixtures;
 import es.upm.parque.business.model.User;
 import es.upm.parque.persistence.UserRepository;
@@ -38,11 +39,11 @@ class InMemoryRepositoryTest {
     @Test
     void userManagerWorksWithInMemoryStorage() throws IOException {
         InMemoryUserRepository repository = new InMemoryUserRepository();
-        UserManager users = UserManager.initialize(repository);
+        UserManager users = UserManager.initialize(repository, Park.HASHER);
         assertEquals(UserManager.USER_CREATED, users.create(Fixtures.ana()));
         assertEquals(UserManager.USER_UPDATED, users.update("ana@correo.com", "Clave1!", "PHONE", "699999999"));
         assertEquals(2, repository.saves);
         assertEquals("699999999", repository.load().get(0).getPhone());
-        assertEquals(1, UserManager.initialize(repository).count());
+        assertEquals(1, UserManager.initialize(repository, Park.HASHER).count());
     }
 }

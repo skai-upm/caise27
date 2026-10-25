@@ -11,12 +11,17 @@ import es.upm.parque.business.controller.InvoiceManager;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.BCryptPasswordHasher;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.presentation.CommandProcessor;
 
 /**
  * Test fixture: the whole application wired over files in one directory.
  */
 public final class Park {
+
+    /** Fast BCrypt configuration for tests. */
+    public static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
 
     public final SystemDate date;
     public final UserManager users;
@@ -28,7 +33,7 @@ public final class Park {
 
     public Park(Path dir, LocalDate today) {
         try {
-            processor = Bootstrap.configure(dir, today);
+            processor = Bootstrap.configure(dir, today, HASHER);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

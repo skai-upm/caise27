@@ -13,6 +13,8 @@ import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
 import es.upm.parque.business.model.StandardInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.BCryptPasswordHasher;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.TextFileAttractionRepository;
 import es.upm.parque.persistence.TextFileGroupRepository;
 import es.upm.parque.persistence.TextFileGroupTicketRepository;
@@ -33,9 +35,17 @@ public final class Bootstrap {
     private Bootstrap() {
     }
 
+    static final int BCRYPT_LOG_ROUNDS = 10;
+
     public static CommandProcessor configure(Path dataDir, LocalDate today) throws IOException {
+        return configure(dataDir, today, new BCryptPasswordHasher(BCRYPT_LOG_ROUNDS));
+    }
+
+    public static CommandProcessor configure(Path dataDir, LocalDate today, PasswordHasher hasher)
+            throws IOException {
         SystemDate systemDate = new SystemDate(today);
-        UserManager users = UserManager.initialize(new TextFileUserRepository(dataDir.resolve("users.txt")));
+        UserManager users = UserManager.initialize(
+                new TextFileUserRepository(dataDir.resolve("users.txt")), hasher);
         GroupManager groups = GroupManager.initialize(
                 new TextFileGroupRepository(dataDir.resolve("groups.txt")), users);
         TicketManager tickets = TicketManager.initialize(
