@@ -1,0 +1,7 @@
+USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456
+USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654
+
+USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999
+HELP
+EXIT
+USER DELETE;pedro@correo.com;Otra2#
