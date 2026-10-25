@@ -1,0 +1,111 @@
+@startuml model
+' Amusement Park - class model (Delivery 2)
+' Associations: cross (x) at the class holding the attribute, arrow towards the referenced class.
+' Relationship labels are the names of the holding attributes.
+skinparam classAttributeIconSize 0
+hide empty methods
+hide empty members
+
+package es.upm.parque {
+
+  class App
+
+  class CommandProcessor {
+    exitRequested : boolean
+  }
+
+  class ParkController {
+    currentDate : LocalDate
+    ticketPrice : BigDecimal
+  }
+
+  class UserManager
+  class GroupManager
+  class TicketManager
+  class AttractionManager
+
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class AttractionRepository
+
+  class UserValidator
+
+  class User {
+    name : String
+    surname : String
+    dni : String
+    email : String
+    password : String
+    phone : String
+    card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    id : String
+    name : String
+  }
+
+  abstract class Ticket {
+    id : String
+    date : LocalDate
+  }
+
+  class IndividualTicket {
+    price : BigDecimal
+  }
+
+  class GroupTicket {
+    price : BigDecimal
+  }
+
+  class Attraction {
+    id : String
+    name : String
+    capacity : int
+  }
+}
+
+' ---- usage (only for classes without incoming relationships) ----
+App ..> CommandProcessor
+UserManager ..> UserValidator
+UserManager ..> UserField
+
+' ---- controller and managers ----
+CommandProcessor "1" x--> "1" ParkController : controller
+ParkController "1" x--> "1" UserManager : userManager
+ParkController "1" x--> "1" GroupManager : groupManager
+ParkController "1" x--> "1" TicketManager : ticketManager
+ParkController "1" x--> "1" AttractionManager : attractionManager
+
+UserManager "1" x--> "1" UserRepository : repository
+UserManager "1" x--> "0..*" User : users
+GroupManager "1" x--> "1" GroupRepository : repository
+GroupManager "1" x--> "0..*" Group : groups
+TicketManager "1" x--> "1" TicketRepository : repository
+TicketManager "1" x--> "0..*" Ticket : tickets
+AttractionManager "1" x--> "1" AttractionRepository : repository
+AttractionManager "1" x--> "0..*" Attraction : attractions
+
+' ---- domain ----
+Group "0..*" x--> "0..*" User : users
+Attraction "0..*" x--> "0..*" User : users
+
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+IndividualTicket "0..*" x--> "1" User : user
+IndividualTicket "1..*" x--> "0..1" GroupTicket : groupTicket
+GroupTicket "0..*" o--> "1" Group : group
+GroupTicket "1" *--> "1..*" IndividualTicket : tickets
+
+@enduml

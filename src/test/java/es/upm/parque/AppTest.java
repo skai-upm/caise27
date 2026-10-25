@@ -30,7 +30,7 @@ public class AppTest {
 
     private String runWith(String[] args) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        App.run(args, dir.resolve("users.txt"), new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        App.run(args, dir, new PrintStream(buffer, true, StandardCharsets.UTF_8));
         return buffer.toString(StandardCharsets.UTF_8);
     }
 
@@ -41,7 +41,7 @@ public class AppTest {
                 + CREATE_PEDRO + "\n");
         String out = runWith(new String[] {commands.toString()});
         assertFalse(out.contains("ERROR"), out);
-        String stored = Files.readString(dir.resolve("users.txt"));
+        String stored = Files.readString(dir.resolve("data/users.txt"));
         assertTrue(stored.contains("12345678Z;ana@correo.com;Clave1!;699999999"));
         assertFalse(stored.contains("Pedro"));
     }

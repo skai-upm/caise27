@@ -23,8 +23,9 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        ParkController controller = ParkController.load(dir);
+        manager = controller.getUserManager();
+        processor = new CommandProcessor(controller);
     }
 
     @Test
@@ -58,6 +59,12 @@ class CommandProcessorTest {
         assertTrue(help.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
         assertTrue(help.contains("HELP"));
         assertTrue(help.contains("EXIT"));
+        for (String cmd : new String[] {"SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;", "GROUP CREATE;", "GROUP ADD;",
+                "GROUP REMOVE;", "GROUP DELETE;", "TICKET CREATE;", "TICKET DELETE;", "GROUPTICKET CREATE;",
+                "GROUPTICKET DELETE;", "ATTRACTION CREATE;", "ATTRACTION DELETE;", "ATTRACTION ENTER;",
+                "ATTRACTION EXIT;", "ATTRACTION STATUS;"}) {
+            assertTrue(help.contains(cmd), cmd);
+        }
     }
 
     @Test

@@ -134,7 +134,7 @@ public class UserManager {
         return "OK USER UPDATED";
     }
 
-    private User authenticate(String email, String password) {
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null || !user.getPassword().equals(password)) {
             return null;
