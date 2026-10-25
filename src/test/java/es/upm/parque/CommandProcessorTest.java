@@ -75,7 +75,7 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailuresBecomeErrors() {
-        CommandProcessor broken = new CommandProcessor(null, null, null, new SystemDate(LocalDate.of(2026, 1, 1)));
+        CommandProcessor broken = new CommandProcessor(null, null, null, null, new SystemDate(LocalDate.of(2026, 1, 1)));
         assertEquals(CommandProcessor.UNEXPECTED_ERROR, broken.process(CREATE_ANA));
     }
 
@@ -249,5 +249,31 @@ class CommandProcessorTest {
         String help = processor.process("HELP");
         assertTrue(help.lines().anyMatch("GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd"::equals));
         assertTrue(help.lines().anyMatch("GROUPTICKET DELETE;Id"::equals));
+    }
+
+    @Test
+    void runsAttractionCommands() {
+        familyWithTicketFor("2026-10-15");
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A01;Tornado;20"));
+        assertEquals("OK ENTERED 2 USERS", processor.process("ATTRACTION ENTER;A01;TG01"));
+        assertTrue(processor.process("attraction status;A01").contains("Capacity: 20 | Present: 2 | Available: 18"));
+        assertEquals("OK EXITED 2 USERS", processor.process("ATTRACTION EXIT;A01;TG01"));
+        assertEquals("OK ATTRACTION DELETED", processor.process("ATTRACTION DELETE;A01"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION CREATE;A01;Tornado"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION DELETE"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION ENTER;A01"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION EXIT;A01"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION STATUS"));
+    }
+
+    @Test
+    void helpListsAttractionCommands() {
+        String help = processor.process("HELP");
+        for (String command : List.of("ATTRACTION CREATE;Id;Nombre;Aforo", "ATTRACTION DELETE;Id",
+                "ATTRACTION ENTER;IdAtraccion;IdEntrada", "ATTRACTION EXIT;IdAtraccion;IdEntrada",
+                "ATTRACTION STATUS;IdAtraccion")) {
+            assertTrue(help.lines().anyMatch(command::equals), command);
+        }
     }
 }

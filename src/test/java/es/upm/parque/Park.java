@@ -14,6 +14,7 @@ final class Park {
     final UserManager users;
     final GroupManager groups;
     final TicketManager tickets;
+    final AttractionManager attractions;
     final CommandProcessor processor;
 
     Park(Path dir, LocalDate today) {
@@ -23,7 +24,9 @@ final class Park {
             groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
             tickets = new TicketManager(new TicketRepository(dir.resolve("tickets.txt")),
                     new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups, date);
-            processor = new CommandProcessor(users, groups, tickets, date);
+            attractions = new AttractionManager(new AttractionRepository(dir.resolve("attractions.txt")), tickets,
+                    date);
+            processor = new CommandProcessor(users, groups, tickets, attractions, date);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

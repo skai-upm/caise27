@@ -29,6 +29,11 @@ public class CommandProcessor {
             "TICKET DELETE;Id",
             "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
             "GROUPTICKET DELETE;Id",
+            "ATTRACTION CREATE;Id;Nombre;Aforo",
+            "ATTRACTION DELETE;Id",
+            "ATTRACTION ENTER;IdAtraccion;IdEntrada",
+            "ATTRACTION EXIT;IdAtraccion;IdEntrada",
+            "ATTRACTION STATUS;IdAtraccion",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -37,13 +42,16 @@ public class CommandProcessor {
     private final UserManager users;
     private final GroupManager groups;
     private final TicketManager tickets;
+    private final AttractionManager attractions;
     private final SystemDate systemDate;
     private boolean finished;
 
-    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets, SystemDate systemDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
+                            AttractionManager attractions, SystemDate systemDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        this.attractions = attractions;
         this.systemDate = systemDate;
     }
 
@@ -70,6 +78,12 @@ public class CommandProcessor {
                 case "GROUPTICKET CREATE" -> withParameters(parts, 4,
                         () -> tickets.createGroupTicket(parts[1], parts[2], parts[3]));
                 case "GROUPTICKET DELETE" -> withParameters(parts, 2, () -> tickets.deleteGroupTicket(parts[1]));
+                case "ATTRACTION CREATE" -> withParameters(parts, 4,
+                        () -> attractions.create(parts[1], parts[2], parts[3]));
+                case "ATTRACTION DELETE" -> withParameters(parts, 2, () -> attractions.delete(parts[1]));
+                case "ATTRACTION ENTER" -> withParameters(parts, 3, () -> attractions.enter(parts[1], parts[2]));
+                case "ATTRACTION EXIT" -> withParameters(parts, 3, () -> attractions.exit(parts[1], parts[2]));
+                case "ATTRACTION STATUS" -> withParameters(parts, 2, () -> attractions.status(parts[1]));
                 case "SYSTEM DATE" -> setDate(parts);
                 case "SYSTEM PRICE" -> withParameters(parts, 2, () -> tickets.setPrice(parts[1]));
                 case "HELP" -> help(parts);

@@ -32,7 +32,9 @@ public class App {
             SystemDate systemDate = new SystemDate(LocalDate.now());
             TicketManager tickets = new TicketManager(new TicketRepository(dataDir.resolve("tickets.txt")),
                     new GroupTicketRepository(dataDir.resolve("grouptickets.txt")), users, groups, systemDate);
-            processor = new CommandProcessor(users, groups, tickets, systemDate);
+            AttractionManager attractions = new AttractionManager(
+                    new AttractionRepository(dataDir.resolve("attractions.txt")), tickets, systemDate);
+            processor = new CommandProcessor(users, groups, tickets, attractions, systemDate);
         } catch (IOException e) {
             out.println("ERROR " + e.getMessage());
             return;
