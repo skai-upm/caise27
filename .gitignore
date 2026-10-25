@@ -22,3 +22,6 @@ buildNumber.properties
 
 # Application runtime data
 data/
+
+# Temporary --fly execution data
+tmp/

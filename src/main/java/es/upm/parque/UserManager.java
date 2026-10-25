@@ -64,18 +64,20 @@ public class UserManager {
         return "OK USER CREATED " + email;
     }
 
-    public String deleteUser(String email, String password) {
-        User user = authenticate(email, password);
-        if (user == null) {
-            return "ERROR Unknown email or wrong password";
-        }
+    /**
+     * Removes the user and updates the storage. Returns false (leaving the user in place) if saving fails.
+     */
+    public boolean remove(User user) {
         int index = users.indexOf(user);
+        if (index < 0) {
+            return false;
+        }
         users.remove(index);
         if (!persist()) {
             users.add(index, user);
-            return "ERROR Could not save users";
+            return false;
         }
-        return "OK USER DELETED " + user.getEmail();
+        return true;
     }
 
     public String updateUser(String email, String password, UserField field, String value) {
@@ -96,7 +98,10 @@ public class UserManager {
         return "OK USER UPDATED " + field;
     }
 
-    private User authenticate(String email, String password) {
+    /**
+     * Returns the user with that email if the password matches, or {@code null} otherwise.
+     */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null || !user.passwordMatches(password)) {
             return null;
@@ -104,7 +109,7 @@ public class UserManager {
         return user;
     }
 
-    private User findByDni(String dni) {
+    public User findByDni(String dni) {
         for (User user : users) {
             if (user.getDni().equals(dni)) {
                 return user;

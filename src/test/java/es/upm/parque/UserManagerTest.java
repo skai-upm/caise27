@@ -70,11 +70,15 @@ public class UserManagerTest {
     }
 
     @Test
-    void deleteRequiresMatchingPassword() throws IOException {
-        assertError(manager.deleteUser("ana@correo.com", "Wrong1!"));
-        assertError(manager.deleteUser("nadie@correo.com", "Clave1!"));
-        assertEquals(1, manager.getUsers().size());
-        assertOk(manager.deleteUser("ana@correo.com", "Clave1!"));
+    void authenticateRequiresMatchingPassword() {
+        assertNull(manager.authenticate("ana@correo.com", "Wrong1!"));
+        assertNull(manager.authenticate("nadie@correo.com", "Clave1!"));
+        assertNotNull(manager.authenticate("ANA@correo.com", "Clave1!"));
+    }
+
+    @Test
+    void removeUpdatesStorage() throws IOException {
+        assertTrue(manager.remove(manager.findByEmail("ana@correo.com")));
         assertTrue(manager.getUsers().isEmpty());
         assertTrue(Files.readAllLines(file).isEmpty());
     }
@@ -122,6 +126,6 @@ public class UserManagerTest {
         User ana = restarted.findByEmail("ana@correo.com");
         assertNotNull(ana);
         assertEquals("699999999", ana.getPhone());
-        assertOk(restarted.deleteUser("ana@correo.com", "Clave1!"));
+        assertNotNull(restarted.authenticate("ana@correo.com", "Clave1!"));
     }
 }

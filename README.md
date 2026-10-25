@@ -24,17 +24,41 @@ processing stops at `EXIT`):
 java -jar target/parque.jar input_basico.txt
 ```
 
-Users are stored in `data/users.txt` (relative to the working directory), one user per line with fields
-separated by `;`, and are loaded again on every start.
+Temporary mode: `--fly` stores every data file in a new `tmp/<yyyyMMdd_HHmmss>/` directory that is deleted when
+the run ends, so the permanent data is never modified. It works in both modes:
+
+```bash
+java -jar target/parque.jar --fly
+java -jar target/parque.jar --fly input_fase2.txt
+```
+
+Data is stored in `data/` (relative to the working directory) as `;`-separated text files — `users.txt`,
+`groups.txt`, `tickets.txt`, `grouptickets.txt` and `attractions.txt` — and is loaded again on every start.
+The system date (initially today's date) and the ticket price (initially 40.00) are not stored.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
 | `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta` | Create a user after validating all data |
-| `USER DELETE;Correo;Contraseña` | Delete a user (password must match) |
+| `USER DELETE;Correo;Contraseña` | Delete a user (password must match; not while holding a ticket dated on or after the system date) |
 | `USER UPDATE;Correo;Contraseña;Campo;NuevoValor` | Update `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE` or `CARD` (the DNI cannot change) |
+| `SYSTEM DATE;yyyy-MM-dd` | Set the simulated current date used by every date rule |
+| `SYSTEM PRICE;Precio` | Set the individual ticket price |
+| `GROUP CREATE;Id;Nombre` | Create an empty group |
+| `GROUP ADD;Id;Correo` / `GROUP REMOVE;Id;Correo` | Add or remove an existing user (not while the group has a current/future group ticket) |
+| `GROUP DELETE;Id` | Delete a group (not while it has a current/future group ticket) |
+| `TICKET CREATE;Id;Correo;yyyy-MM-dd` | Buy an individual ticket (`OK TICKET CREATED -> <price>`) |
+| `TICKET DELETE;Id` | Delete a ticket dated after the system date |
+| `GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd` | Buy a group ticket: one ticket `<Id>-<DNI>` per member, with 0/10/20/50 % discount for <3, 3–5, 6–10, >10 members |
+| `GROUPTICKET DELETE;Id` | Delete a group ticket dated after the system date with its member tickets |
+| `ATTRACTION CREATE;Id;Nombre;Capacidad` / `ATTRACTION DELETE;Id` | Create or delete (when empty) an attraction |
+| `ATTRACTION ENTER;IdAtraccion;IdEntrada` | Enter with an individual or group ticket for the system date (all or nobody) |
+| `ATTRACTION EXIT;IdAtraccion;IdEntrada` | Leave an attraction |
+| `ATTRACTION STATUS;IdAtraccion` | Show capacity, occupancy, available places and users present |
 | `HELP` | Show the available commands |
 | `EXIT` | Stop processing commands |
 
 Successful commands print `OK ...`; invalid commands or data print `ERROR ...` and the application keeps running.
+
+The class model is documented in [`uml/model.puml`](uml/model.puml).

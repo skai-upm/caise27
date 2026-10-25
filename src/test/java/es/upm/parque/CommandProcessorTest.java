@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,8 +26,9 @@ public class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        ParkController park = new ParkController(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        manager = park.getUserManager();
+        processor = new CommandProcessor(park);
     }
 
     @Test
@@ -64,8 +66,23 @@ public class CommandProcessorTest {
         assertTrue(help.contains("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta"));
         assertTrue(help.contains("USER DELETE;Correo;Contraseña"));
         assertTrue(help.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
-        assertTrue(help.contains("HELP"));
-        assertTrue(help.contains("EXIT"));
+        for (String command : new String[] {"SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Precio", "GROUP CREATE;Id;Nombre",
+                "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd",
+                "TICKET DELETE;Id", "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id",
+                "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION DELETE;Id", "ATTRACTION ENTER;IdAtraccion;IdEntrada",
+                "ATTRACTION EXIT;IdAtraccion;IdEntrada", "ATTRACTION STATUS;IdAtraccion", "HELP", "EXIT"}) {
+            assertTrue(help.contains(command), command);
+        }
+    }
+
+    @Test
+    void reportsWrongParameterCountForNewCommands() {
+        for (String line : new String[] {"SYSTEM DATE", "SYSTEM PRICE;1;2", "GROUP CREATE;G01", "GROUP ADD;G01",
+                "GROUP REMOVE;G01", "GROUP DELETE", "TICKET CREATE;T1;a@b.com", "TICKET DELETE",
+                "GROUPTICKET CREATE;TG;G", "GROUPTICKET DELETE", "ATTRACTION CREATE;A;B", "ATTRACTION DELETE",
+                "ATTRACTION ENTER;A", "ATTRACTION EXIT;A", "ATTRACTION STATUS"}) {
+            assertTrue(processor.process(line).startsWith("ERROR Wrong number"), line);
+        }
     }
 
     @Test
