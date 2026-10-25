@@ -1,105 +1,265 @@
 @startuml model
-' Amusement Park — Delivery 2 class model (es.upm.etsisi.park)
+' Amusement Park — Delivery 3 class model (es.upm.etsisi.park)
 hide empty methods
 skinparam classAttributeIconSize 0
 
-package controller {
-  class ParkController <<Singleton>> {
-    - {static} instance : ParkController
-    - currentDate : LocalDate
-    - currentPrice : BigDecimal
+package presentation {
+  class App
+  class ParkInitializer <<composition root>>
+  class CommandProcessor
+  class CommandRunner
+  package help {
+    class HelpGenerator
+    interface HelpFormatter {
+      + format(commands : List<CommandInfo>) : String
+    }
+    class SyntaxHelpFormatter
+    class ExtendedHelpFormatter
+    class CommandCatalog
   }
 }
 
-package model {
-  class User {
-    - firstName : String
-    - surnames : String
-    - dni : String {readOnly}
-    - email : String
-    - password : String
-    - phone : String
-    - card : String
+package business {
+  package controller {
+    class ParkController <<Singleton>>
+    class SystemController <<Singleton>> {
+      - currentDate : LocalDate
+      - currentPrice : BigDecimal
+    }
+    class UserController <<Singleton>>
+    class GroupController <<Singleton>>
+    class TicketController <<Singleton>>
+    class PassController <<Singleton>>
+    class AttractionController <<Singleton>>
+    class InvoiceController <<Singleton>> <<Director>>
   }
 
-  enum UserField {
-    NAME
-    SURNAME
-    EMAIL
-    PASSWORD
-    PHONE
-    CARD
+  package model {
+    class User {
+      - firstName : String
+      - surnames : String
+      - dni : String {readOnly}
+      - email : String
+      - passwordHash : String
+      - phone : String
+      - card : String
+    }
+    enum UserField {
+      NAME
+      SURNAME
+      EMAIL
+      PASSWORD
+      PHONE
+      CARD
+    }
+    class Group {
+      - id : String
+      - name : String
+    }
+
+    interface AccessTicket {
+      + getHolders() : List<User>
+      + isValidOn(day : LocalDate) : boolean
+      + getAccessTickets() : List<IndividualTicket>
+    }
+    interface IndividualAccess {
+      + getIndividualTicket() : IndividualTicket
+    }
+    interface GroupAccess {
+      + getTickets() : List<IndividualTicket>
+    }
+
+    abstract class Ticket {
+      - id : String
+      - date : LocalDate
+      - basePrice : BigDecimal
+      + {abstract} getPrice() : BigDecimal
+    }
+    class IndividualTicket {
+      - discountPercent : int
+    }
+    class GroupTicket
+    enum GroupDiscount {
+      NONE
+      SMALL_GROUP
+      MEDIUM_GROUP
+      LARGE_GROUP
+      - percent : int
+    }
+
+    abstract class Pass {
+      - id : String
+      - price : BigDecimal
+      - consumed : boolean
+    }
+    class SpeedPass
+    class SpecialPass
+    enum PassType {
+      SPEED
+      SPECIAL
+    }
+
+    abstract class "Attraction<T extends AccessTicket>" as Attraction {
+      - id : String
+      - name : String
+      - capacity : int
+      - accessType : Class<T>
+      + enter(ticket : T, today : LocalDate, speed : boolean) : EntryResult
+      # passesToConsume(ticket : T, speed : boolean) : List<Pass>
+    }
+    class "GeneralAttraction" as GeneralAttraction
+    class "IndividualAttraction" as IndividualAttraction
+    class "GroupAttraction" as GroupAttraction
+    class "SpecialAttraction" as SpecialAttraction
+    enum AttractionType {
+      GENERAL
+      INDIVIDUAL
+      GROUP
+      SPECIAL
+    }
+    class EntryResult <<record>>
   }
 
-  class Group {
-    - id : String
-    - name : String
+  package invoice {
+    abstract class InvoiceBuilder {
+      + issuedOn(date : LocalDate) : InvoiceBuilder
+      + build() : Invoice
+    }
+    class UserInvoiceBuilder {
+      + forUser(user : User)
+      + withIndividualTickets(tickets)
+      + withSpeedPasses(passes)
+      + withSpecialPasses(passes)
+    }
+    class GroupInvoiceBuilder {
+      + forGroup(group : Group)
+      + withGroupTickets(tickets)
+    }
+    class Invoice {
+      - title : String
+      - total : BigDecimal
+    }
+    class InvoiceSection <<record>>
+    class InvoiceLine <<record>>
   }
 
-  abstract class Ticket {
-    - id : String
-    - date : LocalDate
-    - basePrice : BigDecimal
-    + {abstract} getPrice() : BigDecimal
-    + {abstract} getHolders() : List<User>
+  package exception {
+    class ParkException
   }
 
-  class IndividualTicket {
-    - discountPercent : int
+  package security {
+    interface PasswordHasher
+    class BCryptPasswordHasher
   }
-
-  class GroupTicket
-
-  enum GroupDiscount {
-    NONE
-    SMALL_GROUP
-    MEDIUM_GROUP
-    LARGE_GROUP
-    - percent : int
-  }
-
-  class Attraction {
-    - id : String
-    - name : String
-    - capacity : int
-  }
-}
-
-package service {
-  class UserService
 }
 
 package persistence {
   class ParkStorage
   interface UserRepository
+  interface GroupRepository
+  interface TicketRepository
+  interface PassRepository
+  interface AttractionRepository
   class UserFileRepository
   class GroupFileRepository
   class TicketFileRepository
+  class PassFileRepository
   class AttractionFileRepository
 }
 
+' ----- Ticket hierarchy and access capabilities -----
+AccessTicket <|-- IndividualAccess
+AccessTicket <|-- GroupAccess
+AccessTicket <|.. Ticket
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
-UserRepository <|.. UserFileRepository
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
 
 IndividualTicket "*" --> "1" User : user
 GroupTicket "1" *-- "1..*" IndividualTicket : tickets
 GroupTicket "*" --> "0..1" Group : group
 GroupTicket "*" --> "1" GroupDiscount : discount
 Group "*" o--> "*" User : members
+
+' ----- Passes -----
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Pass ..> PassType
+IndividualTicket "1" <--> "0..*" SpeedPass : speedPasses / ticket
+IndividualTicket "1" <--> "0..1" SpecialPass : specialPass / ticket
+
+' ----- Generic attractions -----
+Attraction <|-- GeneralAttraction : <<bind>> T = AccessTicket
+Attraction <|-- IndividualAttraction : <<bind>> T = IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T = GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T = IndividualAccess
 Attraction "*" o--> "*" User : occupants
+Attraction ..> EntryResult
+AttractionType ..> Attraction : creates
 
-ParkController "1" --> "1" UserService : users
-ParkController "1" o--> "*" Group : groups
-ParkController "1" o--> "*" Ticket : tickets
-ParkController "1" o--> "*" Attraction : attractions
-ParkController "1" --> "1" ParkStorage : storage
-UserService "1" o--> "*" User : users
-UserService --> UserRepository
-UserService ..> UserField
+' ----- Invoices (Builder) -----
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder ..> Invoice : builds
+Invoice "1" *-- "0..*" InvoiceSection
+InvoiceSection "1" *-- "1..*" InvoiceLine
+InvoiceController ..> UserInvoiceBuilder
+InvoiceController ..> GroupInvoiceBuilder
 
+' ----- Controllers and dependency injection -----
+ParkController --> SystemController
+ParkController --> UserController
+ParkController --> GroupController
+ParkController --> TicketController
+ParkController --> PassController
+ParkController --> AttractionController
+ParkController --> InvoiceController
+UserController --> UserRepository
+UserController --> PasswordHasher
+UserController "1" o--> "*" User
+UserController ..> UserField
+GroupController --> GroupRepository
+GroupController "1" o--> "*" Group
+TicketController --> TicketRepository
+TicketController --> SystemController
+TicketController "1" o--> "*" Ticket
+PassController --> PassRepository
+PassController --> TicketController
+PassController --> SystemController
+PassController "1" o--> "*" Pass
+AttractionController --> AttractionRepository
+AttractionController --> TicketController
+AttractionController --> PassController
+AttractionController --> SystemController
+AttractionController "1" o--> "*" Attraction
+InvoiceController --> UserController
+InvoiceController --> GroupController
+InvoiceController --> TicketController
+InvoiceController --> SystemController
+PasswordHasher <|.. BCryptPasswordHasher
+
+UserRepository <|.. UserFileRepository
+GroupRepository <|.. GroupFileRepository
+TicketRepository <|.. TicketFileRepository
+PassRepository <|.. PassFileRepository
+AttractionRepository <|.. AttractionFileRepository
 ParkStorage --> UserRepository
-ParkStorage --> GroupFileRepository
-ParkStorage --> TicketFileRepository
-ParkStorage --> AttractionFileRepository
+ParkStorage --> GroupRepository
+ParkStorage --> TicketRepository
+ParkStorage --> PassRepository
+ParkStorage --> AttractionRepository
+
+' ----- Presentation -----
+App ..> ParkInitializer
+ParkInitializer ..> ParkStorage : injects repositories
+ParkInitializer ..> ParkController : wires
+CommandRunner --> CommandProcessor
+CommandProcessor --> ParkController
+CommandProcessor --> "2" HelpGenerator
+HelpGenerator --> HelpFormatter
+HelpGenerator --> CommandCatalog
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+CommandProcessor ..> ParkException : handles
 @enduml

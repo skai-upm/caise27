@@ -3,7 +3,7 @@ package es.upm.etsisi.park.persistence;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.etsisi.park.model.User;
+import es.upm.etsisi.park.business.model.User;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -56,7 +56,7 @@ class UserFileRepositoryTest {
         assertEquals("Garcia Lopez", first.getSurnames());
         assertEquals("12345678Z", first.getDni());
         assertEquals("ana@correo.com", first.getEmail());
-        assertEquals("Clave1!", first.getPassword());
+        assertEquals("Clave1!", first.getPasswordHash());
         assertEquals("612345678", first.getPhone());
         assertEquals("1234567890123456", first.getCard());
         assertEquals("pedro@correo.com", loaded.get(1).getEmail());

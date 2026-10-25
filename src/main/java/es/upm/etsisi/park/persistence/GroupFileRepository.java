@@ -1,7 +1,7 @@
 package es.upm.etsisi.park.persistence;
 
-import es.upm.etsisi.park.model.Group;
-import es.upm.etsisi.park.model.User;
+import es.upm.etsisi.park.business.model.Group;
+import es.upm.etsisi.park.business.model.User;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.function.Function;
 /**
  * Stores groups as {@code id;name;dni1,dni2,...}. Members are referenced by their immutable DNI.
  */
-public class GroupFileRepository {
+public class GroupFileRepository implements GroupRepository {
 
     private static final String MEMBER_SEPARATOR = ",";
     private static final int FIELD_COUNT = 3;
@@ -26,6 +26,7 @@ public class GroupFileRepository {
         this.warnings = warnings;
     }
 
+    @Override
     public List<Group> loadAll(Function<String, Optional<User>> userByDni) {
         List<Group> groups = new ArrayList<>();
         int lineNumber = 0;
@@ -55,6 +56,7 @@ public class GroupFileRepository {
         return groups;
     }
 
+    @Override
     public void saveAll(Collection<Group> groups) {
         List<String> lines = new ArrayList<>();
         for (Group group : groups) {

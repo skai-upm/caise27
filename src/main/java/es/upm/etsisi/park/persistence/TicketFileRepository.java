@@ -1,10 +1,10 @@
 package es.upm.etsisi.park.persistence;
 
-import es.upm.etsisi.park.model.Group;
-import es.upm.etsisi.park.model.GroupTicket;
-import es.upm.etsisi.park.model.IndividualTicket;
-import es.upm.etsisi.park.model.Ticket;
-import es.upm.etsisi.park.model.User;
+import es.upm.etsisi.park.business.model.Group;
+import es.upm.etsisi.park.business.model.GroupTicket;
+import es.upm.etsisi.park.business.model.IndividualTicket;
+import es.upm.etsisi.park.business.model.Ticket;
+import es.upm.etsisi.park.business.model.User;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -27,7 +27,7 @@ import java.util.function.Function;
  * </pre>
  * Holder identity is stored so historical tickets survive the deletion of their user.
  */
-public class TicketFileRepository {
+public class TicketFileRepository implements TicketRepository {
 
     private static final String INDIVIDUAL = "INDIVIDUAL";
     private static final String GROUP = "GROUP";
@@ -41,6 +41,7 @@ public class TicketFileRepository {
         this.warnings = warnings;
     }
 
+    @Override
     public List<Ticket> loadAll(Function<String, Optional<User>> userByDni, Function<String, Optional<Group>> groupById) {
         HolderResolver holders = new HolderResolver(userByDni);
         Map<String, Ticket> tickets = new LinkedHashMap<>();
@@ -97,6 +98,7 @@ public class TicketFileRepository {
         return result;
     }
 
+    @Override
     public void saveAll(Collection<Ticket> tickets) {
         List<String> lines = new ArrayList<>();
         for (Ticket ticket : tickets) {

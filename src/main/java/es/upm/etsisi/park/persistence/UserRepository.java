@@ -1,6 +1,6 @@
 package es.upm.etsisi.park.persistence;
 
-import es.upm.etsisi.park.model.User;
+import es.upm.etsisi.park.business.model.User;
 import java.util.Collection;
 import java.util.List;
 

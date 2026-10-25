@@ -5,11 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.etsisi.park.controller.ParkController;
-import es.upm.etsisi.park.model.Attraction;
-import es.upm.etsisi.park.model.GroupTicket;
-import es.upm.etsisi.park.model.IndividualTicket;
-import es.upm.etsisi.park.model.Ticket;
+import es.upm.etsisi.park.TestSupport;
+import es.upm.etsisi.park.business.controller.ParkController;
+import es.upm.etsisi.park.business.model.Attraction;
+import es.upm.etsisi.park.business.model.GroupTicket;
+import es.upm.etsisi.park.business.model.IndividualTicket;
+import es.upm.etsisi.park.business.model.Ticket;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -33,7 +34,6 @@ class ParkPersistenceTest {
 
     @BeforeEach
     void setUp() {
-        park = ParkController.getInstance();
         warnings = new ByteArrayOutputStream();
         reload();
         park.setCurrentDate("2027-04-15");
@@ -46,7 +46,7 @@ class ParkPersistenceTest {
     }
 
     private void reload() {
-        park.configure(ParkStorage.inDirectory(dir, new PrintStream(warnings, true, StandardCharsets.UTF_8)));
+        park = TestSupport.park(dir, new PrintStream(warnings, true, StandardCharsets.UTF_8));
     }
 
     @Test
@@ -58,8 +58,8 @@ class ParkPersistenceTest {
         park.createGroupTicket("TG01", "G01", "2027-04-15");
         park.setCurrentPrice("45.50");
         park.createTicket("T001", "ana@correo.com", "2027-04-20");
-        park.createAttraction("A01", "Dragon Rojo", "20");
-        park.enterAttraction("A01", "TG01");
+        park.createAttraction("A01", "Dragon Rojo", "20", null);
+        park.enterAttraction("A01", "TG01", false);
 
         reload();
 
@@ -72,7 +72,7 @@ class ParkPersistenceTest {
         assertSame(park.users().findByEmail("ana@correo.com").orElseThrow(), group.getTickets().get(0).getUser());
         IndividualTicket single = (IndividualTicket) park.findTicket("T001").orElseThrow();
         assertEquals(new BigDecimal("45.50"), single.getPrice());
-        Attraction attraction = park.requireAttraction("A01");
+        Attraction<?> attraction = park.requireAttraction("A01");
         assertEquals("Dragon Rojo", attraction.getName());
         assertEquals(20, attraction.getCapacity());
         assertEquals(0, attraction.getOccupancy());

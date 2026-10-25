@@ -1,6 +1,6 @@
 package es.upm.etsisi.park.persistence;
 
-import es.upm.etsisi.park.model.User;
+import es.upm.etsisi.park.business.model.User;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -61,7 +61,7 @@ public class UserFileRepository implements UserRepository {
                 user.getSurnames(),
                 user.getDni(),
                 user.getEmail(),
-                user.getPassword(),
+                user.getPasswordHash(),
                 user.getPhone(),
                 user.getCard());
     }
