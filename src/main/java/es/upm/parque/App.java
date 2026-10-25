@@ -30,8 +30,8 @@ public class App {
             UserManager users = new UserManager(new UserRepository(dataDir.resolve("users.txt")));
             GroupManager groups = new GroupManager(new GroupRepository(dataDir.resolve("groups.txt")), users);
             SystemDate systemDate = new SystemDate(LocalDate.now());
-            TicketManager tickets = new TicketManager(new TicketRepository(dataDir.resolve("tickets.txt")), users,
-                    systemDate);
+            TicketManager tickets = new TicketManager(new TicketRepository(dataDir.resolve("tickets.txt")),
+                    new GroupTicketRepository(dataDir.resolve("grouptickets.txt")), users, groups, systemDate);
             processor = new CommandProcessor(users, groups, tickets, systemDate);
         } catch (IOException e) {
             out.println("ERROR " + e.getMessage());

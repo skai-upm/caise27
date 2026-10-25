@@ -32,9 +32,9 @@ class TicketRepositoryTest {
     void savesAndLoadsTickets() throws IOException {
         Path file = dir.resolve("data").resolve("tickets.txt");
         TicketRepository repository = new TicketRepository(file);
-        repository.save(List.of(new Ticket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"))));
+        repository.save(List.of(new IndividualTicket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"))));
         assertEquals(List.of("T001;2026-10-15;12345678Z;40.00"), Files.readAllLines(file));
-        Ticket loaded = repository.load(users::get).get(0);
+        IndividualTicket loaded = repository.load(users::get).get(0);
         assertEquals("T001", loaded.getId());
         assertEquals(LocalDate.of(2026, 10, 15), loaded.getDate());
         assertSame(ana, loaded.getHolder());
@@ -45,7 +45,7 @@ class TicketRepositoryTest {
     void keepsTicketsOfDeletedUsersAsHistory() throws IOException {
         Path file = dir.resolve("tickets.txt");
         Files.write(file, List.of("T009;2025-01-01;87654321X;35.50"));
-        Ticket loaded = new TicketRepository(file).load(users::get).get(0);
+        IndividualTicket loaded = new TicketRepository(file).load(users::get).get(0);
         assertEquals("87654321X", loaded.getHolder().getDni());
         assertEquals(new BigDecimal("35.50"), loaded.getPrice());
     }

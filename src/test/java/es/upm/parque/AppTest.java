@@ -95,6 +95,17 @@ class AppTest {
     }
 
     @Test
+    void groupTicketsAreRestoredOnRestart() throws IOException {
+        startWithStdin(CommandProcessorTest.CREATE_ANA + "\nGROUP CREATE;G01;Familia\nGROUP ADD;G01;ana@correo.com\n"
+                + "GROUPTICKET CREATE;TG01;G01;2099-10-15\n");
+        assertEquals(List.of("TG01;2099-10-15;G01;0;12345678Z:40.00"),
+                Files.readAllLines(dir.resolve("grouptickets.txt")));
+        bytes.reset();
+        startWithStdin("GROUP DELETE;G01\n");
+        assertEquals("ERROR GROUP LOCKED" + NL, output());
+    }
+
+    @Test
     void missingFileIsReportedWithoutException() {
         String missing = dir.resolve("no_existe.txt").toString();
         startWithStdin("", missing);

@@ -7,13 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-class TicketTest {
+class IndividualTicketTest {
 
     private final User ana = UserManagerTest.ana();
-    private final Ticket ticket = new Ticket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
+    private final IndividualTicket ticket = new IndividualTicket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
 
     @Test
     void holdsItsData() {
@@ -21,6 +22,7 @@ class TicketTest {
         assertEquals(LocalDate.of(2026, 10, 15), ticket.getDate());
         assertSame(ana, ticket.getHolder());
         assertEquals(new BigDecimal("40.00"), ticket.getPrice());
+        assertEquals(List.of(ana), ticket.getVisitors());
     }
 
     @Test

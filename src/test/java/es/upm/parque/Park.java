@@ -21,7 +21,8 @@ final class Park {
             date = new SystemDate(today);
             users = new UserManager(new UserRepository(dir.resolve("users.txt")));
             groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
-            tickets = new TicketManager(new TicketRepository(dir.resolve("tickets.txt")), users, date);
+            tickets = new TicketManager(new TicketRepository(dir.resolve("tickets.txt")),
+                    new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups, date);
             processor = new CommandProcessor(users, groups, tickets, date);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

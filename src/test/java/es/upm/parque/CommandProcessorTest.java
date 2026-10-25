@@ -196,7 +196,7 @@ class CommandProcessorTest {
         assertEquals(CommandProcessor.ACTIVE_TICKETS, processor.process("USER DELETE;ana@correo.com;Clave1!"));
         processor.process("SYSTEM DATE;2026-10-16");
         assertEquals("OK USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
-        assertEquals("12345678Z", tickets.find("T001").getHolder().getDni());
+        assertEquals("12345678Z", tickets.findIndividual("T001").getHolder().getDni());
     }
 
     @Test
@@ -205,5 +205,49 @@ class CommandProcessorTest {
         for (String command : List.of("TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id", "SYSTEM PRICE;Precio")) {
             assertTrue(help.lines().anyMatch(command::equals), command);
         }
+    }
+
+    private void familyWithTicketFor(String date) {
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process(CREATE_ANA);
+        processor.process(AppTest.CREATE_PEDRO);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        assertEquals("OK GROUP TICKET CREATED -> 80.00", processor.process("GROUPTICKET CREATE;TG01;G01;" + date));
+    }
+
+    @Test
+    void groupIsLockedWhileItsTicketIsCurrent() {
+        familyWithTicketFor("2026-10-15");
+        users.create(UserManagerTest.numbered(1));
+        assertEquals(CommandProcessor.GROUP_LOCKED, processor.process("GROUP ADD;G01;u1@correo.com"));
+        assertEquals(CommandProcessor.GROUP_LOCKED, processor.process("GROUP REMOVE;G01;ana@correo.com"));
+        assertEquals(CommandProcessor.GROUP_LOCKED, processor.process("GROUP DELETE;G01"));
+        assertEquals("ERROR GROUP NOT FOUND", processor.process("GROUP DELETE;G99"));
+        assertEquals(CommandProcessor.ACTIVE_TICKETS, processor.process("USER DELETE;pedro@correo.com;Otra2#"));
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertEquals(CommandProcessor.GROUP_LOCKED, processor.process("GROUP ADD;G01;u1@correo.com"));
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertEquals("OK USER ADDED TO GROUP", processor.process("GROUP ADD;G01;u1@correo.com"));
+        assertEquals(2, tickets.findGroupTicket("TG01").getTickets().size());
+        assertEquals("OK USER DELETED", processor.process("USER DELETE;pedro@correo.com;Otra2#"));
+    }
+
+    @Test
+    void groupTicketRefundUnlocksGroup() {
+        familyWithTicketFor("2026-10-15");
+        assertEquals("ERROR TICKET NOT FOUND", processor.process("TICKET DELETE;TG01-1"));
+        assertEquals("OK GROUP TICKET DELETED", processor.process("GROUPTICKET DELETE;TG01"));
+        assertEquals("OK GROUP DELETED", processor.process("GROUP DELETE;G01"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("GROUPTICKET CREATE;TG02;G01"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("GROUPTICKET DELETE"));
+    }
+
+    @Test
+    void helpListsGroupTicketCommands() {
+        String help = processor.process("HELP");
+        assertTrue(help.lines().anyMatch("GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd"::equals));
+        assertTrue(help.lines().anyMatch("GROUPTICKET DELETE;Id"::equals));
     }
 }

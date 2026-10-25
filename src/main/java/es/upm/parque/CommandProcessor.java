@@ -16,6 +16,7 @@ public class CommandProcessor {
     static final String EXIT_RESPONSE = "OK EXIT";
     static final String INVALID_DATE = "ERROR INVALID DATE";
     static final String ACTIVE_TICKETS = "ERROR USER HAS ACTIVE TICKETS";
+    static final String GROUP_LOCKED = "ERROR GROUP LOCKED";
     static final List<String> COMMAND_SYNTAX = List.of(
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
@@ -26,6 +27,8 @@ public class CommandProcessor {
             "GROUP DELETE;Id",
             "TICKET CREATE;Id;Correo;yyyy-MM-dd",
             "TICKET DELETE;Id",
+            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
+            "GROUPTICKET DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -56,11 +59,17 @@ public class CommandProcessor {
                 case "USER DELETE" -> deleteUser(parts);
                 case "USER UPDATE" -> updateUser(parts);
                 case "GROUP CREATE" -> withParameters(parts, 3, () -> groups.create(parts[1], parts[2]));
-                case "GROUP ADD" -> withParameters(parts, 3, () -> groups.addMember(parts[1], parts[2]));
-                case "GROUP REMOVE" -> withParameters(parts, 3, () -> groups.removeMember(parts[1], parts[2]));
-                case "GROUP DELETE" -> withParameters(parts, 2, () -> groups.delete(parts[1]));
+                case "GROUP ADD" -> withParameters(parts, 3,
+                        () -> unlessLocked(parts[1], () -> groups.addMember(parts[1], parts[2])));
+                case "GROUP REMOVE" -> withParameters(parts, 3,
+                        () -> unlessLocked(parts[1], () -> groups.removeMember(parts[1], parts[2])));
+                case "GROUP DELETE" -> withParameters(parts, 2,
+                        () -> unlessLocked(parts[1], () -> groups.delete(parts[1])));
                 case "TICKET CREATE" -> withParameters(parts, 4, () -> tickets.create(parts[1], parts[2], parts[3]));
                 case "TICKET DELETE" -> withParameters(parts, 2, () -> tickets.delete(parts[1]));
+                case "GROUPTICKET CREATE" -> withParameters(parts, 4,
+                        () -> tickets.createGroupTicket(parts[1], parts[2], parts[3]));
+                case "GROUPTICKET DELETE" -> withParameters(parts, 2, () -> tickets.deleteGroupTicket(parts[1]));
                 case "SYSTEM DATE" -> setDate(parts);
                 case "SYSTEM PRICE" -> withParameters(parts, 2, () -> tickets.setPrice(parts[1]));
                 case "HELP" -> help(parts);
@@ -133,6 +142,17 @@ public class CommandProcessor {
             groups.removeUserFromAll(user);
         }
         return response;
+    }
+
+    /**
+     * Runs a group modification unless the group has a current or future group ticket.
+     */
+    private String unlessLocked(String groupId, Supplier<String> operation) {
+        Group group = groups.find(groupId);
+        if (group != null && tickets.isGroupLocked(group)) {
+            return GROUP_LOCKED;
+        }
+        return operation.get();
     }
 
     private static String withParameters(String[] p, int expectedParts, Supplier<String> operation) {

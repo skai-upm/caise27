@@ -2,22 +2,19 @@ package es.upm.parque;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
- * An individual ticket for one date, held by a registered user.
+ * Common abstraction for park tickets: an identifier, a date of use, a price and the users it admits.
  */
-public class Ticket {
+public abstract class Ticket {
 
     private final String id;
     private final LocalDate date;
-    private final User holder;
-    private final BigDecimal price;
 
-    public Ticket(String id, LocalDate date, User holder, BigDecimal price) {
+    protected Ticket(String id, LocalDate date) {
         this.id = id;
         this.date = date;
-        this.holder = holder;
-        this.price = price;
     }
 
     public String getId() {
@@ -28,13 +25,12 @@ public class Ticket {
         return date;
     }
 
-    public User getHolder() {
-        return holder;
-    }
+    public abstract BigDecimal getPrice();
 
-    public BigDecimal getPrice() {
-        return price;
-    }
+    /**
+     * The users admitted by this ticket.
+     */
+    public abstract List<User> getVisitors();
 
     /**
      * A ticket dated today or later is still current.

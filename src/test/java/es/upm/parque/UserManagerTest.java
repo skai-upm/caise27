@@ -31,6 +31,16 @@ class UserManagerTest {
                 "9876543210987654");
     }
 
+    /**
+     * A valid user number n (n &lt; 1000), with email u&lt;n&gt;@correo.com and password Clave1!.
+     */
+    static User numbered(int n) {
+        int number = 10_000_000 + n;
+        String dni = number + String.valueOf("TRWAGMYFPDXBNJZSQVHLCKE".charAt(number % 23));
+        return new User("U" + n, "Apellido", dni, "u" + n + "@correo.com", "Clave1!", "600000000",
+                "1234567890123456");
+    }
+
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");

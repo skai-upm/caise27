@@ -65,10 +65,21 @@ package es.upm.parque {
     - file : Path
   }
 
-  class Ticket {
+  abstract class Ticket {
     - id : String {readOnly}
     - date : LocalDate {readOnly}
+  }
+
+  class IndividualTicket {
     - price : BigDecimal {readOnly}
+  }
+
+  class GroupTicket {
+    - discountPercent : int {readOnly}
+  }
+
+  class GroupTicketRepository {
+    - file : Path
   }
 }
 
@@ -85,8 +96,15 @@ Group "0..*" o--> "0..*" User : members
 TicketManager "1" --> "1" TicketRepository : repository
 TicketManager "1" --> "1" UserManager : users
 TicketManager "1" --> "1" SystemDate : systemDate
-TicketManager "1" o--> "0..*" Ticket : ticketsById
-Ticket "0..*" --> "1" User : holder
+TicketManager "1" --> "1" GroupTicketRepository : groupRepository
+TicketManager "1" --> "1" GroupManager : groups
+TicketManager "1" o--> "0..*" IndividualTicket : ticketsById
+TicketManager "1" o--> "0..*" GroupTicket : groupTicketsById
+IndividualTicket --|> Ticket
+GroupTicket --|> Ticket
+IndividualTicket "0..*" --> "1" User : holder
+GroupTicket "0..*" o--> "1" Group : group
+GroupTicket "1" *--> "1..*" IndividualTicket : tickets
 
 App ..> CommandProcessor : creates
 UserManager ..> UserValidator : validates with
