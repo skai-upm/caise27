@@ -7,8 +7,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import es.upm.parque.business.controller.AttractionManager;
+import es.upm.parque.business.controller.Controllers;
 import es.upm.parque.business.controller.GroupManager;
 import es.upm.parque.business.controller.InvoiceManager;
+import es.upm.parque.business.controller.PassManager;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
 import es.upm.parque.business.model.StandardInvoiceBuilder;
@@ -18,6 +20,7 @@ import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.TextFileAttractionRepository;
 import es.upm.parque.persistence.TextFileGroupRepository;
 import es.upm.parque.persistence.TextFileGroupTicketRepository;
+import es.upm.parque.persistence.TextFilePassRepository;
 import es.upm.parque.persistence.TextFileTicketRepository;
 import es.upm.parque.persistence.TextFileUserRepository;
 import es.upm.parque.presentation.CommandProcessor;
@@ -53,10 +56,12 @@ public final class Bootstrap {
                 new TextFileGroupTicketRepository(dataDir.resolve("grouptickets.txt")), users, groups, systemDate);
         AttractionManager attractions = AttractionManager.initialize(
                 new TextFileAttractionRepository(dataDir.resolve("attractions.txt")), tickets, systemDate);
+        PassManager passes = PassManager.initialize(
+                new TextFilePassRepository(dataDir.resolve("passes.txt")), tickets, systemDate);
         InvoiceManager invoices = InvoiceManager.initialize(users, groups, tickets, systemDate,
                 StandardInvoiceBuilder::new);
-        return new CommandProcessor(users, groups, tickets, attractions, invoices, systemDate,
-                helpModes(CommandRegistry.standard()));
+        Controllers controllers = new Controllers(users, groups, tickets, attractions, invoices, passes);
+        return new CommandProcessor(controllers, systemDate, helpModes(CommandRegistry.standard()));
     }
 
     /**

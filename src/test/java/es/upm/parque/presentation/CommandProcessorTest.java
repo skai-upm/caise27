@@ -16,6 +16,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.parque.Fixtures;
 import es.upm.parque.Park;
+import es.upm.parque.business.controller.Controllers;
 import es.upm.parque.business.controller.GroupManager;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
@@ -80,8 +81,8 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailuresBecomeErrors() {
-        CommandProcessor broken = new CommandProcessor(null, null, null, null, null,
-                new SystemDate(LocalDate.of(2026, 1, 1)), Map.of());
+        CommandProcessor broken = new CommandProcessor(
+                new Controllers(null, null, null, null, null, null), new SystemDate(LocalDate.of(2026, 1, 1)), Map.of());
         assertEquals(CommandProcessor.UNEXPECTED_ERROR, broken.process(Fixtures.CREATE_ANA));
     }
 
@@ -313,10 +314,25 @@ class CommandProcessorTest {
     @Test
     void newHelpFormatNeedsNoProcessorChange() {
         CommandRegistry registry = new CommandRegistry().register("EXIT", "Ends.");
-        CommandProcessor custom = new CommandProcessor(null, null, null, null, null,
+        CommandProcessor custom = new CommandProcessor(new Controllers(null, null, null, null, null, null),
                 new SystemDate(LocalDate.of(2026, 1, 1)),
                 Map.of("HELP COUNT", new HelpGenerator(registry, commands -> commands.size() + " commands")));
         assertEquals("1 commands", custom.process("HELP COUNT"));
         assertEquals(CommandProcessor.UNKNOWN_COMMAND, custom.process("HELP"));
+    }
+
+    @Test
+    void runsPassCommands() {
+        familyWithTicketFor("2026-10-15");
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertEquals("OK SPEEDPASS CREATED -> 80.00 (T001-S1..T001-S10)", processor.process("SPEEDPASS CREATE;T001;10"));
+        assertEquals("OK SPEEDPASS DELETED -> 8.00", processor.process("speedpass delete;T001-S3"));
+        assertEquals("OK SPECIALPASS CREATED -> 40.00 (TG01-2-SPECIAL)", processor.process("SPECIALPASS CREATE;TG01-2"));
+        assertEquals("OK SPECIALPASS DELETED -> 40.00", processor.process("SPECIALPASS DELETE;TG01-2"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("SPEEDPASS CREATE;T001"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("SPEEDPASS DELETE"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("SPECIALPASS CREATE"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("SPECIALPASS DELETE;a;b"));
+        assertTrue(processor.process("HELP").lines().anyMatch("SPEEDPASS CREATE;IdEntrada;Cantidad"::equals));
     }
 }

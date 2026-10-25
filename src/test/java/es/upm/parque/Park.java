@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import es.upm.parque.business.controller.AttractionManager;
 import es.upm.parque.business.controller.GroupManager;
 import es.upm.parque.business.controller.InvoiceManager;
+import es.upm.parque.business.controller.PassManager;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
 import es.upm.parque.business.model.SystemDate;
@@ -29,6 +30,7 @@ public final class Park {
     public final TicketManager tickets;
     public final AttractionManager attractions;
     public final InvoiceManager invoices;
+    public final PassManager passes;
     public final CommandProcessor processor;
 
     public Park(Path dir, LocalDate today) {
@@ -43,6 +45,7 @@ public final class Park {
         tickets = TicketManager.getInstance();
         attractions = AttractionManager.getInstance();
         invoices = InvoiceManager.getInstance();
+        passes = PassManager.getInstance();
     }
 
     public String run(String command) {

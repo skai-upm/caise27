@@ -6,8 +6,10 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import es.upm.parque.business.controller.AttractionManager;
+import es.upm.parque.business.controller.Controllers;
 import es.upm.parque.business.controller.GroupManager;
 import es.upm.parque.business.controller.InvoiceManager;
+import es.upm.parque.business.controller.PassManager;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
 import es.upm.parque.business.model.Group;
@@ -32,18 +34,18 @@ public class CommandProcessor {
     private final TicketManager tickets;
     private final AttractionManager attractions;
     private final InvoiceManager invoices;
+    private final PassManager passes;
     private final SystemDate systemDate;
     private final Map<String, HelpGenerator> helpModes;
     private boolean finished;
 
-    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
-                            AttractionManager attractions, InvoiceManager invoices, SystemDate systemDate,
-                            Map<String, HelpGenerator> helpModes) {
-        this.users = users;
-        this.groups = groups;
-        this.tickets = tickets;
-        this.attractions = attractions;
-        this.invoices = invoices;
+    public CommandProcessor(Controllers controllers, SystemDate systemDate, Map<String, HelpGenerator> helpModes) {
+        this.users = controllers.users();
+        this.groups = controllers.groups();
+        this.tickets = controllers.tickets();
+        this.attractions = controllers.attractions();
+        this.invoices = controllers.invoices();
+        this.passes = controllers.passes();
         this.systemDate = systemDate;
         this.helpModes = helpModes;
     }
@@ -82,6 +84,11 @@ public class CommandProcessor {
                 case "ATTRACTION EXIT" -> withParameters(parts, 3, () -> attractions.exit(parts[1], parts[2]));
                 case "ATTRACTION STATUS" -> withParameters(parts, 2, () -> attractions.status(parts[1]));
                 case "INVOICE CREATE" -> withParameters(parts, 3, () -> invoices.create(parts[1], parts[2]));
+                case "SPEEDPASS CREATE" -> withParameters(parts, 3,
+                        () -> passes.createSpeedPasses(parts[1], parts[2]));
+                case "SPEEDPASS DELETE" -> withParameters(parts, 2, () -> passes.deleteSpeedPass(parts[1]));
+                case "SPECIALPASS CREATE" -> withParameters(parts, 2, () -> passes.createSpecialPass(parts[1]));
+                case "SPECIALPASS DELETE" -> withParameters(parts, 2, () -> passes.deleteSpecialPass(parts[1]));
                 case "SYSTEM DATE" -> setDate(parts);
                 case "SYSTEM PRICE" -> withParameters(parts, 2, () -> tickets.setPrice(parts[1]));
                 case "EXIT" -> exit(parts);

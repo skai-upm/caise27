@@ -87,6 +87,10 @@ In file mode the application SHALL read the file line by line, interpret each no
 - **WHEN** `HELP` is processed
 - **THEN** the output also contains `HELP EXTENDED`
 
+#### Scenario: Help lists the pass commands
+- **WHEN** `HELP` is processed
+- **THEN** the output also contains `SPEEDPASS CREATE;IdEntrada;Cantidad`, `SPEEDPASS DELETE;IdPase`, `SPECIALPASS CREATE;IdEntrada` and `SPECIALPASS DELETE;IdEntrada`
+
 ### Requirement: EXIT command
 `EXIT` SHALL terminate the application in a controlled manner after printing `OK EXIT`. No command after `EXIT` SHALL be read or executed, in either mode.
 

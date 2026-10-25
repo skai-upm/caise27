@@ -42,6 +42,12 @@ public class CommandRegistry {
                         "Shows capacity, occupancy, available places and users inside an attraction.")
                 .register("INVOICE CREATE;USER;Correo", "Shows the invoice of a user's direct purchases.")
                 .register("INVOICE CREATE;GROUP;IdGrupo", "Shows the invoice of a group's group tickets.")
+                .register("SPEEDPASS CREATE;IdEntrada;Cantidad",
+                        "Buys 1 or 10 SpeedPasses for an individual ticket, each at 20% of the ticket price.")
+                .register("SPEEDPASS DELETE;IdPase", "Refunds an unused SpeedPass before its ticket's date.")
+                .register("SPECIALPASS CREATE;IdEntrada",
+                        "Buys the single Special Pass of an individual ticket at the ticket price.")
+                .register("SPECIALPASS DELETE;IdEntrada", "Refunds an unused Special Pass before its ticket's date.")
                 .register("SYSTEM DATE;yyyy-MM-dd", "Sets the simulated current date of the application.")
                 .register("SYSTEM PRICE;Precio", "Sets the current individual ticket price.")
                 .register("HELP", "Lists the syntax of every command.")

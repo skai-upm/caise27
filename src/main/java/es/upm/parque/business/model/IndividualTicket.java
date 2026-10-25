@@ -2,6 +2,8 @@ package es.upm.parque.business.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -11,6 +13,8 @@ public class IndividualTicket extends Ticket {
 
     private final User holder;
     private final BigDecimal price;
+    private final List<SpeedPass> speedPasses = new ArrayList<>();
+    private SpecialPass specialPass;
 
     public IndividualTicket(String id, LocalDate date, User holder, BigDecimal price) {
         super(id, date);
@@ -30,5 +34,39 @@ public class IndividualTicket extends Ticket {
     @Override
     public List<User> getVisitors() {
         return List.of(holder);
+    }
+
+    public List<SpeedPass> getSpeedPasses() {
+        return Collections.unmodifiableList(speedPasses);
+    }
+
+    public void addSpeedPass(SpeedPass pass) {
+        speedPasses.add(pass);
+    }
+
+    public boolean removeSpeedPass(SpeedPass pass) {
+        return speedPasses.remove(pass);
+    }
+
+    /**
+     * The ticket's Special Pass, or null when it has none.
+     */
+    public SpecialPass getSpecialPass() {
+        return specialPass;
+    }
+
+    public void setSpecialPass(SpecialPass pass) {
+        this.specialPass = pass;
+    }
+
+    /**
+     * All personal passes of this ticket: SpeedPasses first, then the Special Pass if any.
+     */
+    public List<PersonalPass> getPasses() {
+        List<PersonalPass> passes = new ArrayList<>(speedPasses);
+        if (specialPass != null) {
+            passes.add(specialPass);
+        }
+        return passes;
     }
 }

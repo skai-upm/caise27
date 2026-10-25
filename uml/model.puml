@@ -108,6 +108,16 @@ package es.upm.parque.business.model {
     recipientName : String
     issueDate : LocalDate
   }
+
+  abstract class PersonalPass {
+    id : String
+    price : BigDecimal
+    consumed : boolean
+  }
+
+  class SpeedPass
+
+  class SpecialPass
 }
 
 package es.upm.parque.business.controller {
@@ -122,6 +132,10 @@ package es.upm.parque.business.controller {
   }
 
   class AttractionManager
+
+  class PassManager
+
+  class Controllers
 }
 
 package es.upm.parque.business.security {
@@ -164,14 +178,23 @@ package es.upm.parque.persistence {
   class TextFileAttractionRepository {
     file : Path
   }
+
+  interface PassRepository
+
+  class TextFilePassRepository {
+    file : Path
+  }
 }
 
 ' Inheritance
 IndividualTicket --|> Ticket
 GroupTicket --|> Ticket
+SpeedPass --|> PersonalPass
+SpecialPass --|> PersonalPass
 StandardInvoiceBuilder ..|> InvoiceBuilder
 SyntaxHelpFormat ..|> HelpFormat
 BCryptPasswordHasher ..|> PasswordHasher
+TextFilePassRepository ..|> PassRepository
 ExtendedHelpFormat ..|> HelpFormat
 TextFileUserRepository ..|> UserRepository
 TextFileGroupRepository ..|> GroupRepository
@@ -185,6 +208,7 @@ CommandProcessor "1" x--> "1" GroupManager : groups
 CommandProcessor "1" x--> "1" TicketManager : tickets
 CommandProcessor "1" x--> "1" AttractionManager : attractions
 CommandProcessor "1" x--> "1" InvoiceManager : invoices
+CommandProcessor "1" x--> "1" PassManager : passes
 CommandProcessor "1" x--> "1" SystemDate : systemDate
 CommandProcessor "1" o--> "1..*" HelpGenerator : helpModes
 
@@ -233,12 +257,29 @@ Invoice "1" *--> "0..*" InvoiceSection : sections
 InvoiceSection "1" *--> "0..*" InvoiceLine : lines
 StandardInvoiceBuilder "1" o--> "0..*" InvoiceSection : sections
 
+' Passes
+IndividualTicket "1" *--> "0..*" SpeedPass : speedPasses
+IndividualTicket "1" *--> "0..1" SpecialPass : specialPass
+PassManager "1" x--> "1" PassRepository : repository
+PassManager "1" x--> "1" TicketManager : tickets
+PassManager "1" x--> "1" SystemDate : systemDate
+
+' Controllers handed to the presentation layer at startup
+Controllers "0..1" x--> "1" UserManager : users
+Controllers "0..1" x--> "1" GroupManager : groups
+Controllers "0..1" x--> "1" TicketManager : tickets
+Controllers "0..1" x--> "1" AttractionManager : attractions
+Controllers "0..1" x--> "1" InvoiceManager : invoices
+Controllers "0..1" x--> "1" PassManager : passes
+
 ' Usage of classes without incoming relationships
 App ..> CommandProcessor : creates and runs
 App ..> TemporaryDirectory : uses in --fly mode
 App ..> Bootstrap : configures the application
 Bootstrap ..> StandardInvoiceBuilder : supplies invoice builders
 Bootstrap ..> BCryptPasswordHasher : injects into UserManager
+Bootstrap ..> TextFilePassRepository : creates
+Bootstrap ..> Controllers : hands to CommandProcessor
 Bootstrap ..> SyntaxHelpFormat : injects into HELP
 Bootstrap ..> ExtendedHelpFormat : injects into HELP EXTENDED
 Bootstrap ..> TextFileUserRepository : creates

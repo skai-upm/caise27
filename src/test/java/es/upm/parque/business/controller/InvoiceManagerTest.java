@@ -75,4 +75,18 @@ class InvoiceManagerTest {
         assertEquals(0, park.tickets.ticketsHeldBy(park.users.findByEmail("pedro@correo.com")).size());
         assertEquals(1, park.tickets.groupTicketsOf(park.groups.find("G01")).size());
     }
+
+    @Test
+    void userInvoiceIncludesPassesOfDirectAndGroupTickets() {
+        park.tickets.create("T001", "ana@correo.com", "2026-10-15");
+        park.tickets.createGroupTicket("TG01", "G01", "2026-10-15");
+        park.passes.createSpeedPasses("T001", "1");
+        park.passes.createSpecialPass("TG01-1");
+        assertEquals(String.join(NL, "INVOICE USER ana@correo.com - Ana Garcia Lopez", "Date: 2026-10-01",
+                "Individual tickets:", "- T001 2026-10-15 40.00", "Personal passes:", "- T001-S1 SPEED 8.00",
+                "- TG01-1-SPECIAL SPECIAL 40.00", "TOTAL: 88.00"), park.invoices.create("USER", "ana@correo.com"));
+        assertEquals(String.join(NL, "INVOICE GROUP G01 - Familia Garcia", "Date: 2026-10-01", "Group tickets:",
+                "- TG01 2026-10-15 (3 members, 10% discount) 108.00", "TOTAL: 108.00"),
+                park.invoices.create("GROUP", "G01"));
+    }
 }

@@ -7,6 +7,7 @@ import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.InvoiceBuilder;
+import es.upm.parque.business.model.PersonalPass;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.User;
 
@@ -76,6 +77,12 @@ public class InvoiceManager {
                 .section("Individual tickets");
         for (IndividualTicket ticket : tickets.ticketsHeldBy(user)) {
             builder.line(ticket.getId() + " " + SystemDate.format(ticket.getDate()), ticket.getPrice());
+        }
+        builder.section("Personal passes");
+        for (IndividualTicket ticket : tickets.individualTicketsOf(user)) {
+            for (PersonalPass pass : ticket.getPasses()) {
+                builder.line(pass.getId() + " " + pass.getKind(), pass.getPrice());
+            }
         }
         return builder.build().toText();
     }
