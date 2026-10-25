@@ -1,5 +1,8 @@
 package es.upm.parque;
 
+import es.upm.parque.business.model.User;
+import es.upm.parque.business.model.UserField;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,7 +17,7 @@ public class UserTest {
 
     private User ana() {
         return new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com",
-                "Clave1!", "612345678", "1234567890123456");
+                "hash", "612345678", "1234567890123456");
     }
 
     @Test
@@ -24,7 +27,7 @@ public class UserTest {
         assertEquals("Garcia Lopez", user.getSurnames());
         assertEquals("12345678Z", user.getDni());
         assertEquals("ana@correo.com", user.getEmail());
-        assertEquals("Clave1!", user.getPassword());
+        assertEquals("hash", user.getPasswordHash());
         assertEquals("612345678", user.getPhone());
         assertEquals("1234567890123456", user.getCard());
     }
@@ -35,14 +38,13 @@ public class UserTest {
         user.setName("Ana Maria");
         user.setSurnames("Lopez");
         user.setEmail("nueva@correo.com");
-        user.setPassword("Nueva2#");
+        user.setPasswordHash("other");
         user.setPhone("699999999");
         user.setCard("9999888877776666");
         assertEquals("Ana Maria", user.getName());
         assertEquals("Lopez", user.getSurnames());
         assertEquals("nueva@correo.com", user.getEmail());
-        assertTrue(user.passwordMatches("Nueva2#"));
-        assertFalse(user.passwordMatches("Clave1!"));
+        assertEquals("other", user.getPasswordHash());
         assertEquals("699999999", user.getPhone());
         assertEquals("9999888877776666", user.getCard());
     }

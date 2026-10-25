@@ -1,5 +1,14 @@
 package es.upm.parque;
 
+import es.upm.parque.business.ParkException;
+import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.GeneralAttraction;
+import es.upm.parque.business.model.Group;
+import es.upm.parque.business.model.GroupTicket;
+import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.User;
+import es.upm.parque.persistence.TextAttractionRepository;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,8 +24,8 @@ public class AttractionTest extends ParkTestSupport {
 
     private static final LocalDate DAY = LocalDate.of(2026, 10, 15);
 
-    private Attraction attraction(String id) {
-        return controller.getAttractionManager().get(id);
+    private Attraction<?> attraction(String id) {
+        return attractions().get(id);
     }
 
     private static User person(String dni) {
@@ -25,7 +34,7 @@ public class AttractionTest extends ParkTestSupport {
 
     @Test
     public void groupEntryIsAtomicWhenCapacityIsShort() {
-        Attraction small = new Attraction("A01", "Tornado", 3);
+        GeneralAttraction small = new GeneralAttraction("A01", "Tornado", 3);
         List<IndividualTicket> four = List.of(
                 new IndividualTicket("a", person("1"), DAY, BigDecimal.TEN),
                 new IndividualTicket("b", person("2"), DAY, BigDecimal.TEN),
@@ -134,7 +143,7 @@ public class AttractionTest extends ParkTestSupport {
         ok("TICKET CREATE;T001;" + ANA + ";2026-10-15");
         ok("ATTRACTION CREATE;A01;Tornado;20");
         ok("ATTRACTION ENTER;A01;T001");
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dataDir.resolve(AttractionRepository.FILE_NAME)));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dataDir.resolve(TextAttractionRepository.FILE_NAME)));
         restart();
         assertEquals("Tornado", attraction("A01").getName());
         assertEquals(20, attraction("A01").getCapacity());
@@ -143,8 +152,8 @@ public class AttractionTest extends ParkTestSupport {
 
     @Test
     public void malformedAttractionLinesAreSkipped() throws Exception {
-        Files.write(dataDir.resolve(AttractionRepository.FILE_NAME), List.of("A01;Tornado;x", "A02;Rio;5", "A03"));
+        Files.write(dataDir.resolve(TextAttractionRepository.FILE_NAME), List.of("A01;Tornado;x", "A02;Rio;5", "A03"));
         restart();
-        assertEquals(1, controller.getAttractionManager().getAttractions().size());
+        assertEquals(1, attractions().getAttractions().size());
     }
 }

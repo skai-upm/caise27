@@ -1,5 +1,8 @@
 package es.upm.parque;
 
+import es.upm.parque.business.model.Group;
+import es.upm.parque.persistence.TextGroupRepository;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,7 +18,7 @@ import org.junit.jupiter.api.Test;
 public class GroupTest extends ParkTestSupport {
 
     private Group group(String id) {
-        return controller.getGroupManager().find(id);
+        return groups().find(id);
     }
 
     @Test
@@ -91,7 +94,7 @@ public class GroupTest extends ParkTestSupport {
         ok("GROUP ADD;G01;" + ANA);
         ok("GROUP ADD;G01;" + PEDRO);
         assertEquals(List.of("G01;Familia Garcia;12345678Z;87654321X"),
-                Files.readAllLines(dataDir.resolve(GroupRepository.FILE_NAME)));
+                Files.readAllLines(dataDir.resolve(TextGroupRepository.FILE_NAME)));
         restart();
         Group restored = group("G01");
         assertEquals("Familia Garcia", restored.getName());
@@ -101,7 +104,7 @@ public class GroupTest extends ParkTestSupport {
 
     @Test
     public void malformedGroupLinesAreSkipped() throws Exception {
-        Files.write(dataDir.resolve(GroupRepository.FILE_NAME), List.of("solo", "G01;Familia;99999999R"));
+        Files.write(dataDir.resolve(TextGroupRepository.FILE_NAME), List.of("solo", "G01;Familia;99999999R"));
         restart();
         assertNull(group("solo"));
         assertNotNull(group("G01"));

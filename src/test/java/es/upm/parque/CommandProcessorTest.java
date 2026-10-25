@@ -1,5 +1,9 @@
 package es.upm.parque;
 
+import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.model.User;
+import es.upm.parque.presentation.CommandProcessor;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,14 +24,13 @@ public class CommandProcessorTest {
     @TempDir
     Path tempDir;
 
-    private UserManager manager;
+    private UserController manager;
     private CommandProcessor processor;
 
     @BeforeEach
     public void setUp() {
-        ParkController controller = ParkController.load(tempDir);
-        manager = controller.getUserManager();
-        processor = new CommandProcessor(controller);
+        processor = ParkApplication.start(tempDir, ParkTestSupport.FAST_HASHER);
+        manager = UserController.getInstance();
     }
 
     private void assertError(CommandProcessor.Result result) {

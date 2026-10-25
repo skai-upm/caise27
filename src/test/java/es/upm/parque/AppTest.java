@@ -1,5 +1,9 @@
 package es.upm.parque;
 
+import es.upm.parque.business.controller.UserController;
+import es.upm.parque.presentation.CommandProcessor;
+import es.upm.parque.presentation.ConsoleRunner;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -32,16 +36,15 @@ public class AppTest {
     @TempDir
     Path tempDir;
 
-    private UserManager manager;
+    private UserController manager;
     private CommandProcessor processor;
     private ByteArrayOutputStream buffer;
     private PrintStream out;
 
     @BeforeEach
     public void setUp() {
-        ParkController controller = ParkController.load(tempDir);
-        manager = controller.getUserManager();
-        processor = new CommandProcessor(controller);
+        processor = ParkApplication.start(tempDir, ParkTestSupport.FAST_HASHER);
+        manager = UserController.getInstance();
         buffer = new ByteArrayOutputStream();
         out = new PrintStream(buffer, true, StandardCharsets.UTF_8);
     }
@@ -51,7 +54,7 @@ public class AppTest {
     }
 
     private void runText(String text, boolean echo) {
-        App.run(new BufferedReader(new StringReader(text)), processor, out, echo);
+        ConsoleRunner.run(new BufferedReader(new StringReader(text)), processor, out, echo);
     }
 
     @Test
@@ -82,18 +85,18 @@ public class AppTest {
         Files.write(commands, List.of(CREATE_ANA, CREATE_PEDRO, "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
                 "EXIT", "USER DELETE;pedro@correo.com;Otra2#"));
         try (BufferedReader reader = Files.newBufferedReader(commands)) {
-            App.run(reader, processor, out, true);
+            ConsoleRunner.run(reader, processor, out, true);
         }
         assertEquals("699999999", manager.findByEmail("ana@correo.com").getPhone());
         assertNotNull(manager.findByEmail("pedro@correo.com"), "commands after EXIT must not run");
         assertTrue(output().contains("> " + CREATE_ANA));
+        int usersFromFile = manager.getUsers().size();
 
-        ParkController interactive = ParkController.load(tempDir.resolve("other"));
-        UserManager interactiveManager = interactive.getUserManager();
-        App.run(new BufferedReader(new StringReader(String.join("\n", Files.readAllLines(commands)))),
-                new CommandProcessor(interactive), new PrintStream(new ByteArrayOutputStream()), false);
-        assertEquals(manager.getUsers().size(), interactiveManager.getUsers().size());
-        assertEquals("699999999", interactiveManager.findByEmail("ana@correo.com").getPhone());
+        CommandProcessor interactive = ParkApplication.start(tempDir.resolve("other"), ParkTestSupport.FAST_HASHER);
+        ConsoleRunner.run(new BufferedReader(new StringReader(String.join("\n", Files.readAllLines(commands)))),
+                interactive, new PrintStream(new ByteArrayOutputStream()), false);
+        assertEquals(usersFromFile, UserController.getInstance().getUsers().size());
+        assertEquals("699999999", UserController.getInstance().findByEmail("ana@correo.com").getPhone());
     }
 
     @Test

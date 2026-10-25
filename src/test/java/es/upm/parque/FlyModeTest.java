@@ -1,5 +1,8 @@
 package es.upm.parque;
 
+import es.upm.parque.persistence.TemporaryStorage;
+import es.upm.parque.persistence.TextUserRepository;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -39,9 +42,8 @@ public class FlyModeTest {
         assertNotEquals(first.getDirectory(), second.getDirectory());
         assertTrue(first.getDirectory().getFileName().toString().matches("\\d{8}_\\d{6}(_\\d+)?"));
 
-        ParkController controller = ParkController.load(first.getDirectory());
-        new CommandProcessor(controller).process(COMMANDS.get(0));
-        assertTrue(Files.exists(first.getDirectory().resolve(UserRepository.FILE_NAME)));
+        ParkApplication.start(first.getDirectory(), ParkTestSupport.FAST_HASHER).process(COMMANDS.get(0));
+        assertTrue(Files.exists(first.getDirectory().resolve(TextUserRepository.FILE_NAME)));
 
         first.delete();
         first.delete();

@@ -1,5 +1,9 @@
 package es.upm.parque;
 
+import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Ticket;
+import es.upm.parque.persistence.TextTicketRepository;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -22,7 +26,7 @@ public class TicketTest extends ParkTestSupport {
     }
 
     private Ticket ticket(String id) {
-        return controller.getTicketManager().find(id);
+        return tickets().find(id);
     }
 
     @Test
@@ -48,7 +52,7 @@ public class TicketTest extends ParkTestSupport {
         fails("TICKET CREATE;T,5;" + ANA + ";2026-10-15");
         ok("TICKET CREATE;T001;" + ANA + ";2026-10-15");
         fails("TICKET CREATE;T001;" + ANA + ";2026-10-20");
-        assertEquals(1, controller.getTicketManager().getIndividualTickets().size());
+        assertEquals(1, tickets().getIndividualTickets().size());
     }
 
     @Test
@@ -81,7 +85,7 @@ public class TicketTest extends ParkTestSupport {
         ok("TICKET CREATE;T001;" + ANA + ";2026-10-15");
         ok("SYSTEM PRICE;60.00");
         assertEquals(List.of("T001;12345678Z;2026-10-15;40.00"),
-                Files.readAllLines(dataDir.resolve(TicketRepository.TICKETS_FILE_NAME)));
+                Files.readAllLines(dataDir.resolve(TextTicketRepository.TICKETS_FILE_NAME)));
         restart();
         IndividualTicket t001 = assertInstanceOf(IndividualTicket.class, ticket("T001"));
         assertSame(user(ANA), t001.getUser());
@@ -101,9 +105,9 @@ public class TicketTest extends ParkTestSupport {
 
     @Test
     public void malformedTicketLinesAreSkipped() throws Exception {
-        Files.write(dataDir.resolve(TicketRepository.TICKETS_FILE_NAME),
+        Files.write(dataDir.resolve(TextTicketRepository.TICKETS_FILE_NAME),
                 List.of("T001;12345678Z;2026-10-15;40.00", "T002;12345678Z;mal;40.00", "T003;corto"));
-        Files.write(dataDir.resolve(TicketRepository.GROUP_TICKETS_FILE_NAME), List.of("TG;G;2026-13-01;1;T001"));
+        Files.write(dataDir.resolve(TextTicketRepository.GROUP_TICKETS_FILE_NAME), List.of("TG;G;2026-13-01;1;T001"));
         restart();
         assertNotNull(ticket("T001"));
         assertNull(ticket("T002"));

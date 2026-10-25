@@ -1,5 +1,16 @@
 package es.upm.parque;
 
+import es.upm.parque.business.controller.AttractionController;
+import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.ParkController;
+import es.upm.parque.business.controller.PassController;
+import es.upm.parque.business.controller.TicketController;
+import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.model.User;
+import es.upm.parque.business.security.BCryptPasswordHasher;
+import es.upm.parque.business.security.PasswordHasher;
+import es.upm.parque.presentation.CommandProcessor;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -8,17 +19,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Runs commands against a controller whose data lives in a temporary directory.
+ * Runs commands against the application wired for a temporary data directory.
  */
 abstract class ParkTestSupport {
 
     static final String ANA = "ana@correo.com";
     static final String PEDRO = "pedro@correo.com";
 
+    /**
+     * Minimum BCrypt cost, to keep tests fast.
+     */
+    static final PasswordHasher FAST_HASHER = new BCryptPasswordHasher(4);
+
     @TempDir
     Path dataDir;
 
-    ParkController controller;
     CommandProcessor processor;
 
     @BeforeEach
@@ -27,8 +42,31 @@ abstract class ParkTestSupport {
     }
 
     void restart() {
-        controller = ParkController.load(dataDir);
-        processor = new CommandProcessor(controller);
+        processor = ParkApplication.start(dataDir, FAST_HASHER);
+    }
+
+    ParkController park() {
+        return ParkController.getInstance();
+    }
+
+    UserController users() {
+        return UserController.getInstance();
+    }
+
+    GroupController groups() {
+        return GroupController.getInstance();
+    }
+
+    TicketController tickets() {
+        return TicketController.getInstance();
+    }
+
+    PassController passes() {
+        return PassController.getInstance();
+    }
+
+    AttractionController attractions() {
+        return AttractionController.getInstance();
     }
 
     String run(String command) {
@@ -69,6 +107,6 @@ abstract class ParkTestSupport {
     }
 
     User user(String email) {
-        return controller.getUserManager().findByEmail(email);
+        return users().findByEmail(email);
     }
 }

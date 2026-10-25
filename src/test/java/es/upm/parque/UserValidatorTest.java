@@ -1,5 +1,7 @@
 package es.upm.parque;
 
+import es.upm.parque.business.validation.UserValidator;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

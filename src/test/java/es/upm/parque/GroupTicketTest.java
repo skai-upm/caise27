@@ -1,5 +1,8 @@
 package es.upm.parque;
 
+import es.upm.parque.business.model.GroupTicket;
+import es.upm.parque.business.model.IndividualTicket;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -22,7 +25,7 @@ public class GroupTicketTest extends ParkTestSupport {
     }
 
     private GroupTicket groupTicket(String id) {
-        return assertInstanceOf(GroupTicket.class, controller.getTicketManager().find(id));
+        return assertInstanceOf(GroupTicket.class, tickets().find(id));
     }
 
     private void groupOf(String groupId, String... emails) {
@@ -48,12 +51,12 @@ public class GroupTicketTest extends ParkTestSupport {
         ok("SYSTEM PRICE;50.00");
         assertEquals("OK GROUP TICKET CREATED -> 100.00", run("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
         GroupTicket tg01 = groupTicket("TG01");
-        assertSame(controller.getGroupManager().find("G01"), tg01.getGroup());
+        assertSame(groups().find("G01"), tg01.getGroup());
         assertEquals(List.of(user(ANA), user(PEDRO)), tg01.getUsers());
         for (IndividualTicket generated : tg01.getTickets()) {
             assertEquals("50.00", generated.getPrice().toPlainString());
             assertEquals(tg01.getDate(), generated.getDate());
-            assertSame(generated, controller.getTicketManager().find(generated.getId()));
+            assertSame(generated, tickets().find(generated.getId()));
         }
     }
 
@@ -110,9 +113,9 @@ public class GroupTicketTest extends ParkTestSupport {
         fails("TICKET DELETE;TG01-1");
         fails("TICKET DELETE;TG01");
         assertEquals("OK GROUP TICKET DELETED", run("GROUPTICKET DELETE;TG01"));
-        assertNull(controller.getTicketManager().find("TG01"));
-        assertNull(controller.getTicketManager().find("TG01-1"));
-        assertNull(controller.getTicketManager().find("TG01-2"));
+        assertNull(tickets().find("TG01"));
+        assertNull(tickets().find("TG01-1"));
+        assertNull(tickets().find("TG01-2"));
         ok("GROUP ADD;G01;" + createUsers(1)[0]);
         ok("USER DELETE;" + ANA + ";Clave1!");
     }
@@ -126,7 +129,7 @@ public class GroupTicketTest extends ParkTestSupport {
         fails("GROUPTICKET DELETE;T001");
         ok("SYSTEM DATE;2026-10-15");
         fails("GROUPTICKET DELETE;TG01");
-        assertNotNull(controller.getTicketManager().find("TG01-1"));
+        assertNotNull(tickets().find("TG01-1"));
     }
 
     @Test
@@ -138,10 +141,10 @@ public class GroupTicketTest extends ParkTestSupport {
         restart();
         ok("SYSTEM DATE;2026-10-01");
         GroupTicket tg01 = groupTicket("TG01");
-        assertSame(controller.getGroupManager().find("G01"), tg01.getGroup());
+        assertSame(groups().find("G01"), tg01.getGroup());
         assertEquals("80.00", tg01.getPrice().toPlainString());
         assertEquals(List.of(user(ANA), user(PEDRO)), tg01.getUsers());
-        assertSame(controller.getTicketManager().find("TG01-1"), tg01.getTickets().get(0));
+        assertSame(tickets().find("TG01-1"), tg01.getTickets().get(0));
         fails("GROUP DELETE;G01");
         fails("TICKET DELETE;TG01-2");
     }
@@ -155,6 +158,6 @@ public class GroupTicketTest extends ParkTestSupport {
         ok("GROUP DELETE;G01");
         restart();
         assertEquals("G01", groupTicket("TG01").getGroup().getId());
-        assertNull(controller.getGroupManager().find("G01"));
+        assertNull(groups().find("G01"));
     }
 }

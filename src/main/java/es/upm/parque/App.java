@@ -1,12 +1,17 @@
 package es.upm.parque;
 
+import es.upm.parque.persistence.TemporaryStorage;
+import es.upm.parque.presentation.CommandProcessor;
+import es.upm.parque.presentation.ConsoleRunner;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 
 /**
@@ -42,7 +47,7 @@ public class App {
                 Runtime.getRuntime().addShutdownHook(cleanup);
                 dataDirectory = temporary.getDirectory();
             }
-            run(dataDirectory, commandFile);
+            run(ParkApplication.start(dataDirectory), commandFile);
         } catch (UncheckedIOException e) {
             System.out.println("ERROR: " + e.getMessage());
         } finally {
@@ -53,44 +58,16 @@ public class App {
         }
     }
 
-    private static void run(Path dataDirectory, String commandFile) {
-        CommandProcessor processor = new CommandProcessor(ParkController.load(dataDirectory));
+    private static void run(CommandProcessor processor, String commandFile) {
         if (commandFile == null) {
             BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-            run(stdin, processor, System.out, false);
+            ConsoleRunner.run(stdin, processor, System.out, false);
             return;
         }
         try (BufferedReader reader = Files.newBufferedReader(Path.of(commandFile), StandardCharsets.UTF_8)) {
-            run(reader, processor, System.out, true);
+            ConsoleRunner.run(reader, processor, System.out, true);
         } catch (IOException e) {
             System.out.println("ERROR: cannot read command file '" + commandFile + "': " + describe(e));
-        }
-    }
-
-    /**
-     * Processes commands line by line until EXIT or end of input. Blank lines are ignored.
-     * Read errors are reported and stop processing.
-     *
-     * @param echo whether each command is printed before its result (useful for file input)
-     */
-    public static void run(BufferedReader input, CommandProcessor processor, PrintStream out, boolean echo) {
-        try {
-            String line;
-            while ((line = input.readLine()) != null) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                if (echo) {
-                    out.println("> " + line);
-                }
-                CommandProcessor.Result result = processor.process(line);
-                out.println(result.output());
-                if (result.exit()) {
-                    return;
-                }
-            }
-        } catch (IOException e) {
-            out.println("ERROR: cannot read commands: " + describe(e));
         }
     }
 
@@ -103,10 +80,10 @@ public class App {
     }
 
     private static String describe(IOException e) {
-        if (e instanceof java.nio.file.NoSuchFileException) {
+        if (e instanceof NoSuchFileException) {
             return "file does not exist";
         }
-        if (e instanceof java.nio.file.AccessDeniedException) {
+        if (e instanceof AccessDeniedException) {
             return "permission denied";
         }
         return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
