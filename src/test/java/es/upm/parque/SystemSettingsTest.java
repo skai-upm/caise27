@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
+import es.upm.parque.business.validation.Identifiers;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,7 +23,10 @@ class SystemSettingsTest {
 
     @Test
     void systemDateStartsWithTheOperatingSystemDate() {
-        assertEquals(LocalDate.now(ZoneId.systemDefault()), new ParkController(dir).getSystemDate());
+        App.run(new String[0], dir, dir.resolve("tmp"), new java.io.ByteArrayInputStream(new byte[0]),
+                new java.io.PrintStream(java.io.OutputStream.nullOutputStream()));
+        assertEquals(LocalDate.now(ZoneId.systemDefault()),
+                es.upm.parque.business.controller.ParkController.getInstance().getSystemDate());
     }
 
     @Test

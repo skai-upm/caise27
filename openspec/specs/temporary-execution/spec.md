@@ -7,7 +7,7 @@ Provides the `--fly` execution mode, which runs the application with all persist
 ## Requirements
 
 ### Requirement: Temporary persistence directory
-When started with the `--fly` option, the application SHALL create at startup a new directory `tmp/<yyyyMMdd_HHmmss>/` identified by the start timestamp, and SHALL use it as the only location of every persistence file (users, groups, tickets, group tickets, attractions) during that run.
+When started with the `--fly` option, the application SHALL create at startup a new directory `tmp/<yyyyMMdd_HHmmss>/` identified by the start timestamp, and SHALL use it as the only location of every persistence file (users, groups, tickets, group tickets, passes, attractions) during that run.
 
 #### Scenario: Permanent data untouched
 - **WHEN** the application runs with `--fly` and creates a user
@@ -16,6 +16,10 @@ When started with the `--fly` option, the application SHALL create at startup a 
 #### Scenario: Distinct directory per run
 - **WHEN** a `--fly` run starts while a directory with the same timestamp already exists
 - **THEN** the run uses a different, new directory
+
+#### Scenario: Passes in fly mode
+- **WHEN** a `--fly` run buys passes
+- **THEN** pass data is written only inside the run's temporary directory
 
 ### Requirement: Same persistence logic
 The `--fly` mode SHALL reuse the same persistence implementation as normal execution, differing only in the configured file locations.

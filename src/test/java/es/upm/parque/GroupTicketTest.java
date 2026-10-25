@@ -9,6 +9,9 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import es.upm.parque.business.model.GroupTicket;
+import es.upm.parque.business.model.IndividualTicket;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -40,15 +43,15 @@ class GroupTicketTest {
     void purchaseGeneratesOneTicketPerMember() {
         t.addMembers("G01", 3);
         assertEquals("OK GROUP TICKET CREATED -> 108.00", t.run("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
-        GroupTicket gt = assertInstanceOf(GroupTicket.class, t.park.getTickets().get("TG01"));
+        GroupTicket gt = assertInstanceOf(GroupTicket.class, t.tickets.get("TG01"));
         assertEquals(3, gt.getTickets().size());
-        assertSame(t.park.getGroups().get("G01"), gt.getGroup());
+        assertSame(t.groups.get("G01"), gt.getGroup());
         for (IndividualTicket internal : gt.getTickets()) {
             assertSame(gt, internal.getGroupTicket());
             assertEquals(new BigDecimal("40.00"), internal.getPrice());
-            assertSame(internal, t.park.getTickets().get(internal.getId()));
+            assertSame(internal, t.tickets.get(internal.getId()));
         }
-        assertEquals(t.park.getGroups().get("G01").getMembers(), gt.getUsers());
+        assertEquals(t.groups.get("G01").getMembers(), gt.getUsers());
     }
 
     @Test
@@ -65,7 +68,7 @@ class GroupTicketTest {
     void internalIdsSkipUsedIdentifiers() {
         t.addMembers("G01", 2);
         t.run("TICKET CREATE;TG01-1;u0@correo.com;2026-10-10", "GROUPTICKET CREATE;TG01;G01;2026-10-15");
-        GroupTicket gt = assertInstanceOf(GroupTicket.class, t.park.getTickets().get("TG01"));
+        GroupTicket gt = assertInstanceOf(GroupTicket.class, t.tickets.get("TG01"));
         assertEquals("TG01-2", gt.getTickets().get(0).getId());
         assertEquals("TG01-3", gt.getTickets().get(1).getId());
     }
@@ -77,11 +80,11 @@ class GroupTicketTest {
         assertTrue(t.run("GROUP ADD;G01;ana@correo.com").startsWith("ERROR"));
         assertTrue(t.run("GROUP REMOVE;G01;u0@correo.com").startsWith("ERROR"));
         assertTrue(t.run("GROUP DELETE;G01").startsWith("ERROR"));
-        assertEquals(2, t.park.getGroups().get("G01").getMembers().size());
+        assertEquals(2, t.groups.get("G01").getMembers().size());
 
         t.run("SYSTEM DATE;2026-10-16");
         assertEquals("OK GROUP MEMBER REMOVED", t.run("GROUP REMOVE;G01;u0@correo.com"));
-        GroupTicket gt = assertInstanceOf(GroupTicket.class, t.park.getTickets().get("TG01"));
+        GroupTicket gt = assertInstanceOf(GroupTicket.class, t.tickets.get("TG01"));
         assertEquals(2, gt.getTickets().size());
         assertEquals("OK GROUP DELETED", t.run("GROUP DELETE;G01"));
     }
@@ -104,7 +107,7 @@ class GroupTicketTest {
         assertTrue(t.run("TICKET DELETE;TG01").startsWith("ERROR"));
         t.run("SYSTEM DATE;2026-10-14");
         assertEquals("OK GROUP TICKET DELETED", t.run("GROUPTICKET DELETE;TG01"));
-        assertTrue(t.park.getTickets().getTickets().isEmpty());
+        assertTrue(t.tickets.getTickets().isEmpty());
         assertEquals("OK GROUP MEMBER REMOVED", t.run("GROUP REMOVE;G01;u0@correo.com"));
     }
 
@@ -119,11 +122,11 @@ class GroupTicketTest {
         t.addMembers("G01", 3);
         t.run("GROUPTICKET CREATE;TG01;G01;2026-10-15");
         ParkTestSupport restarted = t.restart(LocalDate.of(2026, 10, 15));
-        GroupTicket gt = assertInstanceOf(GroupTicket.class, restarted.park.getTickets().get("TG01"));
+        GroupTicket gt = assertInstanceOf(GroupTicket.class, restarted.tickets.get("TG01"));
         assertEquals(new BigDecimal("108.00"), gt.getPrice());
         assertEquals(3, gt.getTickets().size());
-        assertSame(restarted.park.getGroups().get("G01"), gt.getGroup());
-        assertSame(restarted.park.getUsers().findByEmail("u0@correo.com"), gt.getTickets().get(0).getUser());
+        assertSame(restarted.groups.get("G01"), gt.getGroup());
+        assertSame(restarted.users.findByEmail("u0@correo.com"), gt.getTickets().get(0).getUser());
         assertTrue(restarted.run("GROUP DELETE;G01").startsWith("ERROR"));
     }
 
@@ -131,7 +134,7 @@ class GroupTicketTest {
     void historyOfDeletedGroupIsKept() {
         t.addMembers("G01", 1);
         t.run("GROUPTICKET CREATE;TG01;G01;2026-10-15", "SYSTEM DATE;2026-10-16", "GROUP DELETE;G01");
-        GroupTicket gt = assertInstanceOf(GroupTicket.class, t.restart(TODAY).park.getTickets().get("TG01"));
+        GroupTicket gt = assertInstanceOf(GroupTicket.class, t.restart(TODAY).tickets.get("TG01"));
         assertEquals("G01", gt.getGroupId());
         assertEquals(1, gt.getTickets().size());
     }

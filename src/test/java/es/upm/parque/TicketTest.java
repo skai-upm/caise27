@@ -14,6 +14,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Ticket;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -51,9 +54,9 @@ class TicketTest {
     @Test
     void createTicketForExistingUser() {
         assertEquals("OK TICKET CREATED -> 40.00", t.run("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
-        IndividualTicket ticket = assertInstanceOf(IndividualTicket.class, t.park.getTickets().get("T001"));
+        IndividualTicket ticket = assertInstanceOf(IndividualTicket.class, t.tickets.get("T001"));
         assertEquals(LocalDate.of(2026, 10, 15), ticket.getDate());
-        assertSame(t.park.getUsers().findByEmail("ana@correo.com"), ticket.getUser());
+        assertSame(t.users.findByEmail("ana@correo.com"), ticket.getUser());
         assertEquals(new BigDecimal("40.00"), ticket.getPrice());
     }
 
@@ -71,7 +74,7 @@ class TicketTest {
         assertTrue(t.run("TICKET CREATE;T003;ana@correo.com;2026-13-01").startsWith("ERROR"));
         assertTrue(t.run("TICKET CREATE;T004;ana@correo.com;2026-09-30").startsWith("ERROR"));
         assertTrue(t.run("TICKET CREATE;T 5;ana@correo.com;2026-10-15").startsWith("ERROR"));
-        assertEquals(1, t.park.getTickets().getTickets().size());
+        assertEquals(1, t.tickets.getTickets().size());
         assertTrue(t.run("TICKET CREATE;T006;ana@correo.com;2026-10-01").startsWith("OK"));
     }
 
@@ -94,7 +97,7 @@ class TicketTest {
         assertTrue(t.run("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
         t.run("SYSTEM DATE;2026-10-16");
         assertEquals("OK USER DELETED", t.run("USER DELETE;ana@correo.com;Clave1!"));
-        assertEquals(1, t.park.getTickets().getTickets().size());
+        assertEquals(1, t.tickets.getTickets().size());
     }
 
     @Test
@@ -112,12 +115,12 @@ class TicketTest {
                 Files.readString(dir.resolve("tickets.txt")));
 
         ParkTestSupport restarted = t.restart(LocalDate.of(2026, 10, 21));
-        IndividualTicket t1 = assertInstanceOf(IndividualTicket.class, restarted.park.getTickets().get("T001"));
-        assertSame(restarted.park.getUsers().findByDni("12345678Z"), t1.getUser());
+        IndividualTicket t1 = assertInstanceOf(IndividualTicket.class, restarted.tickets.get("T001"));
+        assertSame(restarted.users.findByDni("12345678Z"), t1.getUser());
         assertEquals("OK USER DELETED", restarted.run("USER DELETE;ana@correo.com;Clave1!"));
 
         IndividualTicket history = assertInstanceOf(IndividualTicket.class,
-                restarted.restart(TODAY).park.getTickets().get("T002"));
+                restarted.restart(TODAY).tickets.get("T002"));
         assertNull(history.getUser());
         assertEquals("12345678Z", history.getOwnerDni());
         assertEquals(new BigDecimal("55.00"), history.getPrice());
@@ -125,7 +128,7 @@ class TicketTest {
 
     @Test
     void unknownTicketIsReported() {
-        assertThrows(IllegalArgumentException.class, () -> t.park.getTickets().get("NOPE"));
+        assertThrows(IllegalArgumentException.class, () -> t.tickets.get("NOPE"));
         assertTrue(t.run("TICKET DELETE;NOPE").startsWith("ERROR"));
     }
 }

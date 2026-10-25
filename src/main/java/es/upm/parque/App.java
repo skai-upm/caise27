@@ -12,14 +12,18 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
+import es.upm.parque.business.security.BCryptPasswordHasher;
+import es.upm.parque.presentation.CommandProcessor;
+
 /**
- * Entry point. Without a file argument it reads commands from standard input;
+ * Entry point and bootstrap. Without a file argument it reads commands from standard input;
  * with one it reads them from that file. The {@code --fly} option keeps all persistence
  * in a temporary directory that is deleted when the run ends.
  */
@@ -73,7 +77,9 @@ public class App {
                 cleanupHook = registerCleanup(tempDir);
                 dir = tempDir;
             }
-            execute(arguments.file(), new ParkController(dir), in, out);
+            CommandProcessor processor = ParkInitializer.initialize(dir, LocalDate.now(ZoneId.systemDefault()),
+                    new BCryptPasswordHasher(), out);
+            execute(arguments.file(), processor, in, out);
         } catch (IOException | RuntimeException e) {
             out.println("ERROR Cannot start the application: " + e.getMessage());
         } finally {
@@ -84,30 +90,19 @@ public class App {
         }
     }
 
-    private static void execute(String file, ParkController park, InputStream in, PrintStream out) {
-        CommandProcessor processor = new CommandProcessor(park, out);
+    private static void execute(String file, CommandProcessor processor, InputStream in, PrintStream out) {
         if (file == null) {
             try {
-                processCommands(new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8)), processor);
+                processor.run(new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8)));
             } catch (IOException e) {
                 out.println("ERROR Cannot read standard input: " + e.getMessage());
             }
             return;
         }
         try (BufferedReader reader = Files.newBufferedReader(Path.of(file), StandardCharsets.UTF_8)) {
-            processCommands(reader, processor);
+            processor.run(reader);
         } catch (IOException | InvalidPathException e) {
             out.println("ERROR Cannot read command file '" + file + "': " + describe(e));
-        }
-    }
-
-    static void processCommands(BufferedReader reader, CommandProcessor processor) throws IOException {
-        String line;
-        boolean running = true;
-        while (running && (line = reader.readLine()) != null) {
-            if (!line.isBlank()) {
-                running = processor.process(line);
-            }
         }
     }
 

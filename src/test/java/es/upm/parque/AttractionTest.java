@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import es.upm.parque.business.model.Attraction;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -33,7 +35,7 @@ class AttractionTest {
     @Test
     void createAndRejectInvalidAttractions() {
         assertEquals("OK ATTRACTION CREATED", t.run("ATTRACTION CREATE;A01;Tornado;20"));
-        Attraction a = t.park.getAttraction("A01");
+        Attraction<?> a = t.attractions.get("A01");
         assertEquals("Tornado", a.getName());
         assertEquals(20, a.getCapacity());
         assertTrue(a.getPresent().isEmpty());
@@ -78,18 +80,18 @@ class AttractionTest {
         assertTrue(t.run("ATTRACTION ENTER;A01;T001").startsWith("ERROR"));
         t.run("SYSTEM DATE;2026-10-16");
         assertTrue(t.run("ATTRACTION ENTER;A01;TG01").startsWith("ERROR"));
-        assertTrue(t.park.getAttraction("A01").getPresent().isEmpty());
+        assertTrue(t.attractions.get("A01").getPresent().isEmpty());
     }
 
     @Test
     void groupEntryIsAtomicAndCapacityNeverExceeded() {
         t.run("ATTRACTION CREATE;A01;Tornado;3", "ATTRACTION ENTER;A01;T001");
         assertTrue(t.run("ATTRACTION ENTER;A01;TG01").startsWith("ERROR"));
-        assertEquals(1, t.park.getAttraction("A01").getPresent().size());
+        assertEquals(1, t.attractions.get("A01").getPresent().size());
         t.run("ATTRACTION EXIT;A01;T001");
         assertEquals("OK ATTRACTION ENTERED -> 3", t.run("ATTRACTION ENTER;A01;TG01"));
         assertTrue(t.run("ATTRACTION ENTER;A01;T001").startsWith("ERROR"));
-        assertEquals(0, t.park.getAttraction("A01").getAvailable());
+        assertEquals(0, t.attractions.get("A01").getAvailable());
     }
 
     @Test
@@ -118,11 +120,19 @@ class AttractionTest {
     @Test
     void attractionsPersistAndStartEmpty() throws IOException {
         t.run("ATTRACTION CREATE;A01;Tornado;20", "ATTRACTION ENTER;A01;T001");
-        assertEquals("A01;Tornado;20" + System.lineSeparator(), Files.readString(dir.resolve("attractions.txt")));
-        Attraction restored = t.restart(DAY).park.getAttraction("A01");
+        assertEquals("A01;Tornado;20;GENERAL" + System.lineSeparator(), Files.readString(dir.resolve("attractions.txt")));
+        Attraction<?> restored = t.restart(DAY).attractions.get("A01");
         assertEquals("Tornado", restored.getName());
         assertEquals(20, restored.getCapacity());
         assertTrue(restored.getPresent().isEmpty());
         assertTrue(t.restart(DAY).output("ATTRACTION STATUS;A01").contains("(none)"));
+    }
+
+    @Test
+    void legacyAttractionLineIsGeneral() throws IOException {
+        Files.writeString(dir.resolve("attractions.txt"), "A09;Antigua;5\n");
+        Attraction<?> legacy = t.restart(DAY).attractions.get("A09");
+        assertEquals(es.upm.parque.business.model.AttractionType.GENERAL, legacy.getType());
+        assertEquals(5, legacy.getCapacity());
     }
 }

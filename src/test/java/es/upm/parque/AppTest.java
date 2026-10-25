@@ -13,6 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import es.upm.parque.business.model.User;
+import es.upm.parque.persistence.FileUserRepository;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -37,7 +40,7 @@ class AppTest {
     }
 
     private List<User> storedUsers() {
-        return new UserRepository(dir.resolve("users.txt")).load();
+        return new FileUserRepository(dir.resolve("users.txt")).load();
     }
 
     @Test

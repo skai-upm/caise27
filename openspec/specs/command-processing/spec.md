@@ -76,7 +76,7 @@ Interactive mode and file mode SHALL use the same command-processing mechanism, 
 - **THEN** both executions print the same results and leave the same stored data
 
 ### Requirement: HELP command
-The `HELP` command SHALL display the available commands with their basic syntax, including at least `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta`, `USER DELETE;Correo;Contraseña`, `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, `SYSTEM DATE;yyyy-MM-dd`, `SYSTEM PRICE;Precio`, `GROUP CREATE;IdGrupo;Nombre`, `GROUP ADD;IdGrupo;Correo`, `GROUP REMOVE;IdGrupo;Correo`, `GROUP DELETE;IdGrupo`, `TICKET CREATE;IdEntrada;Correo;Fecha`, `TICKET DELETE;IdEntrada`, `GROUPTICKET CREATE;IdEntrada;IdGrupo;Fecha`, `GROUPTICKET DELETE;IdEntrada`, `ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad`, `ATTRACTION DELETE;IdAtraccion`, `ATTRACTION ENTER;IdAtraccion;IdEntrada`, `ATTRACTION EXIT;IdAtraccion;IdEntrada`, `ATTRACTION STATUS;IdAtraccion`, `HELP` and `EXIT`.
+The `HELP` command SHALL display every registered command with its basic syntax (optional parameters in brackets), generated from the registered commands. It SHALL include at least the E1/E2 commands plus `INVOICE CREATE;USER;Correo`, `INVOICE CREATE;GROUP;IdGrupo`, `SPEEDPASS CREATE;IdEntrada;Cantidad`, `SPEEDPASS DELETE;IdSpeedPass`, `SPECIALPASS CREATE;IdEntrada`, `SPECIALPASS DELETE;IdEntrada`, `ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;Tipo]`, `ATTRACTION ENTER;IdAtraccion;IdEntrada[;SPEED]` and `HELP EXTENDED`.
 
 #### Scenario: Display help
 - **WHEN** the `HELP` command is processed
@@ -99,3 +99,28 @@ If the file argument does not exist, cannot be opened or cannot be read, the app
 #### Scenario: Nonexistent file
 - **WHEN** the application is started with the path of a file that does not exist
 - **THEN** an error message naming the problem is printed and the application terminates without a stack trace
+
+### Requirement: HELP EXTENDED command
+The `HELP EXTENDED` command SHALL display, for every registered command, its syntax and a brief description of its behavior.
+
+#### Scenario: Display extended help
+- **WHEN** `HELP EXTENDED` is processed
+- **THEN** each registered command is printed with its syntax followed by a description
+
+### Requirement: Pluggable help formatting
+Both help modes SHALL be produced from the same registered-command information by a help generator that receives its formatting behavior through dependency injection, so new help formats can be added without changing command processing.
+
+#### Scenario: New command appears in both helps
+- **WHEN** a command is registered
+- **THEN** it appears in both `HELP` and `HELP EXTENDED` without changes to the help generator
+
+### Requirement: Optional parameters
+Commands MAY declare optional trailing parameters; a command SHALL be accepted when the number of parameters is between its minimum and maximum, and rejected with an error showing its syntax otherwise.
+
+#### Scenario: Optional parameter omitted
+- **WHEN** `ATTRACTION CREATE;A01;Tornado;20` is processed
+- **THEN** it is accepted although the type parameter is omitted
+
+#### Scenario: Too many parameters
+- **WHEN** `ATTRACTION ENTER;A01;T001;SPEED;X` is processed
+- **THEN** an `ERROR` result showing the command syntax is printed
