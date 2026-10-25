@@ -1,111 +1,242 @@
 @startuml model
-' Amusement Park - class model (Delivery 2)
+' Amusement Park - class model (Delivery 3)
 ' Associations: cross (x) at the class holding the attribute, arrow towards the referenced class.
 ' Relationship labels are the names of the holding attributes.
+' Usage (dashed) arrows are only drawn for classes that have no incoming relationship.
 skinparam classAttributeIconSize 0
 hide empty methods
 hide empty members
 
 package es.upm.parque {
-
   class App
+}
 
+package es.upm.parque.presentation {
   class CommandProcessor {
     exitRequested : boolean
   }
-
-  class ParkController {
-    currentDate : LocalDate
-    ticketPrice : BigDecimal
-  }
-
-  class UserManager
-  class GroupManager
-  class TicketManager
-  class AttractionManager
-
-  class UserRepository
-  class GroupRepository
-  class TicketRepository
-  class AttractionRepository
-
-  class UserValidator
-
-  class User {
+  class CommandDefinition {
     name : String
-    surname : String
-    dni : String
-    email : String
-    password : String
-    phone : String
-    card : String
+    parameters : String [0..*]
+    description : String
   }
+  interface CommandAction
+  class InputRunner
 
-  enum UserField {
-    NAME
-    SURNAME
-    EMAIL
-    PASSWORD
-    PHONE
-    CARD
-  }
-
-  class Group {
-    id : String
-    name : String
-  }
-
-  abstract class Ticket {
-    id : String
-    date : LocalDate
-  }
-
-  class IndividualTicket {
-    price : BigDecimal
-  }
-
-  class GroupTicket {
-    price : BigDecimal
-  }
-
-  class Attraction {
-    id : String
-    name : String
-    capacity : int
+  package help {
+    class HelpGenerator
+    interface HelpFormatter
+    class SyntaxHelpFormatter
+    class ExtendedHelpFormatter
   }
 }
 
+package es.upm.parque.business {
+
+  package controller {
+    class ParkController {
+      currentDate : LocalDate
+      ticketPrice : BigDecimal
+    }
+    class UserController
+    class GroupController
+    class TicketController
+    class AttractionController
+    class InvoiceController
+  }
+
+  package model {
+    class User {
+      name : String
+      surname : String
+      dni : String
+      email : String
+      password : String
+      phone : String
+      card : String
+    }
+
+    enum UserField {
+      NAME
+      SURNAME
+      EMAIL
+      PASSWORD
+      PHONE
+      CARD
+    }
+
+    class Group {
+      id : String
+      name : String
+    }
+
+    interface Access
+    interface IndividualAccess
+    interface GroupAccess
+
+    abstract class Ticket {
+      id : String
+      date : LocalDate
+    }
+    class IndividualTicket {
+      price : BigDecimal
+    }
+    class GroupTicket {
+      price : BigDecimal
+    }
+
+    abstract class Pass {
+      id : String
+      price : BigDecimal
+      consumed : boolean
+    }
+    class SpeedPass
+    class SpecialPass
+
+    abstract class "Attraction<T extends Access>" as Attraction {
+      id : String
+      name : String
+      capacity : int
+    }
+    class GeneralAttraction
+    class IndividualAttraction
+    class GroupAttraction
+    class SpecialAttraction
+
+    enum AttractionType {
+      GENERAL
+      INDIVIDUAL
+      GROUP
+      SPECIAL
+    }
+
+    class EntryResult {
+      error : String
+      users : int
+    }
+  }
+
+  package invoice {
+    interface InvoiceBuilder
+    class StandardInvoiceBuilder {
+      recipient : String
+      issueDate : LocalDate
+      currentTitle : String
+    }
+    class Invoice {
+      recipient : String
+      issueDate : LocalDate
+      total : BigDecimal
+    }
+    class InvoiceSection {
+      title : String
+    }
+    class InvoiceLine {
+      description : String
+      price : BigDecimal
+    }
+  }
+
+  package validation {
+    class UserValidator
+  }
+
+  package security {
+    class PasswordHasher {
+      logRounds : int
+    }
+  }
+}
+
+package es.upm.parque.persistence {
+  class StorageLocation
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class PassRepository
+  class AttractionRepository
+}
+
 ' ---- usage (only for classes without incoming relationships) ----
-App ..> CommandProcessor
-UserManager ..> UserValidator
-UserManager ..> UserField
+App ..> InputRunner
+App ..> StorageLocation
+App ..> SyntaxHelpFormatter
+App ..> ExtendedHelpFormatter
+App ..> StandardInvoiceBuilder
+UserController ..> UserValidator
+UserController ..> UserField
+AttractionController ..> AttractionType
+AttractionType ..> GeneralAttraction
+AttractionType ..> IndividualAttraction
+AttractionType ..> GroupAttraction
+AttractionType ..> SpecialAttraction
+Attraction ..> EntryResult
+StandardInvoiceBuilder ..> Invoice
 
-' ---- controller and managers ----
+' ---- presentation ----
+InputRunner "1" x--> "1" CommandProcessor : processor
 CommandProcessor "1" x--> "1" ParkController : controller
-ParkController "1" x--> "1" UserManager : userManager
-ParkController "1" x--> "1" GroupManager : groupManager
-ParkController "1" x--> "1" TicketManager : ticketManager
-ParkController "1" x--> "1" AttractionManager : attractionManager
+CommandProcessor "1" x--> "1" HelpGenerator : helpGenerator
+CommandProcessor "1" x--> "0..*" CommandDefinition : commands
+CommandDefinition "0..*" x--> "1" CommandAction : action
+HelpGenerator "1" x--> "1..*" HelpFormatter : formatters
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
 
-UserManager "1" x--> "1" UserRepository : repository
-UserManager "1" x--> "0..*" User : users
-GroupManager "1" x--> "1" GroupRepository : repository
-GroupManager "1" x--> "0..*" Group : groups
-TicketManager "1" x--> "1" TicketRepository : repository
-TicketManager "1" x--> "0..*" Ticket : tickets
-AttractionManager "1" x--> "1" AttractionRepository : repository
-AttractionManager "1" x--> "0..*" Attraction : attractions
+' ---- controllers ----
+ParkController "1" x--> "1" UserController : userController
+ParkController "1" x--> "1" GroupController : groupController
+ParkController "1" x--> "1" TicketController : ticketController
+ParkController "1" x--> "1" AttractionController : attractionController
+ParkController "1" x--> "1" InvoiceController : invoiceController
+
+UserController "1" x--> "1" UserRepository : repository
+UserController "1" x--> "1" PasswordHasher : passwordHasher
+UserController "1" x--> "0..*" User : users
+GroupController "1" x--> "1" GroupRepository : repository
+GroupController "1" x--> "0..*" Group : groups
+TicketController "1" x--> "1" TicketRepository : repository
+TicketController "1" x--> "1" PassRepository : passRepository
+TicketController "1" x--> "0..*" Ticket : tickets
+AttractionController "1" x--> "1" AttractionRepository : repository
+AttractionController "1" x--> "0..*" Attraction : attractions
+InvoiceController "1" x--> "1" TicketController : ticketController
+InvoiceController "1" x--> "1" InvoiceBuilder : builderFactory
+
+' ---- invoices ----
+InvoiceBuilder <|.. StandardInvoiceBuilder
+StandardInvoiceBuilder "1" x--> "0..*" InvoiceSection : sections
+StandardInvoiceBuilder "1" x--> "0..*" InvoiceLine : currentLines
+Invoice "1" *--> "0..*" InvoiceSection : sections
+InvoiceSection "1" *--> "1..*" InvoiceLine : lines
 
 ' ---- domain ----
 Group "0..*" x--> "0..*" User : users
-Attraction "0..*" x--> "0..*" User : users
 
+Access <|-- IndividualAccess
+Access <|-- GroupAccess
+Access <|.. Ticket
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
 
 IndividualTicket "0..*" x--> "1" User : user
 IndividualTicket "1..*" x--> "0..1" GroupTicket : groupTicket
+IndividualTicket "1" *--> "0..*" SpeedPass : speedPasses
+IndividualTicket "1" *--> "0..1" SpecialPass : specialPass
 GroupTicket "0..*" o--> "1" Group : group
 GroupTicket "1" *--> "1..*" IndividualTicket : tickets
+
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+
+Attraction <|-- GeneralAttraction : T = Access
+Attraction <|-- IndividualAttraction : T = IndividualAccess
+Attraction <|-- GroupAttraction : T = GroupAccess
+Attraction <|-- SpecialAttraction : T = IndividualAccess
+Attraction "0..*" x--> "0..*" User : users
+
+EntryResult "0..*" x--> "0..*" Pass : consumedPasses
 
 @enduml

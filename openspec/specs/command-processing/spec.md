@@ -57,11 +57,11 @@ If the supplied file does not exist, cannot be opened or cannot be read, the app
 - **THEN** an error message naming the file is printed and the application ends without a stack trace
 
 ### Requirement: HELP command
-`HELP` SHALL display all commands currently available and their basic syntax: the USER, SYSTEM, GROUP, TICKET, GROUPTICKET and ATTRACTION commands, `HELP` and `EXIT`.
+`HELP` SHALL display the syntax of every registered command: the USER, SYSTEM, GROUP, TICKET, GROUPTICKET, ATTRACTION, INVOICE, SPEEDPASS and SPECIALPASS commands, `HELP`, `HELP EXTENDED` and `EXIT`.
 
 #### Scenario: Help output
 - **WHEN** `HELP` is processed
-- **THEN** the output lists the syntax of `USER CREATE`, `USER DELETE`, `USER UPDATE`, `SYSTEM DATE`, `SYSTEM PRICE`, `GROUP CREATE`, `GROUP ADD`, `GROUP REMOVE`, `GROUP DELETE`, `TICKET CREATE`, `TICKET DELETE`, `GROUPTICKET CREATE`, `GROUPTICKET DELETE`, `ATTRACTION CREATE`, `ATTRACTION DELETE`, `ATTRACTION ENTER`, `ATTRACTION EXIT`, `ATTRACTION STATUS`, `HELP` and `EXIT`
+- **THEN** the output lists the syntax of `USER CREATE`, `USER DELETE`, `USER UPDATE`, `SYSTEM DATE`, `SYSTEM PRICE`, `GROUP CREATE`, `GROUP ADD`, `GROUP REMOVE`, `GROUP DELETE`, `TICKET CREATE`, `TICKET DELETE`, `GROUPTICKET CREATE`, `GROUPTICKET DELETE`, `ATTRACTION CREATE`, `ATTRACTION DELETE`, `ATTRACTION ENTER`, `ATTRACTION EXIT`, `ATTRACTION STATUS`, `INVOICE CREATE`, `SPEEDPASS CREATE`, `SPEEDPASS DELETE`, `SPECIALPASS CREATE`, `SPECIALPASS DELETE`, `HELP`, `HELP EXTENDED` and `EXIT`
 
 ### Requirement: EXIT command
 `EXIT` SHALL terminate command processing in a controlled manner; no command after `EXIT` SHALL be executed, in either mode.
@@ -69,3 +69,10 @@ If the supplied file does not exist, cannot be opened or cannot be read, the app
 #### Scenario: Commands after EXIT in a file
 - **WHEN** a command file contains `USER CREATE` for Ana, then `EXIT`, then `USER CREATE` for Pedro
 - **THEN** Ana is created, processing stops at `EXIT` and Pedro is not created
+
+### Requirement: HELP EXTENDED command
+`HELP EXTENDED` SHALL display, for every registered command, its syntax and a brief description of its behavior. Both help modes SHALL be generated from the same registered command information, by a help component that receives its output-formatting behavior through dependency injection.
+
+#### Scenario: Extended help
+- **WHEN** `HELP EXTENDED` is processed
+- **THEN** every command from `HELP` appears with its syntax followed by a description

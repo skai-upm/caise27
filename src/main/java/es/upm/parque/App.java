@@ -1,5 +1,25 @@
 package es.upm.parque;
 
+import es.upm.parque.business.controller.AttractionController;
+import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
+import es.upm.parque.business.controller.ParkController;
+import es.upm.parque.business.controller.TicketController;
+import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.StandardInvoiceBuilder;
+import es.upm.parque.business.security.PasswordHasher;
+import es.upm.parque.persistence.AttractionRepository;
+import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.PassRepository;
+import es.upm.parque.persistence.StorageLocation;
+import es.upm.parque.persistence.TicketRepository;
+import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.presentation.CommandProcessor;
+import es.upm.parque.presentation.InputRunner;
+import es.upm.parque.presentation.help.ExtendedHelpFormatter;
+import es.upm.parque.presentation.help.HelpGenerator;
+import es.upm.parque.presentation.help.SyntaxHelpFormatter;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,6 +30,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -58,16 +79,16 @@ public class App {
     }
 
     private static void runWithData(String commandFile, Path dataDir, PrintStream out) {
-        CommandProcessor processor;
+        InputRunner runner;
         try {
-            processor = new CommandProcessor(ParkController.load(dataDir));
+            runner = new InputRunner(new CommandProcessor(initialize(dataDir), createHelpGenerator()), out);
         } catch (IOException | RuntimeException e) {
             out.println("ERROR could not load stored data: " + e.getMessage());
             return;
         }
         if (commandFile == null) {
             BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
-            processLines(stdin, processor, out);
+            runner.run(stdin);
         } else {
             Path path = Path.of(commandFile);
             if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
@@ -75,25 +96,49 @@ public class App {
                 return;
             }
             try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-                processLines(reader, processor, out);
+                runner.run(reader);
             } catch (IOException e) {
                 out.println("ERROR cannot read command file: " + commandFile);
             }
         }
     }
 
-    private static void processLines(BufferedReader reader, CommandProcessor processor, PrintStream out) {
-        try {
-            String line;
-            while (!processor.isExitRequested() && (line = reader.readLine()) != null) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                out.println(processor.process(line));
-            }
-        } catch (IOException e) {
-            out.println("ERROR reading commands: " + e.getMessage());
-        }
+    /**
+     * Composition root: creates the repositories for the given data directory, injects them into the
+     * singleton controllers and wires the controllers together.
+     */
+    public static ParkController initialize(Path dataDir) throws IOException {
+        return initialize(dataDir, new PasswordHasher());
+    }
+
+    /**
+     * Same as {@link #initialize(Path)} with an explicit password hasher.
+     */
+    public static ParkController initialize(Path dataDir, PasswordHasher passwordHasher) throws IOException {
+        StorageLocation storage = new StorageLocation(dataDir);
+        UserController users = UserController.getInstance();
+        users.configure(new UserRepository(storage.users()), passwordHasher);
+        GroupController groups = GroupController.getInstance();
+        groups.configure(new GroupRepository(storage.groups()), users);
+        TicketController tickets = TicketController.getInstance();
+        tickets.configure(new TicketRepository(storage.tickets(), storage.groupTickets()),
+                new PassRepository(storage.passes()), users, groups);
+        AttractionController attractions = AttractionController.getInstance();
+        attractions.configure(new AttractionRepository(storage.attractions()));
+        InvoiceController invoices = InvoiceController.getInstance();
+        invoices.configure(tickets, StandardInvoiceBuilder::new);
+        ParkController park = ParkController.getInstance();
+        park.configure(users, groups, tickets, attractions, invoices);
+        return park;
+    }
+
+    /**
+     * Help generator with the formatting behavior injected for each help mode.
+     */
+    public static HelpGenerator createHelpGenerator() {
+        return new HelpGenerator(Map.of(
+                CommandProcessor.HELP_BASIC, new SyntaxHelpFormatter(),
+                CommandProcessor.HELP_EXTENDED, new ExtendedHelpFormatter()));
     }
 
     static Path createTemporaryDirectory(Path tmpRoot) throws IOException {

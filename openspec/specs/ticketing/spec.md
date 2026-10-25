@@ -22,7 +22,7 @@ Sells individual and group tickets for specific dates, prices them (with group d
 - **THEN** an error is reported
 
 ### Requirement: Delete individual ticket
-`TICKET DELETE;Id` SHALL delete an individual ticket only if its date is strictly later than the current date. Tickets dated today or in the past, unknown tickets, and individual tickets that belong to a group ticket SHALL NOT be deleted.
+`TICKET DELETE;Id` SHALL delete an individual ticket only if its date is strictly later than the current date, cascade-deleting all its SpeedPasses and its Special Pass. Tickets dated today or in the past, unknown tickets, and individual tickets that belong to a group ticket SHALL NOT be deleted, and a rejected deletion SHALL leave the ticket and its passes intact.
 
 #### Scenario: Future ticket
 - **WHEN** the date is 2026-10-01 and `TICKET DELETE;T001` is executed for a ticket dated 2026-10-15
@@ -31,6 +31,10 @@ Sells individual and group tickets for specific dates, prices them (with group d
 #### Scenario: Ticket for today
 - **WHEN** the date is 2026-10-15 and `TICKET DELETE;T001` is executed for a ticket dated 2026-10-15
 - **THEN** an error is reported and the ticket remains
+
+#### Scenario: Passes cascade
+- **WHEN** a future ticket with SpeedPasses and a Special Pass is deleted
+- **THEN** its passes no longer exist, also after a restart
 
 ### Requirement: Create group ticket
 `GROUPTICKET CREATE;Id;Grupo;Fecha` SHALL, for an existing non-empty group, create a group ticket containing one individual ticket per member at the time of purchase, each priced at the current individual price. The total SHALL be the sum of those prices minus a discount by member count: fewer than 3 → 0 %, 3–5 → 10 %, 6–10 → 20 %, more than 10 → 50 %. The reply SHALL be `OK GROUP TICKET CREATED -> <Precio>`.
@@ -48,15 +52,15 @@ Sells individual and group tickets for specific dates, prices them (with group d
 - **THEN** an error is reported
 
 ### Requirement: Delete group ticket
-`GROUPTICKET DELETE;Id` SHALL delete a group ticket and all its internal individual tickets only if its date is strictly later than the current date.
+`GROUPTICKET DELETE;Id` SHALL, only if its date is strictly later than the current date, delete first the passes of each of its internal individual tickets, then those internal tickets, and finally the group ticket. A rejected deletion SHALL leave everything intact.
 
 #### Scenario: Future group ticket
 - **WHEN** the date is 2026-10-01 and a group ticket dated 2026-10-15 is deleted
-- **THEN** the group ticket and its internal tickets no longer exist
+- **THEN** the group ticket, its internal tickets and their passes no longer exist
 
 #### Scenario: Group ticket for today
 - **WHEN** the date equals the group ticket date
-- **THEN** deletion is rejected
+- **THEN** deletion is rejected and the group ticket, internal tickets and passes remain
 
 ### Requirement: Ticket identifiers
 Ticket identifiers SHALL be unique across individual tickets, group tickets and the internal tickets generated for group tickets.

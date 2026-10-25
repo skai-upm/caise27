@@ -42,7 +42,9 @@ public class AppTest {
         String out = runWith(new String[] {commands.toString()});
         assertFalse(out.contains("ERROR"), out);
         String stored = Files.readString(dir.resolve("data/users.txt"));
-        assertTrue(stored.contains("12345678Z;ana@correo.com;Clave1!;699999999"));
+        assertTrue(stored.contains("12345678Z;ana@correo.com;$2a$"), stored);
+        assertTrue(stored.contains(";699999999;1234567890123456"), stored);
+        assertFalse(stored.contains("Clave1!"));
         assertFalse(stored.contains("Pedro"));
     }
 

@@ -43,10 +43,13 @@ class FlyModeTest {
     void flyFileModeUsesTemporaryDataAndCleansUp() throws Exception {
         Path commands = dir.resolve("input_fase2.txt");
         Files.writeString(commands, CREATE_ANA + "\nGROUP CREATE;G01;F\nATTRACTION CREATE;A01;Tornado;20\n"
-                + "TICKET CREATE;T001;ana@correo.com;2999-01-01\nUSER CREATE;Ana;X;12345678Z;x@correo.com;Clave1!;6;1234567890123456\nEXIT\n");
+                + "TICKET CREATE;T001;ana@correo.com;2999-01-01\nSPEEDPASS CREATE;T001;10\nSPECIALPASS CREATE;T001\n"
+                + "ATTRACTION CREATE;A02;Castillo;5;SPECIAL\nUSER CREATE;Ana;X;12345678Z;x@correo.com;Clave1!;6;1234567890123456\nEXIT\n");
         String out = runWith("--fly", commands.toString());
         assertTrue(out.contains("OK USER CREATED"), out);
         assertTrue(out.contains("ERROR a user with that DNI already exists"), out);
+        assertTrue(out.contains("OK 10 SPEEDPASS CREATED"), out);
+        assertTrue(out.contains("OK SPECIALPASS CREATED"), out);
         assertFalse(Files.exists(dir.resolve("data")), "normal data must not be touched");
         assertTrue(Files.exists(dir.resolve("tmp")));
         assertTrue(tmpEntries() == 0, "temporary directory must be deleted");
