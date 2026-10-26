@@ -3,6 +3,9 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.SpecialPass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserValidator;
@@ -176,6 +179,60 @@ public class TicketManager {
         }
         ticketsById.remove(ticket.getId());
         persist();
+    }
+
+    /**
+     * Sells {@code quantity} (1 or 10) SpeedPasses for an individual ticket not dated before {@code today}.
+     */
+    public List<SpeedPass> buySpeedPasses(String ticketId, int quantity, LocalDate today) {
+        if (quantity != 1 && quantity != 10) {
+            throw new IllegalArgumentException("SpeedPasses are sold one by one or in packs of ten, not " + quantity);
+        }
+        List<SpeedPass> created = requirePassTicket(ticketId, today).addSpeedPasses(quantity);
+        persist();
+        return created;
+    }
+
+    /** Sells the Special Pass of an individual ticket not dated before {@code today}. */
+    public SpecialPass buySpecialPass(String ticketId, LocalDate today) {
+        SpecialPass pass = requirePassTicket(ticketId, today).addSpecialPass();
+        persist();
+        return pass;
+    }
+
+    /**
+     * Refunds an unused pass of the given type when its ticket is dated after {@code today}.
+     *
+     * @return the refunded pass
+     */
+    public Pass refundPass(String passId, Class<? extends Pass> type, LocalDate today) {
+        for (IndividualTicket t : individualTickets()) {
+            for (Pass p : t.getPasses()) {
+                if (p.getId().equals(passId) && type.isInstance(p)) {
+                    if (!t.getDate().isAfter(today)) {
+                        throw new IllegalArgumentException(p.getTypeName() + " " + passId
+                            + " cannot be refunded: its ticket is dated " + t.getDate() + ", not after " + today);
+                    }
+                    p.refund();
+                    persist();
+                    return p;
+                }
+            }
+        }
+        throw new IllegalArgumentException("No " + type.getSimpleName() + " with identifier " + passId);
+    }
+
+    private IndividualTicket requirePassTicket(String ticketId, LocalDate today) {
+        Ticket ticket = findAdmission(ticketId);
+        if (!(ticket instanceof IndividualTicket individual)) {
+            throw new IllegalArgumentException(ticket == null ? "No ticket with identifier " + ticketId
+                : "Ticket " + ticketId + " is a group ticket; passes are bought for individual tickets");
+        }
+        if (individual.getDate().isBefore(today)) {
+            throw new IllegalArgumentException("Ticket " + ticketId + " is dated " + individual.getDate()
+                + ", before " + today);
+        }
+        return individual;
     }
 
     private List<IndividualTicket> individualTickets() {

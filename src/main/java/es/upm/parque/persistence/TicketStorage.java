@@ -3,6 +3,10 @@ package es.upm.parque.persistence;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.PassStatus;
+import es.upm.parque.business.model.SpecialPass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import java.io.IOException;
@@ -15,26 +19,33 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Stores tickets in two text files:
- * individual tickets as {@code Id;yyyy-MM-dd;Precio;DNI} and group tickets as
- * {@code Id;yyyy-MM-dd;IdGrupo;PrecioBase;Descuento;Id-1:DNI,Id-2:DNI,...}.
+ * Stores tickets in three text files:
+ * individual tickets as {@code Id;yyyy-MM-dd;Precio;DNI}, group tickets as
+ * {@code Id;yyyy-MM-dd;IdGrupo;PrecioBase;Descuento;Id-1:DNI,Id-2:DNI,...} and personal passes as
+ * {@code SPEED|SPECIAL;IdPase;IdTicket;Precio;Estado}.
  */
 public class TicketStorage implements TicketRepository {
 
     private static final String SEPARATOR = ";";
     private static final String COMPONENT_SEPARATOR = ",";
     private static final String OWNER_SEPARATOR = ":";
+    private static final String SPEED = "SPEED";
+    private static final String SPECIAL = "SPECIAL";
 
     private final Path ticketsFile;
     private final Path groupTicketsFile;
+    private final Path passesFile;
 
-    public TicketStorage(Path ticketsFile, Path groupTicketsFile) {
+    public TicketStorage(Path ticketsFile, Path groupTicketsFile, Path passesFile) {
         this.ticketsFile = ticketsFile;
         this.groupTicketsFile = groupTicketsFile;
+        this.passesFile = passesFile;
     }
 
     /**
@@ -65,7 +76,36 @@ public class TicketStorage implements TicketRepository {
                 }
             }
         }
+        loadPasses(tickets);
         return tickets;
+    }
+
+    private void loadPasses(List<Ticket> tickets) {
+        Map<String, IndividualTicket> byId = new HashMap<>();
+        for (Ticket t : tickets) {
+            if (t instanceof IndividualTicket it) {
+                byId.put(it.getId(), it);
+            } else if (t instanceof GroupTicket gt) {
+                gt.getComponents().forEach(c -> byId.put(c.getId(), c));
+            }
+        }
+        for (String line : readLines(passesFile)) {
+            String[] f = line.split(SEPARATOR, -1);
+            IndividualTicket ticket = f.length == 5 ? byId.get(f[2]) : null;
+            if (ticket != null) {
+                try {
+                    BigDecimal price = new BigDecimal(f[3]);
+                    PassStatus status = PassStatus.valueOf(f[4]);
+                    if (f[0].equals(SPEED)) {
+                        ticket.restorePass(new SpeedPass(f[1], price, status));
+                    } else if (f[0].equals(SPECIAL)) {
+                        ticket.restorePass(new SpecialPass(f[1], price, status));
+                    }
+                } catch (IllegalArgumentException e) {
+                    // malformed line: skipped
+                }
+            }
+        }
     }
 
     private static GroupTicket parseGroupTicket(String[] f, Function<String, User> userByDni,
@@ -88,14 +128,17 @@ public class TicketStorage implements TicketRepository {
     public void save(Collection<Ticket> tickets) {
         List<String> individual = new ArrayList<>();
         List<String> group = new ArrayList<>();
+        List<String> passes = new ArrayList<>();
         for (Ticket t : tickets) {
             if (t instanceof IndividualTicket it) {
                 individual.add(String.join(SEPARATOR, it.getId(), it.getDate().toString(),
                     it.getPrice().toPlainString(), it.getOwnerDni()));
+                addPassLines(it, passes);
             } else if (t instanceof GroupTicket gt) {
                 List<String> components = new ArrayList<>();
                 for (IndividualTicket c : gt.getComponents()) {
                     components.add(c.getId() + OWNER_SEPARATOR + c.getOwnerDni());
+                    addPassLines(c, passes);
                 }
                 group.add(String.join(SEPARATOR, gt.getId(), gt.getDate().toString(), gt.getGroupId(),
                     gt.getBasePrice().toPlainString(), String.valueOf(gt.getDiscountPercent()),
@@ -104,6 +147,14 @@ public class TicketStorage implements TicketRepository {
         }
         write(ticketsFile, individual);
         write(groupTicketsFile, group);
+        write(passesFile, passes);
+    }
+
+    private static void addPassLines(IndividualTicket ticket, List<String> lines) {
+        for (Pass p : ticket.getPasses()) {
+            lines.add(String.join(SEPARATOR, p instanceof SpecialPass ? SPECIAL : SPEED, p.getId(), ticket.getId(),
+                p.getPrice().toPlainString(), p.getStatus().name()));
+        }
     }
 
     private static List<String> readLines(Path file) {

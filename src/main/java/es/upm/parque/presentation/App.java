@@ -41,6 +41,7 @@ public class App {
     static final String TICKETS_FILE_NAME = "tickets.txt";
     static final String GROUP_TICKETS_FILE_NAME = "group_tickets.txt";
     static final String ATTRACTIONS_FILE_NAME = "attractions.txt";
+    static final String PASSES_FILE_NAME = "passes.txt";
 
     public static void main(String[] args) {
         run(args, System.in, System.out, DATA_DIR, TMP_DIR);
@@ -90,7 +91,8 @@ public class App {
         GroupManager groups = GroupManager.getInstance()
             .configure(users, new GroupStorage(data.resolve(GROUPS_FILE_NAME)));
         TicketManager tickets = TicketManager.getInstance().configure(users, groups,
-            new TicketStorage(data.resolve(TICKETS_FILE_NAME), data.resolve(GROUP_TICKETS_FILE_NAME)));
+            new TicketStorage(data.resolve(TICKETS_FILE_NAME), data.resolve(GROUP_TICKETS_FILE_NAME),
+                data.resolve(PASSES_FILE_NAME)));
         AttractionManager attractions = AttractionManager.getInstance()
             .configure(new AttractionStorage(data.resolve(ATTRACTIONS_FILE_NAME)));
         return ParkController.getInstance()

@@ -41,7 +41,7 @@ class TicketStorageTest {
     void setUp() {
         ticketsFile = dir.resolve("tickets.txt");
         groupTicketsFile = dir.resolve("group_tickets.txt");
-        storage = new TicketStorage(ticketsFile, groupTicketsFile);
+        storage = new TicketStorage(ticketsFile, groupTicketsFile, dir.resolve("passes.txt"));
     }
 
     @Test

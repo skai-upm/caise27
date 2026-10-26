@@ -12,6 +12,9 @@ import es.upm.parque.TestSupport;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.SpeedPass;
+import es.upm.parque.business.model.SpecialPass;
+import es.upm.parque.business.model.PassStatus;
 import es.upm.parque.business.model.User;
 import es.upm.parque.persistence.GroupStorage;
 import es.upm.parque.persistence.TicketStorage;
@@ -19,6 +22,7 @@ import es.upm.parque.persistence.UserStorage;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -54,7 +58,8 @@ class TicketManagerTest {
 
     private TicketManager reload(UserManager u, GroupManager g) {
         return TicketManager.getInstance().configure(u, g,
-            new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt")));
+            new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt"),
+                dir.resolve("passes.txt")));
     }
 
     @Test
@@ -186,5 +191,57 @@ class TicketManagerTest {
         reloaded.detachGroup(g01);
         assertNull(gt.getGroup());
         assertEquals("G01", ((GroupTicket) reload(reloadedUsers, reloadedGroups).find("TG01")).getGroupId());
+    }
+
+    @Test
+    void passesAreSoldForIndividualAndInternalTickets() {
+        tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, PRICE);
+        tickets.createGroupTicket("TG01", "G01", OCT_15, OCT_1, PRICE);
+        List<SpeedPass> pack = tickets.buySpeedPasses("T001", 10, OCT_1);
+        assertEquals(10, pack.size());
+        assertEquals(new BigDecimal("8.00"), pack.get(0).getPrice());
+        assertEquals("TG01-2-S1", tickets.buySpeedPasses("TG01-2", 1, OCT_1).get(0).getId());
+        SpecialPass special = tickets.buySpecialPass("TG01-1", OCT_15);
+        assertEquals(new BigDecimal("40.00"), special.getPrice());
+        assertThrows(IllegalArgumentException.class, () -> tickets.buySpecialPass("TG01-1", OCT_1));
+        assertThrows(IllegalArgumentException.class, () -> tickets.buySpeedPasses("T001", 5, OCT_1));
+        assertThrows(IllegalArgumentException.class, () -> tickets.buySpeedPasses("TG01", 1, OCT_1));
+        assertThrows(IllegalArgumentException.class, () -> tickets.buySpeedPasses("T999", 1, OCT_1));
+        assertThrows(IllegalArgumentException.class, () -> tickets.buySpeedPasses("T001", 1, OCT_15.plusDays(1)));
+    }
+
+    @Test
+    void refundsFollowTheTicketDate() {
+        tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, PRICE);
+        tickets.buySpeedPasses("T001", 1, OCT_1);
+        tickets.buySpecialPass("T001", OCT_1);
+        assertThrows(IllegalArgumentException.class, () -> tickets.refundPass("T001-SPECIAL", SpeedPass.class, OCT_1));
+        assertThrows(IllegalArgumentException.class, () -> tickets.refundPass("T001-S1", SpeedPass.class, OCT_15));
+        assertEquals(PassStatus.REFUNDED, tickets.refundPass("T001-S1", SpeedPass.class, OCT_1).getStatus());
+        assertThrows(IllegalArgumentException.class, () -> tickets.refundPass("T001-S1", SpeedPass.class, OCT_1));
+        assertThrows(IllegalArgumentException.class, () -> tickets.refundPass("X-S9", SpeedPass.class, OCT_1));
+        assertEquals(PassStatus.REFUNDED, tickets.refundPass("T001-SPECIAL", SpecialPass.class, OCT_1).getStatus());
+    }
+
+    @Test
+    void passesSurviveRestartAndDieWithTheirTicket() {
+        tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, PRICE);
+        tickets.createGroupTicket("TG01", "G01", OCT_15, OCT_1, PRICE);
+        tickets.buySpeedPasses("T001", 1, OCT_1).get(0).consume();
+        tickets.buySpecialPass("T001", OCT_1);
+        tickets.refundPass("T001-SPECIAL", SpecialPass.class, OCT_1);
+        tickets.buySpeedPasses("TG01-1", 1, OCT_1);
+
+        TicketManager reloaded = reload(users, groups);
+        IndividualTicket t = (IndividualTicket) reloaded.find("T001");
+        assertEquals(PassStatus.CONSUMED, t.getSpeedPasses().get(0).getStatus());
+        assertEquals(PassStatus.REFUNDED, t.getSpecialPass().getStatus());
+        assertThrows(IllegalArgumentException.class, () -> reloaded.buySpecialPass("T001", OCT_1));
+        assertEquals(1, ((IndividualTicket) reloaded.findAdmission("TG01-1")).getSpeedPasses().size());
+
+        reloaded.delete("T001", OCT_1);
+        reloaded.deleteGroupTicket("TG01", OCT_1);
+        assertTrue(reload(users, groups).getTickets().isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> reloaded.refundPass("TG01-1-S1", SpeedPass.class, OCT_1));
     }
 }

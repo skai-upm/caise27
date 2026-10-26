@@ -37,6 +37,11 @@ public abstract class InvoiceBuilder {
         // not applicable unless a concrete builder overrides it
     }
 
+    /** Adds the personal passes (SpeedPasses, Special Passes) bought by the recipient, if applicable. */
+    public void buildPersonalPasses() {
+        // not applicable unless a concrete builder overrides it
+    }
+
     public Invoice getResult() {
         return new Invoice(recipient, issueDate, sections);
     }

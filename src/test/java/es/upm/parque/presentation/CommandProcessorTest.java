@@ -51,7 +51,8 @@ class CommandProcessorTest {
         manager = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")), TestSupport.FAST_HASHER);
         groups = GroupManager.getInstance().configure(manager, new GroupStorage(dir.resolve("groups.txt")));
         tickets = TicketManager.getInstance().configure(manager, groups,
-            new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt")));
+            new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt"),
+                dir.resolve("passes.txt")));
         attractions = AttractionManager.getInstance().configure(new AttractionStorage(dir.resolve("attractions.txt")));
         park = ParkController.getInstance().configure(manager, groups, tickets, attractions, new InvoiceDirector(), LocalDate.now());
         processor = new CommandProcessor(park, App.helpGenerators());
@@ -110,7 +111,8 @@ class CommandProcessorTest {
         for (String usage : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
-            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id", "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION DELETE;Id",
+            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id", "SPEEDPASS CREATE;IdTicket;Cantidad", "SPEEDPASS DELETE;IdPase",
+            "SPECIALPASS CREATE;IdTicket", "SPECIALPASS DELETE;IdPase", "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION DELETE;Id",
             "ATTRACTION ENTER;Id;IdTicket", "ATTRACTION EXIT;Id;IdTicket", "ATTRACTION STATUS;Id", "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo",
             "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP EXTENDED", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
@@ -421,5 +423,30 @@ class CommandProcessorTest {
         assertTrue(processor.execute("HELP SHORT").startsWith("ERROR: Unknown help mode: SHORT"));
         assertTrue(processor.execute("HELP EXTENDED;x").startsWith("ERROR: Expected 0"));
         assertTrue(processor.execute("HELP EXTENDED NOW").startsWith("ERROR: Unknown command"));
+    }
+
+    @Test
+    void passCommands() {
+        createFamilyG01();
+        processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.execute("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertEquals("OK SPEEDPASS CREATED -> 80.00 (T001-S1..T001-S10)", processor.execute("SPEEDPASS CREATE;T001;10"));
+        assertEquals("OK SPEEDPASS CREATED -> 8.00 (T001-S11)", processor.execute("SPEEDPASS CREATE;T001;1"));
+        assertEquals("OK SPECIALPASS CREATED -> 40.00 (TG01-1-SPECIAL)", processor.execute("SPECIALPASS CREATE;TG01-1"));
+        assertTrue(processor.execute("SPECIALPASS CREATE;TG01-1").startsWith("ERROR"));
+        assertTrue(processor.execute("SPEEDPASS CREATE;T001;5").startsWith("ERROR"));
+        assertTrue(processor.execute("SPEEDPASS CREATE;T001;muchos").startsWith("ERROR: Invalid quantity"));
+        assertTrue(processor.execute("SPEEDPASS CREATE;TG01;1").startsWith("ERROR"));
+        assertEquals("OK: SpeedPass T001-S1 refunded -> 8.00", processor.execute("SPEEDPASS DELETE;T001-S1"));
+        assertTrue(processor.execute("SPEEDPASS DELETE;T001-S1").startsWith("ERROR"));
+        assertTrue(processor.execute("SPECIALPASS DELETE;T001-S2").startsWith("ERROR"));
+        processor.execute("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.execute("SPECIALPASS DELETE;TG01-1-SPECIAL").contains("cannot be refunded"));
+        String invoice = processor.execute("INVOICE CREATE;USER;ana@correo.com");
+        assertTrue(invoice.contains("SpecialPass TG01-1-SPECIAL (ticket TG01-1): 40.00"), invoice);
+        assertTrue(invoice.contains("SpeedPass T001-S2 (ticket T001): 8.00") && !invoice.contains("T001-S1 "), invoice);
+        assertTrue(invoice.endsWith("TOTAL: 160.00"), invoice);
+        assertTrue(processor.execute("SPEEDPASS LIST").startsWith("ERROR: Unknown command"));
+        assertTrue(processor.execute("SPECIALPASS LIST").startsWith("ERROR: Unknown command"));
     }
 }

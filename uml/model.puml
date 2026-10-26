@@ -94,6 +94,21 @@ package es.upm.parque.business.model {
     - discountPercent : int
   }
 
+  abstract class Pass {
+    - id : String
+    - price : BigDecimal
+    - status : PassStatus
+  }
+
+  class SpeedPass
+  class SpecialPass
+
+  enum PassStatus {
+    AVAILABLE
+    CONSUMED
+    REFUNDED
+  }
+
   class Attraction {
     - id : String
     - name : String
@@ -147,6 +162,7 @@ package es.upm.parque.persistence {
   class TicketStorage {
     - ticketsFile : Path
     - groupTicketsFile : Path
+    - passesFile : Path
   }
 
   class AttractionStorage {
@@ -200,6 +216,10 @@ TicketManager "1" x--> "0..*" Ticket : ticketsById
 IndividualTicket "0..*" x--> "0..1" User : owner
 GroupTicket "0..*" o--> "0..1" Group : group
 GroupTicket "0..1" *--> "1..*" IndividualTicket : components
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+IndividualTicket "1" *--> "0..*" SpeedPass : speedPasses
+IndividualTicket "1" *--> "0..1" SpecialPass : specialPass
 
 ' Attractions
 AttractionRepository <|.. AttractionStorage
@@ -234,6 +254,7 @@ ParkController ..> UserInvoiceBuilder
 ParkController ..> GroupInvoiceBuilder
 ParkController ..> Invoice
 CommandProcessor ..> UserField
+Pass ..> PassStatus
 ParkController ..> UserField
 UserManager ..> UserField
 UserManager ..> UserValidator

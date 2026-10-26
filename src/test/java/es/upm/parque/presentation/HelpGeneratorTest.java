@@ -21,7 +21,7 @@ class HelpGeneratorTest {
             assertTrue(syntaxes.add(command.syntax()), command.syntax());
             assertFalse(command.description().isBlank(), command.syntax());
         }
-        assertEquals(23, syntaxes.size());
+        assertEquals(CommandCatalog.all().size(), syntaxes.size());
     }
 
     @Test

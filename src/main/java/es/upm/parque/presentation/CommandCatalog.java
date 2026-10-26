@@ -44,6 +44,19 @@ public final class CommandCatalog {
     public static final CommandInfo GROUPTICKET_DELETE = new CommandInfo(
         "GROUPTICKET DELETE;Id",
         "Deletes a group ticket dated after the system date together with its internal tickets.");
+    public static final CommandInfo SPEEDPASS_CREATE = new CommandInfo(
+        "SPEEDPASS CREATE;IdTicket;Cantidad",
+        "Buys 1 or 10 SpeedPasses for an individual ticket not dated before the system date; each costs 20% of "
+            + "the ticket price.");
+    public static final CommandInfo SPEEDPASS_DELETE = new CommandInfo(
+        "SPEEDPASS DELETE;IdPase",
+        "Refunds an unused SpeedPass if its ticket is dated after the system date; it is kept as REFUNDED.");
+    public static final CommandInfo SPECIALPASS_CREATE = new CommandInfo(
+        "SPECIALPASS CREATE;IdTicket",
+        "Buys the Special Pass of an individual ticket (same price as the ticket); only one per ticket ever.");
+    public static final CommandInfo SPECIALPASS_DELETE = new CommandInfo(
+        "SPECIALPASS DELETE;IdPase",
+        "Refunds an unused Special Pass if its ticket is dated after the system date; it cannot be bought again.");
     public static final CommandInfo ATTRACTION_CREATE = new CommandInfo(
         "ATTRACTION CREATE;Id;Nombre;Capacidad", "Creates an attraction with a positive maximum capacity.");
     public static final CommandInfo ATTRACTION_DELETE = new CommandInfo(
@@ -70,7 +83,7 @@ public final class CommandCatalog {
 
     private static final List<CommandInfo> ALL = List.of(USER_CREATE, USER_DELETE, USER_UPDATE, GROUP_CREATE,
         GROUP_ADD, GROUP_REMOVE, GROUP_DELETE, TICKET_CREATE, TICKET_DELETE, GROUPTICKET_CREATE, GROUPTICKET_DELETE,
-        ATTRACTION_CREATE, ATTRACTION_DELETE, ATTRACTION_ENTER, ATTRACTION_EXIT, ATTRACTION_STATUS, INVOICE_USER,
+        SPEEDPASS_CREATE, SPEEDPASS_DELETE, SPECIALPASS_CREATE, SPECIALPASS_DELETE, ATTRACTION_CREATE, ATTRACTION_DELETE, ATTRACTION_ENTER, ATTRACTION_EXIT, ATTRACTION_STATUS, INVOICE_USER,
         INVOICE_GROUP, SYSTEM_DATE, SYSTEM_PRICE, HELP, HELP_EXTENDED, EXIT);
 
     private CommandCatalog() {

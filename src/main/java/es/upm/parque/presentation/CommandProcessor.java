@@ -5,6 +5,8 @@ import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.Invoice;
 import es.upm.parque.business.model.InvoiceLine;
 import es.upm.parque.business.model.InvoiceSection;
+import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
@@ -100,6 +102,12 @@ public class CommandProcessor {
             }
             if (operation.length == 2 && operation[0].equals("GROUPTICKET")) {
                 return executeGroupTicket(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("SPEEDPASS")) {
+                return executeSpeedPass(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("SPECIALPASS")) {
+                return executeSpecialPass(operation[1], parts);
             }
             if (operation.length == 2 && operation[0].equals("ATTRACTION")) {
                 return executeAttraction(operation[1], parts);
@@ -225,6 +233,58 @@ public class CommandProcessor {
             default -> {
                 return error("Unknown command: GROUPTICKET " + action);
             }
+        }
+    }
+
+    private String executeSpeedPass(String action, String[] parts) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(parts, 2, CommandCatalog.SPEEDPASS_CREATE.syntax());
+                List<SpeedPass> passes = park.buySpeedPasses(parts[1], parseQuantity(parts[2]));
+                BigDecimal total = BigDecimal.ZERO;
+                for (SpeedPass p : passes) {
+                    total = total.add(p.getPrice());
+                }
+                String ids = passes.size() == 1 ? passes.get(0).getId()
+                    : passes.get(0).getId() + ".." + passes.get(passes.size() - 1).getId();
+                return "OK SPEEDPASS CREATED -> " + formatPrice(total) + " (" + ids + ")";
+            }
+            case "DELETE" -> {
+                requireParams(parts, 1, CommandCatalog.SPEEDPASS_DELETE.syntax());
+                return refunded(park.refundSpeedPass(parts[1]));
+            }
+            default -> {
+                return error("Unknown command: SPEEDPASS " + action);
+            }
+        }
+    }
+
+    private String executeSpecialPass(String action, String[] parts) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(parts, 1, CommandCatalog.SPECIALPASS_CREATE.syntax());
+                Pass pass = park.buySpecialPass(parts[1]);
+                return "OK SPECIALPASS CREATED -> " + formatPrice(pass.getPrice()) + " (" + pass.getId() + ")";
+            }
+            case "DELETE" -> {
+                requireParams(parts, 1, CommandCatalog.SPECIALPASS_DELETE.syntax());
+                return refunded(park.refundSpecialPass(parts[1]));
+            }
+            default -> {
+                return error("Unknown command: SPECIALPASS " + action);
+            }
+        }
+    }
+
+    private static String refunded(Pass pass) {
+        return ok(pass.getTypeName() + " " + pass.getId() + " refunded -> " + formatPrice(pass.getPrice()));
+    }
+
+    private static int parseQuantity(String text) {
+        try {
+            return Integer.parseInt(text.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid quantity " + text + ". Expected 1 or 10");
         }
     }
 

@@ -6,12 +6,16 @@ import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.Invoice;
+import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.SpecialPass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Main business controller. It owns the per-execution system variables (system date and current ticket price)
@@ -136,6 +140,22 @@ public class ParkController {
 
     public void deleteGroupTicket(String id) {
         tickets.deleteGroupTicket(id, currentDate);
+    }
+
+    public List<SpeedPass> buySpeedPasses(String ticketId, int quantity) {
+        return tickets.buySpeedPasses(ticketId, quantity, currentDate);
+    }
+
+    public SpecialPass buySpecialPass(String ticketId) {
+        return tickets.buySpecialPass(ticketId, currentDate);
+    }
+
+    public Pass refundSpeedPass(String passId) {
+        return tickets.refundPass(passId, SpeedPass.class, currentDate);
+    }
+
+    public Pass refundSpecialPass(String passId) {
+        return tickets.refundPass(passId, SpecialPass.class, currentDate);
     }
 
     public Attraction createAttraction(String id, String name, String capacity) {

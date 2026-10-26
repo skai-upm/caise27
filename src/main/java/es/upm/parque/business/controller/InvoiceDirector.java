@@ -13,6 +13,7 @@ public class InvoiceDirector {
         builder.buildHeader();
         builder.buildIndividualTickets();
         builder.buildGroupTickets();
+        builder.buildPersonalPasses();
         return builder.getResult();
     }
 }

@@ -83,4 +83,25 @@ class InvoiceBuilderTest {
         assertEquals(1, second.getSections().size());
         assertEquals(DAY.plusDays(1), second.getIssueDate());
     }
+
+    @Test
+    void userInvoiceIncludesPassesOfOwnAndInternalTicketsButNotRefundedOnes() {
+        IndividualTicket t001 = (IndividualTicket) tickets.get(0);
+        t001.addSpeedPasses(1);
+        t001.addSpeedPasses(1).get(0).refund();
+        GroupTicket tg01 = (GroupTicket) tickets.get(3);
+        tg01.getComponents().get(0).addSpecialPass();
+        tg01.getComponents().get(1).addSpeedPasses(1);
+
+        Invoice invoice = director.construct(new UserInvoiceBuilder(ana, tickets), DAY);
+        assertEquals(2, invoice.getSections().size());
+        List<String> passes = invoice.getSections().get(1).getLines().stream().map(InvoiceLine::getDescription).toList();
+        assertEquals(List.of("SpeedPass T001-S1 (ticket T001)", "SpecialPass TG01-1-SPECIAL (ticket TG01-1)"), passes);
+        assertEquals("Personal passes", invoice.getSections().get(1).getTitle());
+        assertEquals(new BigDecimal("148.00"), invoice.getTotal());
+
+        Invoice group = director.construct(new GroupInvoiceBuilder(family, tickets), DAY);
+        assertEquals(1, group.getSections().size());
+        assertEquals(new BigDecimal("80.00"), group.getTotal());
+    }
 }
