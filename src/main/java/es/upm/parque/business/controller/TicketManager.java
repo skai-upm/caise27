@@ -177,8 +177,29 @@ public class TicketManager {
             throw new IllegalArgumentException("Ticket " + ticket.getId() + " for " + ticket.getDate()
                 + " cannot be deleted: only tickets dated after " + today + " can be deleted");
         }
+        List<Ticket> order = new ArrayList<>(ticketsById.values());
+        Map<IndividualTicket, List<Pass>> removedPasses = new LinkedHashMap<>();
+        List<IndividualTicket> removedComponents = List.of();
+        if (ticket instanceof IndividualTicket it) {
+            removedPasses.put(it, it.removePasses());
+        } else if (ticket instanceof GroupTicket gt) {
+            for (IndividualTicket component : gt.getComponents()) {
+                removedPasses.put(component, component.removePasses());
+            }
+            removedComponents = gt.removeComponents();
+        }
         ticketsById.remove(ticket.getId());
-        persist();
+        try {
+            persist();
+        } catch (RuntimeException e) {
+            if (ticket instanceof GroupTicket gt) {
+                gt.restoreComponents(removedComponents);
+            }
+            removedPasses.forEach((owner, passes) -> passes.forEach(owner::restorePass));
+            ticketsById.clear();
+            order.forEach(t -> ticketsById.put(t.getId(), t));
+            throw e;
+        }
     }
 
     /**

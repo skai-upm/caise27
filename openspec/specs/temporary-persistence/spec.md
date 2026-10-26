@@ -7,7 +7,7 @@ Allows isolated executions that use every persistence feature against a per-run 
 ## Requirements
 
 ### Requirement: Temporary data directory
-When `--fly` is among the startup arguments, the application SHALL create at startup a new directory `tmp/<yyyyMMdd_HHmmss>/` named after the start time (adding a numeric suffix if that name already exists) and SHALL use it as the only location of all persistence files for that execution. The permanent data files SHALL NOT be read or modified.
+When `--fly` is among the startup arguments, the application SHALL create at startup a new directory `tmp/<yyyyMMdd_HHmmss>/` named after the start time (adding a numeric suffix if that name already exists) and SHALL use it as the only location of all persistence files for that execution, including users, groups, tickets, group tickets, passes and attractions. The permanent data files SHALL NOT be read or modified.
 
 #### Scenario: Isolated execution
 - **WHEN** permanent data contains user Ana and the application runs with `--fly` and executes `USER CREATE` for Pedro
@@ -16,6 +16,10 @@ When `--fly` is among the startup arguments, the application SHALL create at sta
 #### Scenario: Persistence works within the run
 - **WHEN** in a `--fly` run a user is created and a later command in the same run references it
 - **THEN** the user exists and is stored in the temporary directory
+
+#### Scenario: Passes and attraction types in fly mode
+- **WHEN** a `--fly` run buys SpeedPasses and creates a typed attraction
+- **THEN** the pass and attraction files are written only inside the temporary directory and the permanent pass and attraction files are unchanged
 
 ### Requirement: Temporary directory removed at termination
 The temporary directory and all its files SHALL be deleted when a `--fly` execution terminates, whether by `EXIT`, end of standard input, end of the command file, or an error opening or reading the command file.

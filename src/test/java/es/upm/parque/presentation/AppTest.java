@@ -171,4 +171,27 @@ class AppTest {
         String output = run(new String[0], "SYSTEM DATE;2026-10-01\nSPEEDPASS DELETE;T001-S1\n", users);
         assertTrue(output.contains("CONSUMED, not AVAILABLE"), output);
     }
+
+    @Test
+    void flyModeKeepsPassesAndAttractionsOutOfPermanentData() throws IOException {
+        Path data = dir.resolve("data");
+        String output = run(new String[] {"--fly"}, COMMANDS.get(0) + "\nSYSTEM DATE;2026-10-15\n"
+            + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nSPEEDPASS CREATE;T001;10\n"
+            + "ATTRACTION CREATE;A01;Tornado;5;INDIVIDUAL\nEXIT\n", data);
+        assertFalse(output.contains("ERROR"), output);
+        assertFalse(Files.exists(data.resolve("passes.txt")));
+        assertFalse(Files.exists(data.resolve("attractions.txt")));
+        assertTrue(tmpContents().isEmpty());
+    }
+
+    @Test
+    void attractionTypesAndPassesSurviveRestart() throws IOException {
+        run(new String[0], COMMANDS.get(0) + "\nSYSTEM DATE;2026-10-15\nTICKET CREATE;T001;ana@correo.com;2026-10-15\n"
+            + "SPECIALPASS CREATE;T001\nATTRACTION CREATE;A04;VIP;5;SPECIAL\nATTRACTION ENTER;A04;T001\n", dir);
+        String output = run(new String[0], "SYSTEM DATE;2026-10-15\nATTRACTION STATUS;A04\nATTRACTION ENTER;A04;T001\n"
+            + "INVOICE CREATE;USER;ana@correo.com\n", dir);
+        assertTrue(output.contains("Attraction A04 - VIP (SPECIAL)"), output);
+        assertTrue(output.contains("requires an available Special Pass"), output);
+        assertTrue(output.contains("SpecialPass T001-SPECIAL (ticket T001): 40.00"), output);
+    }
 }

@@ -116,6 +116,23 @@ public class GroupTicket extends Ticket implements GroupAccess {
         return Collections.unmodifiableList(components);
     }
 
+    /**
+     * Removes the internal tickets, used when the group ticket is deleted after their passes were removed.
+     *
+     * @return the removed internal tickets, so the deletion can be undone with {@link #restoreComponents}
+     */
+    public List<IndividualTicket> removeComponents() {
+        List<IndividualTicket> removed = new ArrayList<>(components);
+        components.clear();
+        return removed;
+    }
+
+    /** Undoes {@link #removeComponents()}. */
+    public void restoreComponents(List<IndividualTicket> removed) {
+        components.clear();
+        components.addAll(removed);
+    }
+
     /** Called when the group is deleted; the ticket stays as a historical record. */
     public void detachGroup() {
         group = null;

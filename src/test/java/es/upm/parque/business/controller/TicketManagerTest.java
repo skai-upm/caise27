@@ -12,17 +12,24 @@ import es.upm.parque.TestSupport;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
-import es.upm.parque.business.model.SpeedPass;
-import es.upm.parque.business.model.SpecialPass;
 import es.upm.parque.business.model.PassStatus;
+import es.upm.parque.business.model.SpecialPass;
+import es.upm.parque.business.model.SpeedPass;
+import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.persistence.GroupStorage;
+import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.TicketStorage;
 import es.upm.parque.persistence.UserStorage;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -243,5 +250,71 @@ class TicketManagerTest {
         reloaded.deleteGroupTicket("TG01", OCT_1);
         assertTrue(reload(users, groups).getTickets().isEmpty());
         assertThrows(IllegalArgumentException.class, () -> reloaded.refundPass("TG01-1-S1", SpeedPass.class, OCT_1));
+    }
+
+    /** Repository that delegates to the file storage but can be told to fail on save. */
+    private static final class FailingRepository implements TicketRepository {
+        private final TicketRepository delegate;
+        private boolean failing;
+
+        FailingRepository(TicketRepository delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public List<Ticket> load(Function<String, User> userByDni, Function<String, Group> groupById) {
+            return delegate.load(userByDni, groupById);
+        }
+
+        @Override
+        public void save(Collection<Ticket> all) {
+            if (failing) {
+                throw new UncheckedIOException(new IOException("disk full"));
+            }
+            delegate.save(all);
+        }
+    }
+
+    @Test
+    void groupTicketDeletionCascadesAndFailedSaveLeavesEverything() {
+        FailingRepository repository = new FailingRepository(
+            new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt"), dir.resolve("passes.txt")));
+        TicketManager manager = TicketManager.getInstance().configure(users, groups, repository);
+        manager.create("T001", "ana@correo.com", OCT_15, OCT_1, PRICE);
+        manager.buySpeedPasses("T001", 1, OCT_1);
+        manager.buySpecialPass("T001", OCT_1);
+        GroupTicket gt = manager.createGroupTicket("TG01", "G01", OCT_15, OCT_1, PRICE);
+        manager.buySpeedPasses("TG01-1", 1, OCT_1);
+
+        assertThrows(IllegalArgumentException.class, () -> manager.deleteGroupTicket("TG01", OCT_15));
+        assertEquals(1, gt.getComponents().get(0).getSpeedPasses().size());
+
+        repository.failing = true;
+        assertThrows(UncheckedIOException.class, () -> manager.deleteGroupTicket("TG01", OCT_1));
+        assertThrows(UncheckedIOException.class, () -> manager.delete("T001", OCT_1));
+        assertEquals(List.of("T001", "TG01"), manager.getTickets().stream().map(Ticket::getId).toList());
+        assertEquals(2, gt.getComponents().size());
+        assertEquals(1, gt.getComponents().get(0).getSpeedPasses().size());
+        assertEquals(2, ((IndividualTicket) manager.find("T001")).getPasses().size());
+        assertTrue(manager.hasTicketOnOrAfter(ana, OCT_1));
+
+        repository.failing = false;
+        manager.deleteGroupTicket("TG01", OCT_1);
+        assertTrue(gt.getComponents().isEmpty());
+        manager.delete("T001", OCT_1);
+        assertTrue(manager.getTickets().isEmpty());
+        assertTrue(reload(users, groups).getTickets().isEmpty());
+    }
+
+    @Test
+    void internalTicketPassesAndPricesAreReconstructed() throws IOException {
+        tickets.createGroupTicket("TG01", "G01", OCT_15, OCT_1, PRICE);
+        tickets.buySpeedPasses("TG01-1", 1, OCT_1).get(0).consume();
+        tickets.recordPassUsage();
+        IndividualTicket internal = (IndividualTicket) reload(users, groups).findAdmission("TG01-1");
+        assertEquals(new BigDecimal("8.00"), internal.getSpeedPasses().get(0).getPrice());
+        assertEquals(PassStatus.CONSUMED, internal.getSpeedPasses().get(0).getStatus());
+        assertEquals(List.of("SPEED;TG01-1-S1;TG01-1;8.00;CONSUMED"),
+            Files.readAllLines(dir.resolve("passes.txt")));
     }
 }
