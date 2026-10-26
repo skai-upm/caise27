@@ -4,7 +4,16 @@ package es.upm.parque;
  * Interprets text commands of the form {@code OPERATION;param1;param2;...} and returns a response line.
  */
 public class CommandProcessor {
+    private static final String[] COMMAND_SYNTAX = {
+        "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+        "USER DELETE;Correo;Contraseña",
+        "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+        "HELP",
+        "EXIT"
+    };
+
     private final UserManager userManager;
+    private boolean exitRequested;
 
     public CommandProcessor(UserManager userManager) {
         this.userManager = userManager;
@@ -17,10 +26,31 @@ public class CommandProcessor {
             if (operation.length == 2 && operation[0].equals("USER")) {
                 return processUser(operation[1], parts);
             }
+            if (operation.length == 1 && operation[0].equals("HELP")) {
+                requireParams(parts, 0, "HELP");
+                return help();
+            }
+            if (operation.length == 1 && operation[0].equals("EXIT")) {
+                requireParams(parts, 0, "EXIT");
+                exitRequested = true;
+                return "OK EXIT";
+            }
             return "ERROR: unknown command '" + parts[0].trim() + "'";
         } catch (IllegalArgumentException e) {
             return "ERROR: " + e.getMessage();
         }
+    }
+
+    public boolean isExitRequested() {
+        return exitRequested;
+    }
+
+    private static String help() {
+        StringBuilder sb = new StringBuilder("Available commands:");
+        for (String syntax : COMMAND_SYNTAX) {
+            sb.append(System.lineSeparator()).append("  ").append(syntax);
+        }
+        return sb.toString();
     }
 
     private String processUser(String action, String[] p) {

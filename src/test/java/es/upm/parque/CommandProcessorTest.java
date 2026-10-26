@@ -66,4 +66,22 @@ class CommandProcessorTest {
         assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;AGE;3").startsWith("ERROR"));
         assertEquals("12345678Z", manager.findByEmail("ana@correo.com").getDni());
     }
+
+    @Test
+    void helpListsAllCommands() {
+        String help = processor.process("HELP");
+        for (String syntax : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+                "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT"}) {
+            assertTrue(help.contains(syntax), syntax);
+        }
+    }
+
+    @Test
+    void exitSetsFlagAndRejectsParameters() {
+        assertTrue(processor.process("HELP;x").startsWith("ERROR"));
+        assertTrue(processor.process("EXIT;now").startsWith("ERROR"));
+        assertTrue(!processor.isExitRequested());
+        assertEquals("OK EXIT", processor.process("EXIT"));
+        assertTrue(processor.isExitRequested());
+    }
 }
