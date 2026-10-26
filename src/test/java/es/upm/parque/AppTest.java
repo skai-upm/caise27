@@ -217,4 +217,51 @@ class AppTest {
             assertEquals(0, children.count());
         }
     }
+
+    static final List<String> DELIVERY_SCRIPT = List.of("SYSTEM DATE;2026-09-01", Fixtures.CREATE_ANA,
+            Fixtures.CREATE_PEDRO, "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999", "GROUP CREATE;G01;Familia",
+            "GROUP ADD;G01;ana@correo.com", "GROUP ADD;G01;pedro@correo.com", "SYSTEM PRICE;50.00",
+            "TICKET CREATE;T001;ana@correo.com;2026-09-01", "TICKET CREATE;T002;pedro@correo.com;2026-09-20",
+            "GROUPTICKET CREATE;TG01;G01;2026-09-01", "ATTRACTION CREATE;A01;Tornado;20",
+            "ATTRACTION CREATE;A02;Barcas;5;GROUP", "ATTRACTION CREATE;A03;Castillo;5;SPECIAL",
+            "SPEEDPASS CREATE;T001;1", "SPECIALPASS CREATE;T001", "SPECIALPASS CREATE;T002",
+            "ATTRACTION ENTER;A01;T001;SPEED", "ATTRACTION STATUS;A01", "ATTRACTION EXIT;A01;T001",
+            "ATTRACTION ENTER;A02;TG01", "ATTRACTION EXIT;A02;TG01", "ATTRACTION ENTER;A03;T001",
+            "INVOICE CREATE;USER;ana@correo.com", "INVOICE CREATE;GROUP;G01", "TICKET DELETE;T002", "HELP EXTENDED",
+            "EXIT");
+
+    private String runDelivery(String... args) {
+        bytes.reset();
+        launch(String.join("\n", DELIVERY_SCRIPT) + "\n", args);
+        return output();
+    }
+
+    @Test
+    void deliveryScriptGivesSameResultsInEveryMode() throws IOException {
+        String fly = runDelivery("--fly");
+        assertFalse(Files.exists(data()));
+        Path script = Files.write(dir.resolve("input_fase3.txt"), DELIVERY_SCRIPT);
+        String flyFile = runDelivery("--fly", script.toString());
+        String interactive = runDelivery();
+        assertEquals(fly, flyFile);
+        assertEquals(fly, interactive);
+        assertTrue(fly.lines().noneMatch(line -> line.startsWith("ERROR")), fly);
+        assertTrue(fly.contains("OK ENTERED 1 USERS (SPEEDPASS T001-S1 CONSUMED)"));
+        assertTrue(fly.contains("OK ENTERED 2 USERS"));
+        assertTrue(fly.contains("SPECIALPASS CREATE;IdEntrada"));
+        assertTrue(fly.endsWith("OK EXIT" + NL));
+    }
+
+    @Test
+    void deliveryDataSurvivesRestartWithNormalPersistence() throws IOException {
+        runDelivery();
+        assertTrue(Files.readAllLines(data().resolve("passes.txt")).size() >= 2);
+        String restarted = runDelivery();
+        assertTrue(restarted.contains("ERROR DUPLICATE DNI"));
+        assertTrue(restarted.contains("ERROR DUPLICATE TICKET"));
+        assertTrue(restarted.contains("ERROR DUPLICATE ATTRACTION"));
+        assertTrue(restarted.contains("ERROR SPECIAL PASS ALREADY ISSUED"));
+        assertTrue(restarted.contains("OK SPEEDPASS CREATED -> 10.00 (T001-S2)"));
+        assertTrue(Files.readAllLines(data().resolve("attractions.txt")).contains("A03;Castillo;5;SPECIAL"));
+    }
 }

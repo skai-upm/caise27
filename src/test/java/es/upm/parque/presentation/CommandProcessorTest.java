@@ -351,4 +351,24 @@ class CommandProcessorTest {
         assertEquals("OK ENTERED 2 USERS (2 SPEEDPASSES CONSUMED)", processor.process("ATTRACTION ENTER;A01;TG01;speed"));
         assertTrue(processor.process("HELP").lines().anyMatch("ATTRACTION ENTER;IdAtraccion;IdEntrada;SPEED"::equals));
     }
+
+    @Test
+    void everyDocumentedCommandIsDispatched() {
+        for (CommandInfo command : CommandRegistry.standard().getCommands()) {
+            assertNotEquals(CommandProcessor.UNKNOWN_COMMAND, processor.process(command.getSyntax()),
+                    command.getSyntax());
+        }
+        assertEquals(CommandProcessor.UNKNOWN_COMMAND, processor.process("PARK OPEN;2026-01-01"));
+    }
+
+    @Test
+    void bothHelpModesListDeliveryThreeCommands() {
+        for (String help : List.of(processor.process("HELP"), processor.process("HELP EXTENDED"))) {
+            for (String syntax : List.of("SPEEDPASS CREATE;IdEntrada;Cantidad", "SPEEDPASS DELETE;IdPase",
+                    "SPECIALPASS CREATE;IdEntrada", "SPECIALPASS DELETE;IdEntrada",
+                    "ATTRACTION CREATE;Id;Nombre;Aforo;Tipo", "ATTRACTION ENTER;IdAtraccion;IdEntrada;SPEED")) {
+                assertTrue(help.contains(syntax), syntax);
+            }
+        }
+    }
 }
