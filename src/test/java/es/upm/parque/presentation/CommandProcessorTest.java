@@ -317,8 +317,27 @@ class CommandProcessorTest {
     }
 
     @Test
+    void passCommands() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertEquals("OK SPEEDPASS CREATED -> 8.00 (SP1)", processor.process("SPEEDPASS CREATE;T001;1"));
+        assertEquals("OK SPEEDPASS CREATED -> 80.00 (SP2, SP3, SP4, SP5, SP6, SP7, SP8, SP9, SP10, SP11)",
+                processor.process("SPEEDPASS CREATE;T001;10"));
+        assertTrue(processor.process("SPEEDPASS CREATE;T001;2").startsWith("ERROR"));
+        assertEquals("OK SPECIALPASS CREATED -> 40.00 (XP1)", processor.process("SPECIALPASS CREATE;T001"));
+        assertTrue(processor.process("SPECIALPASS CREATE;T001").startsWith("ERROR"));
+        assertEquals("OK SPEEDPASS REFUNDED -> 8.00", processor.process("SPEEDPASS DELETE;SP1"));
+        assertEquals("OK SPECIALPASS REFUNDED -> 40.00", processor.process("SPECIALPASS DELETE;XP1"));
+        assertTrue(processor.process("SPECIALPASS DELETE;XP1").startsWith("ERROR"));
+        String help = processor.process("HELP");
+        assertTrue(help.contains("SPEEDPASS CREATE;IdentificadorEntrada;Cantidad(1|10)"));
+        assertTrue(help.contains("SPECIALPASS DELETE;IdentificadorPase"));
+    }
+
+    @Test
     void unexpectedErrorsDoNotPropagate() {
-        CommandProcessor broken = new CommandProcessor(null, null, null, null, null, MainController.getInstance(), Map.of());
+        CommandProcessor broken = new CommandProcessor(new ParkControllers(MainController.getInstance(), null, null, null, null, null, null), Map.of());
         assertTrue(broken.process(ANA).startsWith("ERROR Unexpected error"));
     }
 }

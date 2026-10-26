@@ -5,6 +5,7 @@ import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.MainController;
+import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.Invoice;
@@ -12,10 +13,13 @@ import es.upm.parque.business.invoice.InvoiceLine;
 import es.upm.parque.business.invoice.InvoiceSection;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.Group;
+import es.upm.parque.business.model.SpecialPass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.Values;
 import es.upm.parque.presentation.help.CommandInfo;
 import es.upm.parque.presentation.help.HelpGenerator;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +44,10 @@ public class CommandProcessor {
     static final String ATTRACTION_ENTER_SYNTAX = "ATTRACTION ENTER;IdentificadorAtraccion;IdentificadorEntrada";
     static final String ATTRACTION_EXIT_SYNTAX = "ATTRACTION EXIT;IdentificadorAtraccion;IdentificadorEntrada";
     static final String ATTRACTION_STATUS_SYNTAX = "ATTRACTION STATUS;IdentificadorAtraccion";
+    static final String SPEEDPASS_CREATE_SYNTAX = "SPEEDPASS CREATE;IdentificadorEntrada;Cantidad(1|10)";
+    static final String SPEEDPASS_DELETE_SYNTAX = "SPEEDPASS DELETE;IdentificadorPase";
+    static final String SPECIALPASS_CREATE_SYNTAX = "SPECIALPASS CREATE;IdentificadorEntrada";
+    static final String SPECIALPASS_DELETE_SYNTAX = "SPECIALPASS DELETE;IdentificadorPase";
     static final String INVOICE_CREATE_SYNTAX = "INVOICE CREATE;USER|GROUP;Correo|IdentificadorGrupo";
     static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
     static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
@@ -79,6 +87,14 @@ public class CommandProcessor {
                     "Lets the users of a ticket out of an attraction, freeing their places."),
             new CommandInfo(ATTRACTION_STATUS_SYNTAX,
                     "Shows capacity, occupancy, available places and the users present in an attraction."),
+            new CommandInfo(SPEEDPASS_CREATE_SYNTAX,
+                    "Buys 1 or 10 SpeedPasses for an individual ticket dated today or later; each costs 20% of the ticket."),
+            new CommandInfo(SPEEDPASS_DELETE_SYNTAX,
+                    "Refunds an unused SpeedPass while its ticket is still dated after the system date."),
+            new CommandInfo(SPECIALPASS_CREATE_SYNTAX,
+                    "Buys the only Special Pass of an individual ticket; it costs the ticket price."),
+            new CommandInfo(SPECIALPASS_DELETE_SYNTAX,
+                    "Refunds an unused Special Pass while its ticket is still dated after the system date."),
             new CommandInfo(INVOICE_CREATE_SYNTAX,
                     "Shows the invoice of a user (direct tickets) or a group (group tickets) with prices and total."),
             new CommandInfo(SYSTEM_DATE_SYNTAX,
@@ -97,19 +113,19 @@ public class CommandProcessor {
     private final TicketController ticketController;
     private final AttractionController attractionController;
     private final InvoiceController invoiceController;
+    private final PassController passController;
     private final MainController mainController;
     private final Map<String, HelpGenerator> helpGenerators;
     private boolean exitRequested;
 
-    public CommandProcessor(UserController userController, GroupController groupController, TicketController ticketController,
-                            AttractionController attractionController, InvoiceController invoiceController,
-                            MainController mainController, Map<String, HelpGenerator> helpGenerators) {
-        this.userController = userController;
-        this.groupController = groupController;
-        this.ticketController = ticketController;
-        this.attractionController = attractionController;
-        this.invoiceController = invoiceController;
-        this.mainController = mainController;
+    public CommandProcessor(ParkControllers controllers, Map<String, HelpGenerator> helpGenerators) {
+        this.userController = controllers.users();
+        this.groupController = controllers.groups();
+        this.ticketController = controllers.tickets();
+        this.attractionController = controllers.attractions();
+        this.invoiceController = controllers.invoices();
+        this.passController = controllers.passes();
+        this.mainController = controllers.main();
         this.helpGenerators = Map.copyOf(helpGenerators);
     }
 
@@ -185,6 +201,15 @@ public class CommandProcessor {
             case "ATTRACTION ENTER" -> "OK ENTERED " + p[1] + " -> " + users(attractionController.enter(p[1], p[2]));
             case "ATTRACTION EXIT" -> "OK EXITED " + p[1] + " -> " + users(attractionController.exit(p[1], p[2]));
             case "ATTRACTION STATUS" -> attractionStatus(attractionController.requireAttraction(p[1]));
+            case "SPEEDPASS CREATE" -> buySpeedPasses(p[1], p[2]);
+            case "SPEEDPASS DELETE" -> "OK SPEEDPASS REFUNDED -> "
+                    + Values.formatPrice(passController.refundSpeedPass(p[1]).getPrice());
+            case "SPECIALPASS CREATE" -> {
+                SpecialPass pass = passController.buySpecialPass(p[1]);
+                yield "OK SPECIALPASS CREATED -> " + Values.formatPrice(pass.getPrice()) + " (" + pass.getId() + ")";
+            }
+            case "SPECIALPASS DELETE" -> "OK SPECIALPASS REFUNDED -> "
+                    + Values.formatPrice(passController.refundSpecialPass(p[1]).getPrice());
             case "INVOICE CREATE" -> createInvoice(p[1], p[2]);
             case "SYSTEM DATE" -> setSystemDate(p[1]);
             case "SYSTEM PRICE" -> {
@@ -251,6 +276,13 @@ public class CommandProcessor {
                     .append(" (").append(u.getEmail()).append(')');
         }
         return out.toString();
+    }
+
+    private String buySpeedPasses(String ticketId, String quantity) {
+        List<SpeedPass> passes = passController.buySpeedPasses(ticketId, quantity);
+        BigDecimal total = passes.stream().map(SpeedPass::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return "OK SPEEDPASS CREATED -> " + Values.formatPrice(total) + " ("
+                + String.join(", ", passes.stream().map(SpeedPass::getId).toList()) + ")";
     }
 
     private String createInvoice(String type, String id) {

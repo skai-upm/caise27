@@ -89,7 +89,7 @@ class FlyModeTest {
         String out = execute(new String[] {"--fly"}, in);
         assertFalse(out.contains("ERROR"), out);
         assertEquals(List.of("tmp/20260901_100000/attractions.txt", "tmp/20260901_100000/groups.txt",
-                "tmp/20260901_100000/grouptickets.txt", "tmp/20260901_100000/tickets.txt",
+                "tmp/20260901_100000/grouptickets.txt", "tmp/20260901_100000/passes.txt", "tmp/20260901_100000/tickets.txt",
                 "tmp/20260901_100000/users.txt"), in.seen);
         assertTrue(tmpIsEmpty());
         assertEquals(permanentBefore, Files.readAllLines(base.resolve("data").resolve("users.txt")));

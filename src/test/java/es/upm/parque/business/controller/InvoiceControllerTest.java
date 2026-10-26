@@ -76,6 +76,23 @@ class InvoiceControllerTest {
     }
 
     @Test
+    void userInvoiceListsPassesOfStandaloneAndInternalTickets() {
+        park.tickets.create("T001", "ana@correo.com", "2026-10-15");
+        park.tickets.createGroupTicket("TG01", "G01", "2026-10-15");
+        park.passes.buySpeedPasses("T001", "1");
+        park.passes.buySpecialPass("TG01-1");
+
+        Invoice invoice = park.invoices.forUser("ana@correo.com");
+        assertEquals(2, invoice.getSections().size());
+        assertEquals("Personal passes", invoice.getSections().get(1).title());
+        assertEquals(List.of(new InvoiceLine("SpeedPass SP1 (ticket T001)", new BigDecimal("8.00")),
+                new InvoiceLine("Special Pass XP1 (ticket TG01-1)", new BigDecimal("40.00"))),
+                invoice.getSections().get(1).lines());
+        assertEquals(new BigDecimal("88.00"), invoice.getTotal());
+        assertEquals(new BigDecimal("108.00"), park.invoices.forGroup("G01").getTotal());
+    }
+
+    @Test
     void unknownRecipientsAreRejected() {
         assertThrows(ParkException.class, () -> park.invoices.forUser("nadie@correo.com"));
         assertThrows(ParkException.class, () -> park.invoices.forGroup("G99"));

@@ -85,6 +85,30 @@ public final class TicketController {
         return groupTickets.stream().filter(t -> t.getGroup() == group).toList();
     }
 
+    /**
+     * Every individual ticket of the user, standalone or inside a group ticket.
+     */
+    public List<IndividualTicket> getIndividualTicketsOf(User user) {
+        requireConfigured();
+        return individualTickets.stream().filter(t -> t.getUser() == user).toList();
+    }
+
+    /**
+     * The individual ticket with that identifier, or {@code null} if there is none.
+     */
+    public IndividualTicket findIndividualTicket(String id) {
+        requireConfigured();
+        return individualTickets.stream().filter(t -> t.getId().equals(id)).findFirst().orElse(null);
+    }
+
+    /**
+     * Persists changes made to tickets or their passes by other controllers.
+     */
+    public void save() {
+        requireConfigured();
+        persist();
+    }
+
     public Ticket findById(String id) {
         requireConfigured();
         return getTickets().stream().filter(t -> t.getId().equals(id)).findFirst().orElse(null);

@@ -4,6 +4,9 @@ import es.upm.parque.business.ParkException;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.SpecialPass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.Values;
 import java.math.BigDecimal;
@@ -14,10 +17,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Stores tickets in two text files. Individual tickets: {@code id;dni;yyyy-MM-dd;price;groupTicketId}
+ * Stores tickets and their passes in three text files. Individual tickets: {@code id;dni;yyyy-MM-dd;price;groupTicketId}
  * (the last field is empty for standalone tickets and may be absent in older files). Group tickets:
  * {@code id;groupId;yyyy-MM-dd;total}; their composition is given by the individual tickets that
- * name them.
+ * name them. Passes: {@code id;SPEED|SPECIAL;ticketId;price;consumed}.
  */
 public class TicketRepository {
 
@@ -25,12 +28,17 @@ public class TicketRepository {
     public record TicketData(List<IndividualTicket> individual, List<GroupTicket> group) {
     }
 
+    private static final String SPEED = "SPEED";
+    private static final String SPECIAL = "SPECIAL";
+
     private final Path individualFile;
     private final Path groupFile;
+    private final Path passFile;
 
-    public TicketRepository(Path individualFile, Path groupFile) {
+    public TicketRepository(Path individualFile, Path groupFile, Path passFile) {
         this.individualFile = individualFile;
         this.groupFile = groupFile;
+        this.passFile = passFile;
     }
 
     /**
@@ -55,7 +63,37 @@ public class TicketRepository {
                 individual.add(ticket);
             }
         }
+        loadPasses(individual);
         return new TicketData(individual, group);
+    }
+
+    /**
+     * Attaches each stored pass to its individual ticket; passes of unknown tickets are skipped.
+     */
+    private void loadPasses(List<IndividualTicket> tickets) {
+        Map<String, IndividualTicket> byId = new HashMap<>();
+        tickets.forEach(t -> byId.put(t.getId(), t));
+        for (String line : TextFiles.readLines(passFile)) {
+            String[] f = line.split(";", -1);
+            IndividualTicket ticket = f.length == 5 ? byId.get(f[2]) : null;
+            if (ticket != null) {
+                attachPass(ticket, f);
+            }
+        }
+    }
+
+    private static void attachPass(IndividualTicket ticket, String[] f) {
+        try {
+            BigDecimal price = new BigDecimal(f[3]);
+            boolean consumed = Boolean.parseBoolean(f[4]);
+            if (SPEED.equals(f[1])) {
+                ticket.addSpeedPass(new SpeedPass(f[0], price, consumed));
+            } else if (SPECIAL.equals(f[1])) {
+                ticket.setSpecialPass(new SpecialPass(f[0], price, consumed));
+            }
+        } catch (NumberFormatException e) {
+            // malformed price: skip the line
+        }
     }
 
     /**
@@ -86,8 +124,16 @@ public class TicketRepository {
                 .map(t -> String.join(";", t.getId(), t.getUser().getDni(), Values.formatDate(t.getDate()),
                         Values.formatPrice(t.getPrice()), owners.getOrDefault(t, "")))
                 .toList();
+        List<String> passLines = new ArrayList<>();
+        for (IndividualTicket t : individual) {
+            for (Pass pass : t.getPasses()) {
+                passLines.add(String.join(";", pass.getId(), pass instanceof SpeedPass ? SPEED : SPECIAL, t.getId(),
+                        Values.formatPrice(pass.getPrice()), String.valueOf(pass.isConsumed())));
+            }
+        }
         TextFiles.writeLines(groupFile, groupLines);
         TextFiles.writeLines(individualFile, individualLines);
+        TextFiles.writeLines(passFile, passLines);
     }
 
     private static IndividualTicket parseIndividual(String[] f, Map<String, User> usersByDni) {

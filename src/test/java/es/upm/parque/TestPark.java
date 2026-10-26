@@ -4,6 +4,7 @@ import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.MainController;
+import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.StandardInvoiceBuilder;
@@ -36,6 +37,7 @@ public final class TestPark {
     public final TicketController tickets;
     public final AttractionController attractions;
     public final InvoiceController invoices;
+    public final PassController passes;
     public final CommandProcessor processor;
 
     /**
@@ -50,6 +52,7 @@ public final class TestPark {
         tickets = TicketController.getInstance();
         attractions = AttractionController.getInstance();
         invoices = InvoiceController.getInstance();
+        passes = PassController.getInstance();
     }
 
     public App app() {

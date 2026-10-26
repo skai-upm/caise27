@@ -4,6 +4,7 @@ import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.MainController;
+import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.StandardInvoiceBuilder;
@@ -16,6 +17,7 @@ import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 import es.upm.parque.presentation.CommandProcessor;
 import es.upm.parque.presentation.ExecutionOptions;
+import es.upm.parque.presentation.ParkControllers;
 import es.upm.parque.presentation.help.ExtendedHelpFormatter;
 import es.upm.parque.presentation.help.HelpGenerator;
 import es.upm.parque.presentation.help.SyntaxHelpFormatter;
@@ -42,6 +44,7 @@ public class App {
     static final String TICKETS_FILE = "tickets.txt";
     static final String GROUP_TICKETS_FILE = "grouptickets.txt";
     static final String ATTRACTIONS_FILE = "attractions.txt";
+    static final String PASSES_FILE = "passes.txt";
     static final int BCRYPT_COST = 10;
 
     private final CommandProcessor processor;
@@ -99,18 +102,21 @@ public class App {
         GroupController groupController = GroupController.getInstance();
         groupController.configure(new GroupRepository(dataDir.resolve(GROUPS_FILE)), userController);
         TicketController ticketController = TicketController.getInstance();
-        ticketController.configure(new TicketRepository(dataDir.resolve(TICKETS_FILE), dataDir.resolve(GROUP_TICKETS_FILE)),
+        ticketController.configure(new TicketRepository(dataDir.resolve(TICKETS_FILE), dataDir.resolve(GROUP_TICKETS_FILE),
+                dataDir.resolve(PASSES_FILE)),
                 userController, groupController, mainController);
         AttractionController attractionController = AttractionController.getInstance();
         attractionController.configure(new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE)), ticketController,
                 mainController);
         InvoiceController invoiceController = InvoiceController.getInstance();
         invoiceController.configure(userController, groupController, ticketController, StandardInvoiceBuilder::new);
+        PassController passController = PassController.getInstance();
+        passController.configure(ticketController, mainController);
         Map<String, HelpGenerator> help = Map.of(
                 "HELP", new HelpGenerator(CommandProcessor.COMMANDS, new SyntaxHelpFormatter()),
                 "HELP EXTENDED", new HelpGenerator(CommandProcessor.COMMANDS, new ExtendedHelpFormatter()));
-        return new CommandProcessor(userController, groupController, ticketController, attractionController,
-                invoiceController, mainController, help);
+        return new CommandProcessor(new ParkControllers(mainController, userController, groupController,
+                ticketController, attractionController, invoiceController, passController), help);
     }
 
     /**

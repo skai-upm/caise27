@@ -18,6 +18,7 @@ package es.upm.parque.presentation {
   class CommandProcessor {
     exitRequested : boolean
   }
+  class ParkControllers
   class ExecutionOptions {
     fly : boolean
     inputFile : String
@@ -67,6 +68,13 @@ package es.upm.parque.business.model {
     price : BigDecimal
   }
   class IndividualTicket
+  abstract class Pass {
+    id : String
+    price : BigDecimal
+    consumed : boolean
+  }
+  class SpeedPass
+  class SpecialPass
   class GroupTicket
   class Attraction {
     id : String
@@ -85,6 +93,7 @@ package es.upm.parque.business.controller {
   class TicketController
   class AttractionController
   class InvoiceController
+  class PassController
 }
 
 package es.upm.parque.business.invoice {
@@ -136,7 +145,7 @@ package es.upm.parque.persistence {
 
 note as SingletonNote
   MainController, UserController, GroupController, TicketController,
-  AttractionController and InvoiceController are singletons (getInstance).
+  AttractionController, InvoiceController and PassController are singletons (getInstance).
   App creates the repositories at startup and injects them, together with
   the collaborating controllers shown below, through each configure method.
 end note
@@ -155,6 +164,17 @@ HelpGenerator "0..*" x--> "0..*" CommandInfo : commands
 HelpGenerator "0..*" x--> "1" HelpFormatter : formatter
 HelpFormatter <|.. SyntaxHelpFormatter
 HelpFormatter <|.. ExtendedHelpFormatter
+
+CommandProcessor "0..*" x--> "1" PassController : passController
+ParkControllers x--> "1" MainController : main
+ParkControllers x--> "1" UserController : users
+ParkControllers x--> "1" GroupController : groups
+ParkControllers x--> "1" TicketController : tickets
+ParkControllers x--> "1" AttractionController : attractions
+ParkControllers x--> "1" InvoiceController : invoices
+ParkControllers x--> "1" PassController : passes
+PassController x--> "1" TicketController : ticketController
+PassController x--> "1" MainController : mainController
 
 ' Managers
 UserController x--> "1" UserRepository : repository
@@ -195,6 +215,10 @@ Ticket <|-- GroupTicket
 IndividualTicket "0..*" x--> "1" User : user
 GroupTicket "0..*" o--> "1" Group : group
 GroupTicket "1" *--> "0..*" IndividualTicket : tickets
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+IndividualTicket "1" *--> "0..*" SpeedPass : speedPasses
+IndividualTicket "1" *--> "0..1" SpecialPass : specialPass
 Attraction "0..*" x--> "0..*" User : visitors
 RuntimeException <|-- ParkException
 
@@ -202,6 +226,8 @@ RuntimeException <|-- ParkException
 App ..> ExecutionOptions
 App ..> DataDirectory
 App ..> StandardInvoiceBuilder
+App ..> ParkControllers
+CommandProcessor ..> ParkControllers
 App ..> BCryptPasswordHasher
 App ..> SyntaxHelpFormatter
 App ..> ExtendedHelpFormatter

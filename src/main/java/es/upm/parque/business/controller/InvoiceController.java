@@ -6,6 +6,7 @@ import es.upm.parque.business.invoice.InvoiceBuilder;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.Values;
 import java.util.List;
@@ -45,7 +46,7 @@ public final class InvoiceController {
 
     /**
      * Invoice of a user: the individual tickets bought directly for them (internal tickets of group
-     * tickets are billed to the group and not repeated).
+     * tickets are billed to the group and not repeated) and the personal passes of all their tickets.
      */
     public Invoice forUser(String email) {
         requireConfigured();
@@ -60,6 +61,16 @@ public final class InvoiceController {
             builder.section("Individual tickets");
             for (IndividualTicket t : tickets) {
                 builder.item("Ticket " + t.getId() + " " + Values.formatDate(t.getDate()), t.getPrice());
+            }
+        }
+        List<IndividualTicket> withPasses = ticketController.getIndividualTicketsOf(user).stream()
+                .filter(t -> !t.getPasses().isEmpty()).toList();
+        if (!withPasses.isEmpty()) {
+            builder.section("Personal passes");
+            for (IndividualTicket t : withPasses) {
+                for (Pass pass : t.getPasses()) {
+                    builder.item(pass.getKind() + " " + pass.getId() + " (ticket " + t.getId() + ")", pass.getPrice());
+                }
             }
         }
         return builder.build();
