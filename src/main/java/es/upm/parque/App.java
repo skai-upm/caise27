@@ -2,13 +2,17 @@ package es.upm.parque;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Entry point: reads commands from the terminal and prints one response per command.
+ * Entry point. Without arguments commands are read interactively from standard input; with an
+ * argument, the first argument is a file whose lines are executed as commands. Both modes share
+ * the same processing.
  */
 public class App {
 
@@ -22,20 +26,42 @@ public class App {
 
     public static void main(String[] args) {
         UserManager userManager = new UserManager(new UserRepository(USERS_FILE));
-        App app = new App(new CommandProcessor(userManager));
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
-        app.run(in, System.out);
+        new App(new CommandProcessor(userManager)).start(args, System.in, System.out);
     }
 
     /**
-     * Processes every non-blank line until the input ends.
+     * Selects the execution mode from the arguments and runs it.
+     */
+    public void start(String[] args, InputStream stdin, PrintStream out) {
+        if (args.length == 0) {
+            run(new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8)), out);
+            return;
+        }
+        Path file = Path.of(args[0]);
+        if (Files.notExists(file)) {
+            out.println("ERROR Input file not found: " + file);
+            return;
+        }
+        try (BufferedReader in = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            run(in, out);
+        } catch (IOException e) {
+            out.println("ERROR Cannot read input file: " + file);
+        }
+    }
+
+    /**
+     * Processes every non-blank line until the input ends or an EXIT command is processed.
      */
     public void run(BufferedReader in, PrintStream out) {
         try {
             String line;
             while ((line = in.readLine()) != null) {
-                if (!line.isBlank()) {
-                    out.println(processor.process(line));
+                if (line.isBlank()) {
+                    continue;
+                }
+                out.println(processor.process(line));
+                if (processor.isExitRequested()) {
+                    return;
                 }
             }
         } catch (IOException e) {

@@ -1,9 +1,11 @@
 package es.upm.parque;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -68,6 +70,26 @@ class CommandProcessorTest {
         assertEquals("ERROR Incorrect password", processor.process("USER DELETE;ana@correo.com;Mala1!"));
         assertEquals("ERROR The DNI cannot be modified",
                 processor.process("USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X"));
+    }
+
+    @Test
+    void helpListsEveryCommand() {
+        String out = processor.process("HELP");
+        String[] lines = out.split(System.lineSeparator());
+        assertEquals("OK Available commands:", lines[0]);
+        assertEquals(CommandProcessor.COMMAND_SYNTAX, List.of(lines).subList(1, lines.length));
+        assertTrue(out.contains("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta"));
+        assertTrue(out.contains("USER DELETE;Correo;Contraseña"));
+        assertTrue(out.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
+        assertTrue(processor.process("HELP;x").startsWith("ERROR Wrong number of parameters"));
+    }
+
+    @Test
+    void exitSetsFlag() {
+        assertTrue(processor.process("EXIT;x").startsWith("ERROR Wrong number of parameters"));
+        assertFalse(processor.isExitRequested());
+        assertEquals("OK EXIT", processor.process("exit"));
+        assertTrue(processor.isExitRequested());
     }
 
     @Test
