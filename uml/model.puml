@@ -4,25 +4,29 @@ title Parque - class model (current implementation)
 skinparam classAttributeIconSize 0
 hide empty members
 
-package es.upm.parque {
+package es.upm.parque.presentation {
 
   class App
 
-  class DataDirectory {
-    - path : Path
-    - temporary : boolean
-  }
-
   class CommandProcessor {
+    - exitRequested : boolean
+  }
+}
+
+package es.upm.parque.business.controller {
+
+  class ParkController {
     - currentDate : LocalDate
     - currentPrice : BigDecimal
-    - exitRequested : boolean
   }
 
   class UserManager
-  class UserStorage {
-    - file : Path
-  }
+  class GroupManager
+  class TicketManager
+  class AttractionManager
+}
+
+package es.upm.parque.business.model {
 
   class User {
     - name : String
@@ -44,11 +48,6 @@ package es.upm.parque {
   }
 
   class UserValidator
-
-  class GroupManager
-  class GroupStorage {
-    - file : Path
-  }
 
   class Group {
     - id : String
@@ -74,17 +73,6 @@ package es.upm.parque {
     - discountPercent : int
   }
 
-  class TicketManager
-  class TicketStorage {
-    - ticketsFile : Path
-    - groupTicketsFile : Path
-  }
-
-  class AttractionManager
-  class AttractionStorage {
-    - file : Path
-  }
-
   class Attraction {
     - id : String
     - name : String
@@ -92,11 +80,39 @@ package es.upm.parque {
   }
 }
 
+package es.upm.parque.persistence {
+
+  class DataDirectory {
+    - path : Path
+    - temporary : boolean
+  }
+
+  class UserStorage {
+    - file : Path
+  }
+
+  class GroupStorage {
+    - file : Path
+  }
+
+  class TicketStorage {
+    - ticketsFile : Path
+    - groupTicketsFile : Path
+  }
+
+  class AttractionStorage {
+    - file : Path
+  }
+}
+
+' Presentation -> business
+CommandProcessor "1" x--> "1" ParkController : park
+
 ' Controller
-CommandProcessor "1" x--> "1" UserManager : users
-CommandProcessor "1" x--> "1" GroupManager : groups
-CommandProcessor "1" x--> "1" TicketManager : tickets
-CommandProcessor "1" x--> "1" AttractionManager : attractions
+ParkController "1" x--> "1" UserManager : users
+ParkController "1" x--> "1" GroupManager : groups
+ParkController "1" x--> "1" TicketManager : tickets
+ParkController "1" x--> "1" AttractionManager : attractions
 
 ' Users
 UserManager "1" x--> "1" UserStorage : storage
@@ -128,7 +144,9 @@ Attraction "0..*" x--> "0..*" User : present
 ' Usage of types without incoming relationships
 App ..> CommandProcessor
 App ..> DataDirectory
+ParkController ..> DataDirectory
 CommandProcessor ..> UserField
+ParkController ..> UserField
 UserManager ..> UserField
 UserManager ..> UserValidator
 GroupManager ..> UserValidator
