@@ -56,6 +56,17 @@ public class TicketController {
         return List.copyOf(groupTickets);
     }
 
+    /**
+     * Individual tickets bought directly for the user, excluding those inside group tickets.
+     */
+    public List<IndividualTicket> getStandaloneTicketsOf(User user) {
+        return individualTickets.stream().filter(t -> t.getUser() == user && ownerOf(t) == null).toList();
+    }
+
+    public List<GroupTicket> getGroupTicketsOf(Group group) {
+        return groupTickets.stream().filter(t -> t.getGroup() == group).toList();
+    }
+
     public Ticket findById(String id) {
         return getTickets().stream().filter(t -> t.getId().equals(id)).findFirst().orElse(null);
     }

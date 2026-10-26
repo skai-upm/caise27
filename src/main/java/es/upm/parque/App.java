@@ -2,9 +2,11 @@ package es.upm.parque;
 
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.MainController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.StandardInvoiceBuilder;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.DataDirectory;
 import es.upm.parque.persistence.GroupRepository;
@@ -80,7 +82,10 @@ public class App {
                 dataDir.resolve(GROUP_TICKETS_FILE)), userController, groupController, mainController);
         AttractionController attractionController = new AttractionController(
                 new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE)), ticketController, mainController);
-        return new CommandProcessor(userController, groupController, ticketController, attractionController, mainController);
+        InvoiceController invoiceController = new InvoiceController(userController, groupController, ticketController,
+                StandardInvoiceBuilder::new);
+        return new CommandProcessor(userController, groupController, ticketController, attractionController,
+                invoiceController, mainController);
     }
 
     /**

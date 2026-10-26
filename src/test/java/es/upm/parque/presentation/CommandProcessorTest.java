@@ -9,6 +9,8 @@ import es.upm.parque.business.controller.MainController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.User;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
@@ -261,8 +263,36 @@ class CommandProcessorTest {
     }
 
     @Test
+    void invoiceCommands() throws IOException {
+        processor.process(ANA);
+        processor.process(PEDRO);
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUP CREATE;G01;Pareja");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        List<String> stored = Files.readAllLines(dir.resolve("tickets.txt"));
+        String nl = System.lineSeparator();
+        assertEquals(String.join(nl, "OK INVOICE USER ana@correo.com", "Recipient: Ana Garcia Lopez (ana@correo.com)",
+                "Individual tickets:", "- Ticket T001 2026-10-15 40.00", "Total: 40.00"),
+                processor.process("INVOICE CREATE;USER;ana@correo.com"));
+        assertEquals(String.join(nl, "OK INVOICE GROUP G01", "Recipient: Group G01 - Pareja", "Group tickets:",
+                "- Group ticket TG01 2026-10-15 (2 members) 80.00", "Total: 80.00"),
+                processor.process("INVOICE CREATE;group;G01"));
+        assertEquals(String.join(nl, "OK INVOICE USER pedro@correo.com",
+                "Recipient: Pedro Lopez Martin (pedro@correo.com)", "Total: 0.00"),
+                processor.process("INVOICE CREATE;USER;pedro@correo.com"));
+        assertTrue(processor.process("INVOICE CREATE;COMPANY;X").contains("USER or GROUP"));
+        assertTrue(processor.process("INVOICE CREATE;USER;nadie@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("INVOICE CREATE;GROUP;G99").startsWith("ERROR"));
+        assertEquals(stored, Files.readAllLines(dir.resolve("tickets.txt")));
+        assertTrue(processor.process("HELP").contains("INVOICE CREATE;USER|GROUP;Correo|IdentificadorGrupo"));
+    }
+
+    @Test
     void unexpectedErrorsDoNotPropagate() {
-        CommandProcessor broken = new CommandProcessor(null, null, null, null, new MainController(TestPark.CLOCK));
+        CommandProcessor broken = new CommandProcessor(null, null, null, null, null, new MainController(TestPark.CLOCK));
         assertTrue(broken.process(ANA).startsWith("ERROR Unexpected error"));
     }
 }

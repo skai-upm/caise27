@@ -3,9 +3,13 @@ package es.upm.parque.presentation;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.MainController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.Invoice;
+import es.upm.parque.business.invoice.InvoiceLine;
+import es.upm.parque.business.invoice.InvoiceSection;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.User;
@@ -33,6 +37,7 @@ public class CommandProcessor {
     static final String ATTRACTION_ENTER_SYNTAX = "ATTRACTION ENTER;IdentificadorAtraccion;IdentificadorEntrada";
     static final String ATTRACTION_EXIT_SYNTAX = "ATTRACTION EXIT;IdentificadorAtraccion;IdentificadorEntrada";
     static final String ATTRACTION_STATUS_SYNTAX = "ATTRACTION STATUS;IdentificadorAtraccion";
+    static final String INVOICE_CREATE_SYNTAX = "INVOICE CREATE;USER|GROUP;Correo|IdentificadorGrupo";
     static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
     static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
     static final String HELP_SYNTAX = "HELP";
@@ -44,21 +49,25 @@ public class CommandProcessor {
             GROUP_CREATE_SYNTAX, GROUP_ADD_SYNTAX, GROUP_REMOVE_SYNTAX, GROUP_DELETE_SYNTAX,
             TICKET_CREATE_SYNTAX, TICKET_DELETE_SYNTAX, GROUPTICKET_CREATE_SYNTAX, GROUPTICKET_DELETE_SYNTAX,
             ATTRACTION_CREATE_SYNTAX, ATTRACTION_ENTER_SYNTAX, ATTRACTION_EXIT_SYNTAX, ATTRACTION_STATUS_SYNTAX,
+            INVOICE_CREATE_SYNTAX,
             SYSTEM_DATE_SYNTAX, SYSTEM_PRICE_SYNTAX, HELP_SYNTAX, EXIT_SYNTAX);
 
     private final UserController userController;
     private final GroupController groupController;
     private final TicketController ticketController;
     private final AttractionController attractionController;
+    private final InvoiceController invoiceController;
     private final MainController mainController;
     private boolean exitRequested;
 
     public CommandProcessor(UserController userController, GroupController groupController, TicketController ticketController,
-                            AttractionController attractionController, MainController mainController) {
+                            AttractionController attractionController, InvoiceController invoiceController,
+                            MainController mainController) {
         this.userController = userController;
         this.groupController = groupController;
         this.ticketController = ticketController;
         this.attractionController = attractionController;
+        this.invoiceController = invoiceController;
         this.mainController = mainController;
     }
 
@@ -134,6 +143,7 @@ public class CommandProcessor {
             case "ATTRACTION ENTER" -> "OK ENTERED " + p[1] + " -> " + users(attractionController.enter(p[1], p[2]));
             case "ATTRACTION EXIT" -> "OK EXITED " + p[1] + " -> " + users(attractionController.exit(p[1], p[2]));
             case "ATTRACTION STATUS" -> attractionStatus(attractionController.requireAttraction(p[1]));
+            case "INVOICE CREATE" -> createInvoice(p[1], p[2]);
             case "SYSTEM DATE" -> setSystemDate(p[1]);
             case "SYSTEM PRICE" -> {
                 mainController.setTicketPrice(Values.parsePrice(p[1]));
@@ -198,6 +208,25 @@ public class CommandProcessor {
                     .append(" (").append(u.getEmail()).append(')');
         }
         return out.toString();
+    }
+
+    private String createInvoice(String type, String id) {
+        String kind = type.toUpperCase();
+        Invoice invoice = switch (kind) {
+            case "USER" -> invoiceController.forUser(id);
+            case "GROUP" -> invoiceController.forGroup(id);
+            default -> throw new ParkException("Invoice recipient type must be USER or GROUP: " + type);
+        };
+        String nl = System.lineSeparator();
+        StringBuilder out = new StringBuilder("OK INVOICE " + kind + " " + id)
+                .append(nl).append("Recipient: ").append(invoice.getRecipient());
+        for (InvoiceSection section : invoice.getSections()) {
+            out.append(nl).append(section.title()).append(':');
+            for (InvoiceLine line : section.lines()) {
+                out.append(nl).append("- ").append(line.description()).append(' ').append(Values.formatPrice(line.amount()));
+            }
+        }
+        return out.append(nl).append("Total: ").append(Values.formatPrice(invoice.getTotal())).toString();
     }
 
     private String setSystemDate(String text) {

@@ -73,6 +73,25 @@ package es.upm.parque.business.controller {
   class GroupController
   class TicketController
   class AttractionController
+  class InvoiceController
+}
+
+package es.upm.parque.business.invoice {
+  class Invoice {
+    recipient : String
+    total : BigDecimal
+  }
+  class InvoiceSection {
+    title : String
+  }
+  class InvoiceLine {
+    description : String
+    amount : BigDecimal
+  }
+  interface InvoiceBuilder
+  class StandardInvoiceBuilder {
+    recipient : String
+  }
 }
 
 package es.upm.parque.business.validation {
@@ -122,6 +141,18 @@ AttractionController x--> "1" TicketController : ticketController
 AttractionController x--> "1" MainController : mainController
 AttractionController x--> "0..*" Attraction : attractions
 
+InvoiceController x--> "1" UserController : userController
+InvoiceController x--> "1" GroupController : groupController
+InvoiceController x--> "1" TicketController : ticketController
+InvoiceController x--> "1" InvoiceBuilder : builderFactory
+CommandProcessor "0..*" x--> "1" InvoiceController : invoiceController
+
+' Invoices
+Invoice "1" *--> "0..*" InvoiceSection : sections
+InvoiceSection "1" *--> "1..*" InvoiceLine : lines
+InvoiceBuilder <|.. StandardInvoiceBuilder
+StandardInvoiceBuilder x--> "0..*" InvoiceLine : items
+
 ' Domain
 Group "0..*" x--> "0..*" User : members
 Ticket <|-- IndividualTicket
@@ -135,6 +166,7 @@ RuntimeException <|-- ParkException
 ' Usage of classes without incoming relationships
 App ..> ExecutionOptions
 App ..> DataDirectory
+App ..> StandardInvoiceBuilder
 UserController ..> UserField
 UserController ..> UserValidator
 GroupController ..> UserValidator
