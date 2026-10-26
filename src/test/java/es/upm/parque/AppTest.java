@@ -86,4 +86,16 @@ class AppTest {
         String output = run(new String[0], "GROUP ADD;G01;ana@correo.com\n", users);
         assertTrue(output.contains("already in group"), output);
     }
+
+    @Test
+    void ticketsSurviveRestartAndPriceResets() throws IOException {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], COMMANDS.get(0) + "\nSYSTEM DATE;2026-10-01\nSYSTEM PRICE;60.00\n"
+            + "TICKET CREATE;T001;ana@correo.com;2026-10-15\n", users);
+        assertEquals(List.of("T001;2026-10-15;60.00;12345678Z"), Files.readAllLines(dir.resolve("tickets.txt")));
+        String output = run(new String[0], "SYSTEM DATE;2026-10-01\nTICKET CREATE;T002;ana@correo.com;2026-10-16\n"
+            + "USER DELETE;ana@correo.com;Clave1!\n", users);
+        assertTrue(output.contains("OK TICKET CREATED -> 40.00"), output);
+        assertTrue(output.contains("cannot be deleted"), output);
+    }
 }

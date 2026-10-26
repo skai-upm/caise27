@@ -27,13 +27,15 @@ class CommandProcessorTest {
 
     private UserManager manager;
     private GroupManager groups;
+    private TicketManager tickets;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() {
         manager = new UserManager(new UserStorage(dir.resolve("users.txt")));
         groups = new GroupManager(manager, new GroupStorage(dir.resolve("groups.txt")));
-        processor = new CommandProcessor(manager, groups);
+        tickets = new TicketManager(manager, new TicketStorage(dir.resolve("tickets.txt")));
+        processor = new CommandProcessor(manager, groups, tickets);
     }
 
     @Test
@@ -88,7 +90,8 @@ class CommandProcessorTest {
         String help = processor.execute("HELP");
         for (String usage : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo",
-            "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "SYSTEM DATE;yyyy-MM-dd", "HELP", "EXIT"}) {
+            "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
+            "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
         }
         assertFalse(processor.isExitRequested());
@@ -124,7 +127,7 @@ class CommandProcessorTest {
     @Test
     void systemDateStartsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = new CommandProcessor(manager, groups).getCurrentDate();
+        LocalDate date = new CommandProcessor(manager, groups, tickets).getCurrentDate();
         assertTrue(!date.isBefore(before) && !date.isAfter(LocalDate.now()));
     }
 
@@ -138,7 +141,7 @@ class CommandProcessorTest {
 
     @Test
     void invalidSystemDatesAreRejected() {
-        CommandProcessor fixed = new CommandProcessor(manager, groups, LocalDate.of(2026, 1, 1));
+        CommandProcessor fixed = new CommandProcessor(manager, groups, tickets, LocalDate.of(2026, 1, 1));
         for (String value : new String[] {"15/09/2026", "2026-9-15", "2026-02-30", "hoy", ""}) {
             assertTrue(fixed.execute("SYSTEM DATE;" + value).startsWith("ERROR: Invalid date"), value);
         }
@@ -168,5 +171,59 @@ class CommandProcessorTest {
         processor.execute("GROUP ADD;G01;ana@correo.com");
         assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
         assertTrue(groups.find("G01").getMembers().isEmpty());
+    }
+
+    @Test
+    void ticketLifecycleFollowsTheSystemDate() {
+        processor.execute(CREATE_ANA);
+        processor.execute("SYSTEM DATE;2026-10-01");
+        assertEquals("OK TICKET CREATED -> 40.00", processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        processor.execute("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        assertTrue(processor.execute("TICKET DELETE;T001").startsWith("ERROR"));
+        processor.execute("SYSTEM DATE;2026-10-16");
+        assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+        assertEquals("12345678Z", tickets.find("T001").getOwnerDni());
+    }
+
+    @Test
+    void futureTicketCanBeDeleted() {
+        processor.execute(CREATE_ANA);
+        processor.execute("SYSTEM DATE;2026-10-01");
+        processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertEquals("OK: Ticket T001 deleted", processor.execute("TICKET DELETE;T001"));
+        assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+    }
+
+    @Test
+    void ticketCreationErrors() {
+        processor.execute(CREATE_ANA);
+        processor.execute("SYSTEM DATE;2026-10-01");
+        assertTrue(processor.execute("TICKET CREATE;T001;nadie@correo.com;2026-10-15").startsWith("ERROR"));
+        assertTrue(processor.execute("TICKET CREATE;T001;ana@correo.com;2026-13-01").startsWith("ERROR: Invalid date"));
+        assertTrue(processor.execute("TICKET CREATE;T001;ana@correo.com;2026-09-30").startsWith("ERROR"));
+        assertTrue(processor.execute("TICKET CREATE;T001;ana@correo.com").startsWith("ERROR: Expected 3"));
+        assertTrue(processor.execute("TICKET UPDATE;T001").startsWith("ERROR: Unknown command"));
+        assertTrue(tickets.getTickets().isEmpty());
+    }
+
+    @Test
+    void systemPriceChangesNewTicketsOnly() {
+        processor.execute(CREATE_ANA);
+        processor.execute("SYSTEM DATE;2026-10-01");
+        processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertEquals("OK: Ticket price set to 60.00", processor.execute("SYSTEM PRICE;60.00"));
+        assertEquals("OK TICKET CREATED -> 60.00", processor.execute("TICKET CREATE;T002;ana@correo.com;2026-10-20"));
+        assertEquals("40.00", tickets.find("T001").getPrice().toPlainString());
+        assertEquals("OK: Ticket price set to 55.50", processor.execute("SYSTEM PRICE;55.5"));
+    }
+
+    @Test
+    void invalidPricesAreRejected() {
+        for (String value : new String[] {"-5", "0", "abc", "10.555", ""}) {
+            assertTrue(processor.execute("SYSTEM PRICE;" + value).startsWith("ERROR: Invalid price"), value);
+        }
+        assertEquals(CommandProcessor.INITIAL_PRICE, processor.getCurrentPrice());
     }
 }

@@ -3,6 +3,8 @@ package es.upm.parque;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -15,7 +17,8 @@ import java.util.List;
  * {@link String#split} into the operation (first segment) and its parameters (remaining segments).
  * Every command produces a response; no command can make the application stop unexpectedly.
  * The same processor serves interactive and file input through {@link #run}.
- * It is the main controller and owns the single system date used by time-dependent rules.
+ * It is the main controller and owns the per-execution system variables: the system date used by
+ * time-dependent rules and the current ticket price.
  */
 public class CommandProcessor {
 
@@ -28,7 +31,10 @@ public class CommandProcessor {
     private static final String USAGE_GROUP_ADD = "GROUP ADD;Id;Correo";
     private static final String USAGE_GROUP_REMOVE = "GROUP REMOVE;Id;Correo";
     private static final String USAGE_GROUP_DELETE = "GROUP DELETE;Id";
+    private static final String USAGE_TICKET_CREATE = "TICKET CREATE;Id;Correo;yyyy-MM-dd";
+    private static final String USAGE_TICKET_DELETE = "TICKET DELETE;Id";
     private static final String USAGE_SYSTEM_DATE = "SYSTEM DATE;yyyy-MM-dd";
+    private static final String USAGE_SYSTEM_PRICE = "SYSTEM PRICE;Importe";
     private static final String USAGE_HELP = "HELP";
     private static final String USAGE_EXIT = "EXIT";
 
@@ -40,32 +46,45 @@ public class CommandProcessor {
         USAGE_GROUP_ADD,
         USAGE_GROUP_REMOVE,
         USAGE_GROUP_DELETE,
+        USAGE_TICKET_CREATE,
+        USAGE_TICKET_DELETE,
         USAGE_SYSTEM_DATE,
+        USAGE_SYSTEM_PRICE,
         USAGE_HELP,
         USAGE_EXIT);
+
+    static final BigDecimal INITIAL_PRICE = new BigDecimal("40.00");
 
     private static final DateTimeFormatter DATE_FORMAT =
         DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private final UserManager users;
     private final GroupManager groups;
+    private final TicketManager tickets;
     private LocalDate currentDate;
+    private BigDecimal currentPrice = INITIAL_PRICE;
     private boolean exitRequested;
 
     /** Creates the controller with the operating system's current date as system date. */
-    public CommandProcessor(UserManager users, GroupManager groups) {
-        this(users, groups, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets) {
+        this(users, groups, tickets, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, GroupManager groups, LocalDate initialDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
+        this.tickets = tickets;
         this.currentDate = initialDate;
     }
 
     /** The single system date that every time-dependent rule must use. */
     public LocalDate getCurrentDate() {
         return currentDate;
+    }
+
+    /** The price applied to tickets sold from now on. */
+    public BigDecimal getCurrentPrice() {
+        return currentPrice;
     }
 
     public boolean isExitRequested() {
@@ -106,6 +125,9 @@ public class CommandProcessor {
             if (operation.length == 2 && operation[0].equals("GROUP")) {
                 return executeGroup(operation[1], parts);
             }
+            if (operation.length == 2 && operation[0].equals("TICKET")) {
+                return executeTicket(operation[1], parts);
+            }
             if (operation.length == 2 && operation[0].equals("SYSTEM")) {
                 return executeSystem(operation[1], parts);
             }
@@ -144,7 +166,14 @@ public class CommandProcessor {
             }
             case "DELETE" -> {
                 requireParams(parts, 2, USAGE_USER_DELETE);
-                groups.removeUserFromAll(users.delete(parts[1], parts[2]));
+                User user = users.authenticate(parts[1], parts[2]);
+                if (tickets.hasTicketOnOrAfter(user, currentDate)) {
+                    throw new IllegalArgumentException("User " + parts[1]
+                        + " cannot be deleted: it has tickets dated on or after " + currentDate);
+                }
+                users.delete(parts[1], parts[2]);
+                groups.removeUserFromAll(user);
+                tickets.detachOwner(user);
                 return ok("User " + parts[1] + " deleted");
             }
             case "UPDATE" -> {
@@ -187,17 +216,66 @@ public class CommandProcessor {
         }
     }
 
+    private String executeTicket(String action, String[] parts) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(parts, 3, USAGE_TICKET_CREATE);
+                Ticket t = tickets.create(parts[1], parts[2], parseDate(parts[3]), currentDate, currentPrice);
+                return "OK TICKET CREATED -> " + formatPrice(t.getPrice());
+            }
+            case "DELETE" -> {
+                requireParams(parts, 1, USAGE_TICKET_DELETE);
+                tickets.delete(parts[1], currentDate);
+                return ok("Ticket " + parts[1] + " deleted");
+            }
+            default -> {
+                return error("Unknown command: TICKET " + action);
+            }
+        }
+    }
+
     private String executeSystem(String action, String[] parts) {
-        if (!action.equals("DATE")) {
-            return error("Unknown command: SYSTEM " + action);
+        switch (action) {
+            case "DATE" -> {
+                requireParams(parts, 1, USAGE_SYSTEM_DATE);
+                currentDate = parseDate(parts[1]);
+                return ok("System date set to " + currentDate);
+            }
+            case "PRICE" -> {
+                requireParams(parts, 1, USAGE_SYSTEM_PRICE);
+                currentPrice = parsePrice(parts[1]);
+                return ok("Ticket price set to " + formatPrice(currentPrice));
+            }
+            default -> {
+                return error("Unknown command: SYSTEM " + action);
+            }
         }
-        requireParams(parts, 1, USAGE_SYSTEM_DATE);
+    }
+
+    private static LocalDate parseDate(String text) {
         try {
-            currentDate = LocalDate.parse(parts[1].trim(), DATE_FORMAT);
+            return LocalDate.parse(text.trim(), DATE_FORMAT);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Invalid date " + parts[1] + ". Expected format yyyy-MM-dd");
+            throw new IllegalArgumentException("Invalid date " + text + ". Expected format yyyy-MM-dd");
         }
-        return ok("System date set to " + currentDate);
+    }
+
+    private static BigDecimal parsePrice(String text) {
+        BigDecimal price;
+        try {
+            price = new BigDecimal(text.trim());
+        } catch (NumberFormatException e) {
+            price = null;
+        }
+        if (price == null || price.signum() <= 0 || price.scale() > 2) {
+            throw new IllegalArgumentException(
+                "Invalid price " + text + ". Expected a positive amount with at most two decimals");
+        }
+        return price.setScale(2, RoundingMode.UNNECESSARY);
+    }
+
+    private static String formatPrice(BigDecimal price) {
+        return price.setScale(2, RoundingMode.UNNECESSARY).toPlainString();
     }
 
     private static UserField parseField(String text) {

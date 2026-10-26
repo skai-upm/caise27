@@ -9,16 +9,19 @@ package es.upm.parque {
   class App {
     {static} ~USERS_FILE : Path
     {static} ~GROUPS_FILE_NAME : String
+    {static} ~TICKETS_FILE_NAME : String
     +{static} main(args : String[]) : void
     ~{static} run(args : String[], stdin : InputStream, out : PrintStream, usersFile : Path) : void
   }
 
   class CommandProcessor {
     -currentDate : LocalDate
+    -currentPrice : BigDecimal
     -exitRequested : boolean
     +run(in : BufferedReader, out : PrintStream) : void
     +execute(line : String) : String
     +getCurrentDate() : LocalDate
+    +getCurrentPrice() : BigDecimal
     +isExitRequested() : boolean
   }
 
@@ -26,6 +29,7 @@ package es.upm.parque {
     -usersByDni : Map<String, User>
     +create(name, surname, dni, email, password, phone, card) : User
     +delete(email : String, password : String) : User
+    +authenticate(email : String, password : String) : User
     +update(email : String, password : String, field : UserField, value : String) : void
     +findByEmail(email : String) : User
     +findByDni(dni : String) : User
@@ -89,11 +93,36 @@ package es.upm.parque {
     +removeMember(user : User) : boolean
     +isMember(user : User) : boolean
   }
+
+  class TicketManager {
+    -ticketsById : Map<String, Ticket>
+    +create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Ticket
+    +delete(id : String, today : LocalDate) : void
+    +hasTicketOnOrAfter(user : User, today : LocalDate) : boolean
+    +detachOwner(user : User) : void
+    +find(id : String) : Ticket
+  }
+
+  class TicketStorage {
+    -file : Path
+    +load(userByDni : Function<String, User>) : List<Ticket>
+    +save(tickets : Collection<Ticket>) : void
+  }
+
+  class Ticket {
+    -id : String {readOnly}
+    -date : LocalDate {readOnly}
+    -price : BigDecimal {readOnly}
+    -ownerDni : String {readOnly}
+    +isOwnedBy(user : User) : boolean
+    +detachOwner() : void
+  }
 }
 
 App ..> CommandProcessor : creates
 CommandProcessor "1" --> "1" UserManager : users
 CommandProcessor "1" --> "1" GroupManager : groups
+CommandProcessor "1" --> "1" TicketManager : tickets
 UserManager "1" --> "1" UserStorage : storage
 UserManager "1" o--> "0..*" User : users
 UserManager ..> UserValidator
@@ -104,5 +133,10 @@ GroupManager "1" o--> "0..*" Group : groups
 Group "0..*" o--> "0..*" User : members
 UserStorage ..> User
 GroupStorage ..> Group
+TicketManager "1" --> "1" TicketStorage : storage
+TicketManager "1" --> "1" UserManager : users
+TicketManager "1" o--> "0..*" Ticket : tickets
+Ticket "0..*" --> "0..1" User : owner
+TicketStorage ..> Ticket
 
 @enduml

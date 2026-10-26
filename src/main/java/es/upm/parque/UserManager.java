@@ -88,7 +88,11 @@ public class UserManager {
         persist();
     }
 
-    private User authenticate(String email, String password) {
+    /**
+     * @return the user with that email if the password matches
+     * @throws IllegalArgumentException if the user does not exist or the password is wrong
+     */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null) {
             throw new IllegalArgumentException("No user with email " + email);

@@ -18,6 +18,7 @@ public class App {
 
     static final Path USERS_FILE = Path.of("data", "users.txt");
     static final String GROUPS_FILE_NAME = "groups.txt";
+    static final String TICKETS_FILE_NAME = "tickets.txt";
 
     public static void main(String[] args) {
         run(args, System.in, System.out, USERS_FILE);
@@ -28,7 +29,9 @@ public class App {
         try {
             UserManager users = new UserManager(new UserStorage(usersFile));
             GroupManager groups = new GroupManager(users, new GroupStorage(usersFile.resolveSibling(GROUPS_FILE_NAME)));
-            processor = new CommandProcessor(users, groups);
+            TicketManager tickets =
+                new TicketManager(users, new TicketStorage(usersFile.resolveSibling(TICKETS_FILE_NAME)));
+            processor = new CommandProcessor(users, groups, tickets);
         } catch (UncheckedIOException e) {
             out.println("ERROR: " + e.getMessage());
             return;
