@@ -31,7 +31,7 @@ class AppTest {
     private String run(String[] args, String stdin, Path dataDir) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(bytes, true, StandardCharsets.UTF_8), dataDir);
+                new PrintStream(bytes, true, StandardCharsets.UTF_8), dataDir, dir.resolve("tmp"));
         return bytes.toString(StandardCharsets.UTF_8);
     }
 
@@ -89,5 +89,41 @@ class AppTest {
     void directoryInsteadOfFileIsReported() {
         String out = run(new String[] {dir.toString()}, "", dir.resolve("data"));
         assertTrue(out.startsWith("ERROR"), out);
+    }
+
+    @Test
+    void flyModeUsesATemporaryDirectoryAndDeletesIt() throws Exception {
+        Path data = dir.resolve("data");
+        run(new String[0], ANA + "\n", data);
+        String before = Files.readString(data.resolve("users.txt"));
+        String out = run(new String[] {"--fly"}, PEDRO + "\nGROUP CREATE;G01;Amigos\nGROUP ADD;G01;pedro@correo.com\n"
+                + "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456\nEXIT\n",
+                data);
+        assertTrue(!out.contains("ERROR"), out);
+        assertEquals(before, Files.readString(data.resolve("users.txt")));
+        assertTrue(Files.notExists(data.resolve("groups.txt")));
+        try (var left = Files.list(dir.resolve("tmp"))) {
+            assertEquals(0, left.count());
+        }
+    }
+
+    @Test
+    void flyModeWithCommandFile() throws Exception {
+        Path input = dir.resolve("input_fase2.txt");
+        Files.writeString(input, ANA + "\nGROUP CREATE;G01;Amigos\nGROUP ADD;G01;ana@correo.com\n");
+        Path data = dir.resolve("data");
+        String out = run(new String[] {"--fly", input.toString()}, "", data);
+        assertEquals(3, out.lines().filter(l -> l.startsWith("OK")).count(), out);
+        assertTrue(Files.notExists(data.resolve("users.txt")));
+        try (var left = Files.list(dir.resolve("tmp"))) {
+            assertEquals(0, left.count());
+        }
+    }
+
+    @Test
+    void unknownOptionIsRejected() {
+        String out = run(new String[] {"--fast"}, ANA + "\n", dir.resolve("data"));
+        assertTrue(out.startsWith("ERROR") && out.contains("--fast"), out);
+        assertTrue(Files.notExists(dir.resolve("data").resolve("users.txt")));
     }
 }

@@ -36,3 +36,10 @@ The initial project SHALL NOT contain application-domain functionality; the main
 #### Scenario: Minimal entry point
 - **WHEN** the application is run
 - **THEN** it prints a simple start-up message and exits without performing any domain operation
+
+### Requirement: JAR file name
+Packaging SHALL produce the executable JAR at `target/parque.jar`.
+
+#### Scenario: Documented command works
+- **WHEN** `mvn package` is run
+- **THEN** `java -jar target/parque.jar` starts the application
