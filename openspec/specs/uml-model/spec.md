@@ -52,3 +52,10 @@ Each association, aggregation or composition SHALL be named after the field that
 #### Scenario: Usage only for classes without incoming relationships
 - **WHEN** the model is inspected
 - **THEN** classes such as `UserValidator` and `UserField` appear with the usage that reaches them, and no other usage relationships are shown
+
+### Requirement: Model shows layer packages
+`uml/model.puml` SHALL group classes in the same packages as the code (presentation, business model, business controllers, business validation, persistence).
+
+#### Scenario: Packages in the diagram
+- **WHEN** `uml/model.puml` is inspected after the layered reorganisation
+- **THEN** each class appears inside the package that contains it in the code

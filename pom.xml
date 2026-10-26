@@ -70,7 +70,7 @@
           <configuration>
             <archive>
               <manifest>
-                <mainClass>es.upm.parque.App</mainClass>
+                <mainClass>es.upm.parque.presentation.App</mainClass>
               </manifest>
             </archive>
           </configuration>

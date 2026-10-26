@@ -1,7 +1,7 @@
 @startuml model
 title Amusement park - class model (current implementation)
 
-package es.upm.parque {
+package es.upm.parque.presentation {
 
   class App {
   }
@@ -9,10 +9,9 @@ package es.upm.parque {
   class CommandProcessor {
     exitRequested : boolean
   }
+}
 
-  class SystemDate {
-    date : LocalDate
-  }
+package es.upm.parque.business.model {
 
   class User {
     name : String
@@ -33,26 +32,9 @@ package es.upm.parque {
     CARD
   }
 
-  class UserValidator {
-  }
-
-  class UserManager {
-  }
-
-  class UserRepository {
-    file : Path
-  }
-
   class Group {
     id : String
     name : String
-  }
-
-  class GroupManager {
-  }
-
-  class GroupRepository {
-    file : Path
   }
 
   abstract class Ticket {
@@ -68,8 +50,47 @@ package es.upm.parque {
     totalPrice : BigDecimal
   }
 
-  class TicketManager {
+  class Attraction {
+    id : String
+    name : String
+    capacity : int
+  }
+
+  class SystemDate {
+    date : LocalDate
+  }
+}
+
+package es.upm.parque.business.controller {
+
+  class UserController {
+  }
+
+  class GroupController {
+  }
+
+  class TicketController {
     price : BigDecimal
+  }
+
+  class AttractionController {
+  }
+}
+
+package es.upm.parque.business.validation {
+
+  class UserValidator {
+  }
+}
+
+package es.upm.parque.persistence {
+
+  class UserRepository {
+    file : Path
+  }
+
+  class GroupRepository {
+    file : Path
   }
 
   class TicketRepository {
@@ -77,17 +98,12 @@ package es.upm.parque {
     groupFile : Path
   }
 
-  class Attraction {
-    id : String
-    name : String
-    capacity : int
-  }
-
-  class AttractionManager {
-  }
-
   class AttractionRepository {
     file : Path
+  }
+
+  class TemporaryDataDirectory {
+    path : Path
   }
 }
 
@@ -96,42 +112,43 @@ Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 
 ' Associations, aggregations and compositions (named after the owning field)
-CommandProcessor x--> "1" UserManager : userManager
-CommandProcessor x--> "1" GroupManager : groupManager
-CommandProcessor x--> "1" TicketManager : ticketManager
-CommandProcessor x--> "1" AttractionManager : attractionManager
+CommandProcessor x--> "1" UserController : userController
+CommandProcessor x--> "1" GroupController : groupController
+CommandProcessor x--> "1" TicketController : ticketController
+CommandProcessor x--> "1" AttractionController : attractionController
 CommandProcessor x--> "1" SystemDate : systemDate
 
-UserManager x--> "1" UserRepository : repository
-UserManager x--> "0..*" User : users
+UserController x--> "1" UserRepository : repository
+UserController x--> "0..*" User : users
 
-GroupManager x--> "1" GroupRepository : repository
-GroupManager x--> "1" UserManager : userManager
-GroupManager x--> "0..*" Group : groups
+GroupController x--> "1" GroupRepository : repository
+GroupController x--> "1" UserController : userController
+GroupController x--> "0..*" Group : groups
 Group x--> "0..*" User : members
 
-TicketManager x--> "1" TicketRepository : repository
-TicketManager x--> "1" UserManager : userManager
-TicketManager x--> "1" GroupManager : groupManager
-TicketManager x--> "1" SystemDate : systemDate
-TicketManager x--> "0..*" Ticket : tickets
+TicketController x--> "1" TicketRepository : repository
+TicketController x--> "1" UserController : userController
+TicketController x--> "1" GroupController : groupController
+TicketController x--> "1" SystemDate : systemDate
+TicketController x--> "0..*" Ticket : tickets
 IndividualTicket x--> "1" User : user
 GroupTicket o--> "1" Group : group
 GroupTicket *--> "1..*" IndividualTicket : tickets
 
-AttractionManager x--> "1" AttractionRepository : repository
-AttractionManager x--> "1" TicketManager : ticketManager
-AttractionManager x--> "1" SystemDate : systemDate
-AttractionManager x--> "0..*" Attraction : attractions
+AttractionController x--> "1" AttractionRepository : repository
+AttractionController x--> "1" TicketController : ticketController
+AttractionController x--> "1" SystemDate : systemDate
+AttractionController x--> "0..*" Attraction : attractions
 Attraction x--> "0..*" User : present
 
 ' Usage, only for classes without incoming relationships
 App ..> CommandProcessor
+App ..> TemporaryDataDirectory
 CommandProcessor ..> UserField
-UserManager ..> UserField
-UserManager ..> UserValidator
-GroupManager ..> UserValidator
-TicketManager ..> UserValidator
-AttractionManager ..> UserValidator
+UserController ..> UserField
+UserController ..> UserValidator
+GroupController ..> UserValidator
+TicketController ..> UserValidator
+AttractionController ..> UserValidator
 
 @enduml
