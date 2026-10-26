@@ -33,7 +33,9 @@ class CommandProcessorTest {
         GroupManager groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
         TicketManager tickets = new TicketManager(
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), users, groups, systemDate);
-        return new CommandProcessor(users, groups, tickets, systemDate);
+        AttractionManager attractions = new AttractionManager(
+                new AttractionRepository(dir.resolve("attractions.txt")), tickets, systemDate);
+        return new CommandProcessor(users, groups, tickets, attractions, systemDate);
     }
 
     @Test
@@ -200,6 +202,50 @@ class CommandProcessorTest {
         assertEquals("OK GROUP TICKET DELETED", processor.process("GROUPTICKET DELETE;TG02"));
         assertEquals("OK USER REMOVED FROM GROUP", processor.process("GROUP REMOVE;G01;luis@correo.com"));
         assertTrue(processor.process("HELP").contains("GROUPTICKET CREATE;IdEntradaGrupo;IdGrupo;yyyy-MM-dd"));
+    }
+
+    @Test
+    void attractionCommandsAndStatus() throws IOException {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("USER CREATE;Luis;Ruiz;00000000T;luis@correo.com;Clave1!;600000000;1111222233334444");
+        processor.process("GROUP CREATE;G01;Familia");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUP ADD;G01;luis@correo.com");
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("TICKET CREATE;T002;ana@correo.com;2026-10-16");
+
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A01;Tornado;20"));
+        assertTrue(processor.process("ATTRACTION CREATE;A01;Otra;5").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION CREATE;A02;Noria;0").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION CREATE;A02;Noria;muchos").startsWith("ERROR"));
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A02;Mini;2"));
+
+        assertEquals("OK ATTRACTION ENTERED -> 1 users", processor.process("ATTRACTION ENTER;A01;T001"));
+        assertEquals("OK ATTRACTION ENTERED -> 2 users", processor.process("ATTRACTION ENTER;A01;TG01"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION ENTER;A02;T002").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION ENTER;A02;T999").startsWith("ERROR"));
+        assertEquals("OK ATTRACTION ENTERED -> 1 users", processor.process("ATTRACTION ENTER;A02;T001"));
+        assertTrue(processor.process("ATTRACTION ENTER;A02;TG01").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION STATUS;A02").contains("Present: 1"));
+
+        assertEquals("OK ATTRACTION EXITED -> 1 users", processor.process("ATTRACTION EXIT;A01;T001"));
+        assertEquals(String.join(System.lineSeparator(),
+                "OK ATTRACTION STATUS A01", "Name: Tornado", "Capacity: 20", "Present: 2", "Available: 18", "Users:",
+                "- Pedro Lopez Martin (87654321X)", "- Luis Ruiz (00000000T)"),
+                processor.process("ATTRACTION STATUS;A01"));
+        assertTrue(processor.process("ATTRACTION DELETE;A01").startsWith("ERROR"));
+        assertEquals("OK ATTRACTION EXITED -> 2 users", processor.process("ATTRACTION EXIT;A01;TG01"));
+        assertTrue(processor.process("ATTRACTION EXIT;A01;TG01").startsWith("ERROR"));
+
+        CommandProcessor restarted = newProcessor();
+        assertTrue(restarted.process("ATTRACTION STATUS;A02").contains("Present: 0"));
+        assertEquals("OK ATTRACTION DELETED", restarted.process("ATTRACTION DELETE;A01"));
+        assertTrue(restarted.process("ATTRACTION STATUS;A01").startsWith("ERROR"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION STATUS;IdAtraccion"));
     }
 
     @Test

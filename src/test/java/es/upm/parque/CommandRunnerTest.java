@@ -36,8 +36,11 @@ class CommandRunnerTest {
         output = new ByteArrayOutputStream();
         SystemDate date = new SystemDate(LocalDate.of(2026, 9, 1));
         GroupManager groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), manager);
-        CommandProcessor processor = new CommandProcessor(manager, groups, new TicketManager(
-                new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date), date);
+        TicketManager tickets = new TicketManager(
+                new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
+        AttractionManager attractions = new AttractionManager(
+                new AttractionRepository(dir.resolve("attractions.txt")), tickets, date);
+        CommandProcessor processor = new CommandProcessor(manager, groups, tickets, attractions, date);
         runner = new CommandRunner(processor, new PrintStream(output, true, StandardCharsets.UTF_8));
     }
 

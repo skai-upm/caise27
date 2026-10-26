@@ -59,6 +59,11 @@ public class GroupTicket extends Ticket {
     }
 
     @Override
+    public List<User> getHolders() {
+        return tickets.stream().map(IndividualTicket::getUser).toList();
+    }
+
+    @Override
     public BigDecimal getPrice() {
         BigDecimal sum = tickets.stream().map(IndividualTicket::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
         return sum.multiply(HUNDRED.subtract(BigDecimal.valueOf(discountPercent)))

@@ -22,6 +22,11 @@ public class CommandProcessor {
     private static final String TICKET_DELETE_SYNTAX = "TICKET DELETE;IdEntrada";
     private static final String GROUPTICKET_CREATE_SYNTAX = "GROUPTICKET CREATE;IdEntradaGrupo;IdGrupo;yyyy-MM-dd";
     private static final String GROUPTICKET_DELETE_SYNTAX = "GROUPTICKET DELETE;IdEntradaGrupo";
+    private static final String ATTRACTION_CREATE_SYNTAX = "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad";
+    private static final String ATTRACTION_DELETE_SYNTAX = "ATTRACTION DELETE;IdAtraccion";
+    private static final String ATTRACTION_ENTER_SYNTAX = "ATTRACTION ENTER;IdAtraccion;IdEntrada";
+    private static final String ATTRACTION_EXIT_SYNTAX = "ATTRACTION EXIT;IdAtraccion;IdEntrada";
+    private static final String ATTRACTION_STATUS_SYNTAX = "ATTRACTION STATUS;IdAtraccion";
     private static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
 
     /** Syntax of every available command, shown by HELP. */
@@ -37,6 +42,11 @@ public class CommandProcessor {
             TICKET_DELETE_SYNTAX,
             GROUPTICKET_CREATE_SYNTAX,
             GROUPTICKET_DELETE_SYNTAX,
+            ATTRACTION_CREATE_SYNTAX,
+            ATTRACTION_DELETE_SYNTAX,
+            ATTRACTION_ENTER_SYNTAX,
+            ATTRACTION_EXIT_SYNTAX,
+            ATTRACTION_STATUS_SYNTAX,
             SYSTEM_DATE_SYNTAX,
             SYSTEM_PRICE_SYNTAX,
             "HELP",
@@ -45,14 +55,16 @@ public class CommandProcessor {
     private final UserManager userManager;
     private final GroupManager groupManager;
     private final TicketManager ticketManager;
+    private final AttractionManager attractionManager;
     private final SystemDate systemDate;
     private boolean exitRequested;
 
     public CommandProcessor(UserManager userManager, GroupManager groupManager, TicketManager ticketManager,
-                            SystemDate systemDate) {
+                            AttractionManager attractionManager, SystemDate systemDate) {
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.ticketManager = ticketManager;
+        this.attractionManager = attractionManager;
         this.systemDate = systemDate;
     }
 
@@ -72,6 +84,11 @@ public class CommandProcessor {
                 case "TICKET DELETE" -> deleteTicket(parts);
                 case "GROUPTICKET CREATE" -> createGroupTicket(parts);
                 case "GROUPTICKET DELETE" -> deleteGroupTicket(parts);
+                case "ATTRACTION CREATE" -> createAttraction(parts);
+                case "ATTRACTION DELETE" -> deleteAttraction(parts);
+                case "ATTRACTION ENTER" -> enterAttraction(parts);
+                case "ATTRACTION EXIT" -> exitAttraction(parts);
+                case "ATTRACTION STATUS" -> attractionStatus(parts);
                 case "SYSTEM DATE" -> setSystemDate(parts);
                 case "SYSTEM PRICE" -> setSystemPrice(parts);
                 case "HELP" -> help(parts);
@@ -168,6 +185,60 @@ public class CommandProcessor {
         }
         ticketManager.deleteGroupTicket(parts[1]);
         return "OK GROUP TICKET DELETED";
+    }
+
+    private String createAttraction(String[] parts) {
+        if (parts.length != 4) {
+            return usage(ATTRACTION_CREATE_SYNTAX);
+        }
+        attractionManager.create(parts[1], parts[2], parts[3]);
+        return "OK ATTRACTION CREATED";
+    }
+
+    private String deleteAttraction(String[] parts) {
+        if (parts.length != 2) {
+            return usage(ATTRACTION_DELETE_SYNTAX);
+        }
+        attractionManager.delete(parts[1]);
+        return "OK ATTRACTION DELETED";
+    }
+
+    private String enterAttraction(String[] parts) {
+        if (parts.length != 3) {
+            return usage(ATTRACTION_ENTER_SYNTAX);
+        }
+        int entered = attractionManager.enter(parts[1], parts[2]);
+        return "OK ATTRACTION ENTERED -> " + entered + " users";
+    }
+
+    private String exitAttraction(String[] parts) {
+        if (parts.length != 3) {
+            return usage(ATTRACTION_EXIT_SYNTAX);
+        }
+        int left = attractionManager.exit(parts[1], parts[2]);
+        return "OK ATTRACTION EXITED -> " + left + " users";
+    }
+
+    private String attractionStatus(String[] parts) {
+        if (parts.length != 2) {
+            return usage(ATTRACTION_STATUS_SYNTAX);
+        }
+        Attraction attraction = attractionManager.require(parts[1]);
+        List<User> visitors = attraction.getVisitors();
+        StringBuilder status = new StringBuilder("OK ATTRACTION STATUS ").append(attraction.getId())
+                .append(System.lineSeparator()).append("Name: ").append(attraction.getName())
+                .append(System.lineSeparator()).append("Capacity: ").append(attraction.getCapacity())
+                .append(System.lineSeparator()).append("Present: ").append(visitors.size())
+                .append(System.lineSeparator()).append("Available: ").append(attraction.available())
+                .append(System.lineSeparator()).append("Users:");
+        if (visitors.isEmpty()) {
+            status.append(System.lineSeparator()).append("- none");
+        }
+        for (User user : visitors) {
+            status.append(System.lineSeparator()).append("- ").append(user.getName()).append(' ')
+                    .append(user.getSurname()).append(" (").append(user.getDni()).append(')');
+        }
+        return status.toString();
     }
 
     private String createTicket(String[] parts) {

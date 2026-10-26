@@ -26,7 +26,9 @@ public class App {
             TicketManager ticketManager = new TicketManager(
                     new TicketRepository(DATA_DIR.resolve("tickets.txt"), DATA_DIR.resolve("grouptickets.txt")),
                     userManager, groupManager, systemDate);
-            processor = new CommandProcessor(userManager, groupManager, ticketManager, systemDate);
+            AttractionManager attractionManager = new AttractionManager(
+                    new AttractionRepository(DATA_DIR.resolve("attractions.txt")), ticketManager, systemDate);
+            processor = new CommandProcessor(userManager, groupManager, ticketManager, attractionManager, systemDate);
         } catch (IOException e) {
             System.out.println("ERROR Could not load data: " + e.getMessage());
             return;

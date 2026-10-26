@@ -2,6 +2,7 @@ package es.upm.parque;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Common abstraction of every park ticket: an identifier, a date of use and a price.
@@ -25,6 +26,11 @@ public abstract class Ticket {
     }
 
     public abstract BigDecimal getPrice();
+
+    /**
+     * The users admitted with this ticket.
+     */
+    public abstract List<User> getHolders();
 
     /**
      * True if the ticket is for {@code today} or a later day.

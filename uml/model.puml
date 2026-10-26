@@ -1,5 +1,5 @@
 @startuml model
-' Amusement park - class model (Delivery 2: users, groups, tickets, system date)
+' Amusement park - class model (Delivery 2: users, groups, tickets, attractions, system date)
 hide empty members
 skinparam classAttributeIconSize 0
 
@@ -62,6 +62,18 @@ package es.upm.parque {
     name : String
   }
 
+  class AttractionManager
+
+  class AttractionRepository {
+    file : Path
+  }
+
+  class Attraction {
+    id : String
+    name : String
+    capacity : int
+  }
+
   abstract class Ticket {
     id : String
     date : LocalDate
@@ -101,6 +113,12 @@ Ticket <|-- GroupTicket
 IndividualTicket "0..*" o--> "1" User : user
 GroupTicket "0..*" o--> "1" Group : group
 GroupTicket "1" *--> "1..*" IndividualTicket : tickets
+CommandProcessor "0..*" o--> "1" AttractionManager : attractionManager
+AttractionManager "1" o--> "1" AttractionRepository : repository
+AttractionManager "0..*" o--> "1" TicketManager : ticketManager
+AttractionManager "0..*" o--> "1" SystemDate : systemDate
+AttractionManager "1" o--> "0..*" Attraction : attractions
+Attraction "0..*" o--> "0..*" User : visitors
 
 App ..> CommandRunner : <<use>>
 UserManager ..> UserField : <<use>>

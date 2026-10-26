@@ -2,6 +2,7 @@ package es.upm.parque;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * An individual park ticket for one user and one date, sold at a fixed price.
@@ -24,5 +25,10 @@ public class IndividualTicket extends Ticket {
     @Override
     public BigDecimal getPrice() {
         return price;
+    }
+
+    @Override
+    public List<User> getHolders() {
+        return List.of(user);
     }
 }
