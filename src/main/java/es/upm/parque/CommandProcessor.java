@@ -18,6 +18,9 @@ public class CommandProcessor {
     private static final String GROUP_ADD_SYNTAX = "GROUP ADD;IdGrupo;Correo";
     private static final String GROUP_REMOVE_SYNTAX = "GROUP REMOVE;IdGrupo;Correo";
     private static final String GROUP_DELETE_SYNTAX = "GROUP DELETE;IdGrupo";
+    private static final String TICKET_CREATE_SYNTAX = "TICKET CREATE;IdEntrada;Correo;yyyy-MM-dd";
+    private static final String TICKET_DELETE_SYNTAX = "TICKET DELETE;IdEntrada";
+    private static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
 
     /** Syntax of every available command, shown by HELP. */
     private static final List<String> COMMAND_SYNTAX = List.of(
@@ -28,18 +31,24 @@ public class CommandProcessor {
             GROUP_ADD_SYNTAX,
             GROUP_REMOVE_SYNTAX,
             GROUP_DELETE_SYNTAX,
+            TICKET_CREATE_SYNTAX,
+            TICKET_DELETE_SYNTAX,
             SYSTEM_DATE_SYNTAX,
+            SYSTEM_PRICE_SYNTAX,
             "HELP",
             "EXIT");
 
     private final UserManager userManager;
     private final GroupManager groupManager;
+    private final TicketManager ticketManager;
     private final SystemDate systemDate;
     private boolean exitRequested;
 
-    public CommandProcessor(UserManager userManager, GroupManager groupManager, SystemDate systemDate) {
+    public CommandProcessor(UserManager userManager, GroupManager groupManager, TicketManager ticketManager,
+                            SystemDate systemDate) {
         this.userManager = userManager;
         this.groupManager = groupManager;
+        this.ticketManager = ticketManager;
         this.systemDate = systemDate;
     }
 
@@ -55,7 +64,10 @@ public class CommandProcessor {
                 case "GROUP ADD" -> addToGroup(parts);
                 case "GROUP REMOVE" -> removeFromGroup(parts);
                 case "GROUP DELETE" -> deleteGroup(parts);
+                case "TICKET CREATE" -> createTicket(parts);
+                case "TICKET DELETE" -> deleteTicket(parts);
                 case "SYSTEM DATE" -> setSystemDate(parts);
+                case "SYSTEM PRICE" -> setSystemPrice(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> "ERROR Unknown command: " + operation;
@@ -77,8 +89,12 @@ public class CommandProcessor {
         if (parts.length != 3) {
             return usage(USER_DELETE_SYNTAX);
         }
-        User deleted = userManager.delete(parts[1], parts[2]);
-        groupManager.removeFromAllGroups(deleted);
+        User user = userManager.authenticate(parts[1], parts[2]);
+        if (ticketManager.hasCurrentOrFutureTicket(user)) {
+            return "ERROR User " + parts[1] + " has current or future tickets and cannot be deleted";
+        }
+        userManager.delete(user);
+        groupManager.removeFromAllGroups(user);
         return "OK USER DELETED";
     }
 
@@ -120,6 +136,30 @@ public class CommandProcessor {
         }
         groupManager.delete(parts[1]);
         return "OK GROUP DELETED";
+    }
+
+    private String createTicket(String[] parts) {
+        if (parts.length != 4) {
+            return usage(TICKET_CREATE_SYNTAX);
+        }
+        Ticket ticket = ticketManager.create(parts[1], parts[2], parts[3]);
+        return "OK TICKET CREATED -> " + ticket.getPrice().toPlainString();
+    }
+
+    private String deleteTicket(String[] parts) {
+        if (parts.length != 2) {
+            return usage(TICKET_DELETE_SYNTAX);
+        }
+        ticketManager.delete(parts[1]);
+        return "OK TICKET DELETED";
+    }
+
+    private String setSystemPrice(String[] parts) {
+        if (parts.length != 2) {
+            return usage(SYSTEM_PRICE_SYNTAX);
+        }
+        ticketManager.setCurrentPrice(parts[1]);
+        return "OK SYSTEM PRICE " + ticketManager.getCurrentPrice().toPlainString();
     }
 
     private String setSystemDate(String[] parts) {

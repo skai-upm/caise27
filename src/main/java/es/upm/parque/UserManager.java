@@ -68,13 +68,11 @@ public class UserManager {
     }
 
     /**
-     * Deletes the user and returns it so callers can remove references to it.
+     * Removes a registered user and saves the change.
      */
-    public User delete(String email, String password) {
-        User user = authenticate(email, password);
+    public void delete(User user) {
         users.remove(user);
         save();
-        return user;
     }
 
     public void update(String email, String password, String fieldName, String newValue) {
@@ -114,7 +112,10 @@ public class UserManager {
         save();
     }
 
-    private User authenticate(String email, String password) {
+    /**
+     * Returns the user with that email if the password matches; otherwise the operation is rejected.
+     */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null) {
             throw new UserException("No user with email " + email);

@@ -55,11 +55,11 @@ class UserManagerTest {
 
     @Test
     void deleteRequiresMatchingPassword() throws IOException {
-        assertThrows(UserException.class, () -> manager.delete("nadie@correo.com", "Clave1!"));
-        assertThrows(UserException.class, () -> manager.delete("ana@correo.com", "Mala1!"));
+        assertThrows(UserException.class, () -> manager.authenticate("nadie@correo.com", "Clave1!"));
+        assertThrows(UserException.class, () -> manager.authenticate("ana@correo.com", "Mala1!"));
         assertEquals(1, manager.getUsers().size());
 
-        manager.delete("ana@correo.com", "Clave1!");
+        manager.delete(manager.authenticate("ana@correo.com", "Clave1!"));
         assertTrue(manager.getUsers().isEmpty());
         assertTrue(Files.readAllLines(file).isEmpty());
     }

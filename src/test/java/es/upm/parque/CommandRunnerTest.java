@@ -34,8 +34,11 @@ class CommandRunnerTest {
     void setUp() throws IOException {
         manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
         output = new ByteArrayOutputStream();
-        runner = new CommandRunner(new CommandProcessor(manager,
-                new GroupManager(new GroupRepository(dir.resolve("groups.txt")), manager), new SystemDate(LocalDate.of(2026, 9, 1))), new PrintStream(output, true, StandardCharsets.UTF_8));
+        SystemDate date = new SystemDate(LocalDate.of(2026, 9, 1));
+        CommandProcessor processor = new CommandProcessor(manager,
+                new GroupManager(new GroupRepository(dir.resolve("groups.txt")), manager),
+                new TicketManager(new TicketRepository(dir.resolve("tickets.txt")), manager, date), date);
+        runner = new CommandRunner(processor, new PrintStream(output, true, StandardCharsets.UTF_8));
     }
 
     private List<String> run(String input) throws IOException {

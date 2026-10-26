@@ -22,7 +22,10 @@ public class App {
         try {
             UserManager userManager = new UserManager(new UserRepository(DATA_DIR.resolve("users.txt")));
             GroupManager groupManager = new GroupManager(new GroupRepository(DATA_DIR.resolve("groups.txt")), userManager);
-            processor = new CommandProcessor(userManager, groupManager, SystemDate.today());
+            SystemDate systemDate = SystemDate.today();
+            TicketManager ticketManager = new TicketManager(
+                    new TicketRepository(DATA_DIR.resolve("tickets.txt")), userManager, systemDate);
+            processor = new CommandProcessor(userManager, groupManager, ticketManager, systemDate);
         } catch (IOException e) {
             System.out.println("ERROR Could not load data: " + e.getMessage());
             return;

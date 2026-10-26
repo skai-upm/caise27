@@ -31,7 +31,8 @@ class CommandProcessorTest {
     private CommandProcessor newProcessor() throws IOException {
         UserManager users = new UserManager(new UserRepository(dir.resolve("users.txt")));
         GroupManager groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
-        return new CommandProcessor(users, groups, systemDate);
+        TicketManager tickets = new TicketManager(new TicketRepository(dir.resolve("tickets.txt")), users, systemDate);
+        return new CommandProcessor(users, groups, tickets, systemDate);
     }
 
     @Test
@@ -136,6 +137,38 @@ class CommandProcessorTest {
     private GroupManager newProcessorGroups() throws IOException {
         UserManager users = new UserManager(new UserRepository(dir.resolve("users.txt")));
         return new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
+    }
+
+    @Test
+    void ticketCommandsAndDeletionRules() throws IOException {
+        processor.process(CREATE_ANA);
+        assertEquals("OK SYSTEM DATE 2026-10-01", processor.process("SYSTEM DATE;2026-10-01"));
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertTrue(processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-20").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET CREATE;T002;nadie@correo.com;2026-10-20").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET CREATE;T002;ana@correo.com;2026-09-30").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET CREATE;T002;ana@correo.com;2026/10/20").startsWith("ERROR"));
+        assertEquals("OK SYSTEM PRICE 60.00", processor.process("SYSTEM PRICE;60.00"));
+        assertTrue(processor.process("SYSTEM PRICE;-5").startsWith("ERROR"));
+        assertTrue(processor.process("SYSTEM PRICE;abc").startsWith("ERROR"));
+        assertEquals("OK TICKET CREATED -> 60.00", processor.process("TICKET CREATE;T002;ana@correo.com;2026-10-20"));
+
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        assertEquals("OK TICKET DELETED", processor.process("TICKET DELETE;T002"));
+        assertTrue(processor.process("TICKET DELETE;T002").startsWith("ERROR"));
+
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("TICKET DELETE;T001").startsWith("ERROR"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertEquals("OK USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+
+        CommandProcessor restarted = newProcessor();
+        assertEquals("OK USER CREATED", restarted.process(CREATE_ANA));
+        assertEquals("OK TICKET CREATED -> 40.00", restarted.process("TICKET CREATE;T003;ana@correo.com;2026-10-20"));
+        assertTrue(restarted.process("TICKET CREATE;T001;ana@correo.com;2026-10-20").startsWith("ERROR"),
+                "historical ticket T001 must survive the restart");
+        assertTrue(processor.process("HELP").contains("TICKET CREATE;IdEntrada;Correo;yyyy-MM-dd"));
     }
 
     @Test

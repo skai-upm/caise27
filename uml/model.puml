@@ -1,5 +1,5 @@
 @startuml model
-' Amusement park - class model (Delivery 2: users, groups, system date)
+' Amusement park - class model (Delivery 2: users, groups, tickets, system date)
 hide empty members
 skinparam classAttributeIconSize 0
 
@@ -29,6 +29,14 @@ package es.upm.parque {
     file : Path
   }
 
+  class TicketManager {
+    currentPrice : BigDecimal
+  }
+
+  class TicketRepository {
+    file : Path
+  }
+
   class User {
     name : String
     surname : String
@@ -53,6 +61,12 @@ package es.upm.parque {
     name : String
   }
 
+  class Ticket {
+    id : String
+    date : LocalDate
+    price : BigDecimal
+  }
+
   class UserException
 
   class UserValidator
@@ -61,6 +75,7 @@ package es.upm.parque {
 CommandRunner "0..*" o--> "1" CommandProcessor : processor
 CommandProcessor "0..*" o--> "1" UserManager : userManager
 CommandProcessor "0..*" o--> "1" GroupManager : groupManager
+CommandProcessor "0..*" o--> "1" TicketManager : ticketManager
 CommandProcessor "0..*" o--> "1" SystemDate : systemDate
 UserManager "1" o--> "1" UserRepository : repository
 UserManager "1" o--> "0..*" User : users
@@ -68,6 +83,11 @@ GroupManager "1" o--> "1" GroupRepository : repository
 GroupManager "0..*" o--> "1" UserManager : userManager
 GroupManager "1" o--> "0..*" Group : groups
 Group "0..*" o--> "0..*" User : members
+TicketManager "1" o--> "1" TicketRepository : repository
+TicketManager "0..*" o--> "1" UserManager : userManager
+TicketManager "0..*" o--> "1" SystemDate : systemDate
+TicketManager "1" o--> "0..*" Ticket : tickets
+Ticket "0..*" o--> "1" User : user
 
 App ..> CommandRunner : <<use>>
 UserManager ..> UserField : <<use>>
