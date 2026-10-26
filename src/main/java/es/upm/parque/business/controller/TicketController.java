@@ -106,7 +106,10 @@ public class TicketController {
         return ticket;
     }
 
-    public void delete(String id) {
+    /**
+     * Returns the standalone individual ticket if it may be deleted now; otherwise the deletion is rejected.
+     */
+    public IndividualTicket requireDeletableTicket(String id) {
         requireConfigured();
         if (!(tickets.get(id) instanceof IndividualTicket ticket)) {
             throw new BusinessException("No individual ticket with identifier " + id);
@@ -117,6 +120,11 @@ public class TicketController {
                     + " and cannot be deleted on its own");
         }
         requireFuture(ticket);
+        return ticket;
+    }
+
+    public void delete(String id) {
+        requireDeletableTicket(id);
         tickets.remove(id);
         save();
     }
@@ -154,12 +162,20 @@ public class TicketController {
     /**
      * Deletes a future group ticket together with the individual tickets it is composed of.
      */
-    public void deleteGroupTicket(String id) {
+    /**
+     * Returns the group ticket if it may be deleted now; otherwise the deletion is rejected.
+     */
+    public GroupTicket requireDeletableGroupTicket(String id) {
         requireConfigured();
         if (!(tickets.get(id) instanceof GroupTicket groupTicket)) {
             throw new BusinessException("No group ticket with identifier " + id);
         }
         requireFuture(groupTicket);
+        return groupTicket;
+    }
+
+    public void deleteGroupTicket(String id) {
+        GroupTicket groupTicket = requireDeletableGroupTicket(id);
         groupTicket.getTickets().forEach(ticket -> tickets.remove(ticket.getId()));
         tickets.remove(id);
         save();

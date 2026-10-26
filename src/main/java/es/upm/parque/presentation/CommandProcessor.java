@@ -17,7 +17,6 @@ import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.SpecialPass;
 import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.SystemDate;
-import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.presentation.help.HelpGenerator;
 
@@ -174,7 +173,8 @@ public class CommandProcessor {
         if (parts.length != 2) {
             return usage("GROUPTICKET DELETE");
         }
-        requireNoPasses(parts[1]);
+        GroupTicket groupTicket = ticketController.requireDeletableGroupTicket(parts[1]);
+        passController.deletePassesOf(groupTicket.getIndividualTickets());
         ticketController.deleteGroupTicket(parts[1]);
         return "OK GROUP TICKET DELETED";
     }
@@ -245,13 +245,6 @@ public class CommandProcessor {
         return status.toString();
     }
 
-    private void requireNoPasses(String ticketId) {
-        Ticket ticket = ticketController.find(ticketId);
-        if (ticket != null && passController.hasPasses(ticket)) {
-            throw new BusinessException("Ticket " + ticketId + " has passes; refund them before deleting the ticket");
-        }
-    }
-
     private String buySpeedPasses(String[] parts) {
         if (parts.length != 3) {
             return usage("SPEEDPASS CREATE");
@@ -309,7 +302,8 @@ public class CommandProcessor {
         if (parts.length != 2) {
             return usage("TICKET DELETE");
         }
-        requireNoPasses(parts[1]);
+        IndividualTicket ticket = ticketController.requireDeletableTicket(parts[1]);
+        passController.deletePassesOf(ticket.getIndividualTickets());
         ticketController.delete(parts[1]);
         return "OK TICKET DELETED";
     }

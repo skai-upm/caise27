@@ -60,9 +60,17 @@ Passes SHALL be stored after every change and restored at startup with their ide
 - **WHEN** `T001` has SpeedPasses and a Special Pass and the application is restarted
 - **THEN** the same passes exist with the same prices and statuses
 
-### Requirement: Tickets with passes are not deleted
-Until passes are cascade-deleted with their tickets, `TICKET DELETE` and `GROUPTICKET DELETE` SHALL be rejected with an `ERROR` line when the ticket, or any ticket composing the group ticket, has passes.
+### Requirement: Cascade deletion of passes
+When a ticket is validly deleted, its passes SHALL be deleted with it: `TICKET DELETE` SHALL delete the ticket's SpeedPasses and Special Pass, and `GROUPTICKET DELETE` SHALL delete the passes of each composing ticket, then those tickets, then the group ticket. All deletion conditions SHALL be checked before anything is removed, so a rejected deletion SHALL leave every ticket and pass unchanged.
 
-#### Scenario: Ticket with passes
-- **WHEN** `T001` has a SpeedPass and `TICKET DELETE;T001` is processed
-- **THEN** the ticket is kept and an `ERROR` line asks to refund its passes first
+#### Scenario: Individual ticket with passes
+- **WHEN** the system date is 2026-10-01, `T001` (dated 2026-10-15) has SpeedPasses and a Special Pass, and `TICKET DELETE;T001` is processed
+- **THEN** `T001` and all its passes no longer exist, also after a restart
+
+#### Scenario: Group ticket with passes
+- **WHEN** `TG01` is dated after the system date, `TG01-1` has a SpeedPass and `GROUPTICKET DELETE;TG01` is processed
+- **THEN** the SpeedPass, `TG01-1`, `TG01-2` and `TG01` no longer exist
+
+#### Scenario: Rejected deletion
+- **WHEN** `TICKET DELETE;T001` is processed on the ticket's date
+- **THEN** it is rejected and `T001` keeps all its passes

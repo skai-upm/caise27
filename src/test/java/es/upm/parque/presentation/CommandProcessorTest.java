@@ -321,12 +321,43 @@ class CommandProcessorTest {
         assertTrue(processor.process("SPEEDPASS CREATE;T001;2").startsWith("ERROR"));
         assertEquals("OK SPECIALPASS CREATED -> 40.00", processor.process("SPECIALPASS CREATE;T001"));
         assertTrue(processor.process("SPECIALPASS CREATE;T001").startsWith("ERROR"));
-        assertTrue(processor.process("TICKET DELETE;T001").startsWith("ERROR Ticket T001 has passes"));
         assertEquals("OK SPEEDPASS DELETED -> refunded 8.00", processor.process("SPEEDPASS DELETE;T001-SP3"));
         assertEquals("OK SPECIALPASS DELETED -> refunded 40.00", processor.process("SPECIALPASS DELETE;T001"));
         assertTrue(processor.process("SPEEDPASS DELETE;T001-SP3").startsWith("ERROR"));
         assertTrue(processor.process("INVOICE CREATE;USER;ana@correo.com").contains("TOTAL: 120.00"));
         assertTrue(processor.process("HELP").contains("SPEEDPASS CREATE;IdEntrada;1|10"));
+    }
+
+    @Test
+    void ticketDeletionCascadesToPasses() throws IOException {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;Familia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("SPEEDPASS CREATE;T001;10");
+        processor.process("SPECIALPASS CREATE;T001");
+        processor.process("SPEEDPASS CREATE;TG01-1;1");
+        processor.process("SPECIALPASS CREATE;TG01-2");
+
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("TICKET DELETE;T001").startsWith("ERROR"));
+        assertTrue(processor.process("GROUPTICKET DELETE;TG01").startsWith("ERROR"));
+        assertEquals(13, PassController.getInstance().getPasses().size(), "rejected deletions remove nothing");
+
+        processor.process("SYSTEM DATE;2026-10-01");
+        assertEquals("OK TICKET DELETED", processor.process("TICKET DELETE;T001"));
+        assertEquals(2, PassController.getInstance().getPasses().size());
+        assertEquals("OK GROUP TICKET DELETED", processor.process("GROUPTICKET DELETE;TG01"));
+        assertTrue(PassController.getInstance().getPasses().isEmpty());
+
+        CommandProcessor restarted = newProcessor();
+        assertTrue(PassController.getInstance().getPasses().isEmpty());
+        assertTrue(TicketController.getInstance().getTickets().isEmpty());
+        assertTrue(restarted.process("SPEEDPASS CREATE;T001;1").startsWith("ERROR"));
     }
 
     @Test

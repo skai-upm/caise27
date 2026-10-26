@@ -170,6 +170,16 @@ public class PassController {
         }
     }
 
+    /**
+     * Deletes every pass, used or not, of the given tickets (cascade of a ticket deletion).
+     */
+    public void deletePassesOf(List<IndividualTicket> deletedTickets) {
+        requireConfigured();
+        if (passes.values().removeIf(pass -> deletedTickets.contains(pass.getTicket()))) {
+            save();
+        }
+    }
+
     public static BigDecimal total(List<? extends Pass> bought) {
         return bought.stream().map(Pass::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
     }

@@ -129,6 +129,16 @@ class PassControllerTest {
     }
 
     @Test
+    void deletePassesOfTickets() throws IOException {
+        passes.buySpeedPasses("T001", "10");
+        passes.buySpecialPass("TG01-1");
+        passes.buySpeedPasses("TG01-2", "1");
+        passes.deletePassesOf(tickets.find("TG01").getIndividualTickets());
+        assertEquals(10, passes.getPasses().size());
+        assertEquals(10, newPassController().getPasses().size());
+    }
+
+    @Test
     void passesSurviveRestart() throws IOException {
         passes.buySpeedPasses("T001", "1").get(0).consume();
         passes.buySpecialPass("T001");

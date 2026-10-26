@@ -143,6 +143,9 @@ package es.upm.parque.business.model {
 }
 
 package es.upm.parque.persistence {
+  class TemporaryDataDirectory {
+    path : Path
+  }
   class UserRepository {
     file : Path
   }
@@ -244,6 +247,7 @@ BusinessControllers x--> "1" PassController : passes
 
 ' Usage of classes without incoming relationships
 App ..> CommandRunner
+App ..> TemporaryDataDirectory
 AttractionController ..> EntryResult
 CommandProcessor ..> EntryResult
 AttractionController ..> AttractionType
