@@ -1,0 +1,68 @@
+OK: User 12345678Z created
+OK: User 87654321X created
+OK: User 11111111H created
+ERROR: Invalid DNI: 12345678A
+OK: User ana@correo.com updated (PHONE)
+OK: System date set to 2026-10-01
+OK: Group G01 created
+OK: User pedro@correo.com added to group G01
+OK: User luis@correo.com added to group G01
+OK TICKET CREATED -> 40.00
+OK GROUP TICKET CREATED -> 80.00
+OK: Ticket price set to 50.00
+OK TICKET CREATED -> 50.00
+OK SPEEDPASS CREATED -> 80.00 (T001-S1..T001-S10)
+OK SPECIALPASS CREATED -> 40.00 (T001-SPECIAL)
+OK SPEEDPASS CREATED -> 8.00 (TG01-1-S1)
+OK SPEEDPASS CREATED -> 8.00 (TG01-2-S1)
+OK: SpeedPass T001-S10 refunded -> 8.00
+ERROR: Group G01 cannot be modified: it has group tickets dated on or after 2026-10-01
+ERROR: User ana@correo.com cannot be deleted: it has tickets dated on or after 2026-10-01
+OK: Attraction A01 (GENERAL) created with capacity 20
+OK: Attraction A02 (GROUP) created with capacity 10
+OK: Attraction A03 (INDIVIDUAL) created with capacity 10
+OK: Attraction A04 (SPECIAL) created with capacity 5
+OK: System date set to 2026-10-15
+OK: 1 user(s) entered attraction A01; consumed SpeedPass T001-S1
+ERROR: Attraction A02 (GROUP) does not admit this kind of ticket
+ERROR: Attraction A03 (INDIVIDUAL) does not admit this kind of ticket
+OK: 2 user(s) entered attraction A02; consumed SpeedPass TG01-1-S1, SpeedPass TG01-2-S1
+OK: 1 user(s) entered attraction A04; consumed SpecialPass T001-SPECIAL
+ERROR: User ana@correo.com is already in attraction A04
+Attraction A01 - Tornado (GENERAL)
+  Capacity: 20 | Present: 1 | Available: 19
+  Users present: Ana Garcia Lopez <ana@correo.com>
+OK: 1 user(s) left attraction A01
+Attraction A02 - Carrusel (GROUP)
+  Capacity: 10 | Present: 2 | Available: 8
+  Users present: Pedro Lopez Martin <pedro@correo.com>, Luis Ruiz <luis@correo.com>
+INVOICE - User Ana Garcia Lopez <ana@correo.com> DNI 12345678Z
+  Date: 2026-10-15
+  Individual tickets
+    Ticket T001 for 2026-10-15: 40.00
+    Ticket T002 for 2026-10-20: 50.00
+    Subtotal: 90.00
+  Personal passes
+    SpeedPass T001-S1 (ticket T001): 8.00
+    SpeedPass T001-S2 (ticket T001): 8.00
+    SpeedPass T001-S3 (ticket T001): 8.00
+    SpeedPass T001-S4 (ticket T001): 8.00
+    SpeedPass T001-S5 (ticket T001): 8.00
+    SpeedPass T001-S6 (ticket T001): 8.00
+    SpeedPass T001-S7 (ticket T001): 8.00
+    SpeedPass T001-S8 (ticket T001): 8.00
+    SpeedPass T001-S9 (ticket T001): 8.00
+    SpecialPass T001-SPECIAL (ticket T001): 40.00
+    Subtotal: 112.00
+  TOTAL: 202.00
+INVOICE - Group G01 Familia
+  Date: 2026-10-15
+  Group tickets
+    Group ticket TG01 for 2026-10-15 (2 members, 0% discount): 80.00
+    Subtotal: 80.00
+  TOTAL: 80.00
+OK: Ticket T002 deleted
+OK: System date set to 2026-10-16
+OK: User ana@correo.com added to group G01
+ERROR: Ticket TG01 for 2026-10-15 cannot be deleted: only tickets dated after 2026-10-16 can be deleted
+OK: Bye
