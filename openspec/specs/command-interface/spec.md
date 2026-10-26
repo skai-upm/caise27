@@ -66,6 +66,10 @@ The system SHALL provide a `HELP` command that displays every currently availabl
 - **WHEN** `HELP` is processed
 - **THEN** the output contains the syntax of `USER CREATE`, `USER DELETE`, `USER UPDATE`, `HELP` and `EXIT`
 
+#### Scenario: Help lists the system date command
+- **WHEN** `HELP` is processed
+- **THEN** the output contains `SYSTEM DATE;yyyy-MM-dd`
+
 ### Requirement: EXIT command
 The system SHALL provide an `EXIT` command that terminates processing in a controlled manner; no command after `EXIT` SHALL be executed, in either mode.
 

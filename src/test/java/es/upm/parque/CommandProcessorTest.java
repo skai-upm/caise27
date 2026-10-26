@@ -23,7 +23,7 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() {
         manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        processor = new CommandProcessor(manager, new SystemDate());
     }
 
     @Test
@@ -71,7 +71,8 @@ class CommandProcessorTest {
     void helpListsAllCommands() {
         String help = processor.process("HELP");
         for (String syntax : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-                "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT"}) {
+                "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT",
+                "SYSTEM DATE;yyyy-MM-dd"}) {
             assertTrue(help.contains(syntax), syntax);
         }
     }
@@ -83,5 +84,23 @@ class CommandProcessorTest {
         assertTrue(!processor.isExitRequested());
         assertEquals("OK EXIT", processor.process("EXIT"));
         assertTrue(processor.isExitRequested());
+    }
+
+    @Test
+    void systemDateCanBeSetBackwardAndForward() {
+        assertEquals("OK SYSTEM DATE -> 2026-09-15", processor.process("SYSTEM DATE;2026-09-15"));
+        assertEquals(java.time.LocalDate.of(2026, 9, 15), processor.getSystemDate().get());
+        assertTrue(processor.process("SYSTEM DATE;2025-01-01").startsWith("OK"));
+        assertEquals(java.time.LocalDate.of(2025, 1, 1), processor.getSystemDate().get());
+    }
+
+    @Test
+    void invalidSystemDatesAreRejected() {
+        processor.process("SYSTEM DATE;2026-09-15");
+        for (String bad : new String[] {"SYSTEM DATE;15/09/2026", "SYSTEM DATE;2026-9-15", "SYSTEM DATE;2026-02-30",
+                "SYSTEM DATE;", "SYSTEM DATE", "SYSTEM DATE;2026-09-15;x"}) {
+            assertTrue(processor.process(bad).startsWith("ERROR"), bad);
+        }
+        assertEquals(java.time.LocalDate.of(2026, 9, 15), processor.getSystemDate().get());
     }
 }

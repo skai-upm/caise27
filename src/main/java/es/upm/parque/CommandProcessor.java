@@ -1,5 +1,10 @@
 package es.upm.parque;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+
 /**
  * Interprets text commands of the form {@code OPERATION;param1;param2;...} and returns a response line.
  */
@@ -8,15 +13,21 @@ public class CommandProcessor {
         "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
         "USER DELETE;Correo;Contraseña",
         "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+        "SYSTEM DATE;yyyy-MM-dd",
         "HELP",
         "EXIT"
     };
 
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
+
     private final UserManager userManager;
+    private final SystemDate systemDate;
     private boolean exitRequested;
 
-    public CommandProcessor(UserManager userManager) {
+    public CommandProcessor(UserManager userManager, SystemDate systemDate) {
         this.userManager = userManager;
+        this.systemDate = systemDate;
     }
 
     public String process(String line) {
@@ -25,6 +36,11 @@ public class CommandProcessor {
         try {
             if (operation.length == 2 && operation[0].equals("USER")) {
                 return processUser(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("SYSTEM") && operation[1].equals("DATE")) {
+                requireParams(parts, 1, "SYSTEM DATE;yyyy-MM-dd");
+                systemDate.set(parseDate(parts[1]));
+                return "OK SYSTEM DATE -> " + systemDate.get();
             }
             if (operation.length == 1 && operation[0].equals("HELP")) {
                 requireParams(parts, 0, "HELP");
@@ -39,6 +55,10 @@ public class CommandProcessor {
         } catch (IllegalArgumentException e) {
             return "ERROR: " + e.getMessage();
         }
+    }
+
+    public SystemDate getSystemDate() {
+        return systemDate;
     }
 
     public boolean isExitRequested() {
@@ -74,6 +94,14 @@ public class CommandProcessor {
             default -> {
                 return "ERROR: unknown command 'USER " + action + "'";
             }
+        }
+    }
+
+    private static LocalDate parseDate(String text) {
+        try {
+            return LocalDate.parse(text.trim(), DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("invalid date '" + text + "': expected a real date as yyyy-MM-dd");
         }
     }
 

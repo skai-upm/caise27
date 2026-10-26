@@ -23,7 +23,8 @@ public class App {
     }
 
     static void run(String[] args, InputStream stdin, PrintStream out, Path usersFile) {
-        CommandProcessor processor = new CommandProcessor(new UserManager(new UserRepository(usersFile)));
+        CommandProcessor processor = new CommandProcessor(new UserManager(new UserRepository(usersFile)),
+                new SystemDate());
         if (args.length == 0) {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8))) {
                 processLines(in, processor, out);
