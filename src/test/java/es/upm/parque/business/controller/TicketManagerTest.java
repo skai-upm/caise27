@@ -26,6 +26,7 @@ import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.User;
 import es.upm.parque.persistence.TextFileGroupTicketRepository;
+import es.upm.parque.persistence.TextFilePassRepository;
 import es.upm.parque.persistence.TextFileTicketRepository;
 
 class TicketManagerTest {
@@ -230,7 +231,73 @@ class TicketManagerTest {
     void reportsStorageFailure() throws IOException {
         Path blocked = Files.createFile(dir.resolve("blocked"));
         TicketManager broken = TicketManager.initialize(new TextFileTicketRepository(blocked.resolve("t.txt")),
-                new TextFileGroupTicketRepository(blocked.resolve("g.txt")), users, park.groups, today);
+                new TextFileGroupTicketRepository(blocked.resolve("g.txt")),
+                new TextFilePassRepository(blocked.resolve("p.txt")), users, park.groups, today);
         assertEquals(UserManager.STORAGE_FAILURE, broken.create("T001", "ana@correo.com", "2026-10-15"));
+    }
+
+    @Test
+    void deletingTicketDeletesItsPasses() throws IOException {
+        tickets.create("T001", "ana@correo.com", "2026-10-15");
+        park.passes.createSpeedPasses("T001", "10");
+        park.passes.createSpecialPass("T001");
+        assertEquals(11, Files.readAllLines(dir.resolve("passes.txt")).size());
+        assertEquals(TicketManager.TICKET_DELETED, tickets.delete("T001"));
+        assertTrue(Files.readAllLines(dir.resolve("passes.txt")).isEmpty());
+        Park restarted = new Park(dir, LocalDate.of(2026, 10, 1));
+        assertNull(restarted.tickets.findAnyIndividual("T001"));
+        assertEquals(PassManager.PASS_NOT_FOUND, restarted.passes.deleteSpeedPass("T001-S1"));
+    }
+
+    @Test
+    void deletingGroupTicketDeletesPassesThenTicketsThenGroupTicket() throws IOException {
+        familyWithAnaAndPedro();
+        tickets.createGroupTicket("TG01", "G01", "2026-10-15");
+        park.passes.createSpeedPasses("TG01-1", "1");
+        park.passes.createSpecialPass("TG01-2");
+        IndividualTicket member = tickets.findAnyIndividual("TG01-1");
+        assertEquals(TicketManager.GROUP_TICKET_DELETED, tickets.deleteGroupTicket("TG01"));
+        assertTrue(member.getPasses().isEmpty());
+        assertNull(tickets.findAnyIndividual("TG01-1"));
+        assertNull(tickets.findAnyIndividual("TG01-2"));
+        assertTrue(Files.readAllLines(dir.resolve("passes.txt")).isEmpty());
+        assertTrue(Files.readAllLines(dir.resolve("grouptickets.txt")).isEmpty());
+        Park restarted = new Park(dir, LocalDate.of(2026, 10, 1));
+        assertNull(restarted.tickets.findGroupTicket("TG01"));
+    }
+
+    @Test
+    void notRefundableGroupTicketKeepsEverything() {
+        familyWithAnaAndPedro();
+        tickets.createGroupTicket("TG01", "G01", "2026-10-01");
+        park.passes.createSpecialPass("TG01-2");
+        assertEquals(TicketManager.NOT_REFUNDABLE, tickets.deleteGroupTicket("TG01"));
+        assertNotNull(tickets.findAnyIndividual("TG01-2").getSpecialPass());
+        assertNotNull(tickets.findGroupTicket("TG01"));
+    }
+
+    @Test
+    void storageFailureRestoresTicketAndPasses() throws IOException {
+        tickets.create("T001", "ana@correo.com", "2026-10-15");
+        park.passes.createSpeedPasses("T001", "1");
+        park.passes.createSpecialPass("T001");
+        Files.delete(dir.resolve("passes.txt"));
+        Files.createDirectory(dir.resolve("passes.txt"));
+        assertEquals(UserManager.STORAGE_FAILURE, tickets.delete("T001"));
+        IndividualTicket t001 = tickets.findIndividual("T001");
+        assertEquals(2, t001.getPasses().size());
+        assertNotNull(t001.getSpecialPass());
+    }
+
+    @Test
+    void storageFailureRestoresGroupTicketAndPasses() throws IOException {
+        familyWithAnaAndPedro();
+        tickets.createGroupTicket("TG01", "G01", "2026-10-15");
+        park.passes.createSpeedPasses("TG01-1", "1");
+        Files.delete(dir.resolve("passes.txt"));
+        Files.createDirectory(dir.resolve("passes.txt"));
+        assertEquals(UserManager.STORAGE_FAILURE, tickets.deleteGroupTicket("TG01"));
+        assertNotNull(tickets.findGroupTicket("TG01"));
+        assertEquals(1, tickets.findAnyIndividual("TG01-1").getSpeedPasses().size());
     }
 }

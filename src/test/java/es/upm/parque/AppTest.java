@@ -192,4 +192,29 @@ class AppTest {
         launch("", "--fly");
         assertEquals("ERROR CANNOT CREATE TEMPORARY DIRECTORY" + NL, output());
     }
+
+    @Test
+    void passesAndAttractionTypesAreRestoredOnRestart() throws IOException {
+        startWithStdin(Fixtures.CREATE_ANA + "\nTICKET CREATE;T001;ana@correo.com;2099-10-15\n"
+                + "SPEEDPASS CREATE;T001;1\nSPECIALPASS CREATE;T001\nATTRACTION CREATE;A09;Barcas;5;GROUP\n");
+        assertEquals(2, Files.readAllLines(dir.resolve("passes.txt")).size());
+        bytes.reset();
+        startWithStdin("SPECIALPASS CREATE;T001\nATTRACTION CREATE;A09;Barcas;5;GROUP\nTICKET DELETE;T001\n");
+        assertEquals("ERROR SPECIAL PASS ALREADY ISSUED" + NL + "ERROR DUPLICATE ATTRACTION" + NL
+                + "OK TICKET DELETED" + NL, output());
+        assertEquals(List.of("A09;Barcas;5;GROUP"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertTrue(Files.readAllLines(dir.resolve("passes.txt")).isEmpty());
+    }
+
+    @Test
+    void flyModeKeepsPassesAndAttractionsTemporary() throws IOException {
+        launch(Fixtures.CREATE_ANA + "\nTICKET CREATE;T001;ana@correo.com;2099-10-15\nSPEEDPASS CREATE;T001;1\n"
+                + "ATTRACTION CREATE;A09;Barcas;5;SPECIAL\nEXIT\n", "--fly");
+        assertTrue(output().contains("OK SPEEDPASS CREATED -> "));
+        assertFalse(Files.exists(data().resolve("passes.txt")));
+        assertFalse(Files.exists(data().resolve("attractions.txt")));
+        try (var children = Files.list(tmp())) {
+            assertEquals(0, children.count());
+        }
+    }
 }

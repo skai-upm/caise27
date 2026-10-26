@@ -33,3 +33,10 @@ When an execution in `--fly` mode terminates — because input ends, `EXIT` is p
 #### Scenario: Fly with a command file
 - **WHEN** the application is started with `--fly input_fase2.txt`
 - **THEN** it processes that file using temporary persistence and deletes the directory at the end
+
+### Requirement: Temporary mode covers all data
+In `--fly` mode every persistent element, including personal passes and attraction types, SHALL be stored in the temporary directory and never in `data/`.
+
+#### Scenario: Passes in fly mode
+- **WHEN** a `--fly` execution buys passes and creates a SPECIAL attraction
+- **THEN** `passes.txt` and `attractions.txt` are written only inside the temporary directory, which is deleted at the end

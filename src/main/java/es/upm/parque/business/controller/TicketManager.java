@@ -12,11 +12,13 @@ import java.util.Map;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.PersonalPass;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserValidator;
 import es.upm.parque.persistence.GroupTicketRepository;
+import es.upm.parque.persistence.PassRepository;
 import es.upm.parque.persistence.TicketRepository;
 
 /**
@@ -42,6 +44,7 @@ public class TicketManager {
 
     private final TicketRepository repository;
     private final GroupTicketRepository groupRepository;
+    private final PassRepository passRepository;
     private final UserManager users;
     private final GroupManager groups;
     private final SystemDate systemDate;
@@ -54,8 +57,9 @@ public class TicketManager {
      * Called once at application startup.
      */
     public static TicketManager initialize(TicketRepository repository, GroupTicketRepository groupRepository,
-                    UserManager users, GroupManager groups, SystemDate systemDate) throws IOException {
-        instance = new TicketManager(repository, groupRepository, users, groups, systemDate);
+                    PassRepository passRepository, UserManager users, GroupManager groups, SystemDate systemDate)
+            throws IOException {
+        instance = new TicketManager(repository, groupRepository, passRepository, users, groups, systemDate);
         return instance;
     }
 
@@ -69,10 +73,12 @@ public class TicketManager {
         return instance;
     }
 
-    private TicketManager(TicketRepository repository, GroupTicketRepository groupRepository, UserManager users,
-                         GroupManager groups, SystemDate systemDate) throws IOException {
+    private TicketManager(TicketRepository repository, GroupTicketRepository groupRepository,
+                         PassRepository passRepository, UserManager users, GroupManager groups,
+                         SystemDate systemDate) throws IOException {
         this.repository = repository;
         this.groupRepository = groupRepository;
+        this.passRepository = passRepository;
         this.users = users;
         this.groups = groups;
         this.systemDate = systemDate;
@@ -149,8 +155,18 @@ public class TicketManager {
         if (!ticket.isRefundable(systemDate.get())) {
             return NOT_REFUNDABLE;
         }
+        Map<IndividualTicket, List<PersonalPass>> removedPasses = new LinkedHashMap<>();
+        for (IndividualTicket member : ticket.getTickets()) {
+            removedPasses.put(member, member.clearPasses());
+        }
         groupTicketsById.remove(id);
-        return persist(GROUP_TICKET_DELETED);
+        String result = persist(GROUP_TICKET_DELETED);
+        if (!GROUP_TICKET_DELETED.equals(result)) {
+            groupTicketsById.put(id, ticket);
+            removedPasses.forEach(IndividualTicket::restorePasses);
+            persist(result);
+        }
+        return result;
     }
 
     /**
@@ -170,8 +186,15 @@ public class TicketManager {
         if (!ticket.isRefundable(systemDate.get())) {
             return NOT_REFUNDABLE;
         }
+        List<PersonalPass> removedPasses = ticket.clearPasses();
         ticketsById.remove(id);
-        return persist(TICKET_DELETED);
+        String result = persist(TICKET_DELETED);
+        if (!TICKET_DELETED.equals(result)) {
+            ticketsById.put(id, ticket);
+            ticket.restorePasses(removedPasses);
+            persist(result);
+        }
+        return result;
     }
 
     /**
@@ -258,6 +281,7 @@ public class TicketManager {
 
     private String persist(String success) {
         try {
+            passRepository.save(allIndividualTickets());
             repository.save(ticketsById.values());
             groupRepository.save(groupTicketsById.values());
             return success;

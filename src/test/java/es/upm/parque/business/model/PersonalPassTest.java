@@ -57,4 +57,17 @@ class PersonalPassTest {
         List<SpeedPass> view = ticket.getSpeedPasses();
         assertThrows(UnsupportedOperationException.class, () -> view.add(s1));
     }
+
+    @Test
+    void clearsAndRestoresPasses() {
+        SpeedPass s1 = new SpeedPass("T001-S1", new BigDecimal("8.00"), false);
+        SpecialPass special = new SpecialPass("T001-SPECIAL", new BigDecimal("40.00"), false);
+        ticket.addSpeedPass(s1);
+        ticket.setSpecialPass(special);
+        List<PersonalPass> removed = ticket.clearPasses();
+        assertEquals(List.of(s1, special), removed);
+        assertTrue(ticket.getPasses().isEmpty());
+        ticket.restorePasses(removed);
+        assertEquals(List.of(s1, special), ticket.getPasses());
+    }
 }

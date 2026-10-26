@@ -17,6 +17,7 @@ import es.upm.parque.business.model.StandardInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.BCryptPasswordHasher;
 import es.upm.parque.business.security.PasswordHasher;
+import es.upm.parque.persistence.PassRepository;
 import es.upm.parque.persistence.TextFileAttractionRepository;
 import es.upm.parque.persistence.TextFileGroupRepository;
 import es.upm.parque.persistence.TextFileGroupTicketRepository;
@@ -51,11 +52,12 @@ public final class Bootstrap {
                 new TextFileUserRepository(dataDir.resolve("users.txt")), hasher);
         GroupManager groups = GroupManager.initialize(
                 new TextFileGroupRepository(dataDir.resolve("groups.txt")), users);
+        PassRepository passRepository = new TextFilePassRepository(dataDir.resolve("passes.txt"));
         TicketManager tickets = TicketManager.initialize(
                 new TextFileTicketRepository(dataDir.resolve("tickets.txt")),
-                new TextFileGroupTicketRepository(dataDir.resolve("grouptickets.txt")), users, groups, systemDate);
-        PassManager passes = PassManager.initialize(
-                new TextFilePassRepository(dataDir.resolve("passes.txt")), tickets, systemDate);
+                new TextFileGroupTicketRepository(dataDir.resolve("grouptickets.txt")), passRepository,
+                users, groups, systemDate);
+        PassManager passes = PassManager.initialize(passRepository, tickets, systemDate);
         AttractionManager attractions = AttractionManager.initialize(
                 new TextFileAttractionRepository(dataDir.resolve("attractions.txt")), tickets, passes, systemDate);
         InvoiceManager invoices = InvoiceManager.initialize(users, groups, tickets, systemDate,

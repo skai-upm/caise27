@@ -67,6 +67,29 @@ public class IndividualTicket extends Ticket implements IndividualAdmission {
     }
 
     /**
+     * Removes every personal pass of this ticket and returns them, SpeedPasses first.
+     */
+    public List<PersonalPass> clearPasses() {
+        List<PersonalPass> removed = getPasses();
+        speedPasses.clear();
+        specialPass = null;
+        return removed;
+    }
+
+    /**
+     * Attaches again passes previously removed with clearPasses.
+     */
+    public void restorePasses(List<PersonalPass> passes) {
+        for (PersonalPass pass : passes) {
+            if (pass instanceof SpeedPass speedPass) {
+                speedPasses.add(speedPass);
+            } else if (pass instanceof SpecialPass special) {
+                specialPass = special;
+            }
+        }
+    }
+
+    /**
      * All personal passes of this ticket: SpeedPasses first, then the Special Pass if any.
      */
     public List<PersonalPass> getPasses() {

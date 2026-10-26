@@ -266,6 +266,7 @@ Group "0..*" o--> "0..*" User : members
 ' Tickets
 TicketManager "1" x--> "1" TicketRepository : repository
 TicketManager "1" x--> "1" GroupTicketRepository : groupRepository
+TicketManager "1" x--> "1" PassRepository : passRepository
 TicketManager "1" x--> "1" UserManager : users
 TicketManager "1" x--> "1" GroupManager : groups
 TicketManager "1" x--> "1" SystemDate : systemDate
