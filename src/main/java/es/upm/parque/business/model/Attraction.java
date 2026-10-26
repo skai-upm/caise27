@@ -61,16 +61,27 @@ public abstract class Attraction<T extends Admission> {
     }
 
     /**
-     * Lets in every user covered by the ticket, or nobody if the ticket kind is not admitted, any
-     * user is already inside or they do not all fit. Returns how many users entered.
+     * Normal entry: lets in every user covered by the ticket without using SpeedPasses.
      */
-    public int admit(Admission ticket) {
+    public EntryResult admit(Admission ticket) {
+        return admit(ticket, false);
+    }
+
+    /**
+     * Lets in every user covered by the ticket, using one SpeedPass per individual ticket when
+     * {@code speed} is requested. Nobody enters and no pass is consumed unless the ticket kind is
+     * admitted, the required passes are available, no user is already inside and all of them fit.
+     */
+    public EntryResult admit(Admission ticket, boolean speed) {
         if (!accepts(ticket)) {
             throw new ParkException("Attraction " + id + " (" + getType() + ") does not admit "
                     + (ticket instanceof GroupAdmission ? "group" : "individual") + " tickets");
         }
+        if (speed && !allowsSpeed()) {
+            throw new ParkException("SPEED is not accepted at attraction " + id + " (" + getType() + ")");
+        }
         T typed = admitted.cast(ticket);
-        checkAccess(typed);
+        List<Pass> passes = passesFor(typed, speed);
         List<User> users = usersOf(typed);
         if (users.isEmpty()) {
             throw new ParkException("Ticket " + ticket.getId() + " covers no users");
@@ -85,7 +96,8 @@ public abstract class Attraction<T extends Admission> {
                     + " requested, " + getAvailablePlaces() + " available");
         }
         visitors.addAll(users);
-        return users.size();
+        passes.forEach(Pass::consume);
+        return new EntryResult(users.size(), passes);
     }
 
     /**
@@ -100,10 +112,29 @@ public abstract class Attraction<T extends Admission> {
     }
 
     /**
-     * Extra access rules of the attraction type, applied before anyone enters. None by default.
+     * Whether entries may request SpeedPass use at this attraction.
      */
-    protected void checkAccess(T ticket) {
-        // no additional rules
+    protected boolean allowsSpeed() {
+        return true;
+    }
+
+    /**
+     * Passes the entry will consume, checked before anyone enters: with {@code speed}, one unused
+     * SpeedPass for each individual ticket of the admission (all of them must have one); otherwise none.
+     */
+    protected List<Pass> passesFor(T ticket, boolean speed) {
+        if (!speed) {
+            return List.of();
+        }
+        List<Pass> passes = new ArrayList<>();
+        for (IndividualTicket t : ticket.getIndividualTickets()) {
+            SpeedPass pass = t.nextUnusedSpeedPass();
+            if (pass == null) {
+                throw new ParkException("Ticket " + t.getId() + " has no unused SpeedPass");
+            }
+            passes.add(pass);
+        }
+        return passes;
     }
 
     /**

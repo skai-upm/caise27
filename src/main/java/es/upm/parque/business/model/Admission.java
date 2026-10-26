@@ -14,4 +14,9 @@ public interface Admission {
     LocalDate getDate();
 
     List<User> getUsers();
+
+    /**
+     * The individual tickets that grant this access (the ticket itself, or a group's member tickets).
+     */
+    List<IndividualTicket> getIndividualTickets();
 }

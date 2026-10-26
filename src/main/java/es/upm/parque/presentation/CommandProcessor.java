@@ -12,7 +12,9 @@ import es.upm.parque.business.invoice.Invoice;
 import es.upm.parque.business.invoice.InvoiceLine;
 import es.upm.parque.business.invoice.InvoiceSection;
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.EntryResult;
 import es.upm.parque.business.model.Group;
+import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.SpecialPass;
 import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.User;
@@ -44,6 +46,8 @@ public class CommandProcessor {
     static final String ATTRACTION_CREATE_TYPED_SYNTAX =
             "ATTRACTION CREATE;IdentificadorAtraccion;Nombre;Capacidad;Tipo(GENERAL|INDIVIDUAL|GROUP|SPECIAL)";
     static final String ATTRACTION_ENTER_SYNTAX = "ATTRACTION ENTER;IdentificadorAtraccion;IdentificadorEntrada";
+    static final String ATTRACTION_ENTER_SPEED_SYNTAX =
+            "ATTRACTION ENTER;IdentificadorAtraccion;IdentificadorEntrada;SPEED";
     static final String ATTRACTION_EXIT_SYNTAX = "ATTRACTION EXIT;IdentificadorAtraccion;IdentificadorEntrada";
     static final String ATTRACTION_STATUS_SYNTAX = "ATTRACTION STATUS;IdentificadorAtraccion";
     static final String SPEEDPASS_CREATE_SYNTAX = "SPEEDPASS CREATE;IdentificadorEntrada;Cantidad(1|10)";
@@ -87,6 +91,8 @@ public class CommandProcessor {
                     "Creates an attraction of the given type: GENERAL (any ticket), INDIVIDUAL, GROUP or SPECIAL."),
             new CommandInfo(ATTRACTION_ENTER_SYNTAX,
                     "Lets the users of a ticket valid today into an attraction; all of them or none, within capacity."),
+            new CommandInfo(ATTRACTION_ENTER_SPEED_SYNTAX,
+                    "Enters using one unused SpeedPass per individual ticket (all members for a group); not at SPECIAL."),
             new CommandInfo(ATTRACTION_EXIT_SYNTAX,
                     "Lets the users of a ticket out of an attraction, freeing their places."),
             new CommandInfo(ATTRACTION_STATUS_SYNTAX,
@@ -206,7 +212,7 @@ public class CommandProcessor {
                 }
                 yield "OK ATTRACTION CREATED";
             }
-            case "ATTRACTION ENTER" -> "OK ENTERED " + p[1] + " -> " + users(attractionController.enter(p[1], p[2]));
+            case "ATTRACTION ENTER" -> enterAttraction(p);
             case "ATTRACTION EXIT" -> "OK EXITED " + p[1] + " -> " + users(attractionController.exit(p[1], p[2]));
             case "ATTRACTION STATUS" -> attractionStatus(attractionController.requireAttraction(p[1]));
             case "SPEEDPASS CREATE" -> buySpeedPasses(p[1], p[2]);
@@ -262,6 +268,20 @@ public class CommandProcessor {
         if (group != null && ticketController.isGroupLocked(group)) {
             throw new ParkException("Group " + groupId + " is locked by a group ticket dated on or after the system date");
         }
+    }
+
+    private String enterAttraction(String[] p) {
+        boolean speed = p.length == 4;
+        if (speed && !"SPEED".equalsIgnoreCase(p[3])) {
+            throw new ParkException("The entry mode must be SPEED: " + p[3]);
+        }
+        EntryResult result = attractionController.enter(p[1], p[2], speed);
+        String out = "OK ENTERED " + p[1] + " -> " + users(result.admitted());
+        if (!result.consumed().isEmpty()) {
+            out += ", consumed " + result.consumed().get(0).getKind() + " "
+                    + String.join(", ", result.consumed().stream().map(Pass::getId).toList());
+        }
+        return out;
     }
 
     private static String users(int count) {

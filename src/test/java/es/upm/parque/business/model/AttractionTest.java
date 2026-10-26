@@ -36,8 +36,8 @@ class AttractionTest {
     @Test
     void individualAndGroupTicketsEnterUniformly() {
         GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
-        assertEquals(1, a.admit(new IndividualTicket("T001", DAY, ana, PRICE)));
-        assertEquals(2, a.admit(groupTicket(pedro, luis)));
+        assertEquals(1, a.admit(new IndividualTicket("T001", DAY, ana, PRICE)).admitted());
+        assertEquals(2, a.admit(groupTicket(pedro, luis)).admitted());
         assertEquals(List.of(ana, pedro, luis), a.getVisitors());
         assertEquals(3, a.getOccupancy());
         assertEquals(17, a.getAvailablePlaces());
@@ -52,7 +52,7 @@ class AttractionTest {
         GroupTicket tooBig = groupTicket(pedro, luis, user("Eva", "22222222J"));
         assertThrows(ParkException.class, () -> a.admit(tooBig));
         assertEquals(1, a.getOccupancy());
-        assertEquals(2, a.admit(groupTicket(pedro, luis)));
+        assertEquals(2, a.admit(groupTicket(pedro, luis)).admitted());
         assertEquals(0, a.getAvailablePlaces());
     }
 
@@ -94,7 +94,7 @@ class AttractionTest {
         GroupAttraction groupOnly = new GroupAttraction("A02", "Familiar", 10);
         ParkException e = assertThrows(ParkException.class, () -> groupOnly.admit(single));
         assertEquals("Attraction A02 (GROUP) does not admit individual tickets", e.getMessage());
-        assertEquals(2, groupOnly.admit(groupTicket(pedro, luis)));
+        assertEquals(2, groupOnly.admit(groupTicket(pedro, luis)).admitted());
         IndividualAttraction individualOnly = new IndividualAttraction("A03", "Solo", 10);
         GroupTicket group = groupTicket(pedro);
         assertThrows(ParkException.class, () -> individualOnly.admit(group));

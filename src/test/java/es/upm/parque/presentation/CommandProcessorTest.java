@@ -364,6 +364,41 @@ class CommandProcessorTest {
     }
 
     @Test
+    void entriesUseAndReportPasses() {
+        processor.process(ANA);
+        processor.process(PEDRO);
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUP CREATE;G01;Amigos");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("SPEEDPASS CREATE;T001;1");
+        processor.process("SPEEDPASS CREATE;TG01-1;1");
+        processor.process("SPECIALPASS CREATE;T001");
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("ATTRACTION CREATE;A01;Tornado;20");
+        processor.process("ATTRACTION CREATE;A02;Familiar;20;GROUP");
+        processor.process("ATTRACTION CREATE;A04;Magia;20;SPECIAL");
+
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001;FAST").startsWith("ERROR The entry mode must be SPEED"));
+        assertEquals("OK ENTERED A01 -> 1 user, consumed SpeedPass SP1", processor.process("ATTRACTION ENTER;A01;T001;speed"));
+        assertTrue(processor.process("ATTRACTION ENTER;A02;TG01;SPEED").contains("TG01-2 has no unused SpeedPass"));
+        assertTrue(processor.process("ATTRACTION STATUS;A02").contains("Present: 0"));
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001;SPEED").contains("SPEED is not accepted"));
+        assertEquals("OK ENTERED A04 -> 1 user, consumed Special Pass XP1", processor.process("ATTRACTION ENTER;A04;T001"));
+        processor.process("ATTRACTION EXIT;A04;T001");
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001").contains("already been consumed"));
+        assertEquals("OK ENTERED A02 -> 2 users", processor.process("ATTRACTION ENTER;A02;TG01"));
+
+        TestPark restarted = new TestPark(dir);
+        assertTrue(restarted.passes.findPass("SP1").isConsumed());
+        assertTrue(restarted.passes.findPass("XP1").isConsumed());
+        assertFalse(restarted.passes.findPass("SP2").isConsumed());
+        assertTrue(processor.process("HELP").contains("ATTRACTION ENTER;IdentificadorAtraccion;IdentificadorEntrada;SPEED"));
+    }
+
+    @Test
     void unexpectedErrorsDoNotPropagate() {
         CommandProcessor broken = new CommandProcessor(new ParkControllers(MainController.getInstance(), null, null, null, null, null, null), Map.of());
         assertTrue(broken.process(ANA).startsWith("ERROR Unexpected error"));

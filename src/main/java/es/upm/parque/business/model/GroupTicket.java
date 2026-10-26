@@ -33,6 +33,11 @@ public class GroupTicket extends Ticket implements GroupAdmission {
         return Collections.unmodifiableList(tickets);
     }
 
+    @Override
+    public List<IndividualTicket> getIndividualTickets() {
+        return getTickets();
+    }
+
     public boolean contains(IndividualTicket ticket) {
         return tickets.contains(ticket);
     }

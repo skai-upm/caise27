@@ -3,6 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.AttractionType;
+import es.upm.parque.business.model.EntryResult;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.Values;
 import es.upm.parque.business.validation.UserValidator;
@@ -77,9 +78,17 @@ public final class AttractionController {
     }
 
     /**
-     * Lets the users of a ticket dated today into an attraction. Returns how many entered.
+     * Normal entry of the users of a ticket dated today into an attraction.
      */
-    public int enter(String attractionId, String ticketId) {
+    public EntryResult enter(String attractionId, String ticketId) {
+        return enter(attractionId, ticketId, false);
+    }
+
+    /**
+     * Lets the users of a ticket dated today into an attraction, using SpeedPasses when {@code speed}
+     * is requested; the attraction type decides which passes are consumed. Consumption is persisted.
+     */
+    public EntryResult enter(String attractionId, String ticketId, boolean speed) {
         requireConfigured();
         Attraction<?> attraction = requireAttraction(attractionId);
         Ticket ticket = requireTicket(ticketId);
@@ -87,7 +96,11 @@ public final class AttractionController {
             throw new ParkException("Ticket " + ticketId + " is valid for " + Values.formatDate(ticket.getDate())
                     + ", not for the system date " + Values.formatDate(mainController.getCurrentDate()));
         }
-        return attraction.admit(ticket);
+        EntryResult result = attraction.admit(ticket, speed);
+        if (!result.consumed().isEmpty()) {
+            ticketController.save();
+        }
+        return result;
     }
 
     /**

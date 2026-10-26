@@ -46,12 +46,25 @@ public class IndividualTicket extends Ticket implements IndividualAdmission {
     /**
      * The Special Pass of this ticket, or {@code null} if it has none.
      */
+    @Override
     public SpecialPass getSpecialPass() {
         return specialPass;
     }
 
     public void setSpecialPass(SpecialPass specialPass) {
         this.specialPass = specialPass;
+    }
+
+    @Override
+    public List<IndividualTicket> getIndividualTickets() {
+        return List.of(this);
+    }
+
+    /**
+     * The first SpeedPass of this ticket not yet consumed, or {@code null} if there is none.
+     */
+    public SpeedPass nextUnusedSpeedPass() {
+        return speedPasses.stream().filter(p -> !p.isConsumed()).findFirst().orElse(null);
     }
 
     /**

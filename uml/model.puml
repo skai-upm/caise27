@@ -88,6 +88,9 @@ package es.upm.parque.business.model {
   class IndividualAttraction
   class GroupAttraction
   class SpecialAttraction
+  class EntryResult {
+    admitted : int
+  }
   enum AttractionType {
     GENERAL
     INDIVIDUAL
@@ -232,6 +235,7 @@ Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 IndividualTicket "1" *--> "0..*" SpeedPass : speedPasses
 IndividualTicket "1" *--> "0..1" SpecialPass : specialPass
+EntryResult x--> "0..*" Pass : consumed
 Attraction "0..*" x--> "0..*" User : visitors
 Admission <|-- IndividualAdmission
 Admission <|-- GroupAdmission
@@ -249,6 +253,8 @@ App ..> ExecutionOptions
 App ..> DataDirectory
 App ..> StandardInvoiceBuilder
 AttractionController ..> AttractionType
+Attraction ..> EntryResult
+AttractionController ..> EntryResult
 AttractionRepository ..> AttractionType
 AttractionType ..> GeneralAttraction
 AttractionType ..> IndividualAttraction

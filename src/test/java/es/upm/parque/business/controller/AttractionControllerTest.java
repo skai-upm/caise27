@@ -50,8 +50,8 @@ class AttractionControllerTest {
     void entryRequiresTicketForToday() {
         assertThrows(ParkException.class, () -> park.attractions.enter("A01", "T001"));
         park.controller.setCurrentDate(LocalDate.of(2026, 10, 15));
-        assertEquals(1, park.attractions.enter("A01", "T001"));
-        assertEquals(1, park.attractions.enter("A01", "TG01"));
+        assertEquals(1, park.attractions.enter("A01", "T001").admitted());
+        assertEquals(1, park.attractions.enter("A01", "TG01").admitted());
         assertEquals(2, park.attractions.findById("A01").getOccupancy());
         assertThrows(ParkException.class, () -> park.attractions.enter("A99", "T001"));
         assertThrows(ParkException.class, () -> park.attractions.enter("A01", "T999"));
