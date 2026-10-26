@@ -28,20 +28,20 @@ class AppTest {
     @TempDir
     Path dir;
 
-    private String run(String[] args, String stdin, Path users) {
+    private String run(String[] args, String stdin, Path dataDir) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(bytes, true, StandardCharsets.UTF_8), users);
+                new PrintStream(bytes, true, StandardCharsets.UTF_8), dataDir);
         return bytes.toString(StandardCharsets.UTF_8);
     }
 
-    private UserManager reload(Path users) {
-        return new UserManager(new UserRepository(users));
+    private UserManager reload(Path dataDir) {
+        return new UserManager(new UserRepository(dataDir.resolve("users.txt")));
     }
 
     @Test
     void interactiveModeStopsAtExit() {
-        Path users = dir.resolve("users.txt");
+        Path users = dir.resolve("data");
         String out = run(new String[0], ANA + "\nHELP\nEXIT\n" + PEDRO + "\n", users);
         assertTrue(out.contains("OK USER CREATED"));
         assertTrue(out.contains("USER DELETE;Correo;Contraseña"));
@@ -51,14 +51,14 @@ class AppTest {
 
     @Test
     void interactiveModeEndsWithInput() {
-        Path users = dir.resolve("users.txt");
+        Path users = dir.resolve("data");
         run(new String[0], ANA + "\n" + PEDRO + "\n", users);
         assertEquals(2, reload(users).getUsers().size());
     }
 
     @Test
     void fileModeRunsLinesInOrderIgnoringBlanksAndStopsAtExit() throws Exception {
-        Path users = dir.resolve("users.txt");
+        Path users = dir.resolve("data");
         Path input = dir.resolve("input_basico.txt");
         Files.writeString(input, ANA + "\n\n   \nUSER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\nHELP\nEXIT\n"
                 + PEDRO + "\n");
@@ -73,21 +73,21 @@ class AppTest {
     void fileModeAndInteractiveModeShareProcessing() throws Exception {
         Path input = dir.resolve("cmds.txt");
         Files.writeString(input, ANA + "\nUSER DELETE;ana@correo.com;Mal1!\n");
-        String fromFile = run(new String[] {input.toString()}, "", dir.resolve("a.txt"));
-        String fromStdin = run(new String[0], ANA + "\nUSER DELETE;ana@correo.com;Mal1!\n", dir.resolve("b.txt"));
+        String fromFile = run(new String[] {input.toString()}, "", dir.resolve("a"));
+        String fromStdin = run(new String[0], ANA + "\nUSER DELETE;ana@correo.com;Mal1!\n", dir.resolve("b"));
         assertEquals(fromStdin, fromFile);
-        assertNotNull(reload(dir.resolve("a.txt")).findByEmail("ana@correo.com"));
+        assertNotNull(reload(dir.resolve("a")).findByEmail("ana@correo.com"));
     }
 
     @Test
     void missingFileIsReportedWithoutException() {
-        String out = run(new String[] {dir.resolve("nope.txt").toString()}, "", dir.resolve("users.txt"));
+        String out = run(new String[] {dir.resolve("nope.txt").toString()}, "", dir.resolve("data"));
         assertTrue(out.startsWith("ERROR") && out.contains("nope.txt"), out);
     }
 
     @Test
     void directoryInsteadOfFileIsReported() {
-        String out = run(new String[] {dir.toString()}, "", dir.resolve("users.txt"));
+        String out = run(new String[] {dir.toString()}, "", dir.resolve("data"));
         assertTrue(out.startsWith("ERROR"), out);
     }
 }

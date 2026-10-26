@@ -39,10 +39,11 @@ public class UserManager {
         return user;
     }
 
-    public void delete(String email, String password) {
+    public User delete(String email, String password) {
         User user = authenticate(email, password);
         users.remove(user);
         repository.save(users);
+        return user;
     }
 
     public User update(String email, String password, UserField field, String value) {

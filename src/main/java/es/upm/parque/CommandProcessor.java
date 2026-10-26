@@ -13,6 +13,10 @@ public class CommandProcessor {
         "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
         "USER DELETE;Correo;Contraseña",
         "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+        "GROUP CREATE;Id;Nombre",
+        "GROUP ADD;Id;Correo",
+        "GROUP REMOVE;Id;Correo",
+        "GROUP DELETE;Id",
         "SYSTEM DATE;yyyy-MM-dd",
         "HELP",
         "EXIT"
@@ -22,11 +26,13 @@ public class CommandProcessor {
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private final UserManager userManager;
+    private final GroupManager groupManager;
     private final SystemDate systemDate;
     private boolean exitRequested;
 
-    public CommandProcessor(UserManager userManager, SystemDate systemDate) {
+    public CommandProcessor(UserManager userManager, GroupManager groupManager, SystemDate systemDate) {
         this.userManager = userManager;
+        this.groupManager = groupManager;
         this.systemDate = systemDate;
     }
 
@@ -36,6 +42,9 @@ public class CommandProcessor {
         try {
             if (operation.length == 2 && operation[0].equals("USER")) {
                 return processUser(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("GROUP")) {
+                return processGroup(operation[1], parts);
             }
             if (operation.length == 2 && operation[0].equals("SYSTEM") && operation[1].equals("DATE")) {
                 requireParams(parts, 1, "SYSTEM DATE;yyyy-MM-dd");
@@ -82,7 +91,8 @@ public class CommandProcessor {
             }
             case "DELETE" -> {
                 requireParams(p, 2, "USER DELETE;Correo;Contraseña");
-                userManager.delete(p[1], p[2]);
+                User deleted = userManager.delete(p[1], p[2]);
+                groupManager.removeUserFromAllGroups(deleted);
                 return "OK USER DELETED -> " + p[1];
             }
             case "UPDATE" -> {
@@ -93,6 +103,30 @@ public class CommandProcessor {
             }
             default -> {
                 return "ERROR: unknown command 'USER " + action + "'";
+            }
+        }
+    }
+
+    private String processGroup(String action, String[] p) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(p, 2, "GROUP CREATE;Id;Nombre");
+                return "OK GROUP CREATED -> " + groupManager.create(p[1], p[2]);
+            }
+            case "ADD" -> {
+                requireParams(p, 2, "GROUP ADD;Id;Correo");
+                return "OK GROUP MEMBER ADDED -> " + groupManager.addMember(p[1], p[2]);
+            }
+            case "REMOVE" -> {
+                requireParams(p, 2, "GROUP REMOVE;Id;Correo");
+                return "OK GROUP MEMBER REMOVED -> " + groupManager.removeMember(p[1], p[2]);
+            }
+            case "DELETE" -> {
+                requireParams(p, 1, "GROUP DELETE;Id");
+                return "OK GROUP DELETED -> " + groupManager.delete(p[1]).getId();
+            }
+            default -> {
+                return "ERROR: unknown command 'GROUP " + action + "'";
             }
         }
     }

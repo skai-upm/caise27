@@ -1,0 +1,72 @@
+@startuml model
+title Amusement park - class model
+
+package es.upm.parque {
+
+  class App {
+  }
+
+  class CommandProcessor {
+    - exitRequested : boolean
+  }
+
+  class SystemDate {
+    - date : LocalDate
+  }
+
+  class User {
+    - name : String
+    - surname : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class UserValidator <<utility>> {
+  }
+
+  class UserManager {
+  }
+
+  class UserRepository {
+    - file : Path
+  }
+
+  class Group {
+    - id : String {readOnly}
+    - name : String
+  }
+
+  class GroupManager {
+  }
+
+  class GroupRepository {
+    - file : Path
+  }
+}
+
+App ..> CommandProcessor : creates
+CommandProcessor x--> "1" UserManager : userManager
+CommandProcessor x--> "1" GroupManager : groupManager
+CommandProcessor x--> "1" SystemDate : systemDate
+CommandProcessor ..> UserField : uses
+UserManager x--> "1" UserRepository : repository
+UserManager x--> "0..*" User : users
+UserManager ..> UserValidator : uses
+GroupManager x--> "1" GroupRepository : repository
+GroupManager x--> "1" UserManager : userManager
+GroupManager x--> "0..*" Group : groups
+Group x--> "0..*" User : members
+
+@enduml

@@ -18,12 +18,14 @@ class CommandProcessorTest {
     @TempDir
     Path dir;
     private UserManager manager;
+    private GroupManager groups;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() {
         manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager, new SystemDate());
+        groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), manager);
+        processor = new CommandProcessor(manager, groups, new SystemDate());
     }
 
     @Test
@@ -72,7 +74,8 @@ class CommandProcessorTest {
         String help = processor.process("HELP");
         for (String syntax : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
                 "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT",
-                "SYSTEM DATE;yyyy-MM-dd"}) {
+                "SYSTEM DATE;yyyy-MM-dd", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo",
+                "GROUP DELETE;Id"}) {
             assertTrue(help.contains(syntax), syntax);
         }
     }
@@ -102,5 +105,34 @@ class CommandProcessorTest {
             assertTrue(processor.process(bad).startsWith("ERROR"), bad);
         }
         assertEquals(java.time.LocalDate.of(2026, 9, 15), processor.getSystemDate().get());
+    }
+
+    @Test
+    void groupCommands() {
+        processor.process(CREATE_ANA);
+        assertTrue(processor.process("GROUP CREATE;G01;Familia Garcia").startsWith("OK"));
+        assertTrue(processor.process("GROUP CREATE;G01;Otra").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").startsWith("OK"));
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP ADD;G01;nadie@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP ADD;G01").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").startsWith("OK"));
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("OK"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP JOIN;G01").startsWith("ERROR"));
+        assertNotNull(manager.findByEmail("ana@correo.com"));
+    }
+
+    @Test
+    void deletingUserRemovesItFromGroups() {
+        processor.process(CREATE_ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+        assertEquals(0, groups.findById("G01").getMembers().size());
+        GroupManager reloaded = new GroupManager(new GroupRepository(dir.resolve("groups.txt")),
+                new UserManager(new UserRepository(dir.resolve("users.txt"))));
+        assertEquals(0, reloaded.findById("G01").getMembers().size());
     }
 }
