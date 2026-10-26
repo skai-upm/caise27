@@ -11,14 +11,26 @@ import es.upm.parque.business.model.User;
  * Generates invoices on demand for users and groups. Invoices are never stored.
  */
 public class InvoiceController {
-    private final UserController userController;
-    private final GroupController groupController;
-    private final TicketController ticketController;
-    private final SystemDate systemDate;
-    private final InvoiceBuilder builder;
-    private final InvoiceDirector director;
+    private static final InvoiceController INSTANCE = new InvoiceController();
 
-    public InvoiceController(UserController userController, GroupController groupController,
+    private UserController userController;
+    private GroupController groupController;
+    private TicketController ticketController;
+    private SystemDate systemDate;
+    private InvoiceBuilder builder;
+    private InvoiceDirector director;
+
+    private InvoiceController() {
+    }
+
+    public static InvoiceController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the collaborators used to gather invoice data and the builder and director used to assemble it.
+     */
+    public InvoiceController configure(UserController userController, GroupController groupController,
             TicketController ticketController, SystemDate systemDate, InvoiceBuilder builder,
             InvoiceDirector director) {
         this.userController = userController;
@@ -27,6 +39,7 @@ public class InvoiceController {
         this.systemDate = systemDate;
         this.builder = builder;
         this.director = director;
+        return this;
     }
 
     public Invoice userInvoice(String email) {

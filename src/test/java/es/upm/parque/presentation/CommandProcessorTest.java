@@ -7,15 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
-import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
-import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
+import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.model.SystemDate;
-import es.upm.parque.persistence.AttractionRepository;
-import es.upm.parque.persistence.GroupRepository;
-import es.upm.parque.persistence.TicketRepository;
-import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.persistence.FileAttractionRepository;
+import es.upm.parque.persistence.FileGroupRepository;
+import es.upm.parque.persistence.FileTicketRepository;
+import es.upm.parque.persistence.FileUserRepository;
 
 import java.nio.file.Path;
 
@@ -36,14 +36,14 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() {
-        manager = new UserController(new UserRepository(dir.resolve("users.txt")));
-        groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), manager);
+        manager = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
+        groups = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), manager);
         SystemDate date = new SystemDate();
-        TicketController tickets = new TicketController(
-                new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
+        TicketController tickets = TicketController.getInstance().configure(
+                new FileTicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
         processor = new CommandProcessor(manager, groups, tickets,
-                new AttractionController(new AttractionRepository(dir.resolve("attractions.txt")), tickets, date),
-                new InvoiceController(manager, groups, tickets, date, new DefaultInvoiceBuilder(),
+                AttractionController.getInstance().configure(new FileAttractionRepository(dir.resolve("attractions.txt")), tickets, date),
+                InvoiceController.getInstance().configure(manager, groups, tickets, date, new DefaultInvoiceBuilder(),
                         new InvoiceDirector()),
                 date);
     }
@@ -155,8 +155,8 @@ class CommandProcessorTest {
         processor.process("GROUP ADD;G01;ana@correo.com");
         assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
         assertEquals(0, groups.findById("G01").getMembers().size());
-        GroupController reloaded = new GroupController(new GroupRepository(dir.resolve("groups.txt")),
-                new UserController(new UserRepository(dir.resolve("users.txt"))));
+        GroupController reloaded = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")),
+                UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt"))));
         assertEquals(0, reloaded.findById("G01").getMembers().size());
     }
 

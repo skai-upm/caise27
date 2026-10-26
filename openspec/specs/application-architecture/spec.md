@@ -32,3 +32,10 @@ The reorganisation SHALL NOT change the syntax, responses or effects of any exis
 #### Scenario: Existing commands still work
 - **WHEN** the full Delivery 1 and 2 test suite is run after the reorganisation
 - **THEN** all tests pass and `mvn package` produces `target/parque.jar`
+
+### Requirement: Business depends on repository abstractions
+The business layer SHALL declare the repository abstractions it needs and SHALL NOT depend on persistence-layer implementations; the persistence layer SHALL implement those abstractions.
+
+#### Scenario: No persistence imports in business
+- **WHEN** the business-layer sources are inspected
+- **THEN** none imports a class from the persistence package

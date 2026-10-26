@@ -1,5 +1,6 @@
 package es.upm.parque.persistence;
 
+import es.upm.parque.business.repository.UserRepository;
 import es.upm.parque.business.model.User;
 
 import java.io.BufferedReader;
@@ -14,16 +15,17 @@ import java.util.List;
 /**
  * Stores users in a text file: one user per line, attributes separated by ';'.
  */
-public class UserRepository {
+public class FileUserRepository implements UserRepository {
     private static final String SEPARATOR = ";";
     private static final int FIELDS = 7;
 
     private final Path file;
 
-    public UserRepository(Path file) {
+    public FileUserRepository(Path file) {
         this.file = file;
     }
 
+    @Override
     public List<User> load() {
         List<User> users = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -48,6 +50,7 @@ public class UserRepository {
         return users;
     }
 
+    @Override
     public void save(List<User> users) {
         try {
             if (file.getParent() != null) {

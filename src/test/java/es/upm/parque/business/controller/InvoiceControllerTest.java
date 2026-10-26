@@ -7,9 +7,9 @@ import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
 import es.upm.parque.business.invoice.Invoice;
 import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.model.SystemDate;
-import es.upm.parque.persistence.GroupRepository;
-import es.upm.parque.persistence.TicketRepository;
-import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.persistence.FileGroupRepository;
+import es.upm.parque.persistence.FileTicketRepository;
+import es.upm.parque.persistence.FileUserRepository;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -33,16 +33,16 @@ class InvoiceControllerTest {
     void setUp() {
         SystemDate date = new SystemDate();
         date.set(LocalDate.of(2026, 10, 1));
-        UserController users = new UserController(new UserRepository(dir.resolve("users.txt")));
+        UserController users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
                 "9876543210987654");
         users.create("Luis", "Perez", "11111111H", "luis@correo.com", "Luis3$", "634567890", "1111222233334444");
-        groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), users);
-        tickets = new TicketController(new TicketRepository(dir.resolve("tickets.txt"),
+        groups = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), users);
+        tickets = TicketController.getInstance().configure(new FileTicketRepository(dir.resolve("tickets.txt"),
                 dir.resolve("grouptickets.txt")), users, groups, date);
-        invoices = new InvoiceController(users, groups, tickets, date, new DefaultInvoiceBuilder(),
+        invoices = InvoiceController.getInstance().configure(users, groups, tickets, date, new DefaultInvoiceBuilder(),
                 new InvoiceDirector());
         groups.create("G01", "Amigos");
         groups.addMember("G01", "ana@correo.com");

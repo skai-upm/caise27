@@ -2,8 +2,8 @@ package es.upm.parque.business.controller;
 
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
+import es.upm.parque.business.repository.UserRepository;
 import es.upm.parque.business.validation.UserValidator;
-import es.upm.parque.persistence.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,13 +14,28 @@ import java.util.function.Function;
  * Every successful change is saved through the repository.
  */
 public class UserController {
-    private final UserRepository repository;
-    private final List<User> users;
+    private static final UserController INSTANCE = new UserController();
+
+    private UserRepository repository;
+    private final List<User> users = new ArrayList<>();
     private final List<Function<User, String>> deletionChecks = new ArrayList<>();
 
-    public UserController(UserRepository repository) {
+    private UserController() {
+    }
+
+    public static UserController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the repository to use, reloads the users from it and discards previously registered checks.
+     */
+    public UserController configure(UserRepository repository) {
         this.repository = repository;
-        this.users = new ArrayList<>(repository.load());
+        users.clear();
+        users.addAll(repository.load());
+        deletionChecks.clear();
+        return this;
     }
 
     public User create(String name, String surname, String dni, String email, String password, String phone,

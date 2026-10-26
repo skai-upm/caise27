@@ -1,5 +1,6 @@
 package es.upm.parque.persistence;
 
+import es.upm.parque.business.repository.TicketRepository;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
@@ -26,7 +27,7 @@ import java.util.function.Function;
  * {@code Id;yyyy-MM-dd;price;DNI}; group tickets use {@code Id;IdGrupo;yyyy-MM-dd;total;IdTicket1,IdTicket2,...}.
  * Holders and groups that no longer exist are restored as detached objects carrying only their identifier.
  */
-public class TicketRepository {
+public class FileTicketRepository implements TicketRepository {
     private static final String SEPARATOR = ";";
     private static final String LIST_SEPARATOR = ",";
     public static final String DELETED_USER_NAME = "(deleted user)";
@@ -35,11 +36,12 @@ public class TicketRepository {
     private final Path individualFile;
     private final Path groupFile;
 
-    public TicketRepository(Path individualFile, Path groupFile) {
+    public FileTicketRepository(Path individualFile, Path groupFile) {
         this.individualFile = individualFile;
         this.groupFile = groupFile;
     }
 
+    @Override
     public List<Ticket> load(Function<String, User> userByDni, Function<String, Group> groupById) {
         Map<String, IndividualTicket> individuals = new HashMap<>();
         List<Ticket> tickets = new ArrayList<>();
@@ -64,6 +66,7 @@ public class TicketRepository {
         return tickets;
     }
 
+    @Override
     public void save(List<Ticket> tickets) {
         List<String> individualLines = new ArrayList<>();
         List<String> groupLines = new ArrayList<>();

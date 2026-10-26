@@ -63,20 +63,20 @@ package es.upm.parque.business.model {
 
 package es.upm.parque.business.controller {
 
-  class UserController {
+  class UserController <<Singleton>> {
   }
 
-  class GroupController {
+  class GroupController <<Singleton>> {
   }
 
-  class TicketController {
+  class TicketController <<Singleton>> {
     price : BigDecimal
   }
 
-  class AttractionController {
+  class AttractionController <<Singleton>> {
   }
 
-  class InvoiceController {
+  class InvoiceController <<Singleton>> {
   }
 }
 
@@ -113,6 +113,21 @@ package es.upm.parque.business.invoice {
   }
 }
 
+package es.upm.parque.business.repository {
+
+  interface UserRepository {
+  }
+
+  interface GroupRepository {
+  }
+
+  interface TicketRepository {
+  }
+
+  interface AttractionRepository {
+  }
+}
+
 package es.upm.parque.business.validation {
 
   class UserValidator {
@@ -121,20 +136,20 @@ package es.upm.parque.business.validation {
 
 package es.upm.parque.persistence {
 
-  class UserRepository {
+  class FileUserRepository {
     file : Path
   }
 
-  class GroupRepository {
+  class FileGroupRepository {
     file : Path
   }
 
-  class TicketRepository {
+  class FileTicketRepository {
     individualFile : Path
     groupFile : Path
   }
 
-  class AttractionRepository {
+  class FileAttractionRepository {
     file : Path
   }
 
@@ -189,9 +204,18 @@ DefaultInvoiceBuilder x--> "0..*" InvoiceSection : sections
 Invoice x--> "0..*" InvoiceSection : sections
 InvoiceSection x--> "0..*" InvoiceLine : lines
 
+UserRepository <|.. FileUserRepository
+GroupRepository <|.. FileGroupRepository
+TicketRepository <|.. FileTicketRepository
+AttractionRepository <|.. FileAttractionRepository
+
 ' Usage, only for classes without incoming relationships
 App ..> CommandProcessor
 App ..> TemporaryDataDirectory
+App ..> FileUserRepository
+App ..> FileGroupRepository
+App ..> FileTicketRepository
+App ..> FileAttractionRepository
 DefaultInvoiceBuilder ..> Invoice
 CommandProcessor ..> UserField
 UserController ..> UserField

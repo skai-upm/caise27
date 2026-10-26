@@ -3,16 +3,16 @@ package es.upm.parque.presentation;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
-import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
-import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
+import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.model.SystemDate;
-import es.upm.parque.persistence.AttractionRepository;
-import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.FileAttractionRepository;
+import es.upm.parque.persistence.FileGroupRepository;
+import es.upm.parque.persistence.FileTicketRepository;
+import es.upm.parque.persistence.FileUserRepository;
 import es.upm.parque.persistence.TemporaryDataDirectory;
-import es.upm.parque.persistence.TicketRepository;
-import es.upm.parque.persistence.UserRepository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -69,19 +69,7 @@ public class App {
     }
 
     private static void execute(String commandFile, InputStream stdin, PrintStream out, Path dataDir) {
-        UserController userController = new UserController(new UserRepository(dataDir.resolve("users.txt")));
-        GroupController groupController =
-                new GroupController(new GroupRepository(dataDir.resolve("groups.txt")), userController);
-        SystemDate systemDate = new SystemDate();
-        TicketController ticketController = new TicketController(
-                new TicketRepository(dataDir.resolve("tickets.txt"), dataDir.resolve("grouptickets.txt")),
-                userController, groupController, systemDate);
-        AttractionController attractionController = new AttractionController(
-                new AttractionRepository(dataDir.resolve("attractions.txt")), ticketController, systemDate);
-        InvoiceController invoiceController = new InvoiceController(userController, groupController, ticketController,
-                systemDate, new DefaultInvoiceBuilder(), new InvoiceDirector());
-        CommandProcessor processor = new CommandProcessor(userController, groupController, ticketController,
-                attractionController, invoiceController, systemDate);
+        CommandProcessor processor = initialize(dataDir);
         if (commandFile == null) {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8))) {
                 processLines(in, processor, out);
@@ -100,6 +88,27 @@ public class App {
         } catch (IOException e) {
             out.println("ERROR: command file cannot be read: " + file + " (" + e.getMessage() + ")");
         }
+    }
+
+    /**
+     * Application initialization: creates the repositories for the given data directory (normal or --fly) and
+     * injects them, together with the collaborators each controller needs, into the singleton controllers.
+     */
+    static CommandProcessor initialize(Path dataDir) {
+        SystemDate systemDate = new SystemDate();
+        UserController userController = UserController.getInstance()
+                .configure(new FileUserRepository(dataDir.resolve("users.txt")));
+        GroupController groupController = GroupController.getInstance()
+                .configure(new FileGroupRepository(dataDir.resolve("groups.txt")), userController);
+        TicketController ticketController = TicketController.getInstance().configure(
+                new FileTicketRepository(dataDir.resolve("tickets.txt"), dataDir.resolve("grouptickets.txt")),
+                userController, groupController, systemDate);
+        AttractionController attractionController = AttractionController.getInstance().configure(
+                new FileAttractionRepository(dataDir.resolve("attractions.txt")), ticketController, systemDate);
+        InvoiceController invoiceController = InvoiceController.getInstance().configure(userController,
+                groupController, ticketController, systemDate, new DefaultInvoiceBuilder(), new InvoiceDirector());
+        return new CommandProcessor(userController, groupController, ticketController, attractionController,
+                invoiceController, systemDate);
     }
 
     private static void processLines(BufferedReader in, CommandProcessor processor, PrintStream out)

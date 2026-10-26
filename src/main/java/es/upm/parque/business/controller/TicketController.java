@@ -6,8 +6,8 @@ import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
+import es.upm.parque.business.repository.TicketRepository;
 import es.upm.parque.business.validation.UserValidator;
-import es.upm.parque.persistence.TicketRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,24 +21,40 @@ import java.util.List;
 public class TicketController {
     static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
 
-    private final TicketRepository repository;
-    private final UserController userController;
-    private final GroupController groupController;
-    private final SystemDate systemDate;
-    private final List<Ticket> tickets;
+    private static final TicketController INSTANCE = new TicketController();
+
+    private TicketRepository repository;
+    private UserController userController;
+    private GroupController groupController;
+    private SystemDate systemDate;
+    private final List<Ticket> tickets = new ArrayList<>();
     private BigDecimal price = DEFAULT_PRICE;
 
-    public TicketController(TicketRepository repository, UserController userController, GroupController groupController,
-            SystemDate systemDate) {
+    private TicketController() {
+    }
+
+    public static TicketController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the repository and collaborators, reloads the tickets, resets the price and registers the ticket rules
+     * on the user and group controllers (which must already be configured).
+     */
+    public TicketController configure(TicketRepository repository, UserController userController,
+            GroupController groupController, SystemDate systemDate) {
         this.repository = repository;
         this.userController = userController;
         this.groupController = groupController;
         this.systemDate = systemDate;
-        this.tickets = new ArrayList<>(repository.load(userController::findByDni, groupController::findById));
+        tickets.clear();
+        tickets.addAll(repository.load(userController::findByDni, groupController::findById));
+        price = DEFAULT_PRICE;
         userController.addDeletionCheck(
                 user -> hasCurrentOrFutureTickets(user) ? "the user has current or future tickets" : null);
         groupController.addModificationCheck(group -> hasCurrentOrFutureGroupTickets(group)
                 ? "the group has current or future group tickets" : null);
+        return this;
     }
 
     public IndividualTicket create(String id, String email, LocalDate date) {

@@ -4,8 +4,8 @@ import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
+import es.upm.parque.business.repository.AttractionRepository;
 import es.upm.parque.business.validation.UserValidator;
-import es.upm.parque.persistence.AttractionRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,17 +14,31 @@ import java.util.List;
  * Business rules for attractions: creation, deletion, ticket-based entry and exit, and status queries.
  */
 public class AttractionController {
-    private final AttractionRepository repository;
-    private final TicketController ticketController;
-    private final SystemDate systemDate;
-    private final List<Attraction> attractions;
+    private static final AttractionController INSTANCE = new AttractionController();
 
-    public AttractionController(AttractionRepository repository, TicketController ticketController,
+    private AttractionRepository repository;
+    private TicketController ticketController;
+    private SystemDate systemDate;
+    private final List<Attraction> attractions = new ArrayList<>();
+
+    private AttractionController() {
+    }
+
+    public static AttractionController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the repository and collaborators and reloads the attractions (always empty of users).
+     */
+    public AttractionController configure(AttractionRepository repository, TicketController ticketController,
             SystemDate systemDate) {
         this.repository = repository;
         this.ticketController = ticketController;
         this.systemDate = systemDate;
-        this.attractions = new ArrayList<>(repository.load());
+        attractions.clear();
+        attractions.addAll(repository.load());
+        return this;
     }
 
     public Attraction create(String id, String name, int capacity) {

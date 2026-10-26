@@ -8,8 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.UserField;
-import es.upm.parque.persistence.GroupRepository;
-import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.persistence.FileGroupRepository;
+import es.upm.parque.persistence.FileUserRepository;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,12 +27,12 @@ class GroupControllerTest {
 
     @BeforeEach
     void setUp() {
-        users = new UserController(new UserRepository(dir.resolve("users.txt")));
+        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
                 "9876543210987654");
-        groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), users);
+        groups = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), users);
     }
 
     @Test
@@ -84,8 +84,8 @@ class GroupControllerTest {
         groups.create("G02", "Vacio");
         assertEquals("G01;Familia Garcia;12345678Z,87654321X\nG02;Vacio;\n",
                 Files.readString(dir.resolve("groups.txt")));
-        UserController restartedUsers = new UserController(new UserRepository(dir.resolve("users.txt")));
-        GroupController restarted = new GroupController(new GroupRepository(dir.resolve("groups.txt")), restartedUsers);
+        UserController restartedUsers = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
+        GroupController restarted = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), restartedUsers);
         Group g = restarted.findById("G01");
         assertEquals(2, g.getMembers().size());
         assertSame(restartedUsers.findByDni("12345678Z"), g.getMembers().get(0));

@@ -1,5 +1,6 @@
 package es.upm.parque.persistence;
 
+import es.upm.parque.business.repository.AttractionRepository;
 import es.upm.parque.business.model.Attraction;
 
 import java.io.BufferedReader;
@@ -14,15 +15,16 @@ import java.util.List;
 /**
  * Stores attractions in a text file, one per line: {@code Id;Nombre;Capacidad}. Users present are not stored.
  */
-public class AttractionRepository {
+public class FileAttractionRepository implements AttractionRepository {
     private static final String SEPARATOR = ";";
 
     private final Path file;
 
-    public AttractionRepository(Path file) {
+    public FileAttractionRepository(Path file) {
         this.file = file;
     }
 
+    @Override
     public List<Attraction> load() {
         List<Attraction> attractions = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -50,6 +52,7 @@ public class AttractionRepository {
         return attractions;
     }
 
+    @Override
     public void save(List<Attraction> attractions) {
         try {
             if (file.getParent() != null) {

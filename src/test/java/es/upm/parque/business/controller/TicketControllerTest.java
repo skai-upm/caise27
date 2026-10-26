@@ -10,9 +10,9 @@ import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
-import es.upm.parque.persistence.GroupRepository;
-import es.upm.parque.persistence.TicketRepository;
-import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.persistence.FileGroupRepository;
+import es.upm.parque.persistence.FileTicketRepository;
+import es.upm.parque.persistence.FileUserRepository;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -36,7 +36,7 @@ class TicketControllerTest {
 
     @BeforeEach
     void setUp() {
-        users = new UserController(new UserRepository(dir.resolve("users.txt")));
+        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         date = new SystemDate();
@@ -45,8 +45,8 @@ class TicketControllerTest {
     }
 
     private TicketController newTicketController(UserController userController) {
-        return new TicketController(new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
-                userController, new GroupController(new GroupRepository(dir.resolve("groups.txt")), userController), date);
+        return TicketController.getInstance().configure(new FileTicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
+                userController, GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), userController), date);
     }
 
     @Test
@@ -115,16 +115,16 @@ class TicketControllerTest {
         tickets.create("T002", "ana@correo.com", OCT_1);
         assertEquals("T001;2026-10-15;40.00;12345678Z\nT002;2026-10-01;60.00;12345678Z\n",
                 Files.readString(dir.resolve("tickets.txt")));
-        UserController restartedUsers = new UserController(new UserRepository(dir.resolve("users.txt")));
+        UserController restartedUsers = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
         TicketController restarted = newTicketController(restartedUsers);
         assertSame(restartedUsers.findByDni("12345678Z"), restarted.findById("T001").getUsers().get(0));
         assertEquals("60.00", restarted.findById("T002").getPrice().toPlainString());
 
         date.set(LocalDate.of(2026, 11, 1));
         restartedUsers.delete("ana@correo.com", "Clave1!");
-        TicketController afterDeletion = newTicketController(new UserController(new UserRepository(dir.resolve("users.txt"))));
+        TicketController afterDeletion = newTicketController(UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt"))));
         User holder = afterDeletion.findById("T001").getUsers().get(0);
         assertEquals("12345678Z", holder.getDni());
-        assertEquals(TicketRepository.DELETED_USER_NAME, holder.getName());
+        assertEquals(FileTicketRepository.DELETED_USER_NAME, holder.getName());
     }
 }

@@ -64,4 +64,14 @@ class ArchitectureTest {
             }
         }
     }
+
+    @Test
+    void businessLayerDependsOnlyOnRepositoryAbstractions() throws IOException {
+        for (Path p : sources()) {
+            String source = Files.readString(p);
+            if (packageOf(source).startsWith("es.upm.parque.business")) {
+                assertFalse(source.contains("import es.upm.parque.persistence"), p.toString());
+            }
+        }
+    }
 }

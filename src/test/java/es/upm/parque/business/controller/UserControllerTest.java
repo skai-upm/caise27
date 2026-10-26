@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
-import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.persistence.FileUserRepository;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,7 +27,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         file = dir.resolve("users.txt");
-        manager = new UserController(new UserRepository(file));
+        manager = UserController.getInstance().configure(new FileUserRepository(file));
     }
 
     private void createAna() {
@@ -128,11 +128,11 @@ class UserControllerTest {
     void usersSurviveRestart() {
         createAna();
         manager.update("ana@correo.com", "Clave1!", UserField.PHONE, "699999999");
-        UserController restarted = new UserController(new UserRepository(file));
+        UserController restarted = UserController.getInstance().configure(new FileUserRepository(file));
         User u = restarted.findByEmail("ana@correo.com");
         assertNotNull(u);
         assertEquals("699999999", u.getPhone());
         restarted.delete("ana@correo.com", "Clave1!");
-        assertNull(new UserController(new UserRepository(file)).findByEmail("ana@correo.com"));
+        assertNull(UserController.getInstance().configure(new FileUserRepository(file)).findByEmail("ana@correo.com"));
     }
 }

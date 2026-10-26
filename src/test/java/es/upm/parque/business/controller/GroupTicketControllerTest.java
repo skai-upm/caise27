@@ -10,9 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
-import es.upm.parque.persistence.GroupRepository;
-import es.upm.parque.persistence.TicketRepository;
-import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.persistence.FileGroupRepository;
+import es.upm.parque.persistence.FileTicketRepository;
+import es.upm.parque.persistence.FileUserRepository;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -37,7 +37,7 @@ class GroupTicketControllerTest {
     void setUp() {
         date = new SystemDate();
         date.set(OCT_1);
-        users = new UserController(new UserRepository(dir.resolve("users.txt")));
+        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
@@ -50,9 +50,9 @@ class GroupTicketControllerTest {
     }
 
     private void restart() {
-        users = new UserController(new UserRepository(dir.resolve("users.txt")));
-        groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), users);
-        tickets = new TicketController(new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
+        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
+        groups = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), users);
+        tickets = TicketController.getInstance().configure(new FileTicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
                 users, groups, date);
     }
 
@@ -136,6 +136,6 @@ class GroupTicketControllerTest {
         restart();
         GroupTicket gt = (GroupTicket) tickets.findById("TG01");
         assertEquals("G01", gt.getGroup().getId());
-        assertEquals(TicketRepository.DELETED_GROUP_NAME, gt.getGroup().getName());
+        assertEquals(FileTicketRepository.DELETED_GROUP_NAME, gt.getGroup().getName());
     }
 }

@@ -1,5 +1,6 @@
 package es.upm.parque.persistence;
 
+import es.upm.parque.business.repository.GroupRepository;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.User;
 
@@ -17,16 +18,17 @@ import java.util.function.Function;
  * Stores groups in a text file, one group per line: {@code Id;Nombre;DNI1,DNI2,...}.
  * Members are stored by DNI and relinked to the loaded users when reading.
  */
-public class GroupRepository {
+public class FileGroupRepository implements GroupRepository {
     private static final String SEPARATOR = ";";
     private static final String MEMBER_SEPARATOR = ",";
 
     private final Path file;
 
-    public GroupRepository(Path file) {
+    public FileGroupRepository(Path file) {
         this.file = file;
     }
 
+    @Override
     public List<Group> load(Function<String, User> userByDni) {
         List<Group> groups = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -62,6 +64,7 @@ public class GroupRepository {
         return groups;
     }
 
+    @Override
     public void save(List<Group> groups) {
         try {
             if (file.getParent() != null) {

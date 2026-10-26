@@ -2,8 +2,8 @@ package es.upm.parque.business.controller;
 
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.User;
+import es.upm.parque.business.repository.GroupRepository;
 import es.upm.parque.business.validation.UserValidator;
-import es.upm.parque.persistence.GroupRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,15 +13,30 @@ import java.util.function.Function;
  * Business rules for groups of users. Every successful change is saved through the repository.
  */
 public class GroupController {
-    private final GroupRepository repository;
-    private final UserController userController;
-    private final List<Group> groups;
+    private static final GroupController INSTANCE = new GroupController();
+
+    private GroupRepository repository;
+    private UserController userController;
+    private final List<Group> groups = new ArrayList<>();
     private final List<Function<Group, String>> modificationChecks = new ArrayList<>();
 
-    public GroupController(GroupRepository repository, UserController userController) {
+    private GroupController() {
+    }
+
+    public static GroupController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the repository and the user controller, reloads the groups and discards previously registered checks.
+     */
+    public GroupController configure(GroupRepository repository, UserController userController) {
         this.repository = repository;
         this.userController = userController;
-        this.groups = new ArrayList<>(repository.load(userController::findByDni));
+        groups.clear();
+        groups.addAll(repository.load(userController::findByDni));
+        modificationChecks.clear();
+        return this;
     }
 
     /**

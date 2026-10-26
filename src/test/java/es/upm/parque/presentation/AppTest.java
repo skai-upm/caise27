@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.controller.UserController;
-import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.persistence.FileUserRepository;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,7 +39,7 @@ class AppTest {
     }
 
     private UserController reload(Path dataDir) {
-        return new UserController(new UserRepository(dataDir.resolve("users.txt")));
+        return UserController.getInstance().configure(new FileUserRepository(dataDir.resolve("users.txt")));
     }
 
     @Test
