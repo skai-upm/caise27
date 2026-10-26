@@ -99,9 +99,16 @@ class PassControllerTest {
     }
 
     @Test
-    void ticketsWithPassesCannotBeDeleted() {
-        passes.buySpeedPasses("T001", 1);
-        assertThrows(IllegalArgumentException.class, () -> tickets.delete("T001"));
+    void deletingATicketCascadesToItsPasses() throws Exception {
+        passes.buySpeedPasses("T001", 10);
+        passes.buySpecialPass("T001");
+        tickets.create("T002", "ana@correo.com", OCT_15);
+        passes.buySpeedPasses("T002", 1);
+        tickets.delete("T001");
+        assertNull(tickets.findById("T001"));
+        assertEquals(List.of("SPEED;T002-SP1;T002;8.00;false"), Files.readAllLines(dir.resolve("passes.txt")));
+        configure();
+        assertEquals(1, ((IndividualTicket) tickets.findById("T002")).getPasses().size());
     }
 
     @Test

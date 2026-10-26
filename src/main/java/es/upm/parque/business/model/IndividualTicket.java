@@ -73,6 +73,24 @@ public class IndividualTicket extends Ticket implements IndividualAccess {
         return !speedPasses.isEmpty() || specialPass != null;
     }
 
+    /** Removes every pass of this ticket (used when the ticket itself is deleted). */
+    public void clearPasses() {
+        speedPasses.clear();
+        specialPass = null;
+    }
+
+    /** Re-attaches passes previously returned by {@link #getPasses()}, e.g. to undo a failed deletion. */
+    public void restorePasses(List<Pass> passes) {
+        clearPasses();
+        for (Pass pass : passes) {
+            if (pass instanceof SpecialPass special) {
+                specialPass = special;
+            } else {
+                speedPasses.add((SpeedPass) pass);
+            }
+        }
+    }
+
     public void removePass(Pass pass) {
         if (pass == specialPass) {
             specialPass = null;

@@ -31,8 +31,8 @@ public class PassController {
     }
 
     /**
-     * Injects the repository and collaborators and attaches the stored passes to the tickets of the ticket controller
-     * (which must already be configured).
+     * Injects the repository and collaborators, attaches the stored passes to the tickets of the ticket controller
+     * (which must already be configured) and keeps the stored passes in step with ticket deletions.
      */
     public PassController configure(PassRepository repository, TicketController ticketController,
             SystemDate systemDate) {
@@ -40,6 +40,7 @@ public class PassController {
         this.ticketController = ticketController;
         this.systemDate = systemDate;
         repository.load(id -> ticketController.findById(id) instanceof IndividualTicket it ? it : null);
+        ticketController.addDeletionListener(deleted -> save());
         return this;
     }
 

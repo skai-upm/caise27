@@ -139,4 +139,25 @@ class AppTest {
         assertTrue(out.contains("OK SPEEDPASS CREATED"), out);
         assertTrue(Files.notExists(data.resolve("passes.txt")));
     }
+
+    @Test
+    void deliveryThreeStateSurvivesRestartsOnlyInNormalMode() throws Exception {
+        String setup = ANA + "\nSYSTEM DATE;2026-10-01\nTICKET CREATE;T001;ana@correo.com;2026-10-15\n"
+                + "TICKET CREATE;T002;ana@correo.com;2026-10-20\nSPEEDPASS CREATE;T001;10\nSPECIALPASS CREATE;T001\n"
+                + "SPEEDPASS CREATE;T002;1\nATTRACTION CREATE;A04;Magia;10;SPECIAL\nSYSTEM DATE;2026-10-15\n"
+                + "ATTRACTION ENTER;A04;T001\nSYSTEM DATE;2026-10-01\nTICKET DELETE;T002\nEXIT\n";
+        Path data = dir.resolve("data");
+        String fly = run(new String[] {"--fly"}, setup, data);
+        assertTrue(!fly.contains("ERROR"), fly);
+        assertTrue(Files.notExists(data.resolve("passes.txt")) && Files.notExists(data.resolve("attractions.txt")));
+
+        String normal = run(new String[0], setup, data);
+        assertTrue(!normal.contains("ERROR"), normal);
+        String after = run(new String[0], "SYSTEM DATE;2026-10-15\nATTRACTION STATUS;A04\n"
+                + "ATTRACTION ENTER;A04;T001\nINVOICE CREATE;USER;ana@correo.com\nEXIT\n", data);
+        assertTrue(after.contains("Type: SPECIAL"), after);
+        assertTrue(after.contains("already used"), after);
+        assertTrue(after.contains("T001-SP10") && after.contains("T001-SPECIAL") && !after.contains("T002"), after);
+        assertTrue(after.contains("TOTAL: 160.00"), after);
+    }
 }

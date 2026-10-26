@@ -3,6 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
@@ -13,7 +14,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Business rules for individual and group tickets. Date checks always use the shared {@link SystemDate}.
@@ -28,6 +32,7 @@ public class TicketController {
     private GroupController groupController;
     private SystemDate systemDate;
     private final List<Ticket> tickets = new ArrayList<>();
+    private final List<Consumer<List<IndividualTicket>>> deletionListeners = new ArrayList<>();
     private BigDecimal price = DEFAULT_PRICE;
 
     private TicketController() {
@@ -48,6 +53,7 @@ public class TicketController {
         this.groupController = groupController;
         this.systemDate = systemDate;
         tickets.clear();
+        deletionListeners.clear();
         tickets.addAll(repository.load(userController::findByDni, groupController::findById));
         price = DEFAULT_PRICE;
         userController.addDeletionCheck(
@@ -94,6 +100,10 @@ public class TicketController {
         return groupTicket;
     }
 
+    /**
+     * Deletes a future individual ticket together with its passes. Nothing changes if the deletion is rejected or
+     * cannot be stored.
+     */
     public IndividualTicket delete(String id) {
         Ticket ticket = findById(id);
         if (!(ticket instanceof IndividualTicket individual)) {
@@ -105,30 +115,64 @@ public class TicketController {
                     + "; delete the group ticket instead");
         }
         requireFuture(individual);
-        if (individual.hasPasses()) {
-            throw new IllegalArgumentException("ticket " + id + " has passes and cannot be deleted");
-        }
-        tickets.remove(individual);
-        repository.save(tickets);
+        deleteAtomically(List.of(individual), null);
         return individual;
     }
 
+    /**
+     * Deletes a future group ticket: first the passes of its individual tickets, then those tickets and finally the
+     * group ticket. Nothing changes if the deletion is rejected or cannot be stored.
+     */
     public GroupTicket deleteGroupTicket(String id) {
         Ticket ticket = findById(id);
         if (!(ticket instanceof GroupTicket groupTicket)) {
             throw new IllegalArgumentException("group ticket " + id + " does not exist");
         }
         requireFuture(groupTicket);
-        for (IndividualTicket part : groupTicket.getTickets()) {
-            if (part.hasPasses()) {
-                throw new IllegalArgumentException("ticket " + part.getId() + " of group ticket " + id
-                        + " has passes and the group ticket cannot be deleted");
-            }
-        }
-        tickets.removeAll(groupTicket.getTickets());
-        tickets.remove(groupTicket);
-        repository.save(tickets);
+        deleteAtomically(groupTicket.getTickets(), groupTicket);
         return groupTicket;
+    }
+
+    /**
+     * Registers an action run after tickets are deleted, receiving the deleted individual tickets (whose passes are
+     * gone with them). If it fails, the deletion is undone.
+     */
+    public void addDeletionListener(Consumer<List<IndividualTicket>> listener) {
+        deletionListeners.add(listener);
+    }
+
+    private void deleteAtomically(List<IndividualTicket> individuals, GroupTicket groupTicket) {
+        List<Ticket> before = new ArrayList<>(tickets);
+        Map<IndividualTicket, List<Pass>> passes = new LinkedHashMap<>();
+        for (IndividualTicket t : individuals) {
+            passes.put(t, t.getPasses());
+        }
+        try {
+            for (IndividualTicket t : individuals) {
+                t.clearPasses();
+            }
+            tickets.removeAll(individuals);
+            if (groupTicket != null) {
+                tickets.remove(groupTicket);
+            }
+            repository.save(tickets);
+            for (Consumer<List<IndividualTicket>> listener : deletionListeners) {
+                listener.accept(individuals);
+            }
+        } catch (RuntimeException e) {
+            tickets.clear();
+            tickets.addAll(before);
+            passes.forEach(IndividualTicket::restorePasses);
+            try {
+                repository.save(tickets);
+                for (Consumer<List<IndividualTicket>> listener : deletionListeners) {
+                    listener.accept(List.of());
+                }
+            } catch (RuntimeException again) {
+                e.addSuppressed(again);
+            }
+            throw new IllegalStateException("the deletion could not be stored and was undone: " + e.getMessage(), e);
+        }
     }
 
     public BigDecimal getPrice() {

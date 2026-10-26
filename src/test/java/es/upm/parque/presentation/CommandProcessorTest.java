@@ -290,8 +290,6 @@ class CommandProcessorTest {
         assertEquals("OK SPEEDPASS REFUNDED -> T001-SP3 -> 8.00", processor.process("SPEEDPASS DELETE;T001-SP3"));
         assertTrue(processor.process("SPEEDPASS DELETE;T001-SP3").startsWith("ERROR"));
         assertTrue(processor.process("SPECIALPASS DELETE;T001-SP4").startsWith("ERROR"));
-        assertTrue(processor.process("TICKET DELETE;T001").startsWith("ERROR"));
-        assertTrue(processor.process("GROUPTICKET DELETE;TG01").startsWith("ERROR"));
         String invoice = processor.process("INVOICE CREATE;USER;ana@correo.com");
         assertTrue(invoice.contains("TG01-1-SP1") && invoice.contains("T001-SPECIAL") && !invoice.contains("TG01-1 ")
                 && invoice.contains("TOTAL: 168.00"), invoice);
