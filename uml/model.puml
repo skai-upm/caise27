@@ -76,10 +76,23 @@ package es.upm.parque.business.model {
   class SpeedPass
   class SpecialPass
   class GroupTicket
-  class Attraction {
+  interface Admission
+  interface IndividualAdmission
+  interface GroupAdmission
+  abstract class "Attraction<T extends Admission>" as Attraction {
     id : String
     name : String
     capacity : int
+  }
+  class GeneralAttraction
+  class IndividualAttraction
+  class GroupAttraction
+  class SpecialAttraction
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 }
 
@@ -220,12 +233,27 @@ Pass <|-- SpecialPass
 IndividualTicket "1" *--> "0..*" SpeedPass : speedPasses
 IndividualTicket "1" *--> "0..1" SpecialPass : specialPass
 Attraction "0..*" x--> "0..*" User : visitors
+Admission <|-- IndividualAdmission
+Admission <|-- GroupAdmission
+Admission <|.. Ticket
+IndividualAdmission <|.. IndividualTicket
+GroupAdmission <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <<bind>> T -> Admission
+Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualAdmission
+Attraction <|-- GroupAttraction : <<bind>> T -> GroupAdmission
+Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualAdmission
 RuntimeException <|-- ParkException
 
 ' Usage of classes without incoming relationships
 App ..> ExecutionOptions
 App ..> DataDirectory
 App ..> StandardInvoiceBuilder
+AttractionController ..> AttractionType
+AttractionRepository ..> AttractionType
+AttractionType ..> GeneralAttraction
+AttractionType ..> IndividualAttraction
+AttractionType ..> GroupAttraction
+AttractionType ..> SpecialAttraction
 App ..> ParkControllers
 CommandProcessor ..> ParkControllers
 App ..> BCryptPasswordHasher

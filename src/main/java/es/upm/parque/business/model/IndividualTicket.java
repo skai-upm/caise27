@@ -10,7 +10,7 @@ import java.util.List;
  * A ticket for one user on one date. It owns the personal passes bought for it: any number of
  * SpeedPasses and at most one Special Pass.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAdmission {
 
     private final User user;
     private final List<SpeedPass> speedPasses = new ArrayList<>();
@@ -21,6 +21,7 @@ public class IndividualTicket extends Ticket {
         this.user = user;
     }
 
+    @Override
     public User getUser() {
         return user;
     }

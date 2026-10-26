@@ -6,20 +6,25 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A park attraction with a maximum capacity and the users currently inside. Any kind of ticket
- * is handled the same way through the users it covers.
+ * A park attraction with a maximum capacity and the users currently inside. The type parameter is
+ * the access capability the attraction admits: only tickets implementing it can enter, and they are
+ * handled as that capability.
+ *
+ * @param <T> access capability admitted by this attraction
  */
-public class Attraction {
+public abstract class Attraction<T extends Admission> {
 
     private final String id;
     private final String name;
     private final int capacity;
+    private final Class<T> admitted;
     private final List<User> visitors = new ArrayList<>();
 
-    public Attraction(String id, String name, int capacity) {
+    protected Attraction(String id, String name, int capacity, Class<T> admitted) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+        this.admitted = admitted;
     }
 
     public String getId() {
@@ -34,6 +39,8 @@ public class Attraction {
         return capacity;
     }
 
+    public abstract AttractionType getType();
+
     public List<User> getVisitors() {
         return Collections.unmodifiableList(visitors);
     }
@@ -47,11 +54,24 @@ public class Attraction {
     }
 
     /**
-     * Lets in every user covered by the ticket, or nobody if any is already inside or they do not
-     * all fit. Returns how many users entered.
+     * True if tickets of this kind may enter the attraction.
      */
-    public int admit(Ticket ticket) {
-        List<User> users = ticket.getUsers();
+    public boolean accepts(Admission ticket) {
+        return admitted.isInstance(ticket);
+    }
+
+    /**
+     * Lets in every user covered by the ticket, or nobody if the ticket kind is not admitted, any
+     * user is already inside or they do not all fit. Returns how many users entered.
+     */
+    public int admit(Admission ticket) {
+        if (!accepts(ticket)) {
+            throw new ParkException("Attraction " + id + " (" + getType() + ") does not admit "
+                    + (ticket instanceof GroupAdmission ? "group" : "individual") + " tickets");
+        }
+        T typed = admitted.cast(ticket);
+        checkAccess(typed);
+        List<User> users = usersOf(typed);
         if (users.isEmpty()) {
             throw new ParkException("Ticket " + ticket.getId() + " covers no users");
         }
@@ -71,12 +91,26 @@ public class Attraction {
     /**
      * Lets out the users of the ticket who are inside. Returns how many left.
      */
-    public int release(Ticket ticket) {
+    public int release(Admission ticket) {
         int before = visitors.size();
         for (User u : ticket.getUsers()) {
             visitors.removeIf(v -> v == u);
         }
         return before - visitors.size();
+    }
+
+    /**
+     * Extra access rules of the attraction type, applied before anyone enters. None by default.
+     */
+    protected void checkAccess(T ticket) {
+        // no additional rules
+    }
+
+    /**
+     * Users admitted with the ticket, read through the admitted capability.
+     */
+    protected List<User> usersOf(T ticket) {
+        return ticket.getUsers();
     }
 
     private boolean isPresent(User user) {

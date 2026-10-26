@@ -41,6 +41,8 @@ public class CommandProcessor {
     static final String GROUPTICKET_CREATE_SYNTAX = "GROUPTICKET CREATE;IdentificadorEntradaGrupo;IdentificadorGrupo;yyyy-MM-dd";
     static final String GROUPTICKET_DELETE_SYNTAX = "GROUPTICKET DELETE;IdentificadorEntradaGrupo";
     static final String ATTRACTION_CREATE_SYNTAX = "ATTRACTION CREATE;IdentificadorAtraccion;Nombre;Capacidad";
+    static final String ATTRACTION_CREATE_TYPED_SYNTAX =
+            "ATTRACTION CREATE;IdentificadorAtraccion;Nombre;Capacidad;Tipo(GENERAL|INDIVIDUAL|GROUP|SPECIAL)";
     static final String ATTRACTION_ENTER_SYNTAX = "ATTRACTION ENTER;IdentificadorAtraccion;IdentificadorEntrada";
     static final String ATTRACTION_EXIT_SYNTAX = "ATTRACTION EXIT;IdentificadorAtraccion;IdentificadorEntrada";
     static final String ATTRACTION_STATUS_SYNTAX = "ATTRACTION STATUS;IdentificadorAtraccion";
@@ -81,6 +83,8 @@ public class CommandProcessor {
                     "Cancels a group ticket dated after the system date together with its member tickets."),
             new CommandInfo(ATTRACTION_CREATE_SYNTAX,
                     "Creates an attraction with a positive maximum capacity."),
+            new CommandInfo(ATTRACTION_CREATE_TYPED_SYNTAX,
+                    "Creates an attraction of the given type: GENERAL (any ticket), INDIVIDUAL, GROUP or SPECIAL."),
             new CommandInfo(ATTRACTION_ENTER_SYNTAX,
                     "Lets the users of a ticket valid today into an attraction; all of them or none, within capacity."),
             new CommandInfo(ATTRACTION_EXIT_SYNTAX,
@@ -142,7 +146,7 @@ public class CommandProcessor {
             parts[i] = parts[i].trim();
         }
         String operation = parts[0].toUpperCase();
-        CommandInfo command = commandOf(operation);
+        CommandInfo command = commandOf(operation, parts.length - 1);
         if (command == null) {
             return "ERROR Unknown command: " + parts[0];
         }
@@ -195,7 +199,11 @@ public class CommandProcessor {
                 yield "OK GROUP TICKET DELETED";
             }
             case "ATTRACTION CREATE" -> {
-                attractionController.create(p[1], p[2], p[3]);
+                if (p.length == 5) {
+                    attractionController.create(p[1], p[2], p[3], p[4]);
+                } else {
+                    attractionController.create(p[1], p[2], p[3]);
+                }
                 yield "OK ATTRACTION CREATED";
             }
             case "ATTRACTION ENTER" -> "OK ENTERED " + p[1] + " -> " + users(attractionController.enter(p[1], p[2]));
@@ -260,10 +268,11 @@ public class CommandProcessor {
         return count + (count == 1 ? " user" : " users");
     }
 
-    private static String attractionStatus(Attraction a) {
+    private static String attractionStatus(Attraction<?> a) {
         StringBuilder out = new StringBuilder("OK ATTRACTION STATUS " + a.getId());
         String nl = System.lineSeparator();
         out.append(nl).append("Name: ").append(a.getName())
+                .append(nl).append("Type: ").append(a.getType())
                 .append(nl).append("Capacity: ").append(a.getCapacity())
                 .append(nl).append("Present: ").append(a.getOccupancy())
                 .append(nl).append("Available: ").append(a.getAvailablePlaces())
@@ -310,10 +319,14 @@ public class CommandProcessor {
     }
 
     /**
-     * Returns the registered command whose operation matches, or {@code null} if unknown.
+     * Returns the registered syntax of the operation with the given number of parameters; if the
+     * operation exists with another number of parameters its first syntax is returned so the usage
+     * can be reported. Returns {@code null} for unknown operations.
      */
-    private static CommandInfo commandOf(String operation) {
-        return COMMANDS.stream().filter(c -> c.operation().equals(operation)).findFirst().orElse(null);
+    private static CommandInfo commandOf(String operation, int parameterCount) {
+        List<CommandInfo> candidates = COMMANDS.stream().filter(c -> c.operation().equals(operation)).toList();
+        return candidates.stream().filter(c -> c.parameterCount() == parameterCount).findFirst()
+                .orElse(candidates.isEmpty() ? null : candidates.get(0));
     }
 
     /**

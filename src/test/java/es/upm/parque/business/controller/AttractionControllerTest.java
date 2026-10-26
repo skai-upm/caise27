@@ -71,7 +71,7 @@ class AttractionControllerTest {
     void restartKeepsDefinitionsButNotVisitors() {
         park.controller.setCurrentDate(LocalDate.of(2026, 10, 15));
         park.attractions.enter("A01", "T001");
-        Attraction reloaded = new TestPark(dir).attractions.findById("A01");
+        Attraction<?> reloaded = new TestPark(dir).attractions.findById("A01");
         assertEquals("Tornado", reloaded.getName());
         assertEquals(20, reloaded.getCapacity());
         assertTrue(reloaded.getVisitors().isEmpty());

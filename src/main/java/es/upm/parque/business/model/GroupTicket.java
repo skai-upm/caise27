@@ -11,7 +11,7 @@ import java.util.List;
  * A ticket bought by a group: composed of one individual ticket per member at purchase time.
  * Its price is the discounted total.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAdmission {
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
@@ -28,6 +28,7 @@ public class GroupTicket extends Ticket {
         return group;
     }
 
+    @Override
     public List<IndividualTicket> getTickets() {
         return Collections.unmodifiableList(tickets);
     }

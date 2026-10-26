@@ -248,7 +248,7 @@ class CommandProcessorTest {
         assertEquals("OK ENTERED A01 -> 1 user", processor.process("ATTRACTION ENTER;A01;T001"));
         assertEquals("OK ENTERED A01 -> 2 users", processor.process("ATTRACTION ENTER;A01;TG01"));
         String nl = System.lineSeparator();
-        assertEquals(String.join(nl, "OK ATTRACTION STATUS A01", "Name: Tornado", "Capacity: 20", "Present: 3",
+        assertEquals(String.join(nl, "OK ATTRACTION STATUS A01", "Name: Tornado", "Type: GENERAL", "Capacity: 20", "Present: 3",
                 "Available: 17", "Users present:", "- Ana Garcia Lopez (ana@correo.com)",
                 "- Pedro Lopez Martin (pedro@correo.com)", "- Luis Perez (luis@correo.com)"),
                 processor.process("ATTRACTION STATUS;A01"));
@@ -313,7 +313,7 @@ class CommandProcessorTest {
             assertFalse(command.description().isBlank(), command.syntax());
         }
         assertEquals(CommandProcessor.COMMANDS.size(),
-                CommandProcessor.COMMANDS.stream().map(CommandInfo::operation).distinct().count());
+                CommandProcessor.COMMANDS.stream().map(CommandInfo::syntax).distinct().count());
     }
 
     @Test
@@ -333,6 +333,34 @@ class CommandProcessorTest {
         String help = processor.process("HELP");
         assertTrue(help.contains("SPEEDPASS CREATE;IdentificadorEntrada;Cantidad(1|10)"));
         assertTrue(help.contains("SPECIALPASS DELETE;IdentificadorPase"));
+    }
+
+    @Test
+    void attractionTypesRestrictTicketKinds() {
+        processor.process(ANA);
+        processor.process(PEDRO);
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUP CREATE;G01;Amigos");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A01;Tornado;20"));
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A02;Familiar;20;group"));
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A03;Solo;20;INDIVIDUAL"));
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A04;Magia;20;SPECIAL"));
+        assertTrue(processor.process("ATTRACTION CREATE;A05;X;20;VIP").contains("GENERAL, INDIVIDUAL, GROUP, SPECIAL"));
+        assertTrue(processor.process("ATTRACTION CREATE;A05;X").startsWith("ERROR Wrong number of parameters"));
+        assertTrue(processor.process("ATTRACTION STATUS;A02").contains("Type: GROUP"));
+        assertEquals("ERROR Attraction A02 (GROUP) does not admit individual tickets",
+                processor.process("ATTRACTION ENTER;A02;T001"));
+        assertEquals("OK ENTERED A02 -> 1 user", processor.process("ATTRACTION ENTER;A02;TG01"));
+        assertEquals("ERROR Attraction A03 (INDIVIDUAL) does not admit group tickets",
+                processor.process("ATTRACTION ENTER;A03;TG01"));
+        assertEquals("OK ENTERED A03 -> 1 user", processor.process("ATTRACTION ENTER;A03;T001"));
+        assertTrue(processor.process("ATTRACTION ENTER;A04;TG01").startsWith("ERROR"));
+        assertEquals("OK ENTERED A01 -> 1 user", processor.process("ATTRACTION ENTER;A01;TG01"));
+        assertEquals("SPECIAL", new TestPark(dir).attractions.findById("A04").getType().name());
+        assertTrue(processor.process("HELP").contains("ATTRACTION CREATE;IdentificadorAtraccion;Nombre;Capacidad;Tipo"));
     }
 
     @Test

@@ -2,6 +2,7 @@ package es.upm.parque.business.controller;
 
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.Values;
 import es.upm.parque.business.validation.UserValidator;
@@ -19,7 +20,7 @@ public final class AttractionController {
     private AttractionRepository repository;
     private TicketController ticketController;
     private MainController mainController;
-    private List<Attraction> attractions;
+    private List<Attraction<?>> attractions;
 
     private AttractionController() {
     }
@@ -42,17 +43,27 @@ public final class AttractionController {
         this.attractions = new ArrayList<>(repository.loadAll());
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         requireConfigured();
         return List.copyOf(attractions);
     }
 
-    public Attraction findById(String id) {
+    public Attraction<?> findById(String id) {
         requireConfigured();
         return attractions.stream().filter(a -> a.getId().equals(id)).findFirst().orElse(null);
     }
 
+    /**
+     * Creates a GENERAL attraction.
+     */
     public void create(String id, String name, String capacityText) {
+        create(id, name, capacityText, AttractionType.GENERAL.name());
+    }
+
+    /**
+     * Creates an attraction of the given type (GENERAL, INDIVIDUAL, GROUP or SPECIAL).
+     */
+    public void create(String id, String name, String capacityText, String typeText) {
         requireConfigured();
         if (!UserValidator.isNotBlank(id) || !UserValidator.isNotBlank(name)) {
             throw new ParkException("The attraction identifier and name are required");
@@ -60,7 +71,8 @@ public final class AttractionController {
         if (findById(id) != null) {
             throw new ParkException("An attraction with identifier " + id + " already exists");
         }
-        attractions.add(new Attraction(id, name, parseCapacity(capacityText)));
+        int capacity = parseCapacity(capacityText);
+        attractions.add(AttractionType.parse(typeText).create(id, name, capacity));
         persist();
     }
 
@@ -69,7 +81,7 @@ public final class AttractionController {
      */
     public int enter(String attractionId, String ticketId) {
         requireConfigured();
-        Attraction attraction = requireAttraction(attractionId);
+        Attraction<?> attraction = requireAttraction(attractionId);
         Ticket ticket = requireTicket(ticketId);
         if (!ticket.getDate().equals(mainController.getCurrentDate())) {
             throw new ParkException("Ticket " + ticketId + " is valid for " + Values.formatDate(ticket.getDate())
@@ -83,7 +95,7 @@ public final class AttractionController {
      */
     public int exit(String attractionId, String ticketId) {
         requireConfigured();
-        Attraction attraction = requireAttraction(attractionId);
+        Attraction<?> attraction = requireAttraction(attractionId);
         Ticket ticket = requireTicket(ticketId);
         int left = attraction.release(ticket);
         if (left == 0) {
@@ -92,9 +104,9 @@ public final class AttractionController {
         return left;
     }
 
-    public Attraction requireAttraction(String id) {
+    public Attraction<?> requireAttraction(String id) {
         requireConfigured();
-        Attraction attraction = findById(id);
+        Attraction<?> attraction = findById(id);
         if (attraction == null) {
             throw new ParkException("No attraction with identifier " + id);
         }

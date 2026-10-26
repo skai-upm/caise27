@@ -1,7 +1,9 @@
 package es.upm.parque.business.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.ParkException;
 import java.math.BigDecimal;
@@ -33,7 +35,7 @@ class AttractionTest {
 
     @Test
     void individualAndGroupTicketsEnterUniformly() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         assertEquals(1, a.admit(new IndividualTicket("T001", DAY, ana, PRICE)));
         assertEquals(2, a.admit(groupTicket(pedro, luis)));
         assertEquals(List.of(ana, pedro, luis), a.getVisitors());
@@ -45,7 +47,7 @@ class AttractionTest {
 
     @Test
     void exactFitAndOverflowAreAtomic() {
-        Attraction a = new Attraction("A01", "Tornado", 3);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 3);
         a.admit(new IndividualTicket("T001", DAY, ana, PRICE));
         GroupTicket tooBig = groupTicket(pedro, luis, user("Eva", "22222222J"));
         assertThrows(ParkException.class, () -> a.admit(tooBig));
@@ -56,7 +58,7 @@ class AttractionTest {
 
     @Test
     void alreadyPresentRejectsWholeTicket() {
-        Attraction a = new Attraction("A01", "Tornado", 10);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 10);
         IndividualTicket t = new IndividualTicket("T001", DAY, ana, PRICE);
         a.admit(t);
         assertThrows(ParkException.class, () -> a.admit(t));
@@ -67,14 +69,51 @@ class AttractionTest {
 
     @Test
     void emptyGroupTicketCannotEnter() {
-        Attraction a = new Attraction("A01", "Tornado", 10);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 10);
         GroupTicket empty = groupTicket();
         assertThrows(ParkException.class, () -> a.admit(empty));
     }
 
+    private final IndividualTicket single = new IndividualTicket("T001", DAY, ana, PRICE);
+
+    @Test
+    void eachTypeAdmitsItsTicketKindsOnly() {
+        GroupTicket group = groupTicket(pedro, luis);
+        assertTrue(new GeneralAttraction("A", "a", 10).accepts(single));
+        assertTrue(new GeneralAttraction("A", "a", 10).accepts(group));
+        assertTrue(new IndividualAttraction("A", "a", 10).accepts(single));
+        assertFalse(new IndividualAttraction("A", "a", 10).accepts(group));
+        assertFalse(new GroupAttraction("A", "a", 10).accepts(single));
+        assertTrue(new GroupAttraction("A", "a", 10).accepts(group));
+        assertTrue(new SpecialAttraction("A", "a", 10).accepts(single));
+        assertFalse(new SpecialAttraction("A", "a", 10).accepts(group));
+    }
+
+    @Test
+    void rejectedKindLetsNobodyIn() {
+        GroupAttraction groupOnly = new GroupAttraction("A02", "Familiar", 10);
+        ParkException e = assertThrows(ParkException.class, () -> groupOnly.admit(single));
+        assertEquals("Attraction A02 (GROUP) does not admit individual tickets", e.getMessage());
+        assertEquals(2, groupOnly.admit(groupTicket(pedro, luis)));
+        IndividualAttraction individualOnly = new IndividualAttraction("A03", "Solo", 10);
+        GroupTicket group = groupTicket(pedro);
+        assertThrows(ParkException.class, () -> individualOnly.admit(group));
+        assertEquals(0, individualOnly.getOccupancy());
+    }
+
+    @Test
+    void typesAreCreatedAndParsed() {
+        for (AttractionType type : AttractionType.values()) {
+            Attraction<?> a = type.create("A", "a", 5);
+            assertEquals(type, a.getType());
+            assertEquals(type, AttractionType.parse(type.name().toLowerCase()));
+        }
+        assertThrows(ParkException.class, () -> AttractionType.parse("VIP"));
+    }
+
     @Test
     void releaseRemovesOnlyPresentUsers() {
-        Attraction a = new Attraction("A01", "Tornado", 10);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 10);
         GroupTicket g = groupTicket(pedro, luis);
         a.admit(g);
         a.admit(new IndividualTicket("T001", DAY, ana, PRICE));
