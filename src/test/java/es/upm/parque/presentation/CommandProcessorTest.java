@@ -53,7 +53,7 @@ class CommandProcessorTest {
             new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt")));
         attractions = AttractionManager.getInstance().configure(new AttractionStorage(dir.resolve("attractions.txt")));
         park = ParkController.getInstance().configure(manager, groups, tickets, attractions, new InvoiceDirector(), LocalDate.now());
-        processor = new CommandProcessor(park);
+        processor = new CommandProcessor(park, App.helpGenerators());
     }
 
     @Test
@@ -111,7 +111,7 @@ class CommandProcessorTest {
             "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
             "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id", "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION DELETE;Id",
             "ATTRACTION ENTER;Id;IdTicket", "ATTRACTION EXIT;Id;IdTicket", "ATTRACTION STATUS;Id", "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo",
-            "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP", "EXIT"}) {
+            "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP EXTENDED", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
         }
         assertFalse(processor.isExitRequested());
@@ -162,7 +162,7 @@ class CommandProcessorTest {
     @Test
     void invalidSystemDatesAreRejected() {
         ParkController fixedPark = ParkController.getInstance().configure(manager, groups, tickets, attractions, new InvoiceDirector(), LocalDate.of(2026, 1, 1));
-        CommandProcessor fixed = new CommandProcessor(fixedPark);
+        CommandProcessor fixed = new CommandProcessor(fixedPark, App.helpGenerators());
         for (String value : new String[] {"15/09/2026", "2026-9-15", "2026-02-30", "hoy", ""}) {
             assertTrue(fixed.execute("SYSTEM DATE;" + value).startsWith("ERROR: Invalid date"), value);
         }
@@ -401,5 +401,24 @@ class CommandProcessorTest {
         assertTrue(processor.execute("INVOICE CREATE;COMPANY;X").startsWith("ERROR: Unknown invoice recipient"));
         assertTrue(processor.execute("INVOICE CREATE;USER").startsWith("ERROR: Expected 2"));
         assertTrue(processor.execute("INVOICE DELETE;USER;ana@correo.com").startsWith("ERROR: Unknown command"));
+    }
+
+    @Test
+    void extendedHelpShowsSyntaxAndDescriptions() {
+        String help = processor.execute("HELP EXTENDED");
+        for (CommandInfo command : CommandCatalog.all()) {
+            assertTrue(help.contains(command.syntax()), command.syntax());
+            assertTrue(help.contains(command.description()), command.syntax());
+        }
+        assertTrue(help.contains("TICKET DELETE;Id" + System.lineSeparator()
+            + "      Deletes an individual ticket dated after the system date"), help);
+        assertFalse(processor.execute("HELP").contains(CommandCatalog.TICKET_DELETE.description()));
+    }
+
+    @Test
+    void helpModeErrors() {
+        assertTrue(processor.execute("HELP SHORT").startsWith("ERROR: Unknown help mode: SHORT"));
+        assertTrue(processor.execute("HELP EXTENDED;x").startsWith("ERROR: Expected 0"));
+        assertTrue(processor.execute("HELP EXTENDED NOW").startsWith("ERROR: Unknown command"));
     }
 }

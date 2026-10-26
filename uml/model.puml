@@ -11,6 +11,18 @@ package es.upm.parque.presentation {
   class CommandProcessor {
     - exitRequested : boolean
   }
+
+  class CommandInfo {
+    - syntax : String
+    - description : String
+  }
+
+  class CommandCatalog
+
+  interface HelpFormatter
+  class SyntaxHelpFormatter
+  class ExtendedHelpFormatter
+  class HelpGenerator
 }
 
 package es.upm.parque.business.controller {
@@ -133,8 +145,13 @@ package es.upm.parque.persistence {
   }
 }
 
-' Presentation -> business
+' Presentation
 CommandProcessor "1" x--> "1" ParkController : park
+CommandProcessor "1" x--> "1..*" HelpGenerator : helpGenerators
+HelpGenerator "0..*" x--> "0..*" CommandInfo : commands
+HelpGenerator "0..*" x--> "1" HelpFormatter : formatter
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
 
 ' Controller (single instances, collaborators injected at startup)
 ParkController "1" x--> "1" ParkController : INSTANCE
@@ -192,6 +209,10 @@ InvoiceSection "1" *--> "1..*" InvoiceLine : lines
 
 ' Usage of types without incoming relationships
 App ..> CommandProcessor
+App ..> CommandCatalog
+App ..> SyntaxHelpFormatter
+App ..> ExtendedHelpFormatter
+CommandProcessor ..> CommandCatalog
 App ..> DataDirectory
 App ..> UserStorage
 App ..> GroupStorage

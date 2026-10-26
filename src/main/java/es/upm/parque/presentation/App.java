@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Starts the application. Without a file argument commands are read from standard input; otherwise the
@@ -64,7 +65,7 @@ public class App {
         Thread cleanup = new Thread(data::close);
         Runtime.getRuntime().addShutdownHook(cleanup);
         try (data) {
-            CommandProcessor processor = new CommandProcessor(configure(data));
+            CommandProcessor processor = new CommandProcessor(configure(data), helpGenerators());
             if (commandFile == null) {
                 runSource(processor, new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8)), out,
                     "standard input");
@@ -92,6 +93,13 @@ public class App {
             .configure(new AttractionStorage(data.resolve(ATTRACTIONS_FILE_NAME)));
         return ParkController.getInstance()
             .configure(users, groups, tickets, attractions, new InvoiceDirector(), LocalDate.now());
+    }
+
+    /** Startup configuration of the help modes: each generator gets its formatting behavior injected. */
+    static Map<String, HelpGenerator> helpGenerators() {
+        return Map.of(
+            CommandProcessor.DEFAULT_HELP_MODE, new HelpGenerator(CommandCatalog.all(), new SyntaxHelpFormatter()),
+            CommandProcessor.EXTENDED_HELP_MODE, new HelpGenerator(CommandCatalog.all(), new ExtendedHelpFormatter()));
     }
 
     private static void runFile(CommandProcessor processor, Path commandFile, PrintStream out) {

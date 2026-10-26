@@ -20,6 +20,7 @@ import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interprets text commands such as {@code USER CREATE;Ana;...}. The command is split with
@@ -33,61 +34,24 @@ public class CommandProcessor {
 
     private static final String PARAM_SEPARATOR = ";";
 
-    private static final String USAGE_USER_CREATE = "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta";
-    private static final String USAGE_USER_DELETE = "USER DELETE;Correo;Contraseña";
-    private static final String USAGE_USER_UPDATE = "USER UPDATE;Correo;Contraseña;Campo;NuevoValor";
-    private static final String USAGE_GROUP_CREATE = "GROUP CREATE;Id;Nombre";
-    private static final String USAGE_GROUP_ADD = "GROUP ADD;Id;Correo";
-    private static final String USAGE_GROUP_REMOVE = "GROUP REMOVE;Id;Correo";
-    private static final String USAGE_GROUP_DELETE = "GROUP DELETE;Id";
-    private static final String USAGE_TICKET_CREATE = "TICKET CREATE;Id;Correo;yyyy-MM-dd";
-    private static final String USAGE_TICKET_DELETE = "TICKET DELETE;Id";
-    private static final String USAGE_GROUPTICKET_CREATE = "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd";
-    private static final String USAGE_GROUPTICKET_DELETE = "GROUPTICKET DELETE;Id";
-    private static final String USAGE_ATTRACTION_CREATE = "ATTRACTION CREATE;Id;Nombre;Capacidad";
-    private static final String USAGE_ATTRACTION_DELETE = "ATTRACTION DELETE;Id";
-    private static final String USAGE_ATTRACTION_ENTER = "ATTRACTION ENTER;Id;IdTicket";
-    private static final String USAGE_ATTRACTION_EXIT = "ATTRACTION EXIT;Id;IdTicket";
-    private static final String USAGE_ATTRACTION_STATUS = "ATTRACTION STATUS;Id";
-    private static final String USAGE_INVOICE_USER = "INVOICE CREATE;USER;Correo";
-    private static final String USAGE_INVOICE_GROUP = "INVOICE CREATE;GROUP;IdGrupo";
-    private static final String USAGE_SYSTEM_DATE = "SYSTEM DATE;yyyy-MM-dd";
-    private static final String USAGE_SYSTEM_PRICE = "SYSTEM PRICE;Importe";
-    private static final String USAGE_HELP = "HELP";
-    private static final String USAGE_EXIT = "EXIT";
-
-    private static final List<String> HELP_LINES = List.of(
-        USAGE_USER_CREATE,
-        USAGE_USER_DELETE,
-        USAGE_USER_UPDATE + "  (Campo: " + Arrays.toString(UserField.values()) + ")",
-        USAGE_GROUP_CREATE,
-        USAGE_GROUP_ADD,
-        USAGE_GROUP_REMOVE,
-        USAGE_GROUP_DELETE,
-        USAGE_TICKET_CREATE,
-        USAGE_TICKET_DELETE,
-        USAGE_GROUPTICKET_CREATE,
-        USAGE_GROUPTICKET_DELETE,
-        USAGE_ATTRACTION_CREATE,
-        USAGE_ATTRACTION_DELETE,
-        USAGE_ATTRACTION_ENTER,
-        USAGE_ATTRACTION_EXIT,
-        USAGE_ATTRACTION_STATUS,
-        USAGE_INVOICE_USER,
-        USAGE_INVOICE_GROUP,
-        USAGE_SYSTEM_DATE,
-        USAGE_SYSTEM_PRICE,
-        USAGE_HELP,
-        USAGE_EXIT);
-
     private static final DateTimeFormatter DATE_FORMAT =
         DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
+    /** Help mode selected by plain {@code HELP}. */
+    public static final String DEFAULT_HELP_MODE = "";
+    /** Help mode selected by {@code HELP EXTENDED}. */
+    public static final String EXTENDED_HELP_MODE = "EXTENDED";
+
     private final ParkController park;
+    private final Map<String, HelpGenerator> helpGenerators;
     private boolean exitRequested;
 
-    public CommandProcessor(ParkController park) {
+    /**
+     * @param helpGenerators help generator for each help mode ({@link #DEFAULT_HELP_MODE} for plain HELP)
+     */
+    public CommandProcessor(ParkController park, Map<String, HelpGenerator> helpGenerators) {
         this.park = park;
+        this.helpGenerators = Map.copyOf(helpGenerators);
     }
 
     public boolean isExitRequested() {
@@ -119,6 +83,9 @@ public class CommandProcessor {
         String[] parts = line.trim().split(PARAM_SEPARATOR, -1);
         String[] operation = parts[0].trim().split(" ");
         try {
+            if (operation[0].equals("HELP") && operation.length <= 2) {
+                return executeHelp(operation.length == 1 ? DEFAULT_HELP_MODE : operation[1], parts);
+            }
             if (operation.length == 1) {
                 return executeGeneral(operation[0], parts);
             }
@@ -151,15 +118,19 @@ public class CommandProcessor {
         }
     }
 
+    private String executeHelp(String mode, String[] parts) {
+        HelpGenerator generator = helpGenerators.get(mode);
+        if (generator == null) {
+            return error("Unknown help mode: " + mode);
+        }
+        requireParams(parts, 0, DEFAULT_HELP_MODE.equals(mode) ? CommandCatalog.HELP.syntax() : "HELP " + mode);
+        return generator.generate();
+    }
+
     private String executeGeneral(String operation, String[] parts) {
         switch (operation) {
-            case "HELP" -> {
-                requireParams(parts, 0, USAGE_HELP);
-                return "Available commands:" + System.lineSeparator() + "  "
-                    + String.join(System.lineSeparator() + "  ", HELP_LINES);
-            }
             case "EXIT" -> {
-                requireParams(parts, 0, USAGE_EXIT);
+                requireParams(parts, 0, CommandCatalog.EXIT.syntax());
                 exitRequested = true;
                 return ok("Bye");
             }
@@ -172,17 +143,17 @@ public class CommandProcessor {
     private String executeUser(String action, String[] parts) {
         switch (action) {
             case "CREATE" -> {
-                requireParams(parts, 7, USAGE_USER_CREATE);
+                requireParams(parts, 7, CommandCatalog.USER_CREATE.syntax());
                 User u = park.createUser(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
                 return ok("User " + u.getDni() + " created");
             }
             case "DELETE" -> {
-                requireParams(parts, 2, USAGE_USER_DELETE);
+                requireParams(parts, 2, CommandCatalog.USER_DELETE.syntax());
                 park.deleteUser(parts[1], parts[2]);
                 return ok("User " + parts[1] + " deleted");
             }
             case "UPDATE" -> {
-                requireParams(parts, 4, USAGE_USER_UPDATE);
+                requireParams(parts, 4, CommandCatalog.USER_UPDATE.syntax());
                 UserField field = parseField(parts[3]);
                 park.updateUser(parts[1], parts[2], field, parts[4]);
                 return ok("User " + parts[1] + " updated (" + field + ")");
@@ -196,22 +167,22 @@ public class CommandProcessor {
     private String executeGroup(String action, String[] parts) {
         switch (action) {
             case "CREATE" -> {
-                requireParams(parts, 2, USAGE_GROUP_CREATE);
+                requireParams(parts, 2, CommandCatalog.GROUP_CREATE.syntax());
                 park.createGroup(parts[1], parts[2]);
                 return ok("Group " + parts[1] + " created");
             }
             case "ADD" -> {
-                requireParams(parts, 2, USAGE_GROUP_ADD);
+                requireParams(parts, 2, CommandCatalog.GROUP_ADD.syntax());
                 park.addGroupMember(parts[1], parts[2]);
                 return ok("User " + parts[2] + " added to group " + parts[1]);
             }
             case "REMOVE" -> {
-                requireParams(parts, 2, USAGE_GROUP_REMOVE);
+                requireParams(parts, 2, CommandCatalog.GROUP_REMOVE.syntax());
                 park.removeGroupMember(parts[1], parts[2]);
                 return ok("User " + parts[2] + " removed from group " + parts[1]);
             }
             case "DELETE" -> {
-                requireParams(parts, 1, USAGE_GROUP_DELETE);
+                requireParams(parts, 1, CommandCatalog.GROUP_DELETE.syntax());
                 park.deleteGroup(parts[1]);
                 return ok("Group " + parts[1] + " deleted");
             }
@@ -224,12 +195,12 @@ public class CommandProcessor {
     private String executeTicket(String action, String[] parts) {
         switch (action) {
             case "CREATE" -> {
-                requireParams(parts, 3, USAGE_TICKET_CREATE);
+                requireParams(parts, 3, CommandCatalog.TICKET_CREATE.syntax());
                 Ticket t = park.createTicket(parts[1], parts[2], parseDate(parts[3]));
                 return "OK TICKET CREATED -> " + formatPrice(t.getPrice());
             }
             case "DELETE" -> {
-                requireParams(parts, 1, USAGE_TICKET_DELETE);
+                requireParams(parts, 1, CommandCatalog.TICKET_DELETE.syntax());
                 park.deleteTicket(parts[1]);
                 return ok("Ticket " + parts[1] + " deleted");
             }
@@ -242,12 +213,12 @@ public class CommandProcessor {
     private String executeGroupTicket(String action, String[] parts) {
         switch (action) {
             case "CREATE" -> {
-                requireParams(parts, 3, USAGE_GROUPTICKET_CREATE);
+                requireParams(parts, 3, CommandCatalog.GROUPTICKET_CREATE.syntax());
                 Ticket t = park.createGroupTicket(parts[1], parts[2], parseDate(parts[3]));
                 return "OK GROUP TICKET CREATED -> " + formatPrice(t.getPrice());
             }
             case "DELETE" -> {
-                requireParams(parts, 1, USAGE_GROUPTICKET_DELETE);
+                requireParams(parts, 1, CommandCatalog.GROUPTICKET_DELETE.syntax());
                 park.deleteGroupTicket(parts[1]);
                 return ok("Group ticket " + parts[1] + " deleted");
             }
@@ -260,27 +231,27 @@ public class CommandProcessor {
     private String executeAttraction(String action, String[] parts) {
         switch (action) {
             case "CREATE" -> {
-                requireParams(parts, 3, USAGE_ATTRACTION_CREATE);
+                requireParams(parts, 3, CommandCatalog.ATTRACTION_CREATE.syntax());
                 Attraction a = park.createAttraction(parts[1], parts[2], parts[3]);
                 return ok("Attraction " + a.getId() + " created with capacity " + a.getCapacity());
             }
             case "DELETE" -> {
-                requireParams(parts, 1, USAGE_ATTRACTION_DELETE);
+                requireParams(parts, 1, CommandCatalog.ATTRACTION_DELETE.syntax());
                 park.deleteAttraction(parts[1]);
                 return ok("Attraction " + parts[1] + " deleted");
             }
             case "ENTER" -> {
-                requireParams(parts, 2, USAGE_ATTRACTION_ENTER);
+                requireParams(parts, 2, CommandCatalog.ATTRACTION_ENTER.syntax());
                 int entered = park.enterAttraction(parts[1], parts[2]);
                 return ok(entered + " user(s) entered attraction " + parts[1]);
             }
             case "EXIT" -> {
-                requireParams(parts, 2, USAGE_ATTRACTION_EXIT);
+                requireParams(parts, 2, CommandCatalog.ATTRACTION_EXIT.syntax());
                 int left = park.exitAttraction(parts[1], parts[2]);
                 return ok(left + " user(s) left attraction " + parts[1]);
             }
             case "STATUS" -> {
-                requireParams(parts, 1, USAGE_ATTRACTION_STATUS);
+                requireParams(parts, 1, CommandCatalog.ATTRACTION_STATUS.syntax());
                 return formatStatus(park.getAttraction(parts[1]));
             }
             default -> {
@@ -305,7 +276,7 @@ public class CommandProcessor {
         if (!action.equals("CREATE")) {
             return error("Unknown command: INVOICE " + action);
         }
-        requireParams(parts, 2, USAGE_INVOICE_USER + " | " + USAGE_INVOICE_GROUP);
+        requireParams(parts, 2, CommandCatalog.INVOICE_USER.syntax() + " | " + CommandCatalog.INVOICE_GROUP.syntax());
         return switch (parts[1].trim().toUpperCase()) {
             case "USER" -> formatInvoice(park.createUserInvoice(parts[2]));
             case "GROUP" -> formatInvoice(park.createGroupInvoice(parts[2]));
@@ -334,12 +305,12 @@ public class CommandProcessor {
     private String executeSystem(String action, String[] parts) {
         switch (action) {
             case "DATE" -> {
-                requireParams(parts, 1, USAGE_SYSTEM_DATE);
+                requireParams(parts, 1, CommandCatalog.SYSTEM_DATE.syntax());
                 park.setCurrentDate(parseDate(parts[1]));
                 return ok("System date set to " + park.getCurrentDate());
             }
             case "PRICE" -> {
-                requireParams(parts, 1, USAGE_SYSTEM_PRICE);
+                requireParams(parts, 1, CommandCatalog.SYSTEM_PRICE.syntax());
                 park.setCurrentPrice(parsePrice(parts[1]));
                 return ok("Ticket price set to " + formatPrice(park.getCurrentPrice()));
             }
