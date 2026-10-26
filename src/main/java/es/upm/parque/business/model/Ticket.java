@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Common abstraction for park tickets: an identifier, a date of use, a price and the users it admits.
  */
-public abstract class Ticket {
+public abstract class Ticket implements Admission {
 
     private final String id;
     private final LocalDate date;
@@ -30,10 +30,12 @@ public abstract class Ticket {
         }
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }

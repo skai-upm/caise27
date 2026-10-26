@@ -34,7 +34,7 @@ class UmlModelTest {
 
     private static final String PACKAGE = "es.upm.parque.";
     private static final Pattern PACKAGE_BLOCK = Pattern.compile("^package ([\\w.]+) \\{$");
-    private static final Pattern CLASS = Pattern.compile("^\\s*(?:abstract )?(class|enum|interface) (\\w+)(?: \\{)?$");
+    private static final Pattern CLASS = Pattern.compile("^\\s*(?:abstract )?(class|enum|interface) (\\w+)(?:<[^>]*>)?(?: \\{)?$");
     private static final Pattern ATTRIBUTE = Pattern.compile("^\\s*(\\w+) : (\\w+)$");
     private static final Pattern RELATION =
             Pattern.compile("^(\\w+) \"([^\"]+)\" (x-->|o-->|\\*-->) \"([^\"]+)\" (\\w+) : (\\w+)$");
@@ -120,7 +120,8 @@ class UmlModelTest {
         }
         if (field.getGenericType() instanceof ParameterizedType parameterized) {
             for (Type argument : parameterized.getActualTypeArguments()) {
-                if (argument instanceof Class<?> c && isModelType(c)) {
+                Type raw = argument instanceof ParameterizedType nested ? nested.getRawType() : argument;
+                if (raw instanceof Class<?> c && isModelType(c)) {
                     referenced.add(c.getSimpleName());
                 }
             }
@@ -190,9 +191,15 @@ class UmlModelTest {
         Set<String> modelled = inheritances.stream().map(i -> i[0] + ">" + i[1]).collect(Collectors.toSet());
         Set<String> actual = new HashSet<>();
         for (String name : attributes.keySet()) {
-            Class<?> superclass = modelClass(name).getSuperclass();
+            Class<?> type = modelClass(name);
+            Class<?> superclass = type.getSuperclass();
             if (superclass != null && isModelType(superclass)) {
                 actual.add(name + ">" + superclass.getSimpleName());
+            }
+            if (type.isInterface()) {
+                for (Class<?> extended : type.getInterfaces()) {
+                    actual.add(name + ">" + extended.getSimpleName());
+                }
             }
         }
         assertEquals(actual, modelled);
@@ -203,6 +210,9 @@ class UmlModelTest {
         Set<String> modelled = realizations.stream().map(r -> r[0] + ">" + r[1]).collect(Collectors.toSet());
         Set<String> actual = new HashSet<>();
         for (String name : attributes.keySet()) {
+            if (modelClass(name).isInterface()) {
+                continue;
+            }
             for (Class<?> implemented : modelClass(name).getInterfaces()) {
                 if (isModelType(implemented)) {
                     actual.add(name + ">" + implemented.getSimpleName());

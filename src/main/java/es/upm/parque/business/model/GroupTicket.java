@@ -11,7 +11,7 @@ import java.util.List;
  * A ticket bought by a group: it aggregates the group and is composed of one individual ticket
  * per member at the time of purchase, with a discount that depends on the number of members.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAdmission {
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
@@ -54,6 +54,7 @@ public class GroupTicket extends Ticket {
         return group;
     }
 
+    @Override
     public List<IndividualTicket> getTickets() {
         return tickets;
     }

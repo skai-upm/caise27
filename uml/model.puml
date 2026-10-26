@@ -77,11 +77,33 @@ package es.upm.parque.business.model {
     discountPercent : int
   }
 
-  class Attraction {
+  abstract class Attraction<T extends Admission> {
     id : String
     name : String
     capacity : int
+    admitted : Class
   }
+
+  class GeneralAttraction
+
+  class IndividualAttraction
+
+  class GroupAttraction
+
+  class SpecialAttraction
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+
+  interface Admission
+
+  interface IndividualAdmission
+
+  interface GroupAdmission
 
   class Invoice {
     recipientKind : String
@@ -191,10 +213,19 @@ IndividualTicket --|> Ticket
 GroupTicket --|> Ticket
 SpeedPass --|> PersonalPass
 SpecialPass --|> PersonalPass
+GeneralAttraction --|> Attraction
+IndividualAttraction --|> Attraction
+GroupAttraction --|> Attraction
+SpecialAttraction --|> Attraction
+IndividualAdmission --|> Admission
+GroupAdmission --|> Admission
 StandardInvoiceBuilder ..|> InvoiceBuilder
 SyntaxHelpFormat ..|> HelpFormat
 BCryptPasswordHasher ..|> PasswordHasher
 TextFilePassRepository ..|> PassRepository
+Ticket ..|> Admission
+IndividualTicket ..|> IndividualAdmission
+GroupTicket ..|> GroupAdmission
 ExtendedHelpFormat ..|> HelpFormat
 TextFileUserRepository ..|> UserRepository
 TextFileGroupRepository ..|> GroupRepository
@@ -280,6 +311,11 @@ Bootstrap ..> StandardInvoiceBuilder : supplies invoice builders
 Bootstrap ..> BCryptPasswordHasher : injects into UserManager
 Bootstrap ..> TextFilePassRepository : creates
 Bootstrap ..> Controllers : hands to CommandProcessor
+AttractionManager ..> AttractionType : creates attractions by type
+AttractionType ..> GeneralAttraction : creates
+AttractionType ..> IndividualAttraction : creates
+AttractionType ..> GroupAttraction : creates
+AttractionType ..> SpecialAttraction : creates
 Bootstrap ..> SyntaxHelpFormat : injects into HELP
 Bootstrap ..> ExtendedHelpFormat : injects into HELP EXTENDED
 Bootstrap ..> TextFileUserRepository : creates

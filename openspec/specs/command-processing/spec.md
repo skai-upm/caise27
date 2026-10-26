@@ -77,7 +77,7 @@ In file mode the application SHALL read the file line by line, interpret each no
 
 #### Scenario: Help lists the attraction commands
 - **WHEN** `HELP` is processed
-- **THEN** the output also contains `ATTRACTION CREATE;Id;Nombre;Aforo`, `ATTRACTION DELETE;Id`, `ATTRACTION ENTER;IdAtraccion;IdEntrada`, `ATTRACTION EXIT;IdAtraccion;IdEntrada` and `ATTRACTION STATUS;IdAtraccion`
+- **THEN** the output also contains `ATTRACTION CREATE;Id;Nombre;Aforo`, `ATTRACTION CREATE;Id;Nombre;Aforo;Tipo`, `ATTRACTION DELETE;Id`, `ATTRACTION ENTER;IdAtraccion;IdEntrada`, `ATTRACTION EXIT;IdAtraccion;IdEntrada` and `ATTRACTION STATUS;IdAtraccion`
 
 #### Scenario: Help lists the invoice commands
 - **WHEN** `HELP` is processed

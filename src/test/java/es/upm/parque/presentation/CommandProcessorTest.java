@@ -268,6 +268,9 @@ class CommandProcessorTest {
         assertEquals("OK EXITED 2 USERS", processor.process("ATTRACTION EXIT;A01;TG01"));
         assertEquals("OK ATTRACTION DELETED", processor.process("ATTRACTION DELETE;A01"));
         assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION CREATE;A01;Tornado"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION CREATE;A01;Tornado;5;GROUP;x"));
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A09;Barcas;5;group"));
+        assertTrue(processor.process("ATTRACTION STATUS;A09").contains("Type: GROUP"));
         assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION DELETE"));
         assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION ENTER;A01"));
         assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION EXIT;A01"));

@@ -11,7 +11,7 @@ import es.upm.parque.business.model.Attraction;
  */
 public interface AttractionRepository {
 
-    List<Attraction> load() throws IOException;
+    List<Attraction<?>> load() throws IOException;
 
-    void save(Collection<Attraction> attractions) throws IOException;
+    void save(Collection<Attraction<?>> attractions) throws IOException;
 }

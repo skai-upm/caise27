@@ -108,7 +108,7 @@ class AppTest {
     @Test
     void attractionsAreRestoredEmptyOnRestart() throws IOException {
         startWithStdin("ATTRACTION CREATE;A01;Tornado;20\n");
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
         bytes.reset();
         startWithStdin("ATTRACTION STATUS;A01\n");
         assertTrue(output().contains("Capacity: 20 | Present: 0 | Available: 20"));

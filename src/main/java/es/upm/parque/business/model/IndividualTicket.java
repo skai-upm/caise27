@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * An individual ticket for one date, held by a registered user.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAdmission {
 
     private final User holder;
     private final BigDecimal price;
@@ -22,6 +22,7 @@ public class IndividualTicket extends Ticket {
         this.price = price;
     }
 
+    @Override
     public User getHolder() {
         return holder;
     }

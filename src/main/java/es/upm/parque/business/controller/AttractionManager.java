@@ -6,7 +6,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import es.upm.parque.business.model.Admission;
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
@@ -25,6 +27,8 @@ public class AttractionManager {
     public static final String ATTRACTION_NOT_FOUND = "ERROR ATTRACTION NOT FOUND";
     public static final String NOT_EMPTY = "ERROR ATTRACTION NOT EMPTY";
     public static final String INVALID_CAPACITY = "ERROR INVALID CAPACITY";
+    public static final String INVALID_TYPE = "ERROR INVALID ATTRACTION TYPE";
+    public static final String TYPE_NOT_ACCEPTED = "ERROR TICKET TYPE NOT ACCEPTED";
     public static final String NOT_VALID_TODAY = "ERROR TICKET NOT VALID TODAY";
     public static final String ALREADY_INSIDE = "ERROR USER ALREADY INSIDE";
     public static final String CAPACITY_EXCEEDED = "ERROR CAPACITY EXCEEDED";
@@ -35,7 +39,7 @@ public class AttractionManager {
     private final AttractionRepository repository;
     private final TicketManager tickets;
     private final SystemDate systemDate;
-    private final Map<String, Attraction> attractionsById = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractionsById = new LinkedHashMap<>();
 
     /**
      * Creates the unique AttractionManager with its injected dependencies, replacing any previous instance.
@@ -62,12 +66,19 @@ public class AttractionManager {
         this.repository = repository;
         this.tickets = tickets;
         this.systemDate = systemDate;
-        for (Attraction attraction : repository.load()) {
+        for (Attraction<?> attraction : repository.load()) {
             attractionsById.put(attraction.getId(), attraction);
         }
     }
 
+    /**
+     * Creates a GENERAL attraction.
+     */
     public String create(String id, String name, String capacityText) {
+        return create(id, name, capacityText, AttractionType.GENERAL.name());
+    }
+
+    public String create(String id, String name, String capacityText, String typeText) {
         if (!UserValidator.isNotBlank(id) || !UserValidator.isNotBlank(name)) {
             return UserManager.EMPTY_FIELD;
         }
@@ -75,15 +86,19 @@ public class AttractionManager {
         if (capacity == null) {
             return INVALID_CAPACITY;
         }
+        AttractionType type = AttractionType.parse(typeText);
+        if (type == null) {
+            return INVALID_TYPE;
+        }
         if (attractionsById.containsKey(id)) {
             return DUPLICATE_ATTRACTION;
         }
-        attractionsById.put(id, new Attraction(id, name, capacity));
+        attractionsById.put(id, type.create(id, name, capacity));
         return persist(ATTRACTION_CREATED);
     }
 
     public String delete(String id) {
-        Attraction attraction = attractionsById.get(id);
+        Attraction<?> attraction = attractionsById.get(id);
         if (attraction == null) {
             return ATTRACTION_NOT_FOUND;
         }
@@ -95,7 +110,7 @@ public class AttractionManager {
     }
 
     public String enter(String attractionId, String ticketId) {
-        Attraction attraction = attractionsById.get(attractionId);
+        Attraction<?> attraction = attractionsById.get(attractionId);
         if (attraction == null) {
             return ATTRACTION_NOT_FOUND;
         }
@@ -103,22 +118,34 @@ public class AttractionManager {
         if (ticket == null) {
             return TicketManager.TICKET_NOT_FOUND;
         }
-        if (!ticket.getDate().equals(systemDate.get())) {
+        return enter(attraction, ticket);
+    }
+
+    /**
+     * Typed entry: the ticket is converted to the capability bound of the attraction before any
+     * other rule is evaluated, so an attraction only ever admits tickets of its type parameter.
+     */
+    private <T extends Admission> String enter(Attraction<T> attraction, Admission ticket) {
+        if (!attraction.accepts(ticket)) {
+            return TYPE_NOT_ACCEPTED;
+        }
+        T admission = attraction.cast(ticket);
+        if (!admission.getDate().equals(systemDate.get())) {
             return NOT_VALID_TODAY;
         }
-        List<User> visitors = ticket.getVisitors();
+        List<User> visitors = admission.getVisitors();
         if (visitors.stream().anyMatch(this::isInsideAnyAttraction)) {
             return ALREADY_INSIDE;
         }
-        if (!attraction.canAdmit(visitors)) {
+        if (!attraction.hasRoomFor(admission)) {
             return CAPACITY_EXCEEDED;
         }
-        attraction.admit(visitors);
+        attraction.enter(admission);
         return "OK ENTERED " + visitors.size() + " USERS";
     }
 
     public String exit(String attractionId, String ticketId) {
-        Attraction attraction = attractionsById.get(attractionId);
+        Attraction<?> attraction = attractionsById.get(attractionId);
         if (attraction == null) {
             return ATTRACTION_NOT_FOUND;
         }
@@ -131,12 +158,13 @@ public class AttractionManager {
     }
 
     public String status(String attractionId) {
-        Attraction attraction = attractionsById.get(attractionId);
+        Attraction<?> attraction = attractionsById.get(attractionId);
         if (attraction == null) {
             return ATTRACTION_NOT_FOUND;
         }
         List<String> lines = new ArrayList<>();
         lines.add("ATTRACTION " + attraction.getId() + " - " + attraction.getName());
+        lines.add("Type: " + attraction.getType().name());
         lines.add("Capacity: " + attraction.getCapacity() + " | Present: " + attraction.getPresent().size()
                 + " | Available: " + attraction.available());
         lines.add("Users present:");
@@ -149,7 +177,7 @@ public class AttractionManager {
         return String.join(System.lineSeparator(), lines);
     }
 
-    public Attraction find(String id) {
+    public Attraction<?> find(String id) {
         return attractionsById.get(id);
     }
 

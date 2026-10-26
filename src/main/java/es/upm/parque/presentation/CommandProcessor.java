@@ -77,8 +77,7 @@ public class CommandProcessor {
                 case "GROUPTICKET CREATE" -> withParameters(parts, 4,
                         () -> tickets.createGroupTicket(parts[1], parts[2], parts[3]));
                 case "GROUPTICKET DELETE" -> withParameters(parts, 2, () -> tickets.deleteGroupTicket(parts[1]));
-                case "ATTRACTION CREATE" -> withParameters(parts, 4,
-                        () -> attractions.create(parts[1], parts[2], parts[3]));
+                case "ATTRACTION CREATE" -> createAttraction(parts);
                 case "ATTRACTION DELETE" -> withParameters(parts, 2, () -> attractions.delete(parts[1]));
                 case "ATTRACTION ENTER" -> withParameters(parts, 3, () -> attractions.enter(parts[1], parts[2]));
                 case "ATTRACTION EXIT" -> withParameters(parts, 3, () -> attractions.exit(parts[1], parts[2]));
@@ -153,6 +152,13 @@ public class CommandProcessor {
             groups.removeUserFromAll(user);
         }
         return response;
+    }
+
+    private String createAttraction(String[] p) {
+        if (p.length == 4) {
+            return attractions.create(p[1], p[2], p[3]);
+        }
+        return p.length == 5 ? attractions.create(p[1], p[2], p[3], p[4]) : WRONG_PARAMETERS;
     }
 
     /**

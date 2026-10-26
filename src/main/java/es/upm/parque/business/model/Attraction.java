@@ -5,19 +5,51 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A park attraction with a maximum capacity and the users currently inside it.
+ * A park attraction with a maximum capacity and the users currently inside it. The type parameter
+ * bounds the kind of ticket (access capability) the attraction admits.
+ *
+ * @param <T> access capability accepted by this attraction
  */
-public class Attraction {
+public abstract class Attraction<T extends Admission> {
 
     private final String id;
     private final String name;
     private final int capacity;
+    private final Class<T> admitted;
     private final List<User> present = new ArrayList<>();
 
-    public Attraction(String id, String name, int capacity) {
+    protected Attraction(String id, String name, int capacity, Class<T> admitted) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+        this.admitted = admitted;
+    }
+
+    public abstract AttractionType getType();
+
+    /**
+     * True when the ticket offers the access capability this attraction admits.
+     */
+    public boolean accepts(Admission admission) {
+        return admitted.isInstance(admission);
+    }
+
+    /**
+     * Converts an accepted ticket to the admitted capability.
+     */
+    public T cast(Admission admission) {
+        return admitted.cast(admission);
+    }
+
+    public boolean hasRoomFor(T admission) {
+        return canAdmit(admission.getVisitors());
+    }
+
+    /**
+     * Lets in every user admitted by the ticket.
+     */
+    public void enter(T admission) {
+        admit(admission.getVisitors());
     }
 
     /**

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.parque.Fixtures;
 import es.upm.parque.Park;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.persistence.TextFileAttractionRepository;
 
 class AttractionManagerTest {
@@ -111,12 +112,12 @@ class AttractionManagerTest {
     @Test
     void statusReflectsCurrentState() {
         attractions.create("A01", "Tornado", "20");
-        assertEquals(String.join(NL, "ATTRACTION A01 - Tornado", "Capacity: 20 | Present: 0 | Available: 20",
+        assertEquals(String.join(NL, "ATTRACTION A01 - Tornado", "Type: GENERAL", "Capacity: 20 | Present: 0 | Available: 20",
                 "Users present:", "- none"), attractions.status("A01"));
         attractions.enter("A01", "T001");
         attractions.enter("A01", "TG01");
         attractions.exit("A01", "T001");
-        assertEquals(String.join(NL, "ATTRACTION A01 - Tornado", "Capacity: 20 | Present: 3 | Available: 17",
+        assertEquals(String.join(NL, "ATTRACTION A01 - Tornado", "Type: GENERAL", "Capacity: 20 | Present: 3 | Available: 17",
                 "Users present:", "- U0 Apellido (u0@correo.com)", "- U1 Apellido (u1@correo.com)",
                 "- U2 Apellido (u2@correo.com)"), attractions.status("A01"));
         assertEquals(AttractionManager.ATTRACTION_NOT_FOUND, attractions.status("A99"));
@@ -137,7 +138,7 @@ class AttractionManagerTest {
     void restartRestoresEmptyAttractions() throws IOException {
         attractions.create("A01", "Tornado", "20");
         attractions.enter("A01", "T001");
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
         Park restarted = new Park(dir, LocalDate.of(2026, 10, 15));
         assertTrue(restarted.attractions.find("A01").isEmpty());
         assertEquals("OK ENTERED 1 USERS", restarted.attractions.enter("A01", "T001"));
@@ -149,5 +150,20 @@ class AttractionManagerTest {
         AttractionManager broken = AttractionManager.initialize(new TextFileAttractionRepository(blocked.resolve("a.txt")),
                 park.tickets, park.date);
         assertEquals(UserManager.STORAGE_FAILURE, broken.create("A01", "Tornado", "20"));
+    }
+
+    @Test
+    void typedAttractionsCheckTheTicketKind() {
+        assertEquals(AttractionManager.ATTRACTION_CREATED, attractions.create("A02", "Sillas", "10", "individual"));
+        assertEquals(AttractionManager.ATTRACTION_CREATED, attractions.create("A03", "Barcas", "10", "GROUP"));
+        assertEquals(AttractionManager.ATTRACTION_CREATED, attractions.create("A04", "VIP", "10", "SPECIAL"));
+        assertEquals(AttractionManager.INVALID_TYPE, attractions.create("A05", "Otra", "10", "VIP"));
+        assertEquals(AttractionManager.TYPE_NOT_ACCEPTED, attractions.enter("A02", "TG01"));
+        assertEquals(AttractionManager.TYPE_NOT_ACCEPTED, attractions.enter("A04", "TG01"));
+        assertEquals(AttractionManager.TYPE_NOT_ACCEPTED, attractions.enter("A03", "T001"));
+        assertEquals("OK ENTERED 3 USERS", attractions.enter("A03", "TG01"));
+        assertEquals("OK ENTERED 1 USERS", attractions.enter("A04", "T001"));
+        assertTrue(attractions.status("A03").contains("Type: GROUP"));
+        assertEquals(AttractionType.SPECIAL, new Park(dir, LocalDate.of(2026, 10, 15)).attractions.find("A04").getType());
     }
 }

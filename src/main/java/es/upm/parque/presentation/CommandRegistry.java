@@ -33,7 +33,9 @@ public class CommandRegistry {
                         "Buys one ticket per group member with a discount that depends on the group size.")
                 .register("GROUPTICKET DELETE;Id",
                         "Refunds a group ticket dated after the system date together with its member tickets.")
-                .register("ATTRACTION CREATE;Id;Nombre;Aforo", "Creates an attraction with a maximum capacity.")
+                .register("ATTRACTION CREATE;Id;Nombre;Aforo", "Creates a GENERAL attraction with a maximum capacity.")
+                .register("ATTRACTION CREATE;Id;Nombre;Aforo;Tipo",
+                        "Creates a GENERAL, INDIVIDUAL, GROUP or SPECIAL attraction, by the tickets it admits.")
                 .register("ATTRACTION DELETE;Id", "Deletes an attraction with nobody inside.")
                 .register("ATTRACTION ENTER;IdAtraccion;IdEntrada",
                         "Lets in the users of a ticket valid today if they all fit in the attraction.")
