@@ -34,7 +34,8 @@ class CommandProcessorTest {
     void setUp() {
         manager = new UserManager(new UserStorage(dir.resolve("users.txt")));
         groups = new GroupManager(manager, new GroupStorage(dir.resolve("groups.txt")));
-        tickets = new TicketManager(manager, new TicketStorage(dir.resolve("tickets.txt")));
+        tickets = new TicketManager(manager, groups,
+            new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt")));
         processor = new CommandProcessor(manager, groups, tickets);
     }
 
@@ -91,7 +92,7 @@ class CommandProcessorTest {
         for (String usage : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
-            "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP", "EXIT"}) {
+            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id", "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
         }
         assertFalse(processor.isExitRequested());
@@ -184,7 +185,7 @@ class CommandProcessorTest {
         assertTrue(processor.execute("TICKET DELETE;T001").startsWith("ERROR"));
         processor.execute("SYSTEM DATE;2026-10-16");
         assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
-        assertEquals("12345678Z", tickets.find("T001").getOwnerDni());
+        assertEquals("12345678Z", ((IndividualTicket) tickets.find("T001")).getOwnerDni());
     }
 
     @Test
@@ -225,5 +226,58 @@ class CommandProcessorTest {
             assertTrue(processor.execute("SYSTEM PRICE;" + value).startsWith("ERROR: Invalid price"), value);
         }
         assertEquals(CommandProcessor.INITIAL_PRICE, processor.getCurrentPrice());
+    }
+
+    private void createFamilyG01() {
+        processor.execute(CREATE_ANA);
+        processor.execute("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.execute("USER CREATE;Luis;Ruiz;11111111H;luis@correo.com;Clave3$;600000000;1111222233334444");
+        processor.execute("GROUP CREATE;G01;Familia Garcia");
+        processor.execute("GROUP ADD;G01;ana@correo.com");
+        processor.execute("GROUP ADD;G01;pedro@correo.com");
+        processor.execute("SYSTEM DATE;2026-10-01");
+    }
+
+    @Test
+    void groupTicketLocksGroupAndMembersUntilItsDate() {
+        createFamilyG01();
+        assertEquals("OK GROUP TICKET CREATED -> 80.00", processor.execute("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        assertTrue(processor.execute("GROUP ADD;G01;luis@correo.com").contains("cannot be modified"));
+        assertTrue(processor.execute("GROUP REMOVE;G01;ana@correo.com").contains("cannot be modified"));
+        assertTrue(processor.execute("GROUP DELETE;G01").contains("cannot be modified"));
+        assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").contains("cannot be deleted"));
+        assertTrue(processor.execute("TICKET DELETE;TG01-1").contains("GROUPTICKET DELETE"));
+
+        processor.execute("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.execute("GROUP DELETE;G01").contains("cannot be modified"));
+        assertTrue(processor.execute("GROUPTICKET DELETE;TG01").startsWith("ERROR"));
+
+        processor.execute("SYSTEM DATE;2026-10-16");
+        assertTrue(processor.execute("GROUP ADD;G01;luis@correo.com").startsWith("OK"));
+        assertEquals(2, ((GroupTicket) tickets.find("TG01")).getComponents().size());
+        assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+        assertTrue(processor.execute("GROUP DELETE;G01").startsWith("OK"));
+        assertEquals("G01", ((GroupTicket) tickets.find("TG01")).getGroupId());
+    }
+
+    @Test
+    void futureGroupTicketCanBeDeleted() {
+        createFamilyG01();
+        processor.execute("SYSTEM PRICE;60.00");
+        assertEquals("OK GROUP TICKET CREATED -> 120.00", processor.execute("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        assertEquals("OK: Group ticket TG01 deleted", processor.execute("GROUPTICKET DELETE;TG01"));
+        assertTrue(processor.execute("GROUP DELETE;G01").startsWith("OK"));
+        assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+    }
+
+    @Test
+    void groupTicketErrors() {
+        createFamilyG01();
+        assertTrue(processor.execute("GROUPTICKET CREATE;TG01;G99;2026-10-15").startsWith("ERROR"));
+        assertTrue(processor.execute("GROUPTICKET CREATE;TG01;G01;2026-09-30").startsWith("ERROR"));
+        assertTrue(processor.execute("GROUPTICKET CREATE;TG01;G01").startsWith("ERROR: Expected 3"));
+        assertTrue(processor.execute("GROUPTICKET DELETE;TG01").startsWith("ERROR"));
+        assertTrue(processor.execute("GROUPTICKET LIST").startsWith("ERROR: Unknown command"));
+        assertTrue(tickets.getTickets().isEmpty());
     }
 }

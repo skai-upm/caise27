@@ -14,53 +14,103 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Stores tickets in a text file, one ticket per line: {@code Id;yyyy-MM-dd;Precio;DNI}.
+ * Stores tickets in two text files:
+ * individual tickets as {@code Id;yyyy-MM-dd;Precio;DNI} and group tickets as
+ * {@code Id;yyyy-MM-dd;IdGrupo;PrecioBase;Descuento;Id-1:DNI,Id-2:DNI,...}.
  */
 public class TicketStorage {
 
     private static final String SEPARATOR = ";";
+    private static final String COMPONENT_SEPARATOR = ",";
+    private static final String OWNER_SEPARATOR = ":";
 
-    private final Path file;
+    private final Path ticketsFile;
+    private final Path groupTicketsFile;
 
-    public TicketStorage(Path file) {
-        this.file = file;
+    public TicketStorage(Path ticketsFile, Path groupTicketsFile) {
+        this.ticketsFile = ticketsFile;
+        this.groupTicketsFile = groupTicketsFile;
     }
 
     /**
-     * @param userByDni resolves the owner's DNI to the registered user, or null if it no longer exists
+     * @param userByDni resolves a DNI to the registered user, or null if it no longer exists
+     * @param groupById resolves a group identifier to the group, or null if it no longer exists
      */
-    public List<Ticket> load(Function<String, User> userByDni) {
+    public List<Ticket> load(Function<String, User> userByDni, Function<String, Group> groupById) {
         List<Ticket> tickets = new ArrayList<>();
-        if (!Files.exists(file)) {
-            return tickets;
-        }
-        try {
-            for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
-                String[] f = line.split(SEPARATOR, -1);
-                if (f.length == 4 && !f[0].isBlank()) {
-                    parse(f, userByDni, tickets);
+        for (String line : readLines(ticketsFile)) {
+            String[] f = line.split(SEPARATOR, -1);
+            if (f.length == 4 && !f[0].isBlank()) {
+                try {
+                    tickets.add(new IndividualTicket(f[0], LocalDate.parse(f[1]), new BigDecimal(f[2]), f[3],
+                        userByDni.apply(f[3]), null));
+                } catch (DateTimeParseException | NumberFormatException e) {
+                    // malformed line: skipped
                 }
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot read ticket file " + file, e);
+        }
+        for (String line : readLines(groupTicketsFile)) {
+            String[] f = line.split(SEPARATOR, -1);
+            if (f.length == 6 && !f[0].isBlank()) {
+                try {
+                    tickets.add(parseGroupTicket(f, userByDni, groupById));
+                } catch (DateTimeParseException | IllegalArgumentException e) {
+                    // malformed line: skipped
+                }
+            }
         }
         return tickets;
     }
 
-    private static void parse(String[] f, Function<String, User> userByDni, List<Ticket> tickets) {
-        try {
-            tickets.add(new Ticket(f[0], LocalDate.parse(f[1]), new BigDecimal(f[2]), f[3], userByDni.apply(f[3])));
-        } catch (DateTimeParseException | NumberFormatException e) {
-            // malformed line: skipped
+    private static GroupTicket parseGroupTicket(String[] f, Function<String, User> userByDni,
+            Function<String, Group> groupById) {
+        LocalDate date = LocalDate.parse(f[1]);
+        BigDecimal basePrice = new BigDecimal(f[3]);
+        List<IndividualTicket> components = new ArrayList<>();
+        for (String component : f[5].split(COMPONENT_SEPARATOR)) {
+            String[] c = component.split(OWNER_SEPARATOR, -1);
+            if (c.length != 2) {
+                throw new IllegalArgumentException("Malformed group ticket component " + component);
+            }
+            components.add(new IndividualTicket(c[0], date, basePrice, c[1], userByDni.apply(c[1]), f[0]));
         }
+        return new GroupTicket(f[0], date, f[2], groupById.apply(f[2]), basePrice, Integer.parseInt(f[4]),
+            components);
     }
 
     public void save(Collection<Ticket> tickets) {
-        List<String> lines = new ArrayList<>();
+        List<String> individual = new ArrayList<>();
+        List<String> group = new ArrayList<>();
         for (Ticket t : tickets) {
-            lines.add(String.join(SEPARATOR, t.getId(), t.getDate().toString(), t.getPrice().toPlainString(),
-                t.getOwnerDni()));
+            if (t instanceof IndividualTicket it) {
+                individual.add(String.join(SEPARATOR, it.getId(), it.getDate().toString(),
+                    it.getPrice().toPlainString(), it.getOwnerDni()));
+            } else if (t instanceof GroupTicket gt) {
+                List<String> components = new ArrayList<>();
+                for (IndividualTicket c : gt.getComponents()) {
+                    components.add(c.getId() + OWNER_SEPARATOR + c.getOwnerDni());
+                }
+                group.add(String.join(SEPARATOR, gt.getId(), gt.getDate().toString(), gt.getGroupId(),
+                    gt.getBasePrice().toPlainString(), String.valueOf(gt.getDiscountPercent()),
+                    String.join(COMPONENT_SEPARATOR, components)));
+            }
         }
+        write(ticketsFile, individual);
+        write(groupTicketsFile, group);
+    }
+
+    private static List<String> readLines(Path file) {
+        if (!Files.exists(file)) {
+            return List.of();
+        }
+        try {
+            return Files.readAllLines(file, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot read ticket file " + file, e);
+        }
+    }
+
+    private static void write(Path file, List<String> lines) {
         try {
             Path parent = file.toAbsolutePath().getParent();
             if (parent != null) {

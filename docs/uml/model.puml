@@ -10,6 +10,7 @@ package es.upm.parque {
     {static} ~USERS_FILE : Path
     {static} ~GROUPS_FILE_NAME : String
     {static} ~TICKETS_FILE_NAME : String
+    {static} ~GROUP_TICKETS_FILE_NAME : String
     +{static} main(args : String[]) : void
     ~{static} run(args : String[], stdin : InputStream, out : PrintStream, usersFile : Path) : void
   }
@@ -97,25 +98,47 @@ package es.upm.parque {
   class TicketManager {
     -ticketsById : Map<String, Ticket>
     +create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Ticket
+    +createGroupTicket(id : String, groupId : String, date : LocalDate, today : LocalDate, price : BigDecimal) : GroupTicket
     +delete(id : String, today : LocalDate) : void
+    +deleteGroupTicket(id : String, today : LocalDate) : void
     +hasTicketOnOrAfter(user : User, today : LocalDate) : boolean
+    +isGroupLocked(group : Group, today : LocalDate) : boolean
     +detachOwner(user : User) : void
+    +detachGroup(group : Group) : void
     +find(id : String) : Ticket
   }
 
   class TicketStorage {
-    -file : Path
-    +load(userByDni : Function<String, User>) : List<Ticket>
+    -ticketsFile : Path
+    -groupTicketsFile : Path
+    +load(userByDni : Function<String, User>, groupById : Function<String, Group>) : List<Ticket>
     +save(tickets : Collection<Ticket>) : void
   }
 
-  class Ticket {
+  abstract class Ticket {
     -id : String {readOnly}
     -date : LocalDate {readOnly}
+    +isCurrentOrFuture(today : LocalDate) : boolean
+    +{abstract} getPrice() : BigDecimal
+  }
+
+  class IndividualTicket {
     -price : BigDecimal {readOnly}
     -ownerDni : String {readOnly}
+    -groupTicketId : String {readOnly}
+    +getPrice() : BigDecimal
     +isOwnedBy(user : User) : boolean
     +detachOwner() : void
+  }
+
+  class GroupTicket {
+    -groupId : String {readOnly}
+    -basePrice : BigDecimal {readOnly}
+    -discountPercent : int {readOnly}
+    +{static} discountFor(members : int) : int
+    +getPrice() : BigDecimal
+    +isForGroup(group : Group) : boolean
+    +detachGroup() : void
   }
 }
 
@@ -135,8 +158,13 @@ UserStorage ..> User
 GroupStorage ..> Group
 TicketManager "1" --> "1" TicketStorage : storage
 TicketManager "1" --> "1" UserManager : users
+TicketManager "1" --> "1" GroupManager : groups
 TicketManager "1" o--> "0..*" Ticket : tickets
-Ticket "0..*" --> "0..1" User : owner
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+IndividualTicket "0..*" --> "0..1" User : owner
+GroupTicket "0..*" o--> "0..1" Group : group
+GroupTicket "1" *-- "1..*" IndividualTicket : components
 TicketStorage ..> Ticket
 
 @enduml

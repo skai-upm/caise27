@@ -11,45 +11,84 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class TicketStorageTest {
+
+    private static final LocalDate DATE = LocalDate.of(2026, 10, 15);
 
     @TempDir
     Path dir;
 
     private final User ana =
         new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
+    private final User pedro =
+        new User("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
+    private final Map<String, User> usersByDni = Map.of(ana.getDni(), ana, pedro.getDni(), pedro);
+    private Path ticketsFile;
+    private Path groupTicketsFile;
+    private TicketStorage storage;
 
-    @Test
-    void missingFileLoadsNoTickets() {
-        assertTrue(new TicketStorage(dir.resolve("tickets.txt")).load(dni -> null).isEmpty());
+    @BeforeEach
+    void setUp() {
+        ticketsFile = dir.resolve("tickets.txt");
+        groupTicketsFile = dir.resolve("group_tickets.txt");
+        storage = new TicketStorage(ticketsFile, groupTicketsFile);
     }
 
     @Test
-    void roundTrip() throws IOException {
-        Path file = dir.resolve("tickets.txt");
-        TicketStorage storage = new TicketStorage(file);
-        storage.save(List.of(new Ticket("T001", LocalDate.of(2026, 10, 15), new BigDecimal("40.00"), ana)));
+    void missingFilesLoadNoTickets() {
+        assertTrue(storage.load(dni -> null, id -> null).isEmpty());
+    }
 
-        assertEquals(List.of("T001;2026-10-15;40.00;12345678Z"), Files.readAllLines(file));
+    @Test
+    void individualRoundTrip() throws IOException {
+        storage.save(List.of(new IndividualTicket("T001", DATE, new BigDecimal("40.00"), ana)));
 
-        Ticket loaded = storage.load(dni -> dni.equals("12345678Z") ? ana : null).get(0);
+        assertEquals(List.of("T001;2026-10-15;40.00;12345678Z"), Files.readAllLines(ticketsFile));
+
+        IndividualTicket loaded = (IndividualTicket) storage.load(usersByDni::get, id -> null).get(0);
         assertEquals("T001", loaded.getId());
-        assertEquals(LocalDate.of(2026, 10, 15), loaded.getDate());
+        assertEquals(DATE, loaded.getDate());
         assertEquals(new BigDecimal("40.00"), loaded.getPrice());
         assertSame(ana, loaded.getOwner());
     }
 
     @Test
-    void unresolvedOwnerIsKeptAsHistoryAndMalformedLinesSkipped() throws IOException {
-        Path file = dir.resolve("tickets.txt");
-        Files.write(file, List.of("T001;2026-10-15;40.00;87654321X", "T002;notadate;40.00;12345678Z",
+    void groupRoundTripRestoresGroupAndMembers() throws IOException {
+        Group group = new Group("G01", "Familia");
+        group.addMember(ana);
+        group.addMember(pedro);
+        storage.save(List.of(new GroupTicket("TG01", DATE, group, new BigDecimal("40.00"))));
+
+        assertEquals(List.of("TG01;2026-10-15;G01;40.00;0;TG01-1:12345678Z,TG01-2:87654321X"),
+            Files.readAllLines(groupTicketsFile));
+
+        GroupTicket loaded = (GroupTicket) storage.load(usersByDni::get, Map.of("G01", group)::get).get(0);
+        assertSame(group, loaded.getGroup());
+        assertEquals(new BigDecimal("80.00"), loaded.getPrice());
+        assertSame(ana, loaded.getComponents().get(0).getOwner());
+        assertSame(pedro, loaded.getComponents().get(1).getOwner());
+        assertEquals("TG01", loaded.getComponents().get(1).getGroupTicketId());
+    }
+
+    @Test
+    void historyIsKeptWhenOwnersOrGroupsAreGone() throws IOException {
+        Files.write(ticketsFile, List.of("T001;2026-10-15;40.00;87654321X", "T002;notadate;40.00;12345678Z",
             "T003;2026-10-15;cheap;12345678Z", "short;line"));
-        List<Ticket> loaded = new TicketStorage(file).load(dni -> null);
-        assertEquals(1, loaded.size());
-        assertNull(loaded.get(0).getOwner());
-        assertEquals("87654321X", loaded.get(0).getOwnerDni());
+        Files.write(groupTicketsFile, List.of("TG01;2026-10-15;G09;40.00;10;TG01-1:1,TG01-2:2,TG01-3:3",
+            "TG02;2026-10-15;G01;40.00;0;broken", "TG03;bad"));
+        List<Ticket> loaded = storage.load(dni -> null, id -> null);
+        assertEquals(2, loaded.size());
+        IndividualTicket individual = (IndividualTicket) loaded.get(0);
+        assertNull(individual.getOwner());
+        assertEquals("87654321X", individual.getOwnerDni());
+        GroupTicket group = (GroupTicket) loaded.get(1);
+        assertNull(group.getGroup());
+        assertEquals("G09", group.getGroupId());
+        assertEquals(new BigDecimal("108.00"), group.getPrice());
     }
 }

@@ -98,4 +98,16 @@ class AppTest {
         assertTrue(output.contains("OK TICKET CREATED -> 40.00"), output);
         assertTrue(output.contains("cannot be deleted"), output);
     }
+
+    @Test
+    void groupTicketsSurviveRestart() throws IOException {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], COMMANDS.get(0) + "\n" + COMMANDS.get(2) + "\nSYSTEM DATE;2026-10-01\n"
+            + "GROUP CREATE;G01;Familia\nGROUP ADD;G01;ana@correo.com\nGROUP ADD;G01;pedro@correo.com\n"
+            + "GROUPTICKET CREATE;TG01;G01;2026-10-15\n", users);
+        assertEquals(List.of("TG01;2026-10-15;G01;40.00;0;TG01-1:12345678Z,TG01-2:87654321X"),
+            Files.readAllLines(dir.resolve("group_tickets.txt")));
+        String output = run(new String[0], "SYSTEM DATE;2026-10-01\nGROUP DELETE;G01\n", users);
+        assertTrue(output.contains("cannot be modified"), output);
+    }
 }

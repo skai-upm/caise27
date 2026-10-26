@@ -33,6 +33,8 @@ public class CommandProcessor {
     private static final String USAGE_GROUP_DELETE = "GROUP DELETE;Id";
     private static final String USAGE_TICKET_CREATE = "TICKET CREATE;Id;Correo;yyyy-MM-dd";
     private static final String USAGE_TICKET_DELETE = "TICKET DELETE;Id";
+    private static final String USAGE_GROUPTICKET_CREATE = "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd";
+    private static final String USAGE_GROUPTICKET_DELETE = "GROUPTICKET DELETE;Id";
     private static final String USAGE_SYSTEM_DATE = "SYSTEM DATE;yyyy-MM-dd";
     private static final String USAGE_SYSTEM_PRICE = "SYSTEM PRICE;Importe";
     private static final String USAGE_HELP = "HELP";
@@ -48,6 +50,8 @@ public class CommandProcessor {
         USAGE_GROUP_DELETE,
         USAGE_TICKET_CREATE,
         USAGE_TICKET_DELETE,
+        USAGE_GROUPTICKET_CREATE,
+        USAGE_GROUPTICKET_DELETE,
         USAGE_SYSTEM_DATE,
         USAGE_SYSTEM_PRICE,
         USAGE_HELP,
@@ -128,6 +132,9 @@ public class CommandProcessor {
             if (operation.length == 2 && operation[0].equals("TICKET")) {
                 return executeTicket(operation[1], parts);
             }
+            if (operation.length == 2 && operation[0].equals("GROUPTICKET")) {
+                return executeGroupTicket(operation[1], parts);
+            }
             if (operation.length == 2 && operation[0].equals("SYSTEM")) {
                 return executeSystem(operation[1], parts);
             }
@@ -197,17 +204,22 @@ public class CommandProcessor {
             }
             case "ADD" -> {
                 requireParams(parts, 2, USAGE_GROUP_ADD);
+                requireUnlocked(parts[1]);
                 groups.addMember(parts[1], parts[2]);
                 return ok("User " + parts[2] + " added to group " + parts[1]);
             }
             case "REMOVE" -> {
                 requireParams(parts, 2, USAGE_GROUP_REMOVE);
+                requireUnlocked(parts[1]);
                 groups.removeMember(parts[1], parts[2]);
                 return ok("User " + parts[2] + " removed from group " + parts[1]);
             }
             case "DELETE" -> {
                 requireParams(parts, 1, USAGE_GROUP_DELETE);
+                requireUnlocked(parts[1]);
+                Group group = groups.find(parts[1]);
                 groups.delete(parts[1]);
+                tickets.detachGroup(group);
                 return ok("Group " + parts[1] + " deleted");
             }
             default -> {
@@ -230,6 +242,33 @@ public class CommandProcessor {
             }
             default -> {
                 return error("Unknown command: TICKET " + action);
+            }
+        }
+    }
+
+    private void requireUnlocked(String groupId) {
+        Group group = groups.find(groupId);
+        if (group != null && tickets.isGroupLocked(group, currentDate)) {
+            throw new IllegalArgumentException("Group " + groupId
+                + " cannot be modified: it has group tickets dated on or after " + currentDate);
+        }
+    }
+
+    private String executeGroupTicket(String action, String[] parts) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(parts, 3, USAGE_GROUPTICKET_CREATE);
+                GroupTicket t =
+                    tickets.createGroupTicket(parts[1], parts[2], parseDate(parts[3]), currentDate, currentPrice);
+                return "OK GROUP TICKET CREATED -> " + formatPrice(t.getPrice());
+            }
+            case "DELETE" -> {
+                requireParams(parts, 1, USAGE_GROUPTICKET_DELETE);
+                tickets.deleteGroupTicket(parts[1], currentDate);
+                return ok("Group ticket " + parts[1] + " deleted");
+            }
+            default -> {
+                return error("Unknown command: GROUPTICKET " + action);
             }
         }
     }
