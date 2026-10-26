@@ -1,7 +1,8 @@
 package es.upm.parque.persistence;
 
-import es.upm.parque.business.repository.AttractionRepository;
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
+import es.upm.parque.business.repository.AttractionRepository;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -13,7 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Stores attractions in a text file, one per line: {@code Id;Nombre;Capacidad}. Users present are not stored.
+ * Stores attractions in a text file, one per line: {@code Id;Nombre;Capacidad;Tipo} (lines without a type are
+ * GENERAL attractions). Users present are not stored.
  */
 public class FileAttractionRepository implements AttractionRepository {
     private static final String SEPARATOR = ";";
@@ -25,8 +27,8 @@ public class FileAttractionRepository implements AttractionRepository {
     }
 
     @Override
-    public List<Attraction> load() {
-        List<Attraction> attractions = new ArrayList<>();
+    public List<Attraction<?>> load() {
+        List<Attraction<?>> attractions = new ArrayList<>();
         if (!Files.exists(file)) {
             return attractions;
         }
@@ -38,11 +40,12 @@ public class FileAttractionRepository implements AttractionRepository {
                 }
                 String[] f = line.split(SEPARATOR, -1);
                 try {
-                    if (f.length != 3) {
-                        throw new NumberFormatException();
+                    if (f.length != 3 && f.length != 4) {
+                        throw new IllegalArgumentException();
                     }
-                    attractions.add(new Attraction(f[0], f[1], Integer.parseInt(f[2])));
-                } catch (NumberFormatException e) {
+                    AttractionType type = f.length == 4 ? AttractionType.valueOf(f[3]) : AttractionType.GENERAL;
+                    attractions.add(type.create(f[0], f[1], Integer.parseInt(f[2])));
+                } catch (IllegalArgumentException e) {
                     System.err.println("Ignoring malformed attraction line: " + line);
                 }
             }
@@ -53,14 +56,15 @@ public class FileAttractionRepository implements AttractionRepository {
     }
 
     @Override
-    public void save(List<Attraction> attractions) {
+    public void save(List<Attraction<?>> attractions) {
         try {
             if (file.getParent() != null) {
                 Files.createDirectories(file.getParent());
             }
             try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-                for (Attraction a : attractions) {
-                    writer.write(a.getId() + SEPARATOR + a.getName() + SEPARATOR + a.getCapacity());
+                for (Attraction<?> a : attractions) {
+                    writer.write(String.join(SEPARATOR, a.getId(), a.getName(), Integer.toString(a.getCapacity()),
+                            a.getType().name()));
                     writer.newLine();
                 }
             }

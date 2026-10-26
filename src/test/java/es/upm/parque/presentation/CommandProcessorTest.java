@@ -300,4 +300,26 @@ class CommandProcessorTest {
         processor.process("SYSTEM DATE;2026-10-16");
         assertTrue(processor.process("SPEEDPASS CREATE;T001;1").startsWith("ERROR"));
     }
+
+    @Test
+    void typedAttractionCommands() {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;Amigos");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertTrue(processor.process("ATTRACTION CREATE;A01;Tornado;20").contains("GENERAL"));
+        assertTrue(processor.process("ATTRACTION CREATE;A02;Familiar;30;group").contains("GROUP"));
+        assertTrue(processor.process("ATTRACTION CREATE;A03;Solo;30;INDIVIDUAL").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION CREATE;A04;Magia;30;SPECIAL").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION CREATE;A05;X;30;VIP").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION ENTER;A02;T001").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION ENTER;A02;TG01").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION ENTER;A03;TG01").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION ENTER;A03;T001").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION ENTER;A04;TG01").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION STATUS;A02").contains("Type: GROUP"));
+    }
 }

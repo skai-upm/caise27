@@ -85,10 +85,39 @@ package es.upm.parque.business.model {
   class SpecialPass {
   }
 
-  class Attraction {
+  interface AttractionAccess {
+  }
+
+  interface IndividualAccess {
+  }
+
+  interface GroupAccess {
+  }
+
+  abstract class Attraction<T extends AttractionAccess> {
     id : String
     name : String
     capacity : int
+    acceptedType : Class<T>
+  }
+
+  class GeneralAttraction {
+  }
+
+  class IndividualAttraction {
+  }
+
+  class GroupAttraction {
+  }
+
+  class SpecialAttraction {
+  }
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 
   class SystemDate {
@@ -216,6 +245,19 @@ package es.upm.parque.persistence {
 ' Inheritance
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+AttractionAccess <|-- IndividualAccess
+AttractionAccess <|-- GroupAccess
+AttractionAccess <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction
+note bottom of GeneralAttraction : T = AttractionAccess
+Attraction <|-- IndividualAttraction
+note bottom of IndividualAttraction : T = IndividualAccess
+Attraction <|-- GroupAttraction
+note bottom of GroupAttraction : T = GroupAccess
+Attraction <|-- SpecialAttraction
+note bottom of SpecialAttraction : T = IndividualAccess
 
 ' Associations, aggregations and compositions (named after the owning field)
 CommandProcessor x--> "1" UserController : userController
@@ -293,6 +335,7 @@ App ..> FileTicketRepository
 App ..> FileAttractionRepository
 App ..> FilePassRepository
 DefaultInvoiceBuilder ..> Invoice
+Attraction ..> AttractionType
 CommandProcessor ..> UserField
 UserController ..> UserField
 UserController ..> UserValidator

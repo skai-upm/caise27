@@ -7,6 +7,7 @@ import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.Invoice;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SpecialPass;
@@ -211,8 +212,11 @@ public class CommandProcessor {
     private String processAttraction(String action, String[] p) {
         switch (action) {
             case "CREATE" -> {
-                requireParams(p, 3, "ATTRACTION CREATE;Id;Nombre;Capacidad");
-                return "OK ATTRACTION CREATED -> " + attractionController.create(p[1], p[2], parseCapacity(p[3]));
+                if (p.length != 4 && p.length != 5) {
+                    requireParams(p, 4, "ATTRACTION CREATE;Id;Nombre;Capacidad[;Tipo]");
+                }
+                AttractionType type = p.length == 5 ? parseAttractionType(p[4]) : AttractionType.GENERAL;
+                return "OK ATTRACTION CREATED -> " + attractionController.create(p[1], p[2], parseCapacity(p[3]), type);
             }
             case "DELETE" -> {
                 requireParams(p, 1, "ATTRACTION DELETE;Id");
@@ -295,6 +299,16 @@ public class CommandProcessor {
                     "invalid invoice recipient '" + recipientType + "': use USER or GROUP");
         };
         return "OK INVOICE CREATED" + System.lineSeparator() + invoice.format();
+    }
+
+    private static AttractionType parseAttractionType(String text) {
+        for (AttractionType type : AttractionType.values()) {
+            if (type.name().equals(text.trim().toUpperCase())) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("invalid attraction type '" + text + "': use GENERAL, INDIVIDUAL, GROUP or"
+                + " SPECIAL");
     }
 
     private static int parseCapacity(String text) {

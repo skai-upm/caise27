@@ -1,6 +1,7 @@
 package es.upm.parque.business.controller;
 
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
@@ -19,7 +20,7 @@ public class AttractionController {
     private AttractionRepository repository;
     private TicketController ticketController;
     private SystemDate systemDate;
-    private final List<Attraction> attractions = new ArrayList<>();
+    private final List<Attraction<?>> attractions = new ArrayList<>();
 
     private AttractionController() {
     }
@@ -41,7 +42,7 @@ public class AttractionController {
         return this;
     }
 
-    public Attraction create(String id, String name, int capacity) {
+    public Attraction<?> create(String id, String name, int capacity, AttractionType type) {
         if (!UserValidator.isNotBlank(id)) {
             throw new IllegalArgumentException("the attraction identifier cannot be empty");
         }
@@ -54,14 +55,14 @@ public class AttractionController {
         if (findById(id) != null) {
             throw new IllegalArgumentException("attraction " + id + " already exists");
         }
-        Attraction attraction = new Attraction(id, name, capacity);
+        Attraction<?> attraction = type.create(id, name, capacity);
         attractions.add(attraction);
         repository.save(attractions);
         return attraction;
     }
 
-    public Attraction delete(String id) {
-        Attraction attraction = require(id);
+    public Attraction<?> delete(String id) {
+        Attraction<?> attraction = require(id);
         if (!attraction.getPresent().isEmpty()) {
             throw new IllegalArgumentException("attraction " + id + " still has users inside");
         }
@@ -70,39 +71,40 @@ public class AttractionController {
         return attraction;
     }
 
-    public Attraction enter(String attractionId, String ticketId) {
-        Attraction attraction = require(attractionId);
+    public Attraction<?> enter(String attractionId, String ticketId) {
+        Attraction<?> attraction = require(attractionId);
         Ticket ticket = requireTicket(ticketId);
         if (!ticket.getDate().equals(systemDate.get())) {
             throw new IllegalArgumentException("ticket " + ticketId + " is for " + ticket.getDate()
                     + " and is not valid on " + systemDate.get());
         }
-        attraction.enter(ticket);
+        attraction.admit(ticket);
         return attraction;
     }
 
-    public Attraction exit(String attractionId, String ticketId) {
-        Attraction attraction = require(attractionId);
+    public Attraction<?> exit(String attractionId, String ticketId) {
+        Attraction<?> attraction = require(attractionId);
         attraction.exit(requireTicket(ticketId));
         return attraction;
     }
 
     public String status(String id) {
-        Attraction a = require(id);
+        Attraction<?> a = require(id);
         String nl = System.lineSeparator();
         StringBuilder users = new StringBuilder();
         for (User u : a.getPresent()) {
             users.append(users.length() == 0 ? "" : ", ").append(u);
         }
         return "Attraction " + a.getId() + " - " + a.getName() + nl
+                + "  Type: " + a.getType() + nl
                 + "  Capacity: " + a.getCapacity() + nl
                 + "  Present: " + a.getPresent().size() + nl
                 + "  Available: " + a.getAvailable() + nl
                 + "  Users present: " + (users.length() == 0 ? "none" : users);
     }
 
-    public Attraction findById(String id) {
-        for (Attraction a : attractions) {
+    public Attraction<?> findById(String id) {
+        for (Attraction<?> a : attractions) {
             if (a.getId().equals(id)) {
                 return a;
             }
@@ -110,12 +112,12 @@ public class AttractionController {
         return null;
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         return List.copyOf(attractions);
     }
 
-    private Attraction require(String id) {
-        Attraction attraction = findById(id);
+    private Attraction<?> require(String id) {
+        Attraction<?> attraction = findById(id);
         if (attraction == null) {
             throw new IllegalArgumentException("attraction " + id + " does not exist");
         }

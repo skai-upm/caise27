@@ -49,7 +49,10 @@ public class CommandCatalog {
                         "Buys the ticket's only Special Pass, costing the same as the ticket.")
                 .register("SPECIALPASS DELETE;IdPase",
                         "Refunds an unused Special Pass if its ticket date is after the system date.")
-                .register("ATTRACTION CREATE;Id;Nombre;Capacidad", "Creates an attraction with a maximum capacity.")
+                .register("ATTRACTION CREATE;Id;Nombre;Capacidad",
+                        "Creates a GENERAL attraction with a maximum capacity.")
+                .register("ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo",
+                        "Creates an attraction of type GENERAL (any ticket), INDIVIDUAL, GROUP or SPECIAL.")
                 .register("ATTRACTION DELETE;Id", "Deletes an attraction that has nobody inside.")
                 .register("ATTRACTION ENTER;IdAtraccion;IdEntrada",
                         "Lets the ticket's users in if the ticket is for today and there is room for all of them.")

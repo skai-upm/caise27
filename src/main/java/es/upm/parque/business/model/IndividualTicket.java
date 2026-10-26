@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * A ticket for one user, with the price paid for it. It may carry several SpeedPasses and at most one Special Pass.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
     private final User user;
     private final BigDecimal price;
     private final List<SpeedPass> speedPasses = new ArrayList<>();
@@ -21,6 +21,7 @@ public class IndividualTicket extends Ticket {
         this.price = price;
     }
 
+    @Override
     public User getUser() {
         return user;
     }

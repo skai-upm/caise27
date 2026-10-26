@@ -33,7 +33,7 @@ class AttractionTest {
 
     @Test
     void individualAndGroupEntryUseTheSameLogic() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         a.enter(new IndividualTicket("T001", DAY, user(1), PRICE));
         a.enter(groupTicket(3));
         assertEquals(4, a.getPresent().size());
@@ -42,7 +42,7 @@ class AttractionTest {
 
     @Test
     void groupEntryIsAtomic() {
-        Attraction a = new Attraction("A01", "Tornado", 4);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 4);
         a.enter(new IndividualTicket("T001", DAY, user(1), PRICE));
         assertThrows(IllegalArgumentException.class, () -> a.enter(groupTicket(4)));
         assertEquals(1, a.getPresent().size());
@@ -54,7 +54,7 @@ class AttractionTest {
 
     @Test
     void userCannotEnterTwiceAndExitFreesPlaces() {
-        Attraction a = new Attraction("A01", "Tornado", 5);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 5);
         IndividualTicket t = new IndividualTicket("T001", DAY, user(1), PRICE);
         a.enter(t);
         assertThrows(IllegalArgumentException.class, () -> a.enter(t));
@@ -64,5 +64,39 @@ class AttractionTest {
         assertEquals(4, a.getAvailable());
         assertThrows(IllegalArgumentException.class, () -> a.exit(gt));
         assertTrue(a.getPresent().contains(t.getUser()));
+    }
+
+    @Test
+    void typesRestrictTheAcceptedTickets() {
+        IndividualTicket individual = new IndividualTicket("T001", DAY, user(1), PRICE);
+        GroupTicket group = groupTicket(2);
+        Attraction<?> general = AttractionType.GENERAL.create("A1", "G", 10);
+        Attraction<?> onlyIndividual = AttractionType.INDIVIDUAL.create("A2", "I", 10);
+        Attraction<?> onlyGroup = AttractionType.GROUP.create("A3", "Gr", 10);
+        Attraction<?> special = AttractionType.SPECIAL.create("A4", "S", 10);
+        general.admit(individual);
+        general.admit(group);
+        assertEquals(3, general.getPresent().size());
+        onlyIndividual.admit(individual);
+        assertThrows(IllegalArgumentException.class, () -> onlyIndividual.admit(group));
+        onlyGroup.admit(group);
+        assertThrows(IllegalArgumentException.class, () -> onlyGroup.admit(individual));
+        special.admit(individual);
+        assertThrows(IllegalArgumentException.class, () -> special.admit(group));
+        assertEquals(1, special.getPresent().size());
+        assertEquals(AttractionType.SPECIAL, special.getType());
+        assertTrue(special instanceof SpecialAttraction);
+    }
+
+    @Test
+    void typedEntryAcceptsTheBoundCapability() {
+        IndividualAttraction a = new IndividualAttraction("A2", "I", 1);
+        IndividualAccess access = new IndividualTicket("T001", DAY, user(1), PRICE);
+        a.enter(access);
+        GroupAttraction g = new GroupAttraction("A3", "G", 5);
+        GroupAccess groupAccess = groupTicket(3);
+        g.enter(groupAccess);
+        assertEquals(3, g.getPresent().size());
+        assertEquals(1, g.exit(new IndividualTicket("X", DAY, groupAccess.getUsers().get(0), PRICE)));
     }
 }

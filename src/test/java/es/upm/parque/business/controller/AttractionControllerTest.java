@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileAttractionRepository;
@@ -50,16 +51,16 @@ class AttractionControllerTest {
 
     @Test
     void createValidatesData() {
-        attractions.create("A01", "Tornado", 20);
-        assertThrows(IllegalArgumentException.class, () -> attractions.create("A01", "Otra", 5));
-        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", "Otra", 0));
-        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", " ", 5));
+        attractions.create("A01", "Tornado", 20, AttractionType.GENERAL);
+        assertThrows(IllegalArgumentException.class, () -> attractions.create("A01", "Otra", 5, AttractionType.GENERAL));
+        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", "Otra", 0, AttractionType.GENERAL));
+        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", " ", 5, AttractionType.GENERAL));
         assertEquals(1, attractions.getAttractions().size());
     }
 
     @Test
     void entryOnlyOnTheTicketDateAndExitWithoutDateCheck() {
-        attractions.create("A01", "Tornado", 20);
+        attractions.create("A01", "Tornado", 20, AttractionType.GENERAL);
         assertThrows(IllegalArgumentException.class, () -> attractions.enter("A01", "T001"));
         date.set(OCT_15);
         attractions.enter("A01", "T001");
@@ -70,7 +71,7 @@ class AttractionControllerTest {
 
     @Test
     void deleteRequiresEmptyAttraction() {
-        attractions.create("A01", "Tornado", 20);
+        attractions.create("A01", "Tornado", 20, AttractionType.GENERAL);
         date.set(OCT_15);
         attractions.enter("A01", "T001");
         assertThrows(IllegalArgumentException.class, () -> attractions.delete("A01"));
@@ -81,7 +82,7 @@ class AttractionControllerTest {
 
     @Test
     void statusShowsAllInformation() {
-        attractions.create("A01", "Tornado", 20);
+        attractions.create("A01", "Tornado", 20, AttractionType.GENERAL);
         date.set(OCT_15);
         attractions.enter("A01", "T001");
         String status = attractions.status("A01");
@@ -91,12 +92,21 @@ class AttractionControllerTest {
 
     @Test
     void attractionsAreRestoredEmpty() {
-        attractions.create("A01", "Tornado", 20);
+        attractions.create("A01", "Tornado", 20, AttractionType.GENERAL);
         date.set(OCT_15);
         attractions.enter("A01", "T001");
         Attraction restored = newController().findById("A01");
         assertEquals("Tornado", restored.getName());
         assertEquals(20, restored.getCapacity());
         assertEquals(0, restored.getPresent().size());
+    }
+
+    @Test
+    void typeIsShownAndPersisted() throws Exception {
+        attractions.create("A01", "Tornado", 20, AttractionType.SPECIAL);
+        assertTrue(attractions.status("A01").contains("Type: SPECIAL"));
+        assertEquals(AttractionType.SPECIAL, newController().findById("A01").getType());
+        java.nio.file.Files.writeString(dir.resolve("attractions.txt"), "A09;Antigua;5\n");
+        assertEquals(AttractionType.GENERAL, newController().findById("A09").getType());
     }
 }
