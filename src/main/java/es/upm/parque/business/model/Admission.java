@@ -12,6 +12,9 @@ public interface Admission {
     /** @return the registered users this admission lets in */
     List<User> getAdmittedUsers();
 
+    /** @return the individual tickets behind this admission (the ticket itself or the tickets of a group) */
+    List<IndividualAccess> getIndividualAccesses();
+
     /** @return true if the admission can be used on {@code day} */
     boolean isValidOn(LocalDate day);
 }

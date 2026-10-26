@@ -7,4 +7,7 @@ public interface IndividualAccess extends Admission {
 
     /** @return the Special Pass of the ticket (in any status), or null if none was bought */
     SpecialPass getSpecialPass();
+
+    /** @return the first AVAILABLE SpeedPass of the ticket, or null if it has none */
+    SpeedPass findAvailableSpeedPass();
 }

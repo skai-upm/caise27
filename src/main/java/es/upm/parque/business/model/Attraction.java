@@ -57,19 +57,26 @@ public class Attraction<T extends Admission> {
         return acceptedType.isInstance(admission);
     }
 
+    /** Normal entry, without SpeedPasses. */
+    public EntryResult enter(Admission admission, LocalDate today) {
+        return enter(admission, today, false);
+    }
+
     /**
-     * Lets in every user of the admission, or nobody if any rule fails.
+     * Lets in every user of the admission, or nobody if any rule fails. With {@code speed}, one available
+     * SpeedPass of every individual ticket behind the admission is consumed. Passes are consumed only after
+     * every rule has been checked, so a failed entry consumes nothing.
      *
      * @throws IllegalArgumentException describing the violated rule
      */
-    public void enter(Admission admission, LocalDate today) {
+    public EntryResult enter(Admission admission, LocalDate today, boolean speed) {
         if (!admits(admission)) {
             throw new IllegalArgumentException("Attraction " + id + " (" + type + ") does not admit this kind of ticket");
         }
-        enterAdmitted(acceptedType.cast(admission), today);
+        return enterAdmitted(acceptedType.cast(admission), today, speed);
     }
 
-    private void enterAdmitted(T admission, LocalDate today) {
+    private EntryResult enterAdmitted(T admission, LocalDate today, boolean speed) {
         if (!admission.isValidOn(today)) {
             throw new IllegalArgumentException("The ticket is not valid on " + today);
         }
@@ -87,8 +94,28 @@ public class Attraction<T extends Admission> {
                 + " users, " + getAvailable() + " places available");
         }
         checkAccess(admission);
+        List<Pass> toConsume = new ArrayList<>(passesToConsume(admission));
+        if (speed) {
+            toConsume.addAll(speedPassesFor(admission));
+        }
         present.addAll(users);
-        onEntry(admission);
+        toConsume.forEach(Pass::consume);
+        return new EntryResult(users.size(), toConsume);
+    }
+
+    private List<SpeedPass> speedPassesFor(T admission) {
+        if (!allowsSpeed()) {
+            throw new IllegalArgumentException("Attraction " + id + " (" + type + ") does not accept SPEED");
+        }
+        List<SpeedPass> passes = new ArrayList<>();
+        for (IndividualAccess ticket : admission.getIndividualAccesses()) {
+            SpeedPass pass = ticket.findAvailableSpeedPass();
+            if (pass == null) {
+                throw new IllegalArgumentException("A ticket of this entry has no available SpeedPass");
+            }
+            passes.add(pass);
+        }
+        return passes;
     }
 
     /** Extra access rule of a specific attraction kind; it must not change any state. */
@@ -96,9 +123,14 @@ public class Attraction<T extends Admission> {
         // no extra rule by default
     }
 
-    /** Effect of a successful entry for a specific attraction kind. */
-    protected void onEntry(T admission) {
-        // no extra effect by default
+    /** Passes that a specific attraction kind consumes on every successful entry. */
+    protected List<Pass> passesToConsume(T admission) {
+        return List.of();
+    }
+
+    /** @return whether entries may use the SPEED option */
+    protected boolean allowsSpeed() {
+        return true;
     }
 
     /**

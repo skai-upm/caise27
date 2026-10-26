@@ -67,7 +67,12 @@ public final class CommandCatalog {
         "ATTRACTION DELETE;Id", "Deletes an attraction that has nobody inside.");
     public static final CommandInfo ATTRACTION_ENTER = new CommandInfo(
         "ATTRACTION ENTER;Id;IdTicket",
-        "Lets in the users of a ticket valid on the system date; all of them enter or none if capacity is short.");
+        "Lets in the users of a ticket valid on the system date; all of them enter or none if capacity is short. "
+            + "At SPECIAL attractions the Special Pass of the ticket is consumed.");
+    public static final CommandInfo ATTRACTION_ENTER_SPEED = new CommandInfo(
+        "ATTRACTION ENTER;Id;IdTicket;SPEED",
+        "Enters using one available SpeedPass per person (every member of a group ticket needs one); nobody "
+            + "enters and nothing is consumed if any check fails. Not accepted at SPECIAL attractions.");
     public static final CommandInfo ATTRACTION_EXIT = new CommandInfo(
         "ATTRACTION EXIT;Id;IdTicket", "Lets out the users of the ticket who are inside, freeing their places.");
     public static final CommandInfo ATTRACTION_STATUS = new CommandInfo(
@@ -88,7 +93,8 @@ public final class CommandCatalog {
     private static final List<CommandInfo> ALL = List.of(USER_CREATE, USER_DELETE, USER_UPDATE, GROUP_CREATE,
         GROUP_ADD, GROUP_REMOVE, GROUP_DELETE, TICKET_CREATE, TICKET_DELETE, GROUPTICKET_CREATE, GROUPTICKET_DELETE,
         SPEEDPASS_CREATE, SPEEDPASS_DELETE, SPECIALPASS_CREATE, SPECIALPASS_DELETE, ATTRACTION_CREATE,
-        ATTRACTION_CREATE_TYPED, ATTRACTION_DELETE, ATTRACTION_ENTER, ATTRACTION_EXIT, ATTRACTION_STATUS, INVOICE_USER,
+        ATTRACTION_CREATE_TYPED, ATTRACTION_DELETE, ATTRACTION_ENTER, ATTRACTION_ENTER_SPEED,
+        ATTRACTION_EXIT, ATTRACTION_STATUS, INVOICE_USER,
         INVOICE_GROUP, SYSTEM_DATE, SYSTEM_PRICE, HELP, HELP_EXTENDED, EXIT);
 
     private CommandCatalog() {

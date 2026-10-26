@@ -3,6 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.model.Admission;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.AttractionType;
+import es.upm.parque.business.model.EntryResult;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
@@ -181,11 +182,15 @@ public class ParkController {
         attractions.delete(id);
     }
 
-    /** @return the number of users who entered */
-    public int enterAttraction(String attractionId, String ticketId) {
-        Admission admission = requireAdmission(ticketId);
-        attractions.enter(attractionId, admission, currentDate);
-        return admission.getAdmittedUsers().size();
+    /**
+     * Lets the users of a ticket into an attraction, optionally using SpeedPasses; consumed passes are saved.
+     */
+    public EntryResult enterAttraction(String attractionId, String ticketId, boolean speed) {
+        EntryResult result = attractions.enter(attractionId, requireAdmission(ticketId), currentDate, speed);
+        if (!result.consumedPasses().isEmpty()) {
+            tickets.recordPassUsage();
+        }
+        return result;
     }
 
     /** @return the number of users who left */

@@ -146,4 +146,64 @@ class AttractionTest {
         assertThrows(IllegalArgumentException.class, () -> special.enter(second, DAY));
         assertEquals(PassStatus.AVAILABLE, pass.getStatus());
     }
+
+    @Test
+    void individualSpeedEntryConsumesExactlyOneSpeedPass() {
+        Attraction<?> a = AttractionType.INDIVIDUAL.create("A03", "Noria", 10);
+        IndividualTicket t = new IndividualTicket("T001", DAY, PRICE, user(1));
+        List<SpeedPass> passes = t.addSpeedPasses(10);
+        EntryResult result = a.enter(t, DAY, true);
+        assertEquals(1, result.usersEntered());
+        assertEquals(List.of(passes.get(0)), result.consumedPasses());
+        assertEquals(PassStatus.CONSUMED, passes.get(0).getStatus());
+        assertEquals(PassStatus.AVAILABLE, passes.get(1).getStatus());
+    }
+
+    @Test
+    void normalEntryConsumesNothing() {
+        Attraction<?> a = AttractionType.GENERAL.create("A01", "Tornado", 10);
+        IndividualTicket t = new IndividualTicket("T001", DAY, PRICE, user(1));
+        SpeedPass pass = t.addSpeedPasses(1).get(0);
+        assertTrue(a.enter(t, DAY).consumedPasses().isEmpty());
+        assertEquals(PassStatus.AVAILABLE, pass.getStatus());
+    }
+
+    @Test
+    void groupSpeedEntryConsumesOnePerMemberAtomically() {
+        GroupTicket group = groupTicket("TG01", 2);
+        SpeedPass first = group.getComponents().get(0).addSpeedPasses(1).get(0);
+        Attraction<?> a = AttractionType.GROUP.create("A02", "Carrusel", 10);
+        assertThrows(IllegalArgumentException.class, () -> a.enter(group, DAY, true));
+        assertEquals(PassStatus.AVAILABLE, first.getStatus());
+        assertTrue(a.getPresent().isEmpty());
+
+        SpeedPass second = group.getComponents().get(1).addSpeedPasses(1).get(0);
+        EntryResult result = a.enter(group, DAY, true);
+        assertEquals(2, result.usersEntered());
+        assertEquals(List.of(first, second), result.consumedPasses());
+        assertEquals(PassStatus.CONSUMED, second.getStatus());
+    }
+
+    @Test
+    void failedSpeedEntryConsumesNothing() {
+        Attraction<?> a = AttractionType.GENERAL.create("A01", "Tornado", 1);
+        a.enter(new IndividualTicket("T009", DAY, PRICE, user(9)), DAY);
+        IndividualTicket t = new IndividualTicket("T001", DAY, PRICE, user(1));
+        SpeedPass pass = t.addSpeedPasses(1).get(0);
+        assertThrows(IllegalArgumentException.class, () -> a.enter(t, DAY, true));
+        assertEquals(PassStatus.AVAILABLE, pass.getStatus());
+    }
+
+    @Test
+    void specialAttractionRejectsSpeedAndReportsSpecialPass() {
+        Attraction<?> special = AttractionType.SPECIAL.create("A04", "VIP", 10);
+        IndividualTicket t = new IndividualTicket("T001", DAY, PRICE, user(1));
+        SpecialPass pass = t.addSpecialPass();
+        SpeedPass speed = t.addSpeedPasses(1).get(0);
+        assertThrows(IllegalArgumentException.class, () -> special.enter(t, DAY, true));
+        assertEquals(PassStatus.AVAILABLE, pass.getStatus());
+        assertEquals(PassStatus.AVAILABLE, speed.getStatus());
+        assertTrue(special.getPresent().isEmpty());
+        assertEquals(List.of(pass), special.enter(t, DAY, false).consumedPasses());
+    }
 }

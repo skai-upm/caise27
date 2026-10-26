@@ -3,6 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.model.Admission;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.AttractionType;
+import es.upm.parque.business.model.EntryResult;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserValidator;
 import es.upm.parque.persistence.AttractionRepository;
@@ -73,8 +74,8 @@ public class AttractionManager {
         persist();
     }
 
-    public void enter(String id, Admission admission, LocalDate today) {
-        require(id).enter(admission, today);
+    public EntryResult enter(String id, Admission admission, LocalDate today, boolean speed) {
+        return require(id).enter(admission, today, speed);
     }
 
     public int exit(String id, Admission admission) {

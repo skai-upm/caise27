@@ -50,7 +50,7 @@ class AttractionManagerTest {
 
     @Test
     void deleteOnlyEmptyAttractions() {
-        attractions.enter("A01", new IndividualTicket("T001", DAY, BigDecimal.TEN, ana), DAY);
+        attractions.enter("A01", new IndividualTicket("T001", DAY, BigDecimal.TEN, ana), DAY, false);
         assertThrows(IllegalArgumentException.class, () -> attractions.delete("A01"));
         attractions.removeUserEverywhere(ana);
         attractions.delete("A01");
@@ -61,13 +61,13 @@ class AttractionManagerTest {
     @Test
     void unknownAttractionIsReported() {
         IndividualTicket t = new IndividualTicket("T001", DAY, BigDecimal.TEN, ana);
-        assertThrows(IllegalArgumentException.class, () -> attractions.enter("A99", t, DAY));
+        assertThrows(IllegalArgumentException.class, () -> attractions.enter("A99", t, DAY, false));
         assertThrows(IllegalArgumentException.class, () -> attractions.exit("A99", t));
     }
 
     @Test
     void restartKeepsDefinitionsButStartsEmpty() throws IOException {
-        attractions.enter("A01", new IndividualTicket("T001", DAY, BigDecimal.TEN, ana), DAY);
+        attractions.enter("A01", new IndividualTicket("T001", DAY, BigDecimal.TEN, ana), DAY, false);
         assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
         AttractionManager reloaded = AttractionManager.getInstance().configure(new AttractionStorage(dir.resolve("attractions.txt")));
         Attraction<?> a = reloaded.find("A01");

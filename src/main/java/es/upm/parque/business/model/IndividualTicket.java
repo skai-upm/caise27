@@ -85,6 +85,21 @@ public class IndividualTicket extends Ticket implements IndividualAccess {
         return passes;
     }
 
+    @Override
+    public List<IndividualAccess> getIndividualAccesses() {
+        return List.of(this);
+    }
+
+    @Override
+    public SpeedPass findAvailableSpeedPass() {
+        for (SpeedPass pass : speedPasses) {
+            if (pass.isAvailable()) {
+                return pass;
+            }
+        }
+        return null;
+    }
+
     /** Price of one SpeedPass: 20% of the price stored in this ticket. */
     public BigDecimal getSpeedPassPrice() {
         return price.multiply(SPEED_PASS_RATE).setScale(2, RoundingMode.HALF_UP);

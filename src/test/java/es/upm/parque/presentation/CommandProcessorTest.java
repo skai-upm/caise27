@@ -113,7 +113,7 @@ class CommandProcessorTest {
             "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
             "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id", "SPEEDPASS CREATE;IdTicket;Cantidad", "SPEEDPASS DELETE;IdPase",
             "SPECIALPASS CREATE;IdTicket", "SPECIALPASS DELETE;IdPase", "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo", "ATTRACTION DELETE;Id",
-            "ATTRACTION ENTER;Id;IdTicket", "ATTRACTION EXIT;Id;IdTicket", "ATTRACTION STATUS;Id", "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo",
+            "ATTRACTION ENTER;Id;IdTicket", "ATTRACTION ENTER;Id;IdTicket;SPEED", "ATTRACTION EXIT;Id;IdTicket", "ATTRACTION STATUS;Id", "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo",
             "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP EXTENDED", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
         }
@@ -473,5 +473,32 @@ class CommandProcessorTest {
         assertTrue(processor.execute("ATTRACTION ENTER;A04;T001").startsWith("OK"));
         assertTrue(processor.execute("ATTRACTION STATUS;A04").startsWith("Attraction A04 - VIP (SPECIAL)"));
         assertTrue(processor.execute("SPECIALPASS DELETE;T001-SPECIAL").startsWith("ERROR"));
+    }
+
+    @Test
+    void speedEntriesReportConsumption() {
+        createFamilyG01();
+        processor.execute("SYSTEM DATE;2026-10-15");
+        processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.execute("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.execute("ATTRACTION CREATE;A01;Tornado;20");
+        processor.execute("ATTRACTION CREATE;A02;Carrusel;20;GROUP");
+        processor.execute("ATTRACTION CREATE;A04;VIP;20;SPECIAL");
+        processor.execute("SPEEDPASS CREATE;T001;10");
+        processor.execute("SPEEDPASS CREATE;TG01-1;1");
+
+        assertTrue(processor.execute("ATTRACTION ENTER;A01;T001;FAST").startsWith("ERROR: Unknown entry option"));
+        assertEquals("OK: 1 user(s) entered attraction A01; consumed SpeedPass T001-S1",
+            processor.execute("ATTRACTION ENTER;A01;T001;speed"));
+        assertTrue(processor.execute("ATTRACTION ENTER;A02;TG01;SPEED").contains("no available SpeedPass"));
+        processor.execute("SPEEDPASS CREATE;TG01-2;1");
+        assertEquals("OK: 2 user(s) entered attraction A02; consumed SpeedPass TG01-1-S1, SpeedPass TG01-2-S1",
+            processor.execute("ATTRACTION ENTER;A02;TG01;SPEED"));
+
+        processor.execute("SPECIALPASS CREATE;T001");
+        assertTrue(processor.execute("ATTRACTION ENTER;A04;T001;SPEED").contains("does not accept SPEED"));
+        assertEquals("OK: 1 user(s) entered attraction A04; consumed SpecialPass T001-SPECIAL",
+            processor.execute("ATTRACTION ENTER;A04;T001"));
+        assertTrue(processor.execute("ATTRACTION ENTER;A01;T001;SPEED;X").startsWith("ERROR: Expected 2"));
     }
 }

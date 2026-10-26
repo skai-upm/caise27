@@ -2,6 +2,7 @@ package es.upm.parque.presentation;
 
 import es.upm.parque.business.controller.ParkController;
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.EntryResult;
 import es.upm.parque.business.model.Invoice;
 import es.upm.parque.business.model.InvoiceLine;
 import es.upm.parque.business.model.InvoiceSection;
@@ -276,6 +277,17 @@ public class CommandProcessor {
         }
     }
 
+    private static String consumed(EntryResult result) {
+        if (result.consumedPasses().isEmpty()) {
+            return "";
+        }
+        List<String> names = new ArrayList<>();
+        for (Pass p : result.consumedPasses()) {
+            names.add(p.getTypeName() + " " + p.getId());
+        }
+        return "; consumed " + String.join(", ", names);
+    }
+
     private static String refunded(Pass pass) {
         return ok(pass.getTypeName() + " " + pass.getId() + " refunded -> " + formatPrice(pass.getPrice()));
     }
@@ -304,9 +316,16 @@ public class CommandProcessor {
                 return ok("Attraction " + parts[1] + " deleted");
             }
             case "ENTER" -> {
-                requireParams(parts, 2, CommandCatalog.ATTRACTION_ENTER.syntax());
-                int entered = park.enterAttraction(parts[1], parts[2]);
-                return ok(entered + " user(s) entered attraction " + parts[1]);
+                if (parts.length != 4) {
+                    requireParams(parts, 2, CommandCatalog.ATTRACTION_ENTER.syntax() + " | "
+                        + CommandCatalog.ATTRACTION_ENTER_SPEED.syntax());
+                }
+                boolean speed = parts.length == 4;
+                if (speed && !parts[3].trim().equalsIgnoreCase("SPEED")) {
+                    return error("Unknown entry option " + parts[3] + ". Expected SPEED");
+                }
+                EntryResult result = park.enterAttraction(parts[1], parts[2], speed);
+                return ok(result.usersEntered() + " user(s) entered attraction " + parts[1] + consumed(result));
             }
             case "EXIT" -> {
                 requireParams(parts, 2, CommandCatalog.ATTRACTION_EXIT.syntax());

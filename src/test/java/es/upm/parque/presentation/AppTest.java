@@ -160,4 +160,15 @@ class AppTest {
         assertEquals(1, Files.readAllLines(dir.resolve("data/users.txt")).size());
         assertFalse(Files.exists(dir.resolve("tmp")));
     }
+
+    @Test
+    void consumedPassesSurviveRestart() throws IOException {
+        Path users = dir;
+        run(new String[0], COMMANDS.get(0) + "\nSYSTEM DATE;2026-10-15\nTICKET CREATE;T001;ana@correo.com;2026-10-16\n"
+            + "SPEEDPASS CREATE;T001;1\nATTRACTION CREATE;A01;Tornado;5\nSYSTEM DATE;2026-10-16\n"
+            + "ATTRACTION ENTER;A01;T001;SPEED\n", users);
+        assertTrue(Files.readAllLines(dir.resolve("passes.txt")).get(0).endsWith(";CONSUMED"));
+        String output = run(new String[0], "SYSTEM DATE;2026-10-01\nSPEEDPASS DELETE;T001-S1\n", users);
+        assertTrue(output.contains("CONSUMED, not AVAILABLE"), output);
+    }
 }

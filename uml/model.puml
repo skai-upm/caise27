@@ -122,6 +122,10 @@ package es.upm.parque.business.model {
 
   class SpecialAttraction
 
+  class EntryResult {
+    - usersEntered : int
+  }
+
   enum AttractionType {
     GENERAL
     INDIVIDUAL
@@ -245,6 +249,8 @@ AttractionManager "1" x--> "1" AttractionRepository : repository
 AttractionManager "1" x--> "0..*" Attraction : attractionsById
 Attraction "0..*" x--> "0..*" User : present
 Attraction <|-- SpecialAttraction : <<bind>> T = IndividualAccess
+EntryResult "0..*" x--> "0..*" Pass : consumedPasses
+Attraction ..> EntryResult
 
 '' Invoices (Builder)
 InvoiceBuilder <|-- UserInvoiceBuilder

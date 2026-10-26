@@ -222,6 +222,11 @@ public class TicketManager {
         throw new IllegalArgumentException("No " + type.getSimpleName() + " with identifier " + passId);
     }
 
+    /** Saves the tickets after their passes were consumed elsewhere (attraction entries). */
+    public void recordPassUsage() {
+        persist();
+    }
+
     private IndividualTicket requirePassTicket(String ticketId, LocalDate today) {
         Ticket ticket = findAdmission(ticketId);
         if (!(ticket instanceof IndividualTicket individual)) {

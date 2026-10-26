@@ -86,6 +86,11 @@ public class GroupTicket extends Ticket implements GroupAccess {
         return admitted;
     }
 
+    @Override
+    public List<IndividualAccess> getIndividualAccesses() {
+        return new ArrayList<>(components);
+    }
+
     public String getGroupId() {
         return groupId;
     }
