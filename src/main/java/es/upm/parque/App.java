@@ -25,7 +25,10 @@ public class App {
     static void run(String[] args, InputStream stdin, PrintStream out, Path dataDir) {
         UserManager userManager = new UserManager(new UserRepository(dataDir.resolve("users.txt")));
         GroupManager groupManager = new GroupManager(new GroupRepository(dataDir.resolve("groups.txt")), userManager);
-        CommandProcessor processor = new CommandProcessor(userManager, groupManager, new SystemDate());
+        SystemDate systemDate = new SystemDate();
+        TicketManager ticketManager =
+                new TicketManager(new TicketRepository(dataDir.resolve("tickets.txt")), userManager, systemDate);
+        CommandProcessor processor = new CommandProcessor(userManager, groupManager, ticketManager, systemDate);
         if (args.length == 0) {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8))) {
                 processLines(in, processor, out);

@@ -1,5 +1,6 @@
 package es.upm.parque;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -17,7 +18,10 @@ public class CommandProcessor {
         "GROUP ADD;Id;Correo",
         "GROUP REMOVE;Id;Correo",
         "GROUP DELETE;Id",
+        "TICKET CREATE;Id;Correo;yyyy-MM-dd",
+        "TICKET DELETE;Id",
         "SYSTEM DATE;yyyy-MM-dd",
+        "SYSTEM PRICE;Importe",
         "HELP",
         "EXIT"
     };
@@ -27,12 +31,15 @@ public class CommandProcessor {
 
     private final UserManager userManager;
     private final GroupManager groupManager;
+    private final TicketManager ticketManager;
     private final SystemDate systemDate;
     private boolean exitRequested;
 
-    public CommandProcessor(UserManager userManager, GroupManager groupManager, SystemDate systemDate) {
+    public CommandProcessor(UserManager userManager, GroupManager groupManager, TicketManager ticketManager,
+            SystemDate systemDate) {
         this.userManager = userManager;
         this.groupManager = groupManager;
+        this.ticketManager = ticketManager;
         this.systemDate = systemDate;
     }
 
@@ -46,10 +53,18 @@ public class CommandProcessor {
             if (operation.length == 2 && operation[0].equals("GROUP")) {
                 return processGroup(operation[1], parts);
             }
+            if (operation.length == 2 && operation[0].equals("TICKET")) {
+                return processTicket(operation[1], parts);
+            }
             if (operation.length == 2 && operation[0].equals("SYSTEM") && operation[1].equals("DATE")) {
                 requireParams(parts, 1, "SYSTEM DATE;yyyy-MM-dd");
                 systemDate.set(parseDate(parts[1]));
                 return "OK SYSTEM DATE -> " + systemDate.get();
+            }
+            if (operation.length == 2 && operation[0].equals("SYSTEM") && operation[1].equals("PRICE")) {
+                requireParams(parts, 1, "SYSTEM PRICE;Importe");
+                ticketManager.setPrice(parsePrice(parts[1]));
+                return "OK SYSTEM PRICE -> " + ticketManager.getPrice().toPlainString();
             }
             if (operation.length == 1 && operation[0].equals("HELP")) {
                 requireParams(parts, 0, "HELP");
@@ -128,6 +143,31 @@ public class CommandProcessor {
             default -> {
                 return "ERROR: unknown command 'GROUP " + action + "'";
             }
+        }
+    }
+
+    private String processTicket(String action, String[] p) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(p, 3, "TICKET CREATE;Id;Correo;yyyy-MM-dd");
+                Ticket t = ticketManager.create(p[1], p[2], parseDate(p[3]));
+                return "OK TICKET CREATED -> " + t.getPrice().toPlainString();
+            }
+            case "DELETE" -> {
+                requireParams(p, 1, "TICKET DELETE;Id");
+                return "OK TICKET DELETED -> " + ticketManager.delete(p[1]).getId();
+            }
+            default -> {
+                return "ERROR: unknown command 'TICKET " + action + "'";
+            }
+        }
+    }
+
+    private static BigDecimal parsePrice(String text) {
+        try {
+            return new BigDecimal(text.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("invalid price '" + text + "'");
         }
     }
 

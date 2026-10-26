@@ -2,6 +2,7 @@ package es.upm.parque;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Business rules for users: validation, uniqueness and credential checks.
@@ -10,6 +11,7 @@ import java.util.List;
 public class UserManager {
     private final UserRepository repository;
     private final List<User> users;
+    private final List<Function<User, String>> deletionChecks = new ArrayList<>();
 
     public UserManager(UserRepository repository) {
         this.repository = repository;
@@ -39,8 +41,21 @@ public class UserManager {
         return user;
     }
 
+    /**
+     * Registers a rule that can veto deleting a user: it returns the reason for refusing, or null to allow it.
+     */
+    public void addDeletionCheck(Function<User, String> check) {
+        deletionChecks.add(check);
+    }
+
     public User delete(String email, String password) {
         User user = authenticate(email, password);
+        for (Function<User, String> check : deletionChecks) {
+            String reason = check.apply(user);
+            if (reason != null) {
+                throw new IllegalArgumentException("user " + email + " cannot be deleted: " + reason);
+            }
+        }
         users.remove(user);
         repository.save(users);
         return user;

@@ -54,11 +54,26 @@ package es.upm.parque {
   class GroupRepository {
     - file : Path
   }
+
+  class Ticket {
+    - id : String {readOnly}
+    - date : LocalDate {readOnly}
+    - price : BigDecimal {readOnly}
+  }
+
+  class TicketManager {
+    - price : BigDecimal
+  }
+
+  class TicketRepository {
+    - file : Path
+  }
 }
 
 App ..> CommandProcessor : creates
 CommandProcessor x--> "1" UserManager : userManager
 CommandProcessor x--> "1" GroupManager : groupManager
+CommandProcessor x--> "1" TicketManager : ticketManager
 CommandProcessor x--> "1" SystemDate : systemDate
 CommandProcessor ..> UserField : uses
 UserManager x--> "1" UserRepository : repository
@@ -68,5 +83,10 @@ GroupManager x--> "1" GroupRepository : repository
 GroupManager x--> "1" UserManager : userManager
 GroupManager x--> "0..*" Group : groups
 Group x--> "0..*" User : members
+TicketManager x--> "1" TicketRepository : repository
+TicketManager x--> "1" UserManager : userManager
+TicketManager x--> "1" SystemDate : systemDate
+TicketManager x--> "0..*" Ticket : tickets
+Ticket x--> "1" User : user
 
 @enduml

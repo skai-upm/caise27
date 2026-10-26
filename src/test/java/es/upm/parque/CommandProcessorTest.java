@@ -25,7 +25,9 @@ class CommandProcessorTest {
     void setUp() {
         manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
         groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), manager);
-        processor = new CommandProcessor(manager, groups, new SystemDate());
+        SystemDate date = new SystemDate();
+        processor = new CommandProcessor(manager, groups,
+                new TicketManager(new TicketRepository(dir.resolve("tickets.txt")), manager, date), date);
     }
 
     @Test
@@ -75,7 +77,7 @@ class CommandProcessorTest {
         for (String syntax : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
                 "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT",
                 "SYSTEM DATE;yyyy-MM-dd", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo",
-                "GROUP DELETE;Id"}) {
+                "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id", "SYSTEM PRICE;Importe"}) {
             assertTrue(help.contains(syntax), syntax);
         }
     }
@@ -134,5 +136,28 @@ class CommandProcessorTest {
         GroupManager reloaded = new GroupManager(new GroupRepository(dir.resolve("groups.txt")),
                 new UserManager(new UserRepository(dir.resolve("users.txt"))));
         assertEquals(0, reloaded.findById("G01").getMembers().size());
+    }
+
+    @Test
+    void ticketCommandsFollowTheSystemDateAndPrice() {
+        processor.process(CREATE_ANA);
+        processor.process("SYSTEM DATE;2026-10-01");
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertTrue(processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET CREATE;T009;nadie@correo.com;2026-10-15").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET CREATE;T009;ana@correo.com;2026-13-15").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET CREATE;T009;ana@correo.com").startsWith("ERROR"));
+        assertEquals("OK SYSTEM PRICE -> 60.00", processor.process("SYSTEM PRICE;60.00"));
+        assertTrue(processor.process("SYSTEM PRICE;abc").startsWith("ERROR"));
+        assertTrue(processor.process("SYSTEM PRICE;-5").startsWith("ERROR"));
+        assertEquals("OK TICKET CREATED -> 60.00", processor.process("TICKET CREATE;T002;ana@correo.com;2026-10-20"));
+
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET DELETE;T002").startsWith("OK"));
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("TICKET DELETE;T001").startsWith("ERROR"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
     }
 }
