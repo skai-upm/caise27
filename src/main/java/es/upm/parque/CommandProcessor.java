@@ -1,20 +1,56 @@
 package es.upm.parque;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Interprets text commands such as {@code USER CREATE;Ana;...}. The command is split with
  * {@link String#split} into the operation (first segment) and its parameters (remaining segments).
- * Every command produces a response line; no command can make the application stop unexpectedly.
+ * Every command produces a response; no command can make the application stop unexpectedly.
+ * The same processor serves interactive and file input through {@link #run}.
  */
 public class CommandProcessor {
 
     private static final String PARAM_SEPARATOR = ";";
 
+    private static final String USAGE_USER_CREATE = "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta";
+    private static final String USAGE_USER_DELETE = "USER DELETE;Correo;Contraseña";
+    private static final String USAGE_USER_UPDATE = "USER UPDATE;Correo;Contraseña;Campo;NuevoValor";
+    private static final String USAGE_HELP = "HELP";
+    private static final String USAGE_EXIT = "EXIT";
+
+    private static final List<String> HELP_LINES = List.of(
+        USAGE_USER_CREATE,
+        USAGE_USER_DELETE,
+        USAGE_USER_UPDATE + "  (Campo: " + Arrays.toString(UserField.values()) + ")",
+        USAGE_HELP,
+        USAGE_EXIT);
+
     private final UserManager users;
+    private boolean exitRequested;
 
     public CommandProcessor(UserManager users) {
         this.users = users;
+    }
+
+    public boolean isExitRequested() {
+        return exitRequested;
+    }
+
+    /**
+     * Reads commands line by line and prints each response until EXIT is executed or the input ends.
+     */
+    public void run(BufferedReader in, PrintStream out) throws IOException {
+        String line;
+        while (!exitRequested && (line = in.readLine()) != null) {
+            String response = execute(line);
+            if (response != null) {
+                out.println(response);
+            }
+        }
     }
 
     /**
@@ -29,6 +65,9 @@ public class CommandProcessor {
         String[] parts = line.trim().split(PARAM_SEPARATOR, -1);
         String[] operation = parts[0].trim().split(" ");
         try {
+            if (operation.length == 1) {
+                return executeGeneral(operation[0], parts);
+            }
             if (operation.length == 2 && operation[0].equals("USER")) {
                 return executeUser(operation[1], parts);
             }
@@ -40,20 +79,38 @@ public class CommandProcessor {
         }
     }
 
+    private String executeGeneral(String operation, String[] parts) {
+        switch (operation) {
+            case "HELP" -> {
+                requireParams(parts, 0, USAGE_HELP);
+                return "Available commands:" + System.lineSeparator() + "  "
+                    + String.join(System.lineSeparator() + "  ", HELP_LINES);
+            }
+            case "EXIT" -> {
+                requireParams(parts, 0, USAGE_EXIT);
+                exitRequested = true;
+                return ok("Bye");
+            }
+            default -> {
+                return error("Unknown command: " + operation);
+            }
+        }
+    }
+
     private String executeUser(String action, String[] parts) {
         switch (action) {
             case "CREATE" -> {
-                requireParams(parts, 7, "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta");
+                requireParams(parts, 7, USAGE_USER_CREATE);
                 User u = users.create(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
                 return ok("User " + u.getDni() + " created");
             }
             case "DELETE" -> {
-                requireParams(parts, 2, "USER DELETE;Correo;Contraseña");
+                requireParams(parts, 2, USAGE_USER_DELETE);
                 users.delete(parts[1], parts[2]);
                 return ok("User " + parts[1] + " deleted");
             }
             case "UPDATE" -> {
-                requireParams(parts, 4, "USER UPDATE;Correo;Contraseña;Campo;NuevoValor");
+                requireParams(parts, 4, USAGE_USER_UPDATE);
                 UserField field = parseField(parts[3]);
                 users.update(parts[1], parts[2], field, parts[4]);
                 return ok("User " + parts[1] + " updated (" + field + ")");

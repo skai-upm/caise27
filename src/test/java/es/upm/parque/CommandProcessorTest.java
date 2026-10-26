@@ -1,9 +1,16 @@
 package es.upm.parque;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,5 +78,42 @@ class CommandProcessorTest {
     void blankLinesAreIgnored() {
         assertNull(processor.execute("   "));
         assertNull(processor.execute(""));
+    }
+
+    @Test
+    void helpListsAllCommands() {
+        String help = processor.execute("HELP");
+        for (String usage : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+            "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT"}) {
+            assertTrue(help.contains(usage), usage);
+        }
+        assertFalse(processor.isExitRequested());
+    }
+
+    @Test
+    void generalCommandsRejectParameters() {
+        assertTrue(processor.execute("HELP;extra").startsWith("ERROR: Expected 0"));
+        assertTrue(processor.execute("EXIT;now").startsWith("ERROR: Expected 0"));
+        assertFalse(processor.isExitRequested());
+    }
+
+    @Test
+    void exitSetsTheExitFlag() {
+        assertTrue(processor.execute("EXIT").startsWith("OK"));
+        assertTrue(processor.isExitRequested());
+    }
+
+    @Test
+    void runStopsAtExitAndIgnoresBlankLines() throws IOException {
+        String input = CREATE_ANA + "\n\n   \nHELP\nEXIT\n"
+            + "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654\n";
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        processor.run(new BufferedReader(new StringReader(input)), new PrintStream(bytes, true, StandardCharsets.UTF_8));
+
+        String output = bytes.toString(StandardCharsets.UTF_8);
+        assertFalse(output.contains("ERROR"), output);
+        assertTrue(output.contains("Available commands"));
+        assertTrue(output.trim().endsWith("OK: Bye"), output);
+        assertEquals(1, manager.getUsers().size());
     }
 }
