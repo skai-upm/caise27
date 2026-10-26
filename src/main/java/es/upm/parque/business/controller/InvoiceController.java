@@ -47,7 +47,8 @@ public class InvoiceController {
         if (user == null) {
             throw new IllegalArgumentException("no user with email " + email);
         }
-        return director.constructUserInvoice(builder, user, ticketController.directTicketsOf(user), systemDate.get());
+        return director.constructUserInvoice(builder, user, ticketController.directTicketsOf(user),
+                ticketController.individualTicketsOf(user), systemDate.get());
     }
 
     public Invoice groupInvoice(String groupId) {

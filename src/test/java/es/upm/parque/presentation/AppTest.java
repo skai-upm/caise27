@@ -130,4 +130,13 @@ class AppTest {
         assertTrue(out.startsWith("ERROR") && out.contains("--fast"), out);
         assertTrue(Files.notExists(dir.resolve("data").resolve("users.txt")));
     }
+
+    @Test
+    void flyModeStoresPassesInTheTemporaryDirectory() {
+        Path data = dir.resolve("data");
+        String out = run(new String[] {"--fly"}, ANA + "\nSYSTEM DATE;2026-10-01\n"
+                + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nSPEEDPASS CREATE;T001;10\nEXIT\n", data);
+        assertTrue(out.contains("OK SPEEDPASS CREATED"), out);
+        assertTrue(Files.notExists(data.resolve("passes.txt")));
+    }
 }

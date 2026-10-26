@@ -41,6 +41,14 @@ public class CommandCatalog {
                         "Buys one ticket per group member with a size discount (3-5: 10%, 6-10: 20%, >10: 50%).")
                 .register("GROUPTICKET DELETE;Id",
                         "Deletes a future group ticket together with the individual tickets it contains.")
+                .register("SPEEDPASS CREATE;IdEntrada;Cantidad",
+                        "Buys 1 or 10 SpeedPasses for an individual ticket, each costing 20% of the ticket price.")
+                .register("SPEEDPASS DELETE;IdPase",
+                        "Refunds an unused SpeedPass if its ticket date is after the system date.")
+                .register("SPECIALPASS CREATE;IdEntrada",
+                        "Buys the ticket's only Special Pass, costing the same as the ticket.")
+                .register("SPECIALPASS DELETE;IdPase",
+                        "Refunds an unused Special Pass if its ticket date is after the system date.")
                 .register("ATTRACTION CREATE;Id;Nombre;Capacidad", "Creates an attraction with a maximum capacity.")
                 .register("ATTRACTION DELETE;Id", "Deletes an attraction that has nobody inside.")
                 .register("ATTRACTION ENTER;IdAtraccion;IdEntrada",

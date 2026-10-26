@@ -3,11 +3,14 @@ package es.upm.parque.presentation;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
+import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.Invoice;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.SpecialPass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
@@ -18,6 +21,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,19 +36,21 @@ public class CommandProcessor {
     private final TicketController ticketController;
     private final AttractionController attractionController;
     private final InvoiceController invoiceController;
+    private final PassController passController;
     private final SystemDate systemDate;
     private final Map<String, HelpGenerator> helpGenerators;
     private boolean exitRequested;
 
     public CommandProcessor(UserController userController, GroupController groupController,
             TicketController ticketController, AttractionController attractionController,
-            InvoiceController invoiceController, SystemDate systemDate,
+            InvoiceController invoiceController, PassController passController, SystemDate systemDate,
             Map<String, HelpGenerator> helpGenerators) {
         this.userController = userController;
         this.groupController = groupController;
         this.ticketController = ticketController;
         this.attractionController = attractionController;
         this.invoiceController = invoiceController;
+        this.passController = passController;
         this.systemDate = systemDate;
         this.helpGenerators = Map.copyOf(helpGenerators);
     }
@@ -64,6 +70,12 @@ public class CommandProcessor {
             }
             if (operation.length == 2 && operation[0].equals("GROUPTICKET")) {
                 return processGroupTicket(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("SPEEDPASS")) {
+                return processSpeedPass(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("SPECIALPASS")) {
+                return processSpecialPass(operation[1], parts);
             }
             if (operation.length == 2 && operation[0].equals("ATTRACTION")) {
                 return processAttraction(operation[1], parts);
@@ -221,6 +233,57 @@ public class CommandProcessor {
             default -> {
                 return "ERROR: unknown command 'ATTRACTION " + action + "'";
             }
+        }
+    }
+
+    private String processSpeedPass(String action, String[] p) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(p, 2, "SPEEDPASS CREATE;IdEntrada;Cantidad");
+                List<SpeedPass> bought = passController.buySpeedPasses(p[1], parseQuantity(p[2]));
+                BigDecimal total = BigDecimal.ZERO;
+                for (SpeedPass pass : bought) {
+                    total = total.add(pass.getPrice());
+                }
+                String ids = bought.size() == 1 ? bought.get(0).getId()
+                        : bought.get(0).getId() + " .. " + bought.get(bought.size() - 1).getId();
+                return "OK SPEEDPASS CREATED -> " + bought.size() + " x " + bought.get(0).getPrice().toPlainString()
+                        + " = " + total.toPlainString() + " (" + ids + ")";
+            }
+            case "DELETE" -> {
+                requireParams(p, 1, "SPEEDPASS DELETE;IdPase");
+                SpeedPass pass = passController.refundSpeedPass(p[1]);
+                return "OK SPEEDPASS REFUNDED -> " + pass.getId() + " -> " + pass.getPrice().toPlainString();
+            }
+            default -> {
+                return "ERROR: unknown command 'SPEEDPASS " + action + "'";
+            }
+        }
+    }
+
+    private String processSpecialPass(String action, String[] p) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(p, 1, "SPECIALPASS CREATE;IdEntrada");
+                SpecialPass pass = passController.buySpecialPass(p[1]);
+                return "OK SPECIALPASS CREATED -> " + pass.getId() + " -> " + pass.getPrice().toPlainString();
+            }
+            case "DELETE" -> {
+                requireParams(p, 1, "SPECIALPASS DELETE;IdPase");
+                SpecialPass pass = passController.refundSpecialPass(p[1]);
+                return "OK SPECIALPASS REFUNDED -> " + pass.getId() + " -> " + pass.getPrice().toPlainString();
+            }
+            default -> {
+                return "ERROR: unknown command 'SPECIALPASS " + action + "'";
+            }
+        }
+    }
+
+    private static int parseQuantity(String text) {
+        try {
+            return Integer.parseInt(text.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("invalid quantity '" + text + "': use 1 or 10");
         }
     }
 

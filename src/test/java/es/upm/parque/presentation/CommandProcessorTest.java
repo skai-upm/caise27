@@ -4,26 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
-import es.upm.parque.business.controller.InvoiceController;
-import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
-import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
-import es.upm.parque.business.invoice.InvoiceDirector;
-import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.BCryptPasswordEncoder;
-import es.upm.parque.persistence.FileAttractionRepository;
 import es.upm.parque.persistence.FileGroupRepository;
-import es.upm.parque.persistence.FileTicketRepository;
 import es.upm.parque.persistence.FileUserRepository;
-import es.upm.parque.presentation.help.CommandCatalog;
-import es.upm.parque.presentation.help.ConciseHelpFormat;
-import es.upm.parque.presentation.help.ExtendedHelpFormat;
-import es.upm.parque.presentation.help.HelpGenerator;
 
 import java.nio.file.Path;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,18 +29,9 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() {
-        manager = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")), new BCryptPasswordEncoder(4));
-        groups = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), manager);
-        SystemDate date = new SystemDate();
-        TicketController tickets = TicketController.getInstance().configure(
-                new FileTicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
-        processor = new CommandProcessor(manager, groups, tickets,
-                AttractionController.getInstance().configure(new FileAttractionRepository(dir.resolve("attractions.txt")), tickets, date),
-                InvoiceController.getInstance().configure(manager, groups, tickets, date, new DefaultInvoiceBuilder(),
-                        new InvoiceDirector()),
-                date,
-                Map.of("", new HelpGenerator(CommandCatalog.parkCommands(), new ConciseHelpFormat()),
-                        "EXTENDED", new HelpGenerator(CommandCatalog.parkCommands(), new ExtendedHelpFormat())));
+        processor = App.initialize(dir);
+        manager = UserController.getInstance();
+        groups = GroupController.getInstance();
     }
 
     @Test
@@ -287,5 +265,39 @@ class CommandProcessorTest {
         }
         assertTrue(processor.process("HELP MARKDOWN").startsWith("ERROR"));
         assertTrue(processor.process("HELP EXTENDED;x").startsWith("ERROR"));
+    }
+
+    @Test
+    void passCommands() {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;Amigos");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertEquals("OK SPEEDPASS CREATED -> 10 x 8.00 = 80.00 (T001-SP1 .. T001-SP10)",
+                processor.process("SPEEDPASS CREATE;T001;10"));
+        assertEquals("OK SPEEDPASS CREATED -> 1 x 8.00 = 8.00 (T001-SP11)", processor.process("SPEEDPASS CREATE;T001;1"));
+        assertTrue(processor.process("SPEEDPASS CREATE;T001;5").startsWith("ERROR"));
+        assertTrue(processor.process("SPEEDPASS CREATE;TG01;1").startsWith("ERROR"));
+        assertTrue(processor.process("SPEEDPASS CREATE;T999;1").startsWith("ERROR"));
+        assertEquals("OK SPEEDPASS CREATED -> 1 x 8.00 = 8.00 (TG01-1-SP1)",
+                processor.process("SPEEDPASS CREATE;TG01-1;1"));
+        assertEquals("OK SPECIALPASS CREATED -> T001-SPECIAL -> 40.00", processor.process("SPECIALPASS CREATE;T001"));
+        assertTrue(processor.process("SPECIALPASS CREATE;T001").startsWith("ERROR"));
+        assertEquals("OK SPEEDPASS REFUNDED -> T001-SP3 -> 8.00", processor.process("SPEEDPASS DELETE;T001-SP3"));
+        assertTrue(processor.process("SPEEDPASS DELETE;T001-SP3").startsWith("ERROR"));
+        assertTrue(processor.process("SPECIALPASS DELETE;T001-SP4").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET DELETE;T001").startsWith("ERROR"));
+        assertTrue(processor.process("GROUPTICKET DELETE;TG01").startsWith("ERROR"));
+        String invoice = processor.process("INVOICE CREATE;USER;ana@correo.com");
+        assertTrue(invoice.contains("TG01-1-SP1") && invoice.contains("T001-SPECIAL") && !invoice.contains("TG01-1 ")
+                && invoice.contains("TOTAL: 168.00"), invoice);
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("SPECIALPASS DELETE;T001-SPECIAL").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertTrue(processor.process("SPEEDPASS CREATE;T001;1").startsWith("ERROR"));
     }
 }

@@ -105,6 +105,9 @@ public class TicketController {
                     + "; delete the group ticket instead");
         }
         requireFuture(individual);
+        if (individual.hasPasses()) {
+            throw new IllegalArgumentException("ticket " + id + " has passes and cannot be deleted");
+        }
         tickets.remove(individual);
         repository.save(tickets);
         return individual;
@@ -116,6 +119,12 @@ public class TicketController {
             throw new IllegalArgumentException("group ticket " + id + " does not exist");
         }
         requireFuture(groupTicket);
+        for (IndividualTicket part : groupTicket.getTickets()) {
+            if (part.hasPasses()) {
+                throw new IllegalArgumentException("ticket " + part.getId() + " of group ticket " + id
+                        + " has passes and the group ticket cannot be deleted");
+            }
+        }
         tickets.removeAll(groupTicket.getTickets());
         tickets.remove(groupTicket);
         repository.save(tickets);
@@ -156,6 +165,17 @@ public class TicketController {
         List<IndividualTicket> result = new ArrayList<>();
         for (Ticket t : tickets) {
             if (t instanceof IndividualTicket it && it.getUser() == user && groupTicketContaining(it) == null) {
+                result.add(it);
+            }
+        }
+        return result;
+    }
+
+    /** Every individual ticket of the user, including those generated inside group tickets. */
+    public List<IndividualTicket> individualTicketsOf(User user) {
+        List<IndividualTicket> result = new ArrayList<>();
+        for (Ticket t : tickets) {
+            if (t instanceof IndividualTicket it && it.getUser() == user) {
                 result.add(it);
             }
         }

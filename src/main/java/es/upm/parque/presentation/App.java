@@ -3,6 +3,7 @@ package es.upm.parque.presentation;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
+import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
@@ -11,6 +12,7 @@ import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileAttractionRepository;
 import es.upm.parque.persistence.FileGroupRepository;
+import es.upm.parque.persistence.FilePassRepository;
 import es.upm.parque.persistence.FileTicketRepository;
 import es.upm.parque.persistence.FileUserRepository;
 import es.upm.parque.persistence.TemporaryDataDirectory;
@@ -113,12 +115,14 @@ public class App {
                 new FileAttractionRepository(dataDir.resolve("attractions.txt")), ticketController, systemDate);
         InvoiceController invoiceController = InvoiceController.getInstance().configure(userController,
                 groupController, ticketController, systemDate, new DefaultInvoiceBuilder(), new InvoiceDirector());
+        PassController passController = PassController.getInstance()
+                .configure(new FilePassRepository(dataDir.resolve("passes.txt")), ticketController, systemDate);
         CommandCatalog catalog = CommandCatalog.parkCommands();
         Map<String, HelpGenerator> helpGenerators = Map.of(
                 "", new HelpGenerator(catalog, new ConciseHelpFormat()),
                 "EXTENDED", new HelpGenerator(catalog, new ExtendedHelpFormat()));
         return new CommandProcessor(userController, groupController, ticketController, attractionController,
-                invoiceController, systemDate, helpGenerators);
+                invoiceController, passController, systemDate, helpGenerators);
     }
 
     private static void processLines(BufferedReader in, CommandProcessor processor, PrintStream out)

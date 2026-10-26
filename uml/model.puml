@@ -73,6 +73,18 @@ package es.upm.parque.business.model {
     totalPrice : BigDecimal
   }
 
+  abstract class Pass {
+    id : String
+    price : BigDecimal
+    consumed : boolean
+  }
+
+  class SpeedPass {
+  }
+
+  class SpecialPass {
+  }
+
   class Attraction {
     id : String
     name : String
@@ -100,6 +112,9 @@ package es.upm.parque.business.controller {
   }
 
   class InvoiceController <<Singleton>> {
+  }
+
+  class PassController <<Singleton>> {
   }
 }
 
@@ -149,6 +164,9 @@ package es.upm.parque.business.repository {
 
   interface AttractionRepository {
   }
+
+  interface PassRepository {
+  }
 }
 
 package es.upm.parque.business.security {
@@ -186,6 +204,10 @@ package es.upm.parque.persistence {
     file : Path
   }
 
+  class FilePassRepository {
+    file : Path
+  }
+
   class TemporaryDataDirectory {
     path : Path
   }
@@ -201,6 +223,7 @@ CommandProcessor x--> "1" GroupController : groupController
 CommandProcessor x--> "1" TicketController : ticketController
 CommandProcessor x--> "1" AttractionController : attractionController
 CommandProcessor x--> "1" InvoiceController : invoiceController
+CommandProcessor x--> "1" PassController : passController
 CommandProcessor x--> "1" SystemDate : systemDate
 CommandProcessor x--> "0..*" HelpGenerator : helpGenerators
 HelpGenerator x--> "1" CommandCatalog : catalog
@@ -227,6 +250,13 @@ TicketController x--> "0..*" Ticket : tickets
 IndividualTicket x--> "1" User : user
 GroupTicket o--> "1" Group : group
 GroupTicket *--> "1..*" IndividualTicket : tickets
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+IndividualTicket *--> "0..*" SpeedPass : speedPasses
+IndividualTicket *--> "0..1" SpecialPass : specialPass
+PassController x--> "1" PassRepository : repository
+PassController x--> "1" TicketController : ticketController
+PassController x--> "1" SystemDate : systemDate
 
 AttractionController x--> "1" AttractionRepository : repository
 AttractionController x--> "1" TicketController : ticketController
@@ -249,6 +279,7 @@ UserRepository <|.. FileUserRepository
 GroupRepository <|.. FileGroupRepository
 TicketRepository <|.. FileTicketRepository
 AttractionRepository <|.. FileAttractionRepository
+PassRepository <|.. FilePassRepository
 
 ' Usage, only for classes without incoming relationships
 App ..> CommandProcessor
@@ -260,6 +291,7 @@ App ..> FileUserRepository
 App ..> FileGroupRepository
 App ..> FileTicketRepository
 App ..> FileAttractionRepository
+App ..> FilePassRepository
 DefaultInvoiceBuilder ..> Invoice
 CommandProcessor ..> UserField
 UserController ..> UserField

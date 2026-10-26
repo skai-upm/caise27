@@ -53,12 +53,12 @@ class InvoiceBuilderTest {
     void directorIncludesOnlySectionsWithData() {
         InvoiceDirector director = new InvoiceDirector();
         InvoiceBuilder builder = new DefaultInvoiceBuilder();
-        Invoice none = director.constructUserInvoice(builder, ana, List.of(), TODAY);
+        Invoice none = director.constructUserInvoice(builder, ana, List.of(), List.of(), TODAY);
         assertEquals(0, none.getSections().size());
         assertEquals("0.00", none.getTotal().toPlainString());
 
         IndividualTicket t = new IndividualTicket("T001", DAY, ana, new BigDecimal("40.00"));
-        Invoice user = director.constructUserInvoice(builder, ana, List.of(t), TODAY);
+        Invoice user = director.constructUserInvoice(builder, ana, List.of(t), List.of(t), TODAY);
         assertEquals("Individual tickets", user.getSections().get(0).getTitle());
         assertEquals("40.00", user.getTotal().toPlainString());
 
