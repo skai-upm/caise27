@@ -5,10 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,9 +25,10 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() {
-        manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        controller = new MainController(Clock.fixed(Instant.parse("2026-09-01T10:00:00Z"), ZoneOffset.UTC));
-        processor = new CommandProcessor(manager, controller);
+        TestPark park = new TestPark(dir);
+        manager = park.users;
+        controller = park.controller;
+        processor = park.processor;
     }
 
     @Test
@@ -122,8 +120,41 @@ class CommandProcessorTest {
     }
 
     @Test
+    void groupCommands() {
+        processor.process(ANA);
+        assertEquals("OK GROUP CREATED", processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertTrue(processor.process("GROUP CREATE;G01;Otra").startsWith("ERROR"));
+        assertEquals("OK USER ADDED TO GROUP", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP ADD;G01;nadie@correo.com").startsWith("ERROR"));
+        assertEquals("OK USER REMOVED FROM GROUP", processor.process("GROUP REMOVE;G01;ana@correo.com"));
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").startsWith("ERROR"));
+        assertEquals("OK GROUP DELETED", processor.process("GROUP DELETE;G01"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP CREATE;G01").startsWith("ERROR Wrong number of parameters"));
+    }
+
+    @Test
+    void deletingUserRemovesItFromGroups() {
+        processor.process(ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertEquals("OK USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(new TestPark(dir).groups.findById("G01").getMembers().isEmpty());
+    }
+
+    @Test
+    void helpListsGroupCommands() {
+        String help = processor.process("HELP");
+        for (String syntax : List.of("GROUP CREATE;IdentificadorGrupo;Nombre", "GROUP ADD;IdentificadorGrupo;Correo",
+                "GROUP REMOVE;IdentificadorGrupo;Correo", "GROUP DELETE;IdentificadorGrupo")) {
+            assertTrue(help.contains(syntax), syntax);
+        }
+    }
+
+    @Test
     void unexpectedErrorsDoNotPropagate() {
-        CommandProcessor broken = new CommandProcessor(null, new MainController(Clock.systemDefaultZone()));
+        CommandProcessor broken = new CommandProcessor(null, null, new MainController(TestPark.CLOCK));
         assertTrue(broken.process(ANA).startsWith("ERROR Unexpected error"));
     }
 }

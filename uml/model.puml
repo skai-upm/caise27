@@ -1,0 +1,75 @@
+@startuml model
+' Class model of the amusement park application (es.upm.parque).
+' Attributes show only primitive and enumeration values; references to other
+' classes are drawn as associations named after the attribute that holds them.
+' The "x" end marks the class that does not know the other one.
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package es.upm.parque {
+
+  class App {
+    {static} USERS_FILE : Path
+    {static} GROUPS_FILE : Path
+  }
+
+  class CommandProcessor {
+    exitRequested : boolean
+  }
+
+  class MainController {
+    currentDate : LocalDate
+  }
+
+  class UserManager
+  class UserRepository {
+    file : Path
+  }
+
+  class GroupManager
+  class GroupRepository {
+    file : Path
+  }
+
+  class User {
+    name : String
+    surname : String
+    dni : String {readOnly}
+    email : String
+    password : String
+    phone : String
+    card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    id : String {readOnly}
+    name : String {readOnly}
+  }
+
+  class UserValidator <<utility>>
+  class ParkException
+}
+
+App "0..*" x--> "1" CommandProcessor : processor
+CommandProcessor "0..*" x--> "1" UserManager : userManager
+CommandProcessor "0..*" x--> "1" GroupManager : groupManager
+CommandProcessor "0..*" x--> "1" MainController : mainController
+UserManager "0..1" x--> "1" UserRepository : repository
+UserManager "0..1" x--> "0..*" User : users
+GroupManager "0..1" x--> "1" GroupRepository : repository
+GroupManager "0..*" x--> "1" UserManager : userManager
+GroupManager "0..1" x--> "0..*" Group : groups
+Group "0..*" x--> "0..*" User : members
+RuntimeException <|-- ParkException
+UserManager ..> UserField
+UserManager ..> UserValidator
+@enduml

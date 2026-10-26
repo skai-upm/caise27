@@ -1,0 +1,31 @@
+package es.upm.parque;
+
+import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+
+/**
+ * Builds the full application object graph over the data files of a test directory.
+ * Creating a new instance over the same directory simulates restarting the application.
+ */
+final class TestPark {
+
+    static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-01T10:00:00Z"), ZoneOffset.UTC);
+
+    final MainController controller;
+    final UserManager users;
+    final GroupManager groups;
+    final CommandProcessor processor;
+
+    TestPark(Path dir) {
+        controller = new MainController(CLOCK);
+        users = new UserManager(new UserRepository(dir.resolve("users.txt")));
+        groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
+        processor = new CommandProcessor(users, groups, controller);
+    }
+
+    App app() {
+        return new App(processor);
+    }
+}

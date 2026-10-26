@@ -11,21 +11,28 @@ public class CommandProcessor {
     static final String USER_CREATE_SYNTAX = "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta";
     static final String USER_DELETE_SYNTAX = "USER DELETE;Correo;Contraseña";
     static final String USER_UPDATE_SYNTAX = "USER UPDATE;Correo;Contraseña;Campo;NuevoValor";
+    static final String GROUP_CREATE_SYNTAX = "GROUP CREATE;IdentificadorGrupo;Nombre";
+    static final String GROUP_ADD_SYNTAX = "GROUP ADD;IdentificadorGrupo;Correo";
+    static final String GROUP_REMOVE_SYNTAX = "GROUP REMOVE;IdentificadorGrupo;Correo";
+    static final String GROUP_DELETE_SYNTAX = "GROUP DELETE;IdentificadorGrupo";
     static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
     static final String HELP_SYNTAX = "HELP";
     static final String EXIT_SYNTAX = "EXIT";
 
     /** Syntax of every supported command, in the order HELP shows them. */
     static final List<String> COMMAND_SYNTAX = List.of(
-            USER_CREATE_SYNTAX, USER_DELETE_SYNTAX, USER_UPDATE_SYNTAX, SYSTEM_DATE_SYNTAX,
-            HELP_SYNTAX, EXIT_SYNTAX);
+            USER_CREATE_SYNTAX, USER_DELETE_SYNTAX, USER_UPDATE_SYNTAX,
+            GROUP_CREATE_SYNTAX, GROUP_ADD_SYNTAX, GROUP_REMOVE_SYNTAX, GROUP_DELETE_SYNTAX,
+            SYSTEM_DATE_SYNTAX, HELP_SYNTAX, EXIT_SYNTAX);
 
     private final UserManager userManager;
+    private final GroupManager groupManager;
     private final MainController mainController;
     private boolean exitRequested;
 
-    public CommandProcessor(UserManager userManager, MainController mainController) {
+    public CommandProcessor(UserManager userManager, GroupManager groupManager, MainController mainController) {
         this.userManager = userManager;
+        this.groupManager = groupManager;
         this.mainController = mainController;
     }
 
@@ -42,39 +49,13 @@ public class CommandProcessor {
             parts[i] = parts[i].trim();
         }
         String operation = parts[0].toUpperCase();
+        String syntax = syntaxOf(operation);
+        if (syntax == null) {
+            return "ERROR Unknown command: " + parts[0];
+        }
         try {
-            return switch (operation) {
-                case "USER CREATE" -> {
-                    requireParams(parts, USER_CREATE_SYNTAX);
-                    userManager.create(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
-                    yield "OK USER CREATED";
-                }
-                case "USER DELETE" -> {
-                    requireParams(parts, USER_DELETE_SYNTAX);
-                    userManager.delete(parts[1], parts[2]);
-                    yield "OK USER DELETED";
-                }
-                case "USER UPDATE" -> {
-                    requireParams(parts, USER_UPDATE_SYNTAX);
-                    userManager.update(parts[1], parts[2], parts[3], parts[4]);
-                    yield "OK USER UPDATED";
-                }
-                case "SYSTEM DATE" -> {
-                    requireParams(parts, SYSTEM_DATE_SYNTAX);
-                    yield setSystemDate(parts[1]);
-                }
-                case "HELP" -> {
-                    requireParams(parts, HELP_SYNTAX);
-                    yield "OK Available commands:" + System.lineSeparator()
-                            + String.join(System.lineSeparator(), COMMAND_SYNTAX);
-                }
-                case "EXIT" -> {
-                    requireParams(parts, EXIT_SYNTAX);
-                    exitRequested = true;
-                    yield "OK EXIT";
-                }
-                default -> "ERROR Unknown command: " + parts[0];
-            };
+            requireParams(parts, syntax);
+            return execute(operation, parts);
         } catch (ParkException e) {
             return "ERROR " + e.getMessage();
         } catch (RuntimeException e) {
@@ -82,9 +63,65 @@ public class CommandProcessor {
         }
     }
 
+    private String execute(String operation, String[] p) {
+        return switch (operation) {
+            case "USER CREATE" -> {
+                userManager.create(p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+                yield "OK USER CREATED";
+            }
+            case "USER DELETE" -> deleteUser(p[1], p[2]);
+            case "USER UPDATE" -> {
+                userManager.update(p[1], p[2], p[3], p[4]);
+                yield "OK USER UPDATED";
+            }
+            case "GROUP CREATE" -> {
+                groupManager.create(p[1], p[2]);
+                yield "OK GROUP CREATED";
+            }
+            case "GROUP ADD" -> {
+                groupManager.addMember(p[1], p[2]);
+                yield "OK USER ADDED TO GROUP";
+            }
+            case "GROUP REMOVE" -> {
+                groupManager.removeMember(p[1], p[2]);
+                yield "OK USER REMOVED FROM GROUP";
+            }
+            case "GROUP DELETE" -> {
+                groupManager.delete(p[1]);
+                yield "OK GROUP DELETED";
+            }
+            case "SYSTEM DATE" -> setSystemDate(p[1]);
+            case "HELP" -> "OK Available commands:" + System.lineSeparator()
+                    + String.join(System.lineSeparator(), COMMAND_SYNTAX);
+            case "EXIT" -> {
+                exitRequested = true;
+                yield "OK EXIT";
+            }
+            default -> throw new IllegalStateException("No handler for " + operation);
+        };
+    }
+
+    private String deleteUser(String email, String password) {
+        User deleted = userManager.delete(email, password);
+        groupManager.removeUserFromAllGroups(deleted);
+        return "OK USER DELETED";
+    }
+
     private String setSystemDate(String text) {
         mainController.setCurrentDate(MainController.parseDate(text));
         return "OK SYSTEM DATE SET -> " + MainController.formatDate(mainController.getCurrentDate());
+    }
+
+    /**
+     * Returns the syntax of the command whose operation matches, or {@code null} if unknown.
+     */
+    private static String syntaxOf(String operation) {
+        for (String syntax : COMMAND_SYNTAX) {
+            if (syntax.split(";", -1)[0].equals(operation)) {
+                return syntax;
+            }
+        }
+        return null;
     }
 
     /**

@@ -71,10 +71,14 @@ public class UserManager {
         persist();
     }
 
-    public void delete(String email, String password) {
+    /**
+     * Deletes the user after checking the credentials and returns it.
+     */
+    public User delete(String email, String password) {
         User user = authenticate(email, password);
         users.remove(user);
         persist();
+        return user;
     }
 
     public void update(String email, String password, String fieldName, String newValue) {

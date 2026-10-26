@@ -16,7 +16,6 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -31,12 +30,12 @@ class AppTest {
     @TempDir
     Path dir;
 
-    private UserManager manager(Path users) {
-        return new UserManager(new UserRepository(users));
+    private UserManager manager(Path data) {
+        return new TestPark(data).users;
     }
 
-    private String start(Path users, String[] args, String stdin) {
-        App app = new App(new CommandProcessor(manager(users), new MainController(Clock.systemDefaultZone())));
+    private String start(Path data, String[] args, String stdin) {
+        App app = new TestPark(data).app();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         app.start(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(bytes, true, StandardCharsets.UTF_8));
@@ -51,7 +50,7 @@ class AppTest {
 
     @Test
     void interactiveProcessesEachNonBlankLineAndSurvivesRestart() {
-        Path users = dir.resolve("users.txt");
+        Path users = dir.resolve("data");
         String out = start(users, new String[0], ANA + "\n\n   \nUSER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\n");
         assertEquals("OK USER CREATED\nOK USER UPDATED\n", out);
         assertEquals("OK USER DELETED\n", start(users, new String[0], "USER DELETE;ana@correo.com;Clave1!\n"));
@@ -59,7 +58,7 @@ class AppTest {
 
     @Test
     void interactiveStopsAtExit() {
-        Path users = dir.resolve("users.txt");
+        Path users = dir.resolve("data");
         String out = start(users, new String[0], "HELP\nEXIT\n" + ANA + "\n");
         assertTrue(out.startsWith("OK Available commands:\n"));
         assertTrue(out.endsWith("OK EXIT\n"));
@@ -68,7 +67,7 @@ class AppTest {
 
     @Test
     void fileModeRunsLinesInOrderIgnoringBlankLinesAndStopsAtExit() throws IOException {
-        Path users = dir.resolve("users.txt");
+        Path users = dir.resolve("data");
         Path file = commandFile(ANA, "", PEDRO, "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
                 "EXIT", "USER DELETE;pedro@correo.com;Otra2#");
         String out = start(users, new String[] {file.toString()}, "USER DELETE;ana@correo.com;Clave1!\n");
@@ -82,17 +81,17 @@ class AppTest {
     void sameResultsFromTerminalAndFile() throws IOException {
         String[] commands = {ANA, "USER CREATE;Ana;X;12345678Z;b@correo.com;Clave1!;1;1234567890123456",
             "HELP", "BOGUS", "USER UPDATE;ana@correo.com;Clave1!;EMAIL;n@correo.com"};
-        Path usersA = dir.resolve("a.txt");
-        Path usersB = dir.resolve("b.txt");
+        Path usersA = dir.resolve("a");
+        Path usersB = dir.resolve("b");
         String interactive = start(usersA, new String[0], String.join("\n", commands) + "\n");
         String fromFile = start(usersB, new String[] {commandFile(commands).toString()}, "");
         assertEquals(interactive, fromFile);
-        assertEquals(Files.readAllLines(usersA), Files.readAllLines(usersB));
+        assertEquals(Files.readAllLines(usersA.resolve("users.txt")), Files.readAllLines(usersB.resolve("users.txt")));
     }
 
     @Test
     void missingFileIsReported() {
-        Path users = dir.resolve("users.txt");
+        Path users = dir.resolve("data");
         String out = start(users, new String[] {dir.resolve("nope.txt").toString()}, ANA + "\n");
         assertTrue(out.startsWith("ERROR Input file not found"), out);
         assertFalse(Files.exists(users));
@@ -100,13 +99,13 @@ class AppTest {
 
     @Test
     void directoryIsReportedAsUnreadable() {
-        String out = start(dir.resolve("users.txt"), new String[] {dir.toString()}, "");
+        String out = start(dir.resolve("data"), new String[] {dir.toString()}, "");
         assertTrue(out.startsWith("ERROR Cannot read input"), out);
     }
 
     @Test
     void readFailureIsReported() {
-        App app = new App(new CommandProcessor(manager(dir.resolve("u.txt")), new MainController(Clock.systemDefaultZone())));
+        App app = new TestPark(dir.resolve("u")).app();
         Reader failing = new Reader() {
             @Override
             public int read(char[] buf, int off, int len) throws IOException {
@@ -125,7 +124,7 @@ class AppTest {
 
     @Test
     void runOverReaderStopsAtExit() {
-        App app = new App(new CommandProcessor(manager(dir.resolve("u.txt")), new MainController(Clock.systemDefaultZone())));
+        App app = new TestPark(dir.resolve("u")).app();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         app.run(new BufferedReader(new StringReader("EXIT\nHELP\n")), new PrintStream(bytes, true, StandardCharsets.UTF_8));
         assertEquals("OK EXIT", bytes.toString(StandardCharsets.UTF_8).trim());
