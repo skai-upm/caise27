@@ -17,6 +17,8 @@ public class CommandProcessor {
     static final String GROUP_DELETE_SYNTAX = "GROUP DELETE;IdentificadorGrupo";
     static final String TICKET_CREATE_SYNTAX = "TICKET CREATE;IdentificadorEntrada;Correo;yyyy-MM-dd";
     static final String TICKET_DELETE_SYNTAX = "TICKET DELETE;IdentificadorEntrada";
+    static final String GROUPTICKET_CREATE_SYNTAX = "GROUPTICKET CREATE;IdentificadorEntradaGrupo;IdentificadorGrupo;yyyy-MM-dd";
+    static final String GROUPTICKET_DELETE_SYNTAX = "GROUPTICKET DELETE;IdentificadorEntradaGrupo";
     static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
     static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
     static final String HELP_SYNTAX = "HELP";
@@ -26,7 +28,7 @@ public class CommandProcessor {
     static final List<String> COMMAND_SYNTAX = List.of(
             USER_CREATE_SYNTAX, USER_DELETE_SYNTAX, USER_UPDATE_SYNTAX,
             GROUP_CREATE_SYNTAX, GROUP_ADD_SYNTAX, GROUP_REMOVE_SYNTAX, GROUP_DELETE_SYNTAX,
-            TICKET_CREATE_SYNTAX, TICKET_DELETE_SYNTAX,
+            TICKET_CREATE_SYNTAX, TICKET_DELETE_SYNTAX, GROUPTICKET_CREATE_SYNTAX, GROUPTICKET_DELETE_SYNTAX,
             SYSTEM_DATE_SYNTAX, SYSTEM_PRICE_SYNTAX, HELP_SYNTAX, EXIT_SYNTAX);
 
     private final UserManager userManager;
@@ -86,22 +88,27 @@ public class CommandProcessor {
                 yield "OK GROUP CREATED";
             }
             case "GROUP ADD" -> {
+                requireUnlocked(p[1]);
                 groupManager.addMember(p[1], p[2]);
                 yield "OK USER ADDED TO GROUP";
             }
             case "GROUP REMOVE" -> {
+                requireUnlocked(p[1]);
                 groupManager.removeMember(p[1], p[2]);
                 yield "OK USER REMOVED FROM GROUP";
             }
-            case "GROUP DELETE" -> {
-                groupManager.delete(p[1]);
-                yield "OK GROUP DELETED";
-            }
+            case "GROUP DELETE" -> deleteGroup(p[1]);
             case "TICKET CREATE" -> "OK TICKET CREATED -> "
                     + MainController.formatPrice(ticketManager.create(p[1], p[2], p[3]).getPrice());
             case "TICKET DELETE" -> {
                 ticketManager.delete(p[1]);
                 yield "OK TICKET DELETED";
+            }
+            case "GROUPTICKET CREATE" -> "OK GROUP TICKET CREATED -> "
+                    + MainController.formatPrice(ticketManager.createGroupTicket(p[1], p[2], p[3]).getPrice());
+            case "GROUPTICKET DELETE" -> {
+                ticketManager.deleteGroupTicket(p[1]);
+                yield "OK GROUP TICKET DELETED";
             }
             case "SYSTEM DATE" -> setSystemDate(p[1]);
             case "SYSTEM PRICE" -> {
@@ -127,6 +134,24 @@ public class CommandProcessor {
         groupManager.removeUserFromAllGroups(user);
         ticketManager.removeTicketsOf(user);
         return "OK USER DELETED";
+    }
+
+    private String deleteGroup(String id) {
+        requireUnlocked(id);
+        Group group = groupManager.findById(id);
+        groupManager.delete(id);
+        ticketManager.removeGroupTicketsOf(group);
+        return "OK GROUP DELETED";
+    }
+
+    /**
+     * Rejects changes to a group that has a group ticket dated on or after the system date.
+     */
+    private void requireUnlocked(String groupId) {
+        Group group = groupManager.findById(groupId);
+        if (group != null && ticketManager.isGroupLocked(group)) {
+            throw new ParkException("Group " + groupId + " is locked by a group ticket dated on or after the system date");
+        }
     }
 
     private String setSystemDate(String text) {

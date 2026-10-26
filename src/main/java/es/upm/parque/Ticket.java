@@ -2,21 +2,21 @@ package es.upm.parque;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
- * An individual admission ticket for one user on one date, with the price charged.
+ * Common abstraction of every admission ticket: an identifier, a date of use, the price charged
+ * and the users it covers.
  */
-public class Ticket {
+public abstract class Ticket {
 
     private final String id;
     private final LocalDate date;
-    private final User user;
     private final BigDecimal price;
 
-    public Ticket(String id, LocalDate date, User user, BigDecimal price) {
+    protected Ticket(String id, LocalDate date, BigDecimal price) {
         this.id = id;
         this.date = date;
-        this.user = user;
         this.price = price;
     }
 
@@ -28,11 +28,12 @@ public class Ticket {
         return date;
     }
 
-    public User getUser() {
-        return user;
-    }
-
     public BigDecimal getPrice() {
         return price;
     }
+
+    /**
+     * Users admitted with this ticket.
+     */
+    public abstract List<User> getUsers();
 }

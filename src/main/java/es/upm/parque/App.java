@@ -20,6 +20,7 @@ public class App {
     static final Path USERS_FILE = Path.of("data", "users.txt");
     static final Path GROUPS_FILE = Path.of("data", "groups.txt");
     static final Path TICKETS_FILE = Path.of("data", "tickets.txt");
+    static final Path GROUP_TICKETS_FILE = Path.of("data", "grouptickets.txt");
 
     private final CommandProcessor processor;
 
@@ -31,7 +32,8 @@ public class App {
         MainController mainController = new MainController(Clock.systemDefaultZone());
         UserManager userManager = new UserManager(new UserRepository(USERS_FILE));
         GroupManager groupManager = new GroupManager(new GroupRepository(GROUPS_FILE), userManager);
-        TicketManager ticketManager = new TicketManager(new TicketRepository(TICKETS_FILE), userManager, mainController);
+        TicketManager ticketManager = new TicketManager(new TicketRepository(TICKETS_FILE, GROUP_TICKETS_FILE),
+                userManager, groupManager, mainController);
         new App(new CommandProcessor(userManager, groupManager, ticketManager, mainController))
                 .start(args, System.in, System.out);
     }

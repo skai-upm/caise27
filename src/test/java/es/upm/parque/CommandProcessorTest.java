@@ -19,13 +19,14 @@ class CommandProcessorTest {
     @TempDir
     Path dir;
 
+    private TestPark park;
     private UserManager manager;
     private MainController controller;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() {
-        TestPark park = new TestPark(dir);
+        park = new TestPark(dir);
         manager = park.users;
         controller = park.controller;
         processor = park.processor;
@@ -182,6 +183,45 @@ class CommandProcessorTest {
         assertEquals("ERROR Incorrect password", processor.process("USER DELETE;ana@correo.com;Mala1!"));
         assertEquals("OK USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
         assertTrue(new TestPark(dir).tickets.getTickets().isEmpty());
+    }
+
+    private static final String PEDRO =
+            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
+    private static final String LUIS =
+            "USER CREATE;Luis;Perez;11111111H;luis@correo.com;Clave1!;600000000;1111222233334444";
+
+    @Test
+    void groupTicketLifecycleWithLocks() {
+        processor.process(ANA);
+        processor.process(PEDRO);
+        processor.process(LUIS);
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        assertEquals("OK GROUP TICKET CREATED -> 80.00", processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        assertTrue(processor.process("GROUP ADD;G01;luis@correo.com").contains("locked"));
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").contains("locked"));
+        assertTrue(processor.process("GROUP DELETE;G01").contains("locked"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET DELETE;TG01-1").startsWith("ERROR"));
+
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("GROUP ADD;G01;luis@correo.com").contains("locked"));
+        assertTrue(processor.process("GROUPTICKET DELETE;TG01").startsWith("ERROR"));
+
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertEquals("OK USER ADDED TO GROUP", processor.process("GROUP ADD;G01;luis@correo.com"));
+        assertEquals(List.of("Ana", "Pedro"),
+                ((GroupTicket) park.tickets.findById("TG01")).getUsers().stream().map(User::getName).toList());
+        assertEquals("OK GROUP TICKET CREATED -> 108.00", processor.process("GROUPTICKET CREATE;TG02;G01;2026-10-20"));
+        assertEquals("OK GROUP TICKET DELETED", processor.process("GROUPTICKET DELETE;TG02"));
+        assertEquals("OK USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals("OK GROUP DELETED", processor.process("GROUP DELETE;G01"));
+        assertTrue(park.tickets.getTickets().isEmpty());
+        String help = processor.process("HELP");
+        assertTrue(help.contains("GROUPTICKET CREATE;IdentificadorEntradaGrupo;IdentificadorGrupo;yyyy-MM-dd"));
+        assertTrue(help.contains("GROUPTICKET DELETE;IdentificadorEntradaGrupo"));
     }
 
     @Test

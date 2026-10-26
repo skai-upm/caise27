@@ -23,7 +23,8 @@ final class TestPark {
         controller = new MainController(CLOCK);
         users = new UserManager(new UserRepository(dir.resolve("users.txt")));
         groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
-        tickets = new TicketManager(new TicketRepository(dir.resolve("tickets.txt")), users, controller);
+        tickets = new TicketManager(new TicketRepository(dir.resolve("tickets.txt"),
+                dir.resolve("grouptickets.txt")), users, groups, controller);
         processor = new CommandProcessor(users, groups, tickets, controller);
     }
 
