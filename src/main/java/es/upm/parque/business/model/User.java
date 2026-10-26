@@ -1,7 +1,8 @@
 package es.upm.parque.business.model;
 
 /**
- * A registered park user. Holds state only; it knows nothing about persistence.
+ * A registered park user. Holds state only; it knows nothing about persistence. The password is
+ * kept only as a hash.
  */
 public class User {
 
@@ -9,17 +10,17 @@ public class User {
     private String surname;
     private final String dni;
     private String email;
-    private String password;
+    private String passwordHash;
     private String phone;
     private String card;
 
     public User(String name, String surname, String dni, String email,
-                String password, String phone, String card) {
+                String passwordHash, String phone, String card) {
         this.name = name;
         this.surname = surname;
         this.dni = dni;
         this.email = email;
-        this.password = password;
+        this.passwordHash = passwordHash;
         this.phone = phone;
         this.card = card;
     }
@@ -52,12 +53,15 @@ public class User {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    /**
+     * The stored password hash; the plaintext password is never kept.
+     */
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public String getPhone() {

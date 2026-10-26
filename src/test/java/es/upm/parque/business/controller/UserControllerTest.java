@@ -1,16 +1,21 @@
 package es.upm.parque.business.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.parque.TestPark;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.model.User;
 import es.upm.parque.persistence.UserRepository;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,7 +32,7 @@ class UserControllerTest {
 
     private static UserController configured(UserRepository repository) {
         UserController users = UserController.getInstance();
-        users.configure(repository);
+        users.configure(repository, TestPark.HASHER);
         return users;
     }
 
@@ -125,7 +130,8 @@ class UserControllerTest {
         assertEquals("Ana Maria", u.getName());
         assertEquals("Lopez", u.getSurname());
         assertEquals("699999999", u.getPhone());
-        assertEquals("Nueva2#", u.getPassword());
+        assertTrue(TestPark.HASHER.matches("Nueva2#", u.getPasswordHash()));
+        assertFalse(TestPark.HASHER.matches("Clave1!", u.getPasswordHash()));
         assertEquals("9999888877776666", u.getCard());
         assertEquals("12345678Z", u.getDni());
     }
@@ -151,8 +157,39 @@ class UserControllerTest {
         assertThrows(ParkException.class, () -> controller.update("ana@correo.com", "Clave1!", "NAME", " "));
         User ana = configured(new UserRepository(file)).findByEmail("ana@correo.com");
         assertEquals("Ana", ana.getName());
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(TestPark.HASHER.matches("Clave1!", ana.getPasswordHash()));
         assertEquals("1234567890123456", ana.getCard());
+    }
+
+    @Test
+    void passwordsAreStoredOnlyAsHashes() throws IOException {
+        createAna();
+        String line = Files.readAllLines(file).get(0);
+        assertFalse(line.contains("Clave1!"));
+        String[] f = line.split(";");
+        assertTrue(f[4].startsWith("$2a$") && f[4].length() == 60, f[4]);
+        assertTrue(controller.findByEmail("ana@correo.com").getPasswordHash().startsWith("$2a$"));
+    }
+
+    @Test
+    void changedPasswordAuthenticatesAfterRestart() {
+        createAna();
+        String before = controller.findByEmail("ana@correo.com").getPasswordHash();
+        controller.update("ana@correo.com", "Clave1!", "PASSWORD", "Nueva2#");
+        UserController reloaded = configured(new UserRepository(file));
+        assertNotEquals(before, reloaded.findByEmail("ana@correo.com").getPasswordHash());
+        assertThrows(ParkException.class, () -> reloaded.authenticate("ana@correo.com", "Clave1!"));
+        assertEquals("12345678Z", reloaded.authenticate("ana@correo.com", "Nueva2#").getDni());
+    }
+
+    @Test
+    void legacyPlaintextPasswordsAreMigrated() throws IOException {
+        Files.write(file, List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"));
+        UserController migrated = configured(new UserRepository(file));
+        String stored = Files.readAllLines(file).get(0).split(";")[4];
+        assertTrue(TestPark.HASHER.isHash(stored));
+        migrated.delete("ana@correo.com", "Clave1!");
+        assertTrue(migrated.getUsers().isEmpty());
     }
 
     @Test

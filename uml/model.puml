@@ -45,7 +45,7 @@ package es.upm.parque.business.model {
     surname : String
     dni : String
     email : String
-    password : String
+    passwordHash : String
     phone : String
     card : String
   }
@@ -102,6 +102,13 @@ package es.upm.parque.business.invoice {
   interface InvoiceBuilder
   class StandardInvoiceBuilder {
     recipient : String
+  }
+}
+
+package es.upm.parque.business.security {
+  interface PasswordHasher
+  class BCryptPasswordHasher {
+    cost : int
   }
 }
 
@@ -172,6 +179,9 @@ InvoiceController x--> "1" TicketController : ticketController
 InvoiceController x--> "1" InvoiceBuilder : builderFactory
 CommandProcessor "0..*" x--> "1" InvoiceController : invoiceController
 
+UserController x--> "1" PasswordHasher : hasher
+PasswordHasher <|.. BCryptPasswordHasher
+
 ' Invoices
 Invoice "1" *--> "0..*" InvoiceSection : sections
 InvoiceSection "1" *--> "1..*" InvoiceLine : lines
@@ -192,6 +202,7 @@ RuntimeException <|-- ParkException
 App ..> ExecutionOptions
 App ..> DataDirectory
 App ..> StandardInvoiceBuilder
+App ..> BCryptPasswordHasher
 App ..> SyntaxHelpFormatter
 App ..> ExtendedHelpFormatter
 UserController ..> UserField

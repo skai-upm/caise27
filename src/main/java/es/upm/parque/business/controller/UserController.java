@@ -3,6 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.business.validation.UserValidator;
 import es.upm.parque.persistence.UserRepository;
 import java.io.UncheckedIOException;
@@ -15,6 +16,7 @@ import java.util.List;
 public final class UserController {
 
     private UserRepository repository;
+    private PasswordHasher hasher;
     private List<User> users;
 
     private UserController() {
@@ -30,9 +32,27 @@ public final class UserController {
     /**
      * Injects the repository and collaborating controllers chosen at startup and loads the stored data.
      */
-    public void configure(UserRepository repository) {
+    public void configure(UserRepository repository, PasswordHasher hasher) {
         this.repository = repository;
+        this.hasher = hasher;
         this.users = new ArrayList<>(repository.loadAll());
+        migratePlaintextPasswords();
+    }
+
+    /**
+     * Replaces passwords stored in plaintext by earlier versions with their hashes.
+     */
+    private void migratePlaintextPasswords() {
+        boolean changed = false;
+        for (User u : users) {
+            if (!hasher.isHash(u.getPasswordHash())) {
+                u.setPasswordHash(hasher.hash(u.getPasswordHash()));
+                changed = true;
+            }
+        }
+        if (changed) {
+            repository.saveAll(users);
+        }
     }
 
     public List<User> getUsers() {
@@ -89,7 +109,7 @@ public final class UserController {
         if (findByEmail(email) != null) {
             throw new ParkException("A user with email " + email + " already exists");
         }
-        users.add(new User(name, surname, normalizedDni, email, password, phone, card));
+        users.add(new User(name, surname, normalizedDni, email, hasher.hash(password), phone, card));
         persist();
     }
 
@@ -133,7 +153,7 @@ public final class UserController {
                 if (!UserValidator.isValidPassword(newValue)) {
                     throw new ParkException("Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol");
                 }
-                user.setPassword(newValue);
+                user.setPasswordHash(hasher.hash(newValue));
             }
             case CARD -> {
                 if (!UserValidator.isValidCard(newValue)) {
@@ -154,7 +174,7 @@ public final class UserController {
         if (user == null) {
             throw new ParkException("No user with email " + email);
         }
-        if (!user.getPassword().equals(password)) {
+        if (!hasher.matches(password, user.getPasswordHash())) {
             throw new ParkException("Incorrect password");
         }
         return user;

@@ -87,7 +87,16 @@ class AppTest {
         String interactive = start(usersA, new String[0], String.join("\n", commands) + "\n");
         String fromFile = start(usersB, new String[] {commandFile(commands).toString()}, "");
         assertEquals(interactive, fromFile);
-        assertEquals(Files.readAllLines(usersA.resolve("users.txt")), Files.readAllLines(usersB.resolve("users.txt")));
+        List<String> a = Files.readAllLines(usersA.resolve("users.txt"));
+        List<String> b = Files.readAllLines(usersB.resolve("users.txt"));
+        assertEquals(withoutPasswordHash(a), withoutPasswordHash(b));
+        assertTrue(TestPark.HASHER.matches("Clave1!", a.get(0).split(";")[4]));
+        assertTrue(TestPark.HASHER.matches("Clave1!", b.get(0).split(";")[4]));
+    }
+
+    /** Password hashes are salted, so equal passwords give different stored values. */
+    private static List<String> withoutPasswordHash(List<String> lines) {
+        return lines.stream().map(l -> l.replaceFirst("\\$2a\\$[^;]*", "<hash>")).toList();
     }
 
     @Test

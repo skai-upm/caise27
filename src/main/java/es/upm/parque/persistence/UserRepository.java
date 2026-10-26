@@ -39,7 +39,7 @@ public class UserRepository {
     public void saveAll(List<User> users) {
         TextFiles.writeLines(file, users.stream()
                 .map(u -> String.join(SEPARATOR, u.getName(), u.getSurname(), u.getDni(), u.getEmail(),
-                        u.getPassword(), u.getPhone(), u.getCard()))
+                        u.getPasswordHash(), u.getPhone(), u.getCard()))
                 .toList());
     }
 }

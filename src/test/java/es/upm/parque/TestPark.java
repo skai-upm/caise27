@@ -7,6 +7,8 @@ import es.upm.parque.business.controller.MainController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.StandardInvoiceBuilder;
+import es.upm.parque.business.security.BCryptPasswordHasher;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.TicketRepository;
@@ -23,6 +25,9 @@ import java.time.ZoneOffset;
  */
 public final class TestPark {
 
+    /** Minimum BCrypt cost keeps the tests fast. */
+    public static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
+
     public static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-01T10:00:00Z"), ZoneOffset.UTC);
 
     public final MainController controller;
@@ -38,7 +43,7 @@ public final class TestPark {
      * application does at startup.
      */
     public TestPark(Path dir) {
-        processor = App.configure(dir, CLOCK);
+        processor = App.configure(dir, CLOCK, HASHER);
         controller = MainController.getInstance();
         users = UserController.getInstance();
         groups = GroupController.getInstance();

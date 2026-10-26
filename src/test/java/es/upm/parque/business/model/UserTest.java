@@ -15,7 +15,7 @@ class UserTest {
         assertEquals("Garcia Lopez", user.getSurname());
         assertEquals("12345678Z", user.getDni());
         assertEquals("ana@correo.com", user.getEmail());
-        assertEquals("Clave1!", user.getPassword());
+        assertEquals("Clave1!", user.getPasswordHash());
         assertEquals("612345678", user.getPhone());
         assertEquals("1234567890123456", user.getCard());
     }
@@ -26,13 +26,13 @@ class UserTest {
         user.setName("Ana Maria");
         user.setSurname("Lopez");
         user.setEmail("n@b.com");
-        user.setPassword("Nueva2#");
+        user.setPasswordHash("Nueva2#");
         user.setPhone("2");
         user.setCard("9999888877776666");
         assertEquals("Ana Maria", user.getName());
         assertEquals("Lopez", user.getSurname());
         assertEquals("n@b.com", user.getEmail());
-        assertEquals("Nueva2#", user.getPassword());
+        assertEquals("Nueva2#", user.getPasswordHash());
         assertEquals("2", user.getPhone());
         assertEquals("9999888877776666", user.getCard());
         assertEquals("12345678Z", user.getDni());

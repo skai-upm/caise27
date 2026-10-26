@@ -7,6 +7,8 @@ import es.upm.parque.business.controller.MainController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.StandardInvoiceBuilder;
+import es.upm.parque.business.security.BCryptPasswordHasher;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.DataDirectory;
 import es.upm.parque.persistence.GroupRepository;
@@ -40,6 +42,7 @@ public class App {
     static final String TICKETS_FILE = "tickets.txt";
     static final String GROUP_TICKETS_FILE = "grouptickets.txt";
     static final String ATTRACTIONS_FILE = "attractions.txt";
+    static final int BCRYPT_COST = 10;
 
     private final CommandProcessor processor;
 
@@ -82,10 +85,17 @@ public class App {
      * Normal and --fly executions only differ in the directory passed here.
      */
     public static CommandProcessor configure(Path dataDir, Clock clock) {
+        return configure(dataDir, clock, new BCryptPasswordHasher(BCRYPT_COST));
+    }
+
+    /**
+     * Same as {@link #configure(Path, Clock)} with an explicit password hasher.
+     */
+    public static CommandProcessor configure(Path dataDir, Clock clock, PasswordHasher hasher) {
         MainController mainController = MainController.getInstance();
         mainController.configure(clock);
         UserController userController = UserController.getInstance();
-        userController.configure(new UserRepository(dataDir.resolve(USERS_FILE)));
+        userController.configure(new UserRepository(dataDir.resolve(USERS_FILE)), hasher);
         GroupController groupController = GroupController.getInstance();
         groupController.configure(new GroupRepository(dataDir.resolve(GROUPS_FILE)), userController);
         TicketController ticketController = TicketController.getInstance();
