@@ -14,7 +14,10 @@ import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.Values;
+import es.upm.parque.presentation.help.CommandInfo;
+import es.upm.parque.presentation.help.HelpGenerator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interprets one text command, split on ';', and returns the response text.
@@ -41,16 +44,53 @@ public class CommandProcessor {
     static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
     static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
     static final String HELP_SYNTAX = "HELP";
+    static final String HELP_EXTENDED_SYNTAX = "HELP EXTENDED";
     static final String EXIT_SYNTAX = "EXIT";
 
-    /** Syntax of every supported command, in the order HELP shows them. */
-    static final List<String> COMMAND_SYNTAX = List.of(
-            USER_CREATE_SYNTAX, USER_DELETE_SYNTAX, USER_UPDATE_SYNTAX,
-            GROUP_CREATE_SYNTAX, GROUP_ADD_SYNTAX, GROUP_REMOVE_SYNTAX, GROUP_DELETE_SYNTAX,
-            TICKET_CREATE_SYNTAX, TICKET_DELETE_SYNTAX, GROUPTICKET_CREATE_SYNTAX, GROUPTICKET_DELETE_SYNTAX,
-            ATTRACTION_CREATE_SYNTAX, ATTRACTION_ENTER_SYNTAX, ATTRACTION_EXIT_SYNTAX, ATTRACTION_STATUS_SYNTAX,
-            INVOICE_CREATE_SYNTAX,
-            SYSTEM_DATE_SYNTAX, SYSTEM_PRICE_SYNTAX, HELP_SYNTAX, EXIT_SYNTAX);
+    /** Registry of every supported command, in the order the help shows them. */
+    public static final List<CommandInfo> COMMANDS = List.of(
+            new CommandInfo(USER_CREATE_SYNTAX,
+                    "Registers a user after validating every field; DNI and email must be unique."),
+            new CommandInfo(USER_DELETE_SYNTAX,
+                    "Deletes the user after checking the password, unless they have tickets dated today or later."),
+            new CommandInfo(USER_UPDATE_SYNTAX,
+                    "Changes one field (NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD) after checking the password; the DNI cannot change."),
+            new CommandInfo(GROUP_CREATE_SYNTAX,
+                    "Creates an empty group with a unique identifier."),
+            new CommandInfo(GROUP_ADD_SYNTAX,
+                    "Adds a registered user to a group that is not locked by a current or future group ticket."),
+            new CommandInfo(GROUP_REMOVE_SYNTAX,
+                    "Removes a member from a group that is not locked by a current or future group ticket."),
+            new CommandInfo(GROUP_DELETE_SYNTAX,
+                    "Deletes an unlocked group; its users stay registered."),
+            new CommandInfo(TICKET_CREATE_SYNTAX,
+                    "Buys an individual ticket for a user and date (not before the system date) at the current price."),
+            new CommandInfo(TICKET_DELETE_SYNTAX,
+                    "Cancels a standalone individual ticket dated after the system date."),
+            new CommandInfo(GROUPTICKET_CREATE_SYNTAX,
+                    "Buys one ticket per current group member with a size-based discount (0/10/20/50%)."),
+            new CommandInfo(GROUPTICKET_DELETE_SYNTAX,
+                    "Cancels a group ticket dated after the system date together with its member tickets."),
+            new CommandInfo(ATTRACTION_CREATE_SYNTAX,
+                    "Creates an attraction with a positive maximum capacity."),
+            new CommandInfo(ATTRACTION_ENTER_SYNTAX,
+                    "Lets the users of a ticket valid today into an attraction; all of them or none, within capacity."),
+            new CommandInfo(ATTRACTION_EXIT_SYNTAX,
+                    "Lets the users of a ticket out of an attraction, freeing their places."),
+            new CommandInfo(ATTRACTION_STATUS_SYNTAX,
+                    "Shows capacity, occupancy, available places and the users present in an attraction."),
+            new CommandInfo(INVOICE_CREATE_SYNTAX,
+                    "Shows the invoice of a user (direct tickets) or a group (group tickets) with prices and total."),
+            new CommandInfo(SYSTEM_DATE_SYNTAX,
+                    "Sets the simulated current date used by every date rule."),
+            new CommandInfo(SYSTEM_PRICE_SYNTAX,
+                    "Sets the current individual ticket price (40.00 at every start)."),
+            new CommandInfo(HELP_SYNTAX,
+                    "Lists the syntax of every command."),
+            new CommandInfo(HELP_EXTENDED_SYNTAX,
+                    "Lists every command with its syntax and a short description."),
+            new CommandInfo(EXIT_SYNTAX,
+                    "Ends the application; in a file, no later line is executed."));
 
     private final UserController userController;
     private final GroupController groupController;
@@ -58,17 +98,19 @@ public class CommandProcessor {
     private final AttractionController attractionController;
     private final InvoiceController invoiceController;
     private final MainController mainController;
+    private final Map<String, HelpGenerator> helpGenerators;
     private boolean exitRequested;
 
     public CommandProcessor(UserController userController, GroupController groupController, TicketController ticketController,
                             AttractionController attractionController, InvoiceController invoiceController,
-                            MainController mainController) {
+                            MainController mainController, Map<String, HelpGenerator> helpGenerators) {
         this.userController = userController;
         this.groupController = groupController;
         this.ticketController = ticketController;
         this.attractionController = attractionController;
         this.invoiceController = invoiceController;
         this.mainController = mainController;
+        this.helpGenerators = Map.copyOf(helpGenerators);
     }
 
     /**
@@ -84,12 +126,12 @@ public class CommandProcessor {
             parts[i] = parts[i].trim();
         }
         String operation = parts[0].toUpperCase();
-        String syntax = syntaxOf(operation);
-        if (syntax == null) {
+        CommandInfo command = commandOf(operation);
+        if (command == null) {
             return "ERROR Unknown command: " + parts[0];
         }
         try {
-            requireParams(parts, syntax);
+            requireParams(parts, command);
             return execute(operation, parts);
         } catch (ParkException e) {
             return "ERROR " + e.getMessage();
@@ -149,8 +191,9 @@ public class CommandProcessor {
                 mainController.setTicketPrice(Values.parsePrice(p[1]));
                 yield "OK SYSTEM PRICE SET -> " + Values.formatPrice(mainController.getTicketPrice());
             }
-            case "HELP" -> "OK Available commands:" + System.lineSeparator()
-                    + String.join(System.lineSeparator(), COMMAND_SYNTAX);
+            case "HELP" -> "OK Available commands:" + System.lineSeparator() + helpGenerators.get(operation).generate();
+            case "HELP EXTENDED" -> "OK Available commands (extended):" + System.lineSeparator()
+                    + helpGenerators.get(operation).generate();
             case "EXIT" -> {
                 exitRequested = true;
                 yield "OK EXIT";
@@ -235,25 +278,20 @@ public class CommandProcessor {
     }
 
     /**
-     * Returns the syntax of the command whose operation matches, or {@code null} if unknown.
+     * Returns the registered command whose operation matches, or {@code null} if unknown.
      */
-    private static String syntaxOf(String operation) {
-        for (String syntax : COMMAND_SYNTAX) {
-            if (syntax.split(";", -1)[0].equals(operation)) {
-                return syntax;
-            }
-        }
-        return null;
+    private static CommandInfo commandOf(String operation) {
+        return COMMANDS.stream().filter(c -> c.operation().equals(operation)).findFirst().orElse(null);
     }
 
     /**
      * Checks that the command has as many parameters as its syntax declares.
      */
-    private static void requireParams(String[] parts, String syntax) {
-        int expected = syntax.split(";", -1).length - 1;
+    private static void requireParams(String[] parts, CommandInfo command) {
+        int expected = command.parameterCount();
         if (parts.length - 1 != expected) {
             throw new ParkException("Wrong number of parameters (expected " + expected + ", got "
-                    + (parts.length - 1) + "). Usage: " + syntax);
+                    + (parts.length - 1) + "). Usage: " + command.syntax());
         }
     }
 }

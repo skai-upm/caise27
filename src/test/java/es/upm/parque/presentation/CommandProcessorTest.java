@@ -13,7 +13,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import es.upm.parque.presentation.help.CommandInfo;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -89,7 +91,7 @@ class CommandProcessorTest {
         String out = processor.process("HELP");
         String[] lines = out.split(System.lineSeparator());
         assertEquals("OK Available commands:", lines[0]);
-        assertEquals(CommandProcessor.COMMAND_SYNTAX, List.of(lines).subList(1, lines.length));
+        assertEquals(CommandProcessor.COMMANDS.stream().map(CommandInfo::syntax).toList(), List.of(lines).subList(1, lines.length));
         assertTrue(out.contains("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta"));
         assertTrue(out.contains("USER DELETE;Correo;Contraseña"));
         assertTrue(out.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
@@ -291,8 +293,32 @@ class CommandProcessorTest {
     }
 
     @Test
+    void extendedHelpShowsSyntaxAndDescriptionForTheSameCommands() {
+        String nl = System.lineSeparator();
+        String[] concise = processor.process("HELP").split(nl);
+        String[] extended = processor.process("HELP EXTENDED").split(nl);
+        assertEquals("OK Available commands (extended):", extended[0]);
+        assertEquals(concise.length * 2 - 1, extended.length);
+        for (int i = 1; i < concise.length; i++) {
+            assertEquals(concise[i], extended[2 * i - 1]);
+            assertTrue(extended[2 * i].startsWith("    ") && extended[2 * i].trim().length() > 10, extended[2 * i]);
+        }
+        assertTrue(processor.process("HELP").contains(nl + "HELP EXTENDED" + nl));
+        assertTrue(processor.process("HELP EXTENDED;x").startsWith("ERROR Wrong number of parameters"));
+    }
+
+    @Test
+    void everyRegisteredCommandIsDescribed() {
+        for (CommandInfo command : CommandProcessor.COMMANDS) {
+            assertFalse(command.description().isBlank(), command.syntax());
+        }
+        assertEquals(CommandProcessor.COMMANDS.size(),
+                CommandProcessor.COMMANDS.stream().map(CommandInfo::operation).distinct().count());
+    }
+
+    @Test
     void unexpectedErrorsDoNotPropagate() {
-        CommandProcessor broken = new CommandProcessor(null, null, null, null, null, MainController.getInstance());
+        CommandProcessor broken = new CommandProcessor(null, null, null, null, null, MainController.getInstance(), Map.of());
         assertTrue(broken.process(ANA).startsWith("ERROR Unexpected error"));
     }
 }

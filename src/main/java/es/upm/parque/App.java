@@ -14,6 +14,9 @@ import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 import es.upm.parque.presentation.CommandProcessor;
 import es.upm.parque.presentation.ExecutionOptions;
+import es.upm.parque.presentation.help.ExtendedHelpFormatter;
+import es.upm.parque.presentation.help.HelpGenerator;
+import es.upm.parque.presentation.help.SyntaxHelpFormatter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.Map;
 
 /**
  * Entry point. Without a file argument commands are read interactively from standard input;
@@ -92,8 +96,11 @@ public class App {
                 mainController);
         InvoiceController invoiceController = InvoiceController.getInstance();
         invoiceController.configure(userController, groupController, ticketController, StandardInvoiceBuilder::new);
+        Map<String, HelpGenerator> help = Map.of(
+                "HELP", new HelpGenerator(CommandProcessor.COMMANDS, new SyntaxHelpFormatter()),
+                "HELP EXTENDED", new HelpGenerator(CommandProcessor.COMMANDS, new ExtendedHelpFormatter()));
         return new CommandProcessor(userController, groupController, ticketController, attractionController,
-                invoiceController, mainController);
+                invoiceController, mainController, help);
     }
 
     /**

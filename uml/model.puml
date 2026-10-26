@@ -24,6 +24,17 @@ package es.upm.parque.presentation {
   }
 }
 
+package es.upm.parque.presentation.help {
+  class CommandInfo {
+    syntax : String
+    description : String
+  }
+  interface HelpFormatter
+  class SyntaxHelpFormatter
+  class ExtendedHelpFormatter
+  class HelpGenerator
+}
+
 package es.upm.parque.business {
   class ParkException
 }
@@ -131,6 +142,13 @@ CommandProcessor "0..*" x--> "1" TicketController : ticketController
 CommandProcessor "0..*" x--> "1" AttractionController : attractionController
 CommandProcessor "0..*" x--> "1" MainController : mainController
 
+CommandProcessor "0..*" x--> "0..*" HelpGenerator : helpGenerators
+CommandProcessor x--> "1..*" CommandInfo : COMMANDS
+HelpGenerator "0..*" x--> "0..*" CommandInfo : commands
+HelpGenerator "0..*" x--> "1" HelpFormatter : formatter
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+
 ' Managers
 UserController x--> "1" UserRepository : repository
 UserController x--> "0..*" User : users
@@ -174,6 +192,8 @@ RuntimeException <|-- ParkException
 App ..> ExecutionOptions
 App ..> DataDirectory
 App ..> StandardInvoiceBuilder
+App ..> SyntaxHelpFormatter
+App ..> ExtendedHelpFormatter
 UserController ..> UserField
 UserController ..> UserValidator
 GroupController ..> UserValidator
