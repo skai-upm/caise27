@@ -177,10 +177,13 @@ public class CommandProcessor {
     }
 
     private String createAttraction(String[] parts) {
-        if (parts.length != 4) {
+        if (parts.length == 4) {
+            attractionController.create(parts[1], parts[2], parts[3]);
+        } else if (parts.length == 5) {
+            attractionController.create(parts[1], parts[2], parts[3], parts[4]);
+        } else {
             return usage("ATTRACTION CREATE");
         }
-        attractionController.create(parts[1], parts[2], parts[3]);
         return "OK ATTRACTION CREATED";
     }
 
@@ -212,10 +215,11 @@ public class CommandProcessor {
         if (parts.length != 2) {
             return usage("ATTRACTION STATUS");
         }
-        Attraction attraction = attractionController.require(parts[1]);
+        Attraction<?> attraction = attractionController.require(parts[1]);
         List<User> visitors = attraction.getVisitors();
         StringBuilder status = new StringBuilder("OK ATTRACTION STATUS ").append(attraction.getId())
                 .append(System.lineSeparator()).append("Name: ").append(attraction.getName())
+                .append(System.lineSeparator()).append("Type: ").append(attraction.getType())
                 .append(System.lineSeparator()).append("Capacity: ").append(attraction.getCapacity())
                 .append(System.lineSeparator()).append("Present: ").append(visitors.size())
                 .append(System.lineSeparator()).append("Available: ").append(attraction.available())

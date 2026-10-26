@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * An individual park ticket for one user and one date, sold at a fixed price.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final User user;
     private final BigDecimal price;
@@ -18,6 +18,7 @@ public class IndividualTicket extends Ticket {
         this.price = price;
     }
 
+    @Override
     public User getUser() {
         return user;
     }

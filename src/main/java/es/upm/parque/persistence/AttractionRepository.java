@@ -1,6 +1,7 @@
 package es.upm.parque.persistence;
 
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -13,7 +14,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Stores attractions in a text file, one per line: {@code id;name;capacity}. Visitors are not stored.
+ * Stores attractions in a text file, one per line: {@code id;name;capacity;type}. Visitors are not stored.
+ * Lines without a type are read as GENERAL attractions.
  */
 public class AttractionRepository {
 
@@ -25,8 +27,8 @@ public class AttractionRepository {
         this.file = file;
     }
 
-    public List<Attraction> loadAll() throws IOException {
-        List<Attraction> attractions = new ArrayList<>();
+    public List<Attraction<?>> loadAll() throws IOException {
+        List<Attraction<?>> attractions = new ArrayList<>();
         if (!Files.exists(file)) {
             return attractions;
         }
@@ -34,26 +36,36 @@ public class AttractionRepository {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] fields = line.split(SEPARATOR, -1);
-                if (fields.length == 3) {
-                    try {
-                        attractions.add(new Attraction(fields[0], fields[1], Integer.parseInt(fields[2])));
-                    } catch (NumberFormatException e) {
-                        // malformed line: skipped
-                    }
+                Attraction<?> attraction = parse(fields);
+                if (attraction != null) {
+                    attractions.add(attraction);
                 }
             }
         }
         return attractions;
     }
 
-    public void saveAll(Collection<Attraction> attractions) throws IOException {
+    private static Attraction<?> parse(String[] fields) {
+        if (fields.length != 3 && fields.length != 4) {
+            return null;
+        }
+        AttractionType type = fields.length == 4 ? AttractionType.fromName(fields[3]) : AttractionType.GENERAL;
+        try {
+            return type == null ? null : type.create(fields[0], fields[1], Integer.parseInt(fields[2]));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public void saveAll(Collection<Attraction<?>> attractions) throws IOException {
         Path parent = file.toAbsolutePath().getParent();
         if (parent != null) {
             Files.createDirectories(parent);
         }
         try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            for (Attraction attraction : attractions) {
-                writer.write(attraction.getId() + SEPARATOR + attraction.getName() + SEPARATOR + attraction.getCapacity());
+            for (Attraction<?> attraction : attractions) {
+                writer.write(String.join(SEPARATOR, attraction.getId(), attraction.getName(),
+                        Integer.toString(attraction.getCapacity()), attraction.getType().name()));
                 writer.newLine();
             }
         }

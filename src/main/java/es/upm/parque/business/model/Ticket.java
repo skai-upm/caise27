@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Common abstraction of every park ticket: an identifier, a date of use and a price.
  */
-public abstract class Ticket {
+public abstract class Ticket implements Accessible {
 
     private final String id;
     private final LocalDate date;
@@ -17,10 +17,12 @@ public abstract class Ticket {
         this.date = date;
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }
@@ -30,6 +32,7 @@ public abstract class Ticket {
     /**
      * The users admitted with this ticket.
      */
+    @Override
     public abstract List<User> getHolders();
 
     /**

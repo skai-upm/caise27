@@ -76,7 +76,7 @@ class AttractionControllerTest {
     void attractionsPersistAndStartEmpty() throws IOException {
         attractions.create("A01", "Tornado", "20");
         attractions.enter("A01", "T001");
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
 
         AttractionController restarted = newManager();
         Attraction restored = restarted.find("A01");

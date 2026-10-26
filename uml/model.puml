@@ -118,11 +118,25 @@ package es.upm.parque.business.model {
   }
   class SpeedPass
   class SpecialPass
-  class Attraction {
+  interface Accessible
+  interface IndividualAccess
+  interface GroupAccess
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+  abstract class "Attraction<T extends Accessible>" as Attraction {
     id : String
     name : String
     capacity : int
+    admitted : Class<T>
   }
+  class GeneralAttraction
+  class IndividualAttraction
+  class GroupAttraction
+  class SpecialAttraction
 }
 
 package es.upm.parque.persistence {
@@ -148,6 +162,15 @@ package es.upm.parque.persistence {
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 Pass <|-- SpeedPass
+Accessible <|-- IndividualAccess
+Accessible <|-- GroupAccess
+Accessible <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <T = Accessible>
+Attraction <|-- IndividualAttraction : <T = IndividualAccess>
+Attraction <|-- GroupAttraction : <T = GroupAccess>
+Attraction <|-- SpecialAttraction : <T = IndividualAccess>
 Pass <|-- SpecialPass
 RuntimeException <|-- BusinessException
 InvoiceBuilder <|.. TextInvoiceBuilder
@@ -216,6 +239,7 @@ BusinessControllers x--> "1" PassController : passes
 
 ' Usage of classes without incoming relationships
 App ..> CommandRunner
+AttractionController ..> AttractionType
 App ..> BusinessControllers
 CommandProcessor ..> BusinessControllers
 TextInvoiceBuilder ..> Invoice

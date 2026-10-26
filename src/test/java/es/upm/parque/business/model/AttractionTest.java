@@ -3,6 +3,8 @@ package es.upm.parque.business.model;
 import es.upm.parque.business.BusinessException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,7 +41,7 @@ class AttractionTest {
 
     @Test
     void individualAndGroupEntryAndExit() {
-        Attraction attraction = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction attraction = new GeneralAttraction("A01", "Tornado", 20);
         IndividualTicket single = new IndividualTicket("T001", TODAY, user(0), PRICE);
         GroupTicket group = groupTicket("TG01", 2, 1);
         assertEquals(1, attraction.enter(single, TODAY));
@@ -53,7 +55,7 @@ class AttractionTest {
 
     @Test
     void ticketMustBeForToday() {
-        Attraction attraction = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction attraction = new GeneralAttraction("A01", "Tornado", 20);
         IndividualTicket ticket = new IndividualTicket("T001", TODAY, user(0), PRICE);
         assertThrows(BusinessException.class, () -> attraction.enter(ticket, TODAY.minusDays(1)));
         assertThrows(BusinessException.class, () -> attraction.enter(ticket, TODAY.plusDays(1)));
@@ -62,7 +64,7 @@ class AttractionTest {
 
     @Test
     void groupEntryIsAtomic() {
-        Attraction attraction = new Attraction("A01", "Tornado", 4);
+        GeneralAttraction attraction = new GeneralAttraction("A01", "Tornado", 4);
         attraction.enter(new IndividualTicket("T001", TODAY, user(9), PRICE), TODAY);
         assertThrows(BusinessException.class, () -> attraction.enter(groupTicket("TG01", 4, 0), TODAY));
         assertEquals(1, attraction.getVisitors().size());
@@ -71,8 +73,33 @@ class AttractionTest {
     }
 
     @Test
+    void typesAdmitTheirCapabilitiesOnly() {
+        IndividualTicket single = new IndividualTicket("T001", TODAY, user(0), PRICE);
+        GroupTicket group = groupTicket("TG01", 2, 1);
+        assertEquals(1, new GeneralAttraction("A", "A", 9).enterWith(single, TODAY));
+        assertEquals(2, new GeneralAttraction("A", "A", 9).enterWith(group, TODAY));
+        assertEquals(1, new IndividualAttraction("A", "A", 9).enterWith(single, TODAY));
+        assertThrows(BusinessException.class, () -> new IndividualAttraction("A", "A", 9).enterWith(group, TODAY));
+        assertEquals(2, new GroupAttraction("A", "A", 9).enterWith(group, TODAY));
+        assertThrows(BusinessException.class, () -> new GroupAttraction("A", "A", 9).enterWith(single, TODAY));
+        SpecialAttraction special = new SpecialAttraction("A", "A", 9);
+        IndividualAccess admitted = special.admit(single);
+        assertSame(single, admitted);
+        assertThrows(BusinessException.class, () -> special.admit(group));
+        assertEquals(AttractionType.SPECIAL, special.getType());
+    }
+
+    @Test
+    void factoryCreatesEachType() {
+        for (AttractionType type : AttractionType.values()) {
+            assertEquals(type, type.create("A", "A", 1).getType());
+        }
+        assertNull(AttractionType.fromName("VIP"));
+    }
+
+    @Test
     void sameUserCannotEnterTwice() {
-        Attraction attraction = new Attraction("A01", "Tornado", 4);
+        GeneralAttraction attraction = new GeneralAttraction("A01", "Tornado", 4);
         IndividualTicket ticket = new IndividualTicket("T001", TODAY, user(0), PRICE);
         attraction.enter(ticket, TODAY);
         assertThrows(BusinessException.class, () -> attraction.enter(ticket, TODAY));

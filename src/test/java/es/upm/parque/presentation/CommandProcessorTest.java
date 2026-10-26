@@ -272,7 +272,7 @@ class CommandProcessorTest {
 
         assertEquals("OK ATTRACTION EXITED -> 1 users", processor.process("ATTRACTION EXIT;A01;T001"));
         assertEquals(String.join(System.lineSeparator(),
-                "OK ATTRACTION STATUS A01", "Name: Tornado", "Capacity: 20", "Present: 2", "Available: 18", "Users:",
+                "OK ATTRACTION STATUS A01", "Name: Tornado", "Type: GENERAL", "Capacity: 20", "Present: 2", "Available: 18", "Users:",
                 "- Pedro Lopez Martin (87654321X)", "- Luis Ruiz (00000000T)"),
                 processor.process("ATTRACTION STATUS;A01"));
         assertTrue(processor.process("ATTRACTION DELETE;A01").startsWith("ERROR"));
@@ -327,6 +327,33 @@ class CommandProcessorTest {
         assertTrue(processor.process("SPEEDPASS DELETE;T001-SP3").startsWith("ERROR"));
         assertTrue(processor.process("INVOICE CREATE;USER;ana@correo.com").contains("TOTAL: 120.00"));
         assertTrue(processor.process("HELP").contains("SPEEDPASS CREATE;IdEntrada;1|10"));
+    }
+
+    @Test
+    void attractionTypes() throws IOException {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;Familia");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A03;Barcas;10;GROUP"));
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A05;Coches;10;INDIVIDUAL"));
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A06;Torre;10;SPECIAL"));
+        assertTrue(processor.process("ATTRACTION CREATE;A07;X;10;VIP").startsWith("ERROR Invalid attraction type"));
+
+        assertEquals("ERROR Attraction A03 (GROUP) does not admit individual ticket T001",
+                processor.process("ATTRACTION ENTER;A03;T001"));
+        assertEquals("OK ATTRACTION ENTERED -> 1 users", processor.process("ATTRACTION ENTER;A03;TG01"));
+        assertEquals("ERROR Attraction A05 (INDIVIDUAL) does not admit group ticket TG01",
+                processor.process("ATTRACTION ENTER;A05;TG01"));
+        assertEquals("OK ATTRACTION ENTERED -> 1 users", processor.process("ATTRACTION ENTER;A05;T001"));
+        assertTrue(processor.process("ATTRACTION ENTER;A06;TG01").startsWith("ERROR"));
+        assertEquals("OK ATTRACTION ENTERED -> 1 users", processor.process("ATTRACTION ENTER;A06;T001"));
+        assertTrue(processor.process("ATTRACTION STATUS;A06").contains("Type: SPECIAL"));
+
+        assertTrue(newProcessor().process("ATTRACTION STATUS;A03").contains("Type: GROUP"));
     }
 
     @Test

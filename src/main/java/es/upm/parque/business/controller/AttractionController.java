@@ -2,6 +2,7 @@ package es.upm.parque.business.controller;
 
 import es.upm.parque.business.BusinessException;
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.persistence.AttractionRepository;
@@ -23,7 +24,7 @@ public class AttractionController {
     private AttractionRepository repository;
     private TicketController ticketController;
     private SystemDate systemDate;
-    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
 
     private AttractionController() {
     }
@@ -42,23 +43,27 @@ public class AttractionController {
         this.ticketController = ticketController;
         this.systemDate = systemDate;
         attractions.clear();
-        for (Attraction attraction : repository.loadAll()) {
+        for (Attraction<?> attraction : repository.loadAll()) {
             attractions.put(attraction.getId(), attraction);
         }
         return this;
     }
 
-    public Attraction find(String id) {
+    public Attraction<?> find(String id) {
         requireConfigured();
         return attractions.get(id);
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         requireConfigured();
         return new ArrayList<>(attractions.values());
     }
 
     public void create(String id, String name, String capacityText) {
+        create(id, name, capacityText, AttractionType.GENERAL.name());
+    }
+
+    public void create(String id, String name, String capacityText, String typeName) {
         requireConfigured();
         if (id == null || id.isBlank()) {
             throw new BusinessException("The attraction identifier cannot be empty");
@@ -78,13 +83,17 @@ public class AttractionController {
         if (capacity <= 0) {
             throw new BusinessException("Invalid capacity: " + capacityText + " (must be positive)");
         }
-        attractions.put(id, new Attraction(id, name, capacity));
+        AttractionType type = AttractionType.fromName(typeName.trim());
+        if (type == null) {
+            throw new BusinessException("Invalid attraction type: " + typeName + " (GENERAL, INDIVIDUAL, GROUP or SPECIAL)");
+        }
+        attractions.put(id, type.create(id, name, capacity));
         save();
     }
 
     public void delete(String id) {
         requireConfigured();
-        Attraction attraction = require(id);
+        Attraction<?> attraction = require(id);
         if (!attraction.getVisitors().isEmpty()) {
             throw new BusinessException("Attraction " + id + " has users inside and cannot be deleted");
         }
@@ -94,19 +103,19 @@ public class AttractionController {
 
     public int enter(String attractionId, String ticketId) {
         requireConfigured();
-        Attraction attraction = require(attractionId);
-        return attraction.enter(requireTicket(ticketId), systemDate.get());
+        Attraction<?> attraction = require(attractionId);
+        return attraction.enterWith(requireTicket(ticketId), systemDate.get());
     }
 
     public int exit(String attractionId, String ticketId) {
         requireConfigured();
-        Attraction attraction = require(attractionId);
+        Attraction<?> attraction = require(attractionId);
         return attraction.exit(requireTicket(ticketId));
     }
 
-    public Attraction require(String id) {
+    public Attraction<?> require(String id) {
         requireConfigured();
-        Attraction attraction = attractions.get(id);
+        Attraction<?> attraction = attractions.get(id);
         if (attraction == null) {
             throw new BusinessException("No attraction with identifier " + id);
         }

@@ -9,21 +9,27 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A park attraction with a maximum capacity and the users currently inside it.
- * Entry and exit work with any kind of ticket through {@link Ticket#getHolders()}.
+ * A park attraction with a maximum capacity and the users currently inside it. The type parameter is the access
+ * capability the attraction admits; entry is only possible with an object of that type.
+ *
+ * @param <T> the kind of access (ticket capability) admitted by the attraction
  */
-public class Attraction {
+public abstract class Attraction<T extends Accessible> {
 
     private final String id;
     private final String name;
     private final int capacity;
+    private final Class<T> admitted;
     private final Set<User> visitors = new LinkedHashSet<>();
 
-    public Attraction(String id, String name, int capacity) {
+    protected Attraction(String id, String name, int capacity, Class<T> admitted) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+        this.admitted = admitted;
     }
+
+    public abstract AttractionType getType();
 
     public String getId() {
         return id;
@@ -46,15 +52,35 @@ public class Attraction {
     }
 
     /**
-     * Admits every holder of the ticket, or nobody if any condition fails.
+     * Returns the access as the type this attraction admits, or rejects it.
+     */
+    public T admit(Accessible access) {
+        if (!admitted.isInstance(access)) {
+            throw new BusinessException("Attraction " + id + " (" + getType() + ") does not admit "
+                    + kindOf(access) + " " + access.getId());
+        }
+        return admitted.cast(access);
+    }
+
+    /**
+     * Admits an access of any kind if this attraction accepts it.
      *
      * @return the number of users admitted
      */
-    public int enter(Ticket ticket, LocalDate today) {
-        if (!ticket.getDate().equals(today)) {
-            throw new BusinessException("Ticket " + ticket.getId() + " is not valid today (" + SystemDate.format(today) + ")");
+    public int enterWith(Accessible access, LocalDate today) {
+        return enter(admit(access), today);
+    }
+
+    /**
+     * Admits every holder of the access, or nobody if any condition fails.
+     *
+     * @return the number of users admitted
+     */
+    public int enter(T access, LocalDate today) {
+        if (!access.getDate().equals(today)) {
+            throw new BusinessException("Ticket " + access.getId() + " is not valid today (" + SystemDate.format(today) + ")");
         }
-        List<User> holders = ticket.getHolders();
+        List<User> holders = access.getHolders();
         for (User holder : holders) {
             if (visitors.contains(holder)) {
                 throw new BusinessException("User " + holder.getEmail() + " is already in attraction " + id);
@@ -69,17 +95,24 @@ public class Attraction {
     }
 
     /**
-     * Removes the ticket's holders that are inside the attraction.
+     * Removes the holders of the access that are inside the attraction.
      *
      * @return the number of users that left
      */
-    public int exit(Ticket ticket) {
-        List<User> leaving = new ArrayList<>(ticket.getHolders());
+    public int exit(Accessible access) {
+        List<User> leaving = new ArrayList<>(access.getHolders());
         leaving.retainAll(visitors);
         if (leaving.isEmpty()) {
-            throw new BusinessException("No user of ticket " + ticket.getId() + " is in attraction " + id);
+            throw new BusinessException("No user of ticket " + access.getId() + " is in attraction " + id);
         }
         leaving.forEach(visitors::remove);
         return leaving.size();
+    }
+
+    private static String kindOf(Accessible access) {
+        if (access instanceof GroupAccess) {
+            return "group ticket";
+        }
+        return access instanceof IndividualAccess ? "individual ticket" : "ticket";
     }
 }
