@@ -14,22 +14,32 @@ public class CommandProcessor {
     private static final String USER_DELETE_SYNTAX = "USER DELETE;Correo;Contraseña";
     private static final String USER_UPDATE_SYNTAX = "USER UPDATE;Correo;Contraseña;Campo;NuevoValor";
     private static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
+    private static final String GROUP_CREATE_SYNTAX = "GROUP CREATE;IdGrupo;Nombre";
+    private static final String GROUP_ADD_SYNTAX = "GROUP ADD;IdGrupo;Correo";
+    private static final String GROUP_REMOVE_SYNTAX = "GROUP REMOVE;IdGrupo;Correo";
+    private static final String GROUP_DELETE_SYNTAX = "GROUP DELETE;IdGrupo";
 
     /** Syntax of every available command, shown by HELP. */
     private static final List<String> COMMAND_SYNTAX = List.of(
             USER_CREATE_SYNTAX,
             USER_DELETE_SYNTAX,
             USER_UPDATE_SYNTAX,
+            GROUP_CREATE_SYNTAX,
+            GROUP_ADD_SYNTAX,
+            GROUP_REMOVE_SYNTAX,
+            GROUP_DELETE_SYNTAX,
             SYSTEM_DATE_SYNTAX,
             "HELP",
             "EXIT");
 
     private final UserManager userManager;
+    private final GroupManager groupManager;
     private final SystemDate systemDate;
     private boolean exitRequested;
 
-    public CommandProcessor(UserManager userManager, SystemDate systemDate) {
+    public CommandProcessor(UserManager userManager, GroupManager groupManager, SystemDate systemDate) {
         this.userManager = userManager;
+        this.groupManager = groupManager;
         this.systemDate = systemDate;
     }
 
@@ -41,6 +51,10 @@ public class CommandProcessor {
                 case "USER CREATE" -> createUser(parts);
                 case "USER DELETE" -> deleteUser(parts);
                 case "USER UPDATE" -> updateUser(parts);
+                case "GROUP CREATE" -> createGroup(parts);
+                case "GROUP ADD" -> addToGroup(parts);
+                case "GROUP REMOVE" -> removeFromGroup(parts);
+                case "GROUP DELETE" -> deleteGroup(parts);
                 case "SYSTEM DATE" -> setSystemDate(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
@@ -63,7 +77,8 @@ public class CommandProcessor {
         if (parts.length != 3) {
             return usage(USER_DELETE_SYNTAX);
         }
-        userManager.delete(parts[1], parts[2]);
+        User deleted = userManager.delete(parts[1], parts[2]);
+        groupManager.removeFromAllGroups(deleted);
         return "OK USER DELETED";
     }
 
@@ -73,6 +88,38 @@ public class CommandProcessor {
         }
         userManager.update(parts[1], parts[2], parts[3], parts[4]);
         return "OK USER UPDATED";
+    }
+
+    private String createGroup(String[] parts) {
+        if (parts.length != 3) {
+            return usage(GROUP_CREATE_SYNTAX);
+        }
+        groupManager.create(parts[1], parts[2]);
+        return "OK GROUP CREATED";
+    }
+
+    private String addToGroup(String[] parts) {
+        if (parts.length != 3) {
+            return usage(GROUP_ADD_SYNTAX);
+        }
+        groupManager.addMember(parts[1], parts[2]);
+        return "OK USER ADDED TO GROUP";
+    }
+
+    private String removeFromGroup(String[] parts) {
+        if (parts.length != 3) {
+            return usage(GROUP_REMOVE_SYNTAX);
+        }
+        groupManager.removeMember(parts[1], parts[2]);
+        return "OK USER REMOVED FROM GROUP";
+    }
+
+    private String deleteGroup(String[] parts) {
+        if (parts.length != 2) {
+            return usage(GROUP_DELETE_SYNTAX);
+        }
+        groupManager.delete(parts[1]);
+        return "OK GROUP DELETED";
     }
 
     private String setSystemDate(String[] parts) {

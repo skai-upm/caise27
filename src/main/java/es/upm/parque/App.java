@@ -15,14 +15,16 @@ import java.nio.file.Path;
  */
 public class App {
 
-    private static final Path USERS_FILE = Path.of("data", "users.txt");
+    private static final Path DATA_DIR = Path.of("data");
 
     public static void main(String[] args) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new UserManager(new UserRepository(USERS_FILE)), SystemDate.today());
+            UserManager userManager = new UserManager(new UserRepository(DATA_DIR.resolve("users.txt")));
+            GroupManager groupManager = new GroupManager(new GroupRepository(DATA_DIR.resolve("groups.txt")), userManager);
+            processor = new CommandProcessor(userManager, groupManager, SystemDate.today());
         } catch (IOException e) {
-            System.out.println("ERROR Could not load users: " + e.getMessage());
+            System.out.println("ERROR Could not load data: " + e.getMessage());
             return;
         }
         CommandRunner runner = new CommandRunner(processor, System.out);

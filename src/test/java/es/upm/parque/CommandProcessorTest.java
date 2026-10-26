@@ -25,7 +25,13 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        processor = new CommandProcessor(new UserManager(new UserRepository(dir.resolve("users.txt"))), systemDate);
+        processor = newProcessor();
+    }
+
+    private CommandProcessor newProcessor() throws IOException {
+        UserManager users = new UserManager(new UserRepository(dir.resolve("users.txt")));
+        GroupManager groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
+        return new CommandProcessor(users, groups, systemDate);
     }
 
     @Test
@@ -91,6 +97,45 @@ class CommandProcessorTest {
         assertTrue(processor.process("SYSTEM DATE").startsWith("ERROR Wrong number of parameters"));
         assertEquals(LocalDate.of(2026, 9, 1), systemDate.get());
         assertTrue(processor.process("HELP").contains("SYSTEM DATE;yyyy-MM-dd"));
+    }
+
+    @Test
+    void groupCommands() throws IOException {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        assertEquals("OK GROUP CREATED", processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertTrue(processor.process("GROUP CREATE;G01;Otra").startsWith("ERROR"));
+        assertEquals("OK USER ADDED TO GROUP", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertEquals("OK USER ADDED TO GROUP", processor.process("GROUP ADD;G01;pedro@correo.com"));
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP ADD;G01;nadie@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP ADD;G99;ana@correo.com").startsWith("ERROR"));
+        assertEquals("OK USER REMOVED FROM GROUP", processor.process("GROUP REMOVE;G01;pedro@correo.com"));
+        assertTrue(processor.process("GROUP REMOVE;G01;pedro@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP CREATE;G02").startsWith("ERROR Wrong number of parameters"));
+
+        Group restored = newProcessorGroups().find("G01");
+        assertEquals("Familia Garcia", restored.getName());
+        assertEquals(1, restored.getMembers().size());
+        assertEquals("12345678Z", restored.getMembers().get(0).getDni());
+
+        assertEquals("OK GROUP DELETED", processor.process("GROUP DELETE;G01"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR"));
+        assertTrue(processor.process("HELP").contains("GROUP ADD;IdGrupo;Correo"));
+    }
+
+    @Test
+    void deletedUserLeavesGroups() throws IOException {
+        processor.process(CREATE_ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertEquals("OK USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(newProcessorGroups().find("G01").getMembers().isEmpty());
+    }
+
+    private GroupManager newProcessorGroups() throws IOException {
+        UserManager users = new UserManager(new UserRepository(dir.resolve("users.txt")));
+        return new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
     }
 
     @Test

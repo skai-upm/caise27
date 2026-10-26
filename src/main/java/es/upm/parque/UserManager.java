@@ -67,10 +67,14 @@ public class UserManager {
         save();
     }
 
-    public void delete(String email, String password) {
+    /**
+     * Deletes the user and returns it so callers can remove references to it.
+     */
+    public User delete(String email, String password) {
         User user = authenticate(email, password);
         users.remove(user);
         save();
+        return user;
     }
 
     public void update(String email, String password, String fieldName, String newValue) {

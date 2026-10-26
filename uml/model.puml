@@ -1,0 +1,78 @@
+@startuml model
+' Amusement park - class model (Delivery 2: users, groups, system date)
+hide empty members
+skinparam classAttributeIconSize 0
+
+package es.upm.parque {
+
+  class App
+
+  class CommandRunner
+
+  class CommandProcessor {
+    exitRequested : boolean
+  }
+
+  class SystemDate {
+    current : LocalDate
+  }
+
+  class UserManager
+
+  class GroupManager
+
+  class UserRepository {
+    file : Path
+  }
+
+  class GroupRepository {
+    file : Path
+  }
+
+  class User {
+    name : String
+    surname : String
+    dni : String
+    email : String
+    password : String
+    phone : String
+    card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    id : String
+    name : String
+  }
+
+  class UserException
+
+  class UserValidator
+}
+
+CommandRunner "0..*" o--> "1" CommandProcessor : processor
+CommandProcessor "0..*" o--> "1" UserManager : userManager
+CommandProcessor "0..*" o--> "1" GroupManager : groupManager
+CommandProcessor "0..*" o--> "1" SystemDate : systemDate
+UserManager "1" o--> "1" UserRepository : repository
+UserManager "1" o--> "0..*" User : users
+GroupManager "1" o--> "1" GroupRepository : repository
+GroupManager "0..*" o--> "1" UserManager : userManager
+GroupManager "1" o--> "0..*" Group : groups
+Group "0..*" o--> "0..*" User : members
+
+App ..> CommandRunner : <<use>>
+UserManager ..> UserField : <<use>>
+UserManager ..> UserValidator : <<use>>
+UserManager ..> UserException : <<use>>
+RuntimeException <|-- UserException
+
+@enduml
