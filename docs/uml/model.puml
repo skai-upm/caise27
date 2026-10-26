@@ -11,6 +11,7 @@ package es.upm.parque {
     {static} ~GROUPS_FILE_NAME : String
     {static} ~TICKETS_FILE_NAME : String
     {static} ~GROUP_TICKETS_FILE_NAME : String
+    {static} ~ATTRACTIONS_FILE_NAME : String
     +{static} main(args : String[]) : void
     ~{static} run(args : String[], stdin : InputStream, out : PrintStream, usersFile : Path) : void
   }
@@ -106,6 +107,7 @@ package es.upm.parque {
     +detachOwner(user : User) : void
     +detachGroup(group : Group) : void
     +find(id : String) : Ticket
+    +findAdmission(id : String) : Ticket
   }
 
   class TicketStorage {
@@ -115,10 +117,16 @@ package es.upm.parque {
     +save(tickets : Collection<Ticket>) : void
   }
 
+  interface Admission {
+    +getAdmittedUsers() : List<User>
+    +isValidOn(day : LocalDate) : boolean
+  }
+
   abstract class Ticket {
     -id : String {readOnly}
     -date : LocalDate {readOnly}
     +isCurrentOrFuture(today : LocalDate) : boolean
+    +isValidOn(day : LocalDate) : boolean
     +{abstract} getPrice() : BigDecimal
   }
 
@@ -127,6 +135,7 @@ package es.upm.parque {
     -ownerDni : String {readOnly}
     -groupTicketId : String {readOnly}
     +getPrice() : BigDecimal
+    +getAdmittedUsers() : List<User>
     +isOwnedBy(user : User) : boolean
     +detachOwner() : void
   }
@@ -137,8 +146,35 @@ package es.upm.parque {
     -discountPercent : int {readOnly}
     +{static} discountFor(members : int) : int
     +getPrice() : BigDecimal
+    +getAdmittedUsers() : List<User>
     +isForGroup(group : Group) : boolean
     +detachGroup() : void
+  }
+
+  class AttractionManager {
+    -attractionsById : Map<String, Attraction>
+    +create(id : String, name : String, capacity : String) : Attraction
+    +delete(id : String) : void
+    +enter(id : String, admission : Admission, today : LocalDate) : void
+    +exit(id : String, admission : Admission) : int
+    +removeUserEverywhere(user : User) : void
+    +require(id : String) : Attraction
+  }
+
+  class AttractionStorage {
+    -file : Path
+    +load() : List<Attraction>
+    +save(attractions : Collection<Attraction>) : void
+  }
+
+  class Attraction {
+    -id : String {readOnly}
+    -name : String {readOnly}
+    -capacity : int {readOnly}
+    +enter(admission : Admission, today : LocalDate) : void
+    +exit(admission : Admission) : int
+    +remove(user : User) : void
+    +getAvailable() : int
   }
 }
 
@@ -146,6 +182,7 @@ App ..> CommandProcessor : creates
 CommandProcessor "1" --> "1" UserManager : users
 CommandProcessor "1" --> "1" GroupManager : groups
 CommandProcessor "1" --> "1" TicketManager : tickets
+CommandProcessor "1" --> "1" AttractionManager : attractions
 UserManager "1" --> "1" UserStorage : storage
 UserManager "1" o--> "0..*" User : users
 UserManager ..> UserValidator
@@ -160,11 +197,17 @@ TicketManager "1" --> "1" TicketStorage : storage
 TicketManager "1" --> "1" UserManager : users
 TicketManager "1" --> "1" GroupManager : groups
 TicketManager "1" o--> "0..*" Ticket : tickets
+Admission <|.. Ticket
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 IndividualTicket "0..*" --> "0..1" User : owner
 GroupTicket "0..*" o--> "0..1" Group : group
 GroupTicket "1" *-- "1..*" IndividualTicket : components
 TicketStorage ..> Ticket
+AttractionManager "1" --> "1" AttractionStorage : storage
+AttractionManager "1" o--> "0..*" Attraction : attractions
+Attraction "0..*" o--> "0..*" User : present
+Attraction ..> Admission : enter/exit
+AttractionStorage ..> Attraction
 
 @enduml

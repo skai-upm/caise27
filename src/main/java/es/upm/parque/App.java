@@ -20,6 +20,7 @@ public class App {
     static final String GROUPS_FILE_NAME = "groups.txt";
     static final String TICKETS_FILE_NAME = "tickets.txt";
     static final String GROUP_TICKETS_FILE_NAME = "group_tickets.txt";
+    static final String ATTRACTIONS_FILE_NAME = "attractions.txt";
 
     public static void main(String[] args) {
         run(args, System.in, System.out, USERS_FILE);
@@ -32,7 +33,9 @@ public class App {
             GroupManager groups = new GroupManager(users, new GroupStorage(usersFile.resolveSibling(GROUPS_FILE_NAME)));
             TicketManager tickets = new TicketManager(users, groups, new TicketStorage(
                 usersFile.resolveSibling(TICKETS_FILE_NAME), usersFile.resolveSibling(GROUP_TICKETS_FILE_NAME)));
-            processor = new CommandProcessor(users, groups, tickets);
+            AttractionManager attractions =
+                new AttractionManager(new AttractionStorage(usersFile.resolveSibling(ATTRACTIONS_FILE_NAME)));
+            processor = new CommandProcessor(users, groups, tickets, attractions);
         } catch (UncheckedIOException e) {
             out.println("ERROR: " + e.getMessage());
             return;

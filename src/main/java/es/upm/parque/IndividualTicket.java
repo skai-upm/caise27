@@ -2,6 +2,7 @@ package es.upm.parque;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * A ticket for one user and one date. It references the registered user it was sold to; the owner's DNI
@@ -44,6 +45,11 @@ public class IndividualTicket extends Ticket {
     /** @return the identifier of the group ticket that generated this ticket, or null for a standalone ticket */
     public String getGroupTicketId() {
         return groupTicketId;
+    }
+
+    @Override
+    public List<User> getAdmittedUsers() {
+        return owner == null ? List.of() : List.of(owner);
     }
 
     public boolean isOwnedBy(User user) {

@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,6 +36,11 @@ public class CommandProcessor {
     private static final String USAGE_TICKET_DELETE = "TICKET DELETE;Id";
     private static final String USAGE_GROUPTICKET_CREATE = "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd";
     private static final String USAGE_GROUPTICKET_DELETE = "GROUPTICKET DELETE;Id";
+    private static final String USAGE_ATTRACTION_CREATE = "ATTRACTION CREATE;Id;Nombre;Capacidad";
+    private static final String USAGE_ATTRACTION_DELETE = "ATTRACTION DELETE;Id";
+    private static final String USAGE_ATTRACTION_ENTER = "ATTRACTION ENTER;Id;IdTicket";
+    private static final String USAGE_ATTRACTION_EXIT = "ATTRACTION EXIT;Id;IdTicket";
+    private static final String USAGE_ATTRACTION_STATUS = "ATTRACTION STATUS;Id";
     private static final String USAGE_SYSTEM_DATE = "SYSTEM DATE;yyyy-MM-dd";
     private static final String USAGE_SYSTEM_PRICE = "SYSTEM PRICE;Importe";
     private static final String USAGE_HELP = "HELP";
@@ -52,6 +58,11 @@ public class CommandProcessor {
         USAGE_TICKET_DELETE,
         USAGE_GROUPTICKET_CREATE,
         USAGE_GROUPTICKET_DELETE,
+        USAGE_ATTRACTION_CREATE,
+        USAGE_ATTRACTION_DELETE,
+        USAGE_ATTRACTION_ENTER,
+        USAGE_ATTRACTION_EXIT,
+        USAGE_ATTRACTION_STATUS,
         USAGE_SYSTEM_DATE,
         USAGE_SYSTEM_PRICE,
         USAGE_HELP,
@@ -65,19 +76,23 @@ public class CommandProcessor {
     private final UserManager users;
     private final GroupManager groups;
     private final TicketManager tickets;
+    private final AttractionManager attractions;
     private LocalDate currentDate;
     private BigDecimal currentPrice = INITIAL_PRICE;
     private boolean exitRequested;
 
     /** Creates the controller with the operating system's current date as system date. */
-    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets) {
-        this(users, groups, tickets, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
+            AttractionManager attractions) {
+        this(users, groups, tickets, attractions, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets, LocalDate initialDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
+            AttractionManager attractions, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        this.attractions = attractions;
         this.currentDate = initialDate;
     }
 
@@ -135,6 +150,9 @@ public class CommandProcessor {
             if (operation.length == 2 && operation[0].equals("GROUPTICKET")) {
                 return executeGroupTicket(operation[1], parts);
             }
+            if (operation.length == 2 && operation[0].equals("ATTRACTION")) {
+                return executeAttraction(operation[1], parts);
+            }
             if (operation.length == 2 && operation[0].equals("SYSTEM")) {
                 return executeSystem(operation[1], parts);
             }
@@ -181,6 +199,7 @@ public class CommandProcessor {
                 users.delete(parts[1], parts[2]);
                 groups.removeUserFromAll(user);
                 tickets.detachOwner(user);
+                attractions.removeUserEverywhere(user);
                 return ok("User " + parts[1] + " deleted");
             }
             case "UPDATE" -> {
@@ -271,6 +290,59 @@ public class CommandProcessor {
                 return error("Unknown command: GROUPTICKET " + action);
             }
         }
+    }
+
+    private String executeAttraction(String action, String[] parts) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(parts, 3, USAGE_ATTRACTION_CREATE);
+                Attraction a = attractions.create(parts[1], parts[2], parts[3]);
+                return ok("Attraction " + a.getId() + " created with capacity " + a.getCapacity());
+            }
+            case "DELETE" -> {
+                requireParams(parts, 1, USAGE_ATTRACTION_DELETE);
+                attractions.delete(parts[1]);
+                return ok("Attraction " + parts[1] + " deleted");
+            }
+            case "ENTER" -> {
+                requireParams(parts, 2, USAGE_ATTRACTION_ENTER);
+                Admission admission = requireAdmission(parts[2]);
+                attractions.enter(parts[1], admission, currentDate);
+                return ok(admission.getAdmittedUsers().size() + " user(s) entered attraction " + parts[1]);
+            }
+            case "EXIT" -> {
+                requireParams(parts, 2, USAGE_ATTRACTION_EXIT);
+                int left = attractions.exit(parts[1], requireAdmission(parts[2]));
+                return ok(left + " user(s) left attraction " + parts[1]);
+            }
+            case "STATUS" -> {
+                requireParams(parts, 1, USAGE_ATTRACTION_STATUS);
+                return formatStatus(attractions.require(parts[1]));
+            }
+            default -> {
+                return error("Unknown command: ATTRACTION " + action);
+            }
+        }
+    }
+
+    private Admission requireAdmission(String ticketId) {
+        Ticket ticket = tickets.findAdmission(ticketId);
+        if (ticket == null) {
+            throw new IllegalArgumentException("No ticket with identifier " + ticketId);
+        }
+        return ticket;
+    }
+
+    private static String formatStatus(Attraction a) {
+        List<String> names = new ArrayList<>();
+        for (User u : a.getPresent()) {
+            names.add(u.getName() + " " + u.getSurname() + " <" + u.getEmail() + ">");
+        }
+        String nl = System.lineSeparator();
+        return "Attraction " + a.getId() + " - " + a.getName() + nl
+            + "  Capacity: " + a.getCapacity() + " | Present: " + a.getPresent().size()
+            + " | Available: " + a.getAvailable() + nl
+            + "  Users present: " + (names.isEmpty() ? "(none)" : String.join(", ", names));
     }
 
     private String executeSystem(String action, String[] parts) {

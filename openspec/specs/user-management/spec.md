@@ -91,7 +91,7 @@ The system SHALL NOT allow two users with the same DNI or the same email address
 - **THEN** no user is created and a duplicate-email error is printed
 
 ### Requirement: Delete user
-The system SHALL delete a user with `USER DELETE;Correo;Contraseña` only when a user with that email exists, the password matches the stored password, and the user has no ticket dated on or after the current system date; the user SHALL also be removed from every group it belongs to, and the persistent files SHALL then be updated. Tickets dated before the system date SHALL NOT prevent deletion and SHALL be kept as history. Otherwise no user SHALL be deleted and an error SHALL be reported.
+The system SHALL delete a user with `USER DELETE;Correo;Contraseña` only when a user with that email exists, the password matches the stored password, and the user has no ticket dated on or after the current system date; the user SHALL also be removed from every group and every attraction it belongs to, and the persistent files SHALL then be updated. Tickets dated before the system date SHALL NOT prevent deletion and SHALL be kept as history. Otherwise no user SHALL be deleted and an error SHALL be reported.
 
 #### Scenario: Successful deletion
 - **WHEN** user `ana@correo.com` with password `Clave1!` exists and `USER DELETE;ana@correo.com;Clave1!` is received
@@ -120,6 +120,10 @@ The system SHALL delete a user with `USER DELETE;Correo;Contraseña` only when a
 #### Scenario: Past ticket does not block deletion
 - **WHEN** the system date is changed to 2026-10-16 and Ana's only ticket is dated 2026-10-15
 - **THEN** `USER DELETE;ana@correo.com;Clave1!` succeeds
+
+#### Scenario: Deleted user leaves attractions
+- **WHEN** Ana entered `A01` on 2026-10-15, the system date moves to 2026-10-16 and Ana is deleted
+- **THEN** Ana is no longer present in `A01`
 
 ### Requirement: Update user
 The system SHALL update one field with `USER UPDATE;Correo;Contraseña;Campo;NuevoValor` only after verifying that a user with the current email exists and the current password matches. `Campo` SHALL be one of `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD`. The new value SHALL be validated with the same rules as on creation, and a new email SHALL NOT belong to another user. After a successful update the persistent file SHALL reflect the new state.

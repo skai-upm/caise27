@@ -75,6 +75,15 @@ public class GroupTicket extends Ticket {
             .divide(HUNDRED, 2, RoundingMode.HALF_UP);
     }
 
+    @Override
+    public List<User> getAdmittedUsers() {
+        List<User> admitted = new ArrayList<>();
+        for (IndividualTicket t : components) {
+            admitted.addAll(t.getAdmittedUsers());
+        }
+        return admitted;
+    }
+
     public String getGroupId() {
         return groupId;
     }

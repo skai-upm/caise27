@@ -38,6 +38,14 @@ public class TicketManager {
         return ticketsById.get(id);
     }
 
+    /**
+     * @return the individual, group or internal ticket with that identifier, or null if none exists
+     */
+    public Ticket findAdmission(String id) {
+        Ticket ticket = ticketsById.get(id);
+        return ticket != null ? ticket : findInternal(id);
+    }
+
     public IndividualTicket create(String id, String email, LocalDate date, LocalDate today, BigDecimal price) {
         requireNewId(id);
         User user = users.findByEmail(email);

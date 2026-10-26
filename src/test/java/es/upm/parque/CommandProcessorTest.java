@@ -28,6 +28,7 @@ class CommandProcessorTest {
     private UserManager manager;
     private GroupManager groups;
     private TicketManager tickets;
+    private AttractionManager attractions;
     private CommandProcessor processor;
 
     @BeforeEach
@@ -36,7 +37,8 @@ class CommandProcessorTest {
         groups = new GroupManager(manager, new GroupStorage(dir.resolve("groups.txt")));
         tickets = new TicketManager(manager, groups,
             new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt")));
-        processor = new CommandProcessor(manager, groups, tickets);
+        attractions = new AttractionManager(new AttractionStorage(dir.resolve("attractions.txt")));
+        processor = new CommandProcessor(manager, groups, tickets, attractions);
     }
 
     @Test
@@ -92,7 +94,8 @@ class CommandProcessorTest {
         for (String usage : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
-            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id", "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP", "EXIT"}) {
+            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id", "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION DELETE;Id",
+            "ATTRACTION ENTER;Id;IdTicket", "ATTRACTION EXIT;Id;IdTicket", "ATTRACTION STATUS;Id", "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
         }
         assertFalse(processor.isExitRequested());
@@ -128,7 +131,7 @@ class CommandProcessorTest {
     @Test
     void systemDateStartsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = new CommandProcessor(manager, groups, tickets).getCurrentDate();
+        LocalDate date = new CommandProcessor(manager, groups, tickets, attractions).getCurrentDate();
         assertTrue(!date.isBefore(before) && !date.isAfter(LocalDate.now()));
     }
 
@@ -142,7 +145,7 @@ class CommandProcessorTest {
 
     @Test
     void invalidSystemDatesAreRejected() {
-        CommandProcessor fixed = new CommandProcessor(manager, groups, tickets, LocalDate.of(2026, 1, 1));
+        CommandProcessor fixed = new CommandProcessor(manager, groups, tickets, attractions, LocalDate.of(2026, 1, 1));
         for (String value : new String[] {"15/09/2026", "2026-9-15", "2026-02-30", "hoy", ""}) {
             assertTrue(fixed.execute("SYSTEM DATE;" + value).startsWith("ERROR: Invalid date"), value);
         }
@@ -279,5 +282,70 @@ class CommandProcessorTest {
         assertTrue(processor.execute("GROUPTICKET DELETE;TG01").startsWith("ERROR"));
         assertTrue(processor.execute("GROUPTICKET LIST").startsWith("ERROR: Unknown command"));
         assertTrue(tickets.getTickets().isEmpty());
+    }
+
+    @Test
+    void attractionEntryExitAndStatus() {
+        createFamilyG01();
+        processor.execute("GROUP CREATE;G02;Amigos");
+        processor.execute("GROUP ADD;G02;pedro@correo.com");
+        processor.execute("GROUP ADD;G02;luis@correo.com");
+        processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.execute("GROUPTICKET CREATE;TG01;G02;2026-10-15");
+        assertTrue(processor.execute("ATTRACTION CREATE;A01;Tornado;20").startsWith("OK"));
+
+        assertTrue(processor.execute("ATTRACTION ENTER;A01;T001").startsWith("ERROR: The ticket is not valid"));
+        processor.execute("SYSTEM DATE;2026-10-15");
+        assertEquals("OK: 1 user(s) entered attraction A01", processor.execute("ATTRACTION ENTER;A01;T001"));
+        assertEquals("OK: 2 user(s) entered attraction A01", processor.execute("ATTRACTION ENTER;A01;TG01"));
+        String status = processor.execute("ATTRACTION STATUS;A01");
+        assertTrue(status.contains("A01") && status.contains("Tornado"), status);
+        assertTrue(status.contains("Capacity: 20 | Present: 3 | Available: 17"), status);
+        assertTrue(status.contains("ana@correo.com") && status.contains("pedro@correo.com")
+            && status.contains("luis@correo.com"), status);
+
+        assertEquals("OK: 1 user(s) left attraction A01", processor.execute("ATTRACTION EXIT;A01;T001"));
+        status = processor.execute("ATTRACTION STATUS;A01");
+        assertTrue(status.contains("Present: 2 | Available: 18") && !status.contains("ana@correo.com"), status);
+        assertTrue(processor.execute("ATTRACTION EXIT;A01;T001").startsWith("ERROR"));
+        assertTrue(processor.execute("ATTRACTION DELETE;A01").startsWith("ERROR"));
+        processor.execute("ATTRACTION EXIT;A01;TG01");
+        assertTrue(processor.execute("ATTRACTION STATUS;A01").contains("Users present: (none)"));
+        assertTrue(processor.execute("ATTRACTION DELETE;A01").startsWith("OK"));
+    }
+
+    @Test
+    void groupEntryRejectedWhenCapacityIsShort() {
+        createFamilyG01();
+        processor.execute("GROUP ADD;G01;luis@correo.com");
+        processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-01");
+        processor.execute("GROUPTICKET CREATE;TG01;G01;2026-10-01");
+        processor.execute("ATTRACTION CREATE;A01;Tornado;3");
+        assertTrue(processor.execute("ATTRACTION ENTER;A01;T001").startsWith("OK"));
+        assertTrue(processor.execute("ATTRACTION ENTER;A01;TG01").startsWith("ERROR"));
+        assertTrue(processor.execute("ATTRACTION ENTER;A01;TG01-2").startsWith("OK"));
+        assertTrue(processor.execute("ATTRACTION STATUS;A01").contains("Present: 2 | Available: 1"));
+    }
+
+    @Test
+    void attractionCommandErrors() {
+        assertTrue(processor.execute("ATTRACTION CREATE;A01;Tornado;0").startsWith("ERROR: Invalid capacity"));
+        assertTrue(processor.execute("ATTRACTION CREATE;A01;Tornado").startsWith("ERROR: Expected 3"));
+        processor.execute("ATTRACTION CREATE;A01;Tornado;5");
+        assertTrue(processor.execute("ATTRACTION ENTER;A01;T999").startsWith("ERROR: No ticket"));
+        assertTrue(processor.execute("ATTRACTION STATUS;A99").startsWith("ERROR: No attraction"));
+        assertTrue(processor.execute("ATTRACTION OPEN;A01").startsWith("ERROR: Unknown command"));
+    }
+
+    @Test
+    void deletedUserLeavesAttractions() {
+        processor.execute(CREATE_ANA);
+        processor.execute("SYSTEM DATE;2026-10-15");
+        processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.execute("ATTRACTION CREATE;A01;Tornado;5");
+        processor.execute("ATTRACTION ENTER;A01;T001");
+        processor.execute("SYSTEM DATE;2026-10-16");
+        assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+        assertTrue(attractions.find("A01").getPresent().isEmpty());
     }
 }
