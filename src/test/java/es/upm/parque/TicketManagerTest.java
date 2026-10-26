@@ -23,6 +23,7 @@ class TicketManagerTest {
 
     private final SystemDate date = new SystemDate(LocalDate.of(2026, 10, 1));
     private UserManager users;
+    private GroupManager groups;
     private TicketManager tickets;
     private User ana;
 
@@ -31,16 +32,18 @@ class TicketManagerTest {
         users = new UserManager(new UserRepository(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         ana = users.findByEmail("ana@correo.com");
+        groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
         tickets = newTicketManager();
     }
 
     private TicketManager newTicketManager() throws IOException {
-        return new TicketManager(new TicketRepository(dir.resolve("tickets.txt")), users, date);
+        return new TicketManager(new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
+                users, groups, date);
     }
 
     @Test
     void createsTicketAtCurrentPrice() {
-        Ticket ticket = tickets.create("T001", "ana@correo.com", "2026-10-15");
+        IndividualTicket ticket = tickets.create("T001", "ana@correo.com", "2026-10-15");
         assertEquals(new BigDecimal("40.00"), ticket.getPrice());
         assertSame(ana, ticket.getUser());
         assertEquals(LocalDate.of(2026, 10, 15), ticket.getDate());
@@ -72,7 +75,7 @@ class TicketManagerTest {
         TicketManager restarted = newTicketManager();
         assertEquals(new BigDecimal("40.00"), restarted.getCurrentPrice());
         assertEquals(new BigDecimal("60.00"), restarted.find("T002").getPrice());
-        assertSame(ana, restarted.find("T002").getUser());
+        assertSame(ana, ((IndividualTicket) restarted.find("T002")).getUser());
     }
 
     @Test
@@ -84,6 +87,80 @@ class TicketManagerTest {
         date.set(LocalDate.of(2026, 10, 15));
         assertThrows(UserException.class, () -> tickets.delete("T002"));
         assertThrows(UserException.class, () -> tickets.delete("T999"));
+    }
+
+    private Group familyOf(int extraMembers) {
+        groups.create("G01", "Familia");
+        groups.addMember("G01", "ana@correo.com");
+        for (int i = 0; i < extraMembers; i++) {
+            String dni = String.format("%08d", i);
+            dni += "TRWAGMYFPDXBNJZSQVHLCKE".charAt(i % 23);
+            users.create("U" + i, "S", dni, "u" + i + "@correo.com", "Clave1!", "6", "1234567890123456");
+            groups.addMember("G01", "u" + i + "@correo.com");
+        }
+        return groups.find("G01");
+    }
+
+    @Test
+    void groupTicketGeneratesOneTicketPerMember() {
+        Group family = familyOf(2);
+        GroupTicket groupTicket = tickets.createGroupTicket("TG01", "G01", "2026-10-15");
+        assertEquals(new BigDecimal("108.00"), groupTicket.getPrice());
+        assertEquals(3, groupTicket.getTickets().size());
+        assertSame(ana, groupTicket.getTickets().get(0).getUser());
+        assertSame(family, groupTicket.getGroup());
+        assertSame(groupTicket, tickets.findOwner((IndividualTicket) tickets.find("TG01-1")));
+        assertTrue(tickets.hasCurrentOrFutureTicket(ana));
+    }
+
+    @Test
+    void groupTicketValidations() {
+        groups.create("G02", "Vacio");
+        assertThrows(UserException.class, () -> tickets.createGroupTicket("TG01", "G02", "2026-10-15"));
+        assertThrows(UserException.class, () -> tickets.createGroupTicket("TG01", "G99", "2026-10-15"));
+        familyOf(0);
+        tickets.create("TG01-1", "ana@correo.com", "2026-10-15");
+        assertThrows(UserException.class, () -> tickets.createGroupTicket("TG01", "G01", "2026-10-15"));
+        assertThrows(UserException.class, () -> tickets.createGroupTicket("TG02", "G01", "2026-09-01"));
+        assertEquals(1, tickets.getTickets().size());
+    }
+
+    @Test
+    void groupLockFollowsTheSystemDate() {
+        Group family = familyOf(1);
+        assertFalse(tickets.isGroupLocked(family));
+        tickets.createGroupTicket("TG01", "G01", "2026-10-15");
+        assertTrue(tickets.isGroupLocked(family));
+        date.set(LocalDate.of(2026, 10, 15));
+        assertTrue(tickets.isGroupLocked(family));
+        date.set(LocalDate.of(2026, 10, 16));
+        assertFalse(tickets.isGroupLocked(family));
+    }
+
+    @Test
+    void deleteGroupTicketRemovesItsTickets() {
+        familyOf(1);
+        tickets.createGroupTicket("TG01", "G01", "2026-10-15");
+        assertThrows(UserException.class, () -> tickets.delete("TG01-1"));
+        assertThrows(UserException.class, () -> tickets.delete("TG01"));
+        assertThrows(UserException.class, () -> tickets.deleteGroupTicket("TG01-1"));
+        date.set(LocalDate.of(2026, 10, 15));
+        assertThrows(UserException.class, () -> tickets.deleteGroupTicket("TG01"));
+        date.set(LocalDate.of(2026, 10, 14));
+        tickets.deleteGroupTicket("TG01");
+        assertTrue(tickets.getTickets().isEmpty());
+        assertFalse(tickets.isGroupLocked(groups.find("G01")));
+    }
+
+    @Test
+    void groupTicketsSurviveRestart() throws IOException {
+        familyOf(1);
+        tickets.createGroupTicket("TG01", "G01", "2026-10-15");
+        TicketManager restarted = newTicketManager();
+        GroupTicket restored = (GroupTicket) restarted.find("TG01");
+        assertEquals(new BigDecimal("80.00"), restored.getPrice());
+        assertSame(restarted.find("TG01-1"), restored.getTickets().get(0));
+        assertTrue(restarted.isGroupLocked(groups.find("G01")));
     }
 
     @Test

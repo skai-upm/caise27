@@ -8,10 +8,10 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 
-class TicketTest {
+class IndividualTicketTest {
 
     private final User ana = new User("Ana", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
-    private final Ticket ticket = new Ticket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
+    private final IndividualTicket ticket = new IndividualTicket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
 
     @Test
     void currentOrFutureIncludesTheSameDay() {

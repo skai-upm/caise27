@@ -34,7 +34,8 @@ package es.upm.parque {
   }
 
   class TicketRepository {
-    file : Path
+    ticketsFile : Path
+    groupTicketsFile : Path
   }
 
   class User {
@@ -61,10 +62,17 @@ package es.upm.parque {
     name : String
   }
 
-  class Ticket {
+  abstract class Ticket {
     id : String
     date : LocalDate
+  }
+
+  class IndividualTicket {
     price : BigDecimal
+  }
+
+  class GroupTicket {
+    discountPercent : int
   }
 
   class UserException
@@ -85,9 +93,14 @@ GroupManager "1" o--> "0..*" Group : groups
 Group "0..*" o--> "0..*" User : members
 TicketManager "1" o--> "1" TicketRepository : repository
 TicketManager "0..*" o--> "1" UserManager : userManager
+TicketManager "0..*" o--> "1" GroupManager : groupManager
 TicketManager "0..*" o--> "1" SystemDate : systemDate
 TicketManager "1" o--> "0..*" Ticket : tickets
-Ticket "0..*" o--> "1" User : user
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+IndividualTicket "0..*" o--> "1" User : user
+GroupTicket "0..*" o--> "1" Group : group
+GroupTicket "1" *--> "1..*" IndividualTicket : tickets
 
 App ..> CommandRunner : <<use>>
 UserManager ..> UserField : <<use>>

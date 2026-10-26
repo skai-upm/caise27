@@ -24,7 +24,8 @@ public class App {
             GroupManager groupManager = new GroupManager(new GroupRepository(DATA_DIR.resolve("groups.txt")), userManager);
             SystemDate systemDate = SystemDate.today();
             TicketManager ticketManager = new TicketManager(
-                    new TicketRepository(DATA_DIR.resolve("tickets.txt")), userManager, systemDate);
+                    new TicketRepository(DATA_DIR.resolve("tickets.txt"), DATA_DIR.resolve("grouptickets.txt")),
+                    userManager, groupManager, systemDate);
             processor = new CommandProcessor(userManager, groupManager, ticketManager, systemDate);
         } catch (IOException e) {
             System.out.println("ERROR Could not load data: " + e.getMessage());

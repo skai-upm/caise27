@@ -4,20 +4,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * An individual park ticket for one user and one date, sold at a fixed price.
+ * Common abstraction of every park ticket: an identifier, a date of use and a price.
  */
-public class Ticket {
+public abstract class Ticket {
 
     private final String id;
     private final LocalDate date;
-    private final User user;
-    private final BigDecimal price;
 
-    public Ticket(String id, LocalDate date, User user, BigDecimal price) {
+    protected Ticket(String id, LocalDate date) {
         this.id = id;
         this.date = date;
-        this.user = user;
-        this.price = price;
     }
 
     public String getId() {
@@ -28,13 +24,7 @@ public class Ticket {
         return date;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
+    public abstract BigDecimal getPrice();
 
     /**
      * True if the ticket is for {@code today} or a later day.

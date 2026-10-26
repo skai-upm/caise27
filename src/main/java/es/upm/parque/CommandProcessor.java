@@ -20,6 +20,8 @@ public class CommandProcessor {
     private static final String GROUP_DELETE_SYNTAX = "GROUP DELETE;IdGrupo";
     private static final String TICKET_CREATE_SYNTAX = "TICKET CREATE;IdEntrada;Correo;yyyy-MM-dd";
     private static final String TICKET_DELETE_SYNTAX = "TICKET DELETE;IdEntrada";
+    private static final String GROUPTICKET_CREATE_SYNTAX = "GROUPTICKET CREATE;IdEntradaGrupo;IdGrupo;yyyy-MM-dd";
+    private static final String GROUPTICKET_DELETE_SYNTAX = "GROUPTICKET DELETE;IdEntradaGrupo";
     private static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
 
     /** Syntax of every available command, shown by HELP. */
@@ -33,6 +35,8 @@ public class CommandProcessor {
             GROUP_DELETE_SYNTAX,
             TICKET_CREATE_SYNTAX,
             TICKET_DELETE_SYNTAX,
+            GROUPTICKET_CREATE_SYNTAX,
+            GROUPTICKET_DELETE_SYNTAX,
             SYSTEM_DATE_SYNTAX,
             SYSTEM_PRICE_SYNTAX,
             "HELP",
@@ -66,6 +70,8 @@ public class CommandProcessor {
                 case "GROUP DELETE" -> deleteGroup(parts);
                 case "TICKET CREATE" -> createTicket(parts);
                 case "TICKET DELETE" -> deleteTicket(parts);
+                case "GROUPTICKET CREATE" -> createGroupTicket(parts);
+                case "GROUPTICKET DELETE" -> deleteGroupTicket(parts);
                 case "SYSTEM DATE" -> setSystemDate(parts);
                 case "SYSTEM PRICE" -> setSystemPrice(parts);
                 case "HELP" -> help(parts);
@@ -118,6 +124,7 @@ public class CommandProcessor {
         if (parts.length != 3) {
             return usage(GROUP_ADD_SYNTAX);
         }
+        requireUnlocked(parts[1]);
         groupManager.addMember(parts[1], parts[2]);
         return "OK USER ADDED TO GROUP";
     }
@@ -126,6 +133,7 @@ public class CommandProcessor {
         if (parts.length != 3) {
             return usage(GROUP_REMOVE_SYNTAX);
         }
+        requireUnlocked(parts[1]);
         groupManager.removeMember(parts[1], parts[2]);
         return "OK USER REMOVED FROM GROUP";
     }
@@ -134,15 +142,39 @@ public class CommandProcessor {
         if (parts.length != 2) {
             return usage(GROUP_DELETE_SYNTAX);
         }
+        requireUnlocked(parts[1]);
         groupManager.delete(parts[1]);
         return "OK GROUP DELETED";
+    }
+
+    private void requireUnlocked(String groupId) {
+        Group group = groupManager.find(groupId);
+        if (group != null && ticketManager.isGroupLocked(group)) {
+            throw new UserException("Group " + groupId + " has current or future group tickets and cannot be modified");
+        }
+    }
+
+    private String createGroupTicket(String[] parts) {
+        if (parts.length != 4) {
+            return usage(GROUPTICKET_CREATE_SYNTAX);
+        }
+        GroupTicket ticket = ticketManager.createGroupTicket(parts[1], parts[2], parts[3]);
+        return "OK GROUP TICKET CREATED -> " + ticket.getPrice().toPlainString();
+    }
+
+    private String deleteGroupTicket(String[] parts) {
+        if (parts.length != 2) {
+            return usage(GROUPTICKET_DELETE_SYNTAX);
+        }
+        ticketManager.deleteGroupTicket(parts[1]);
+        return "OK GROUP TICKET DELETED";
     }
 
     private String createTicket(String[] parts) {
         if (parts.length != 4) {
             return usage(TICKET_CREATE_SYNTAX);
         }
-        Ticket ticket = ticketManager.create(parts[1], parts[2], parts[3]);
+        IndividualTicket ticket = ticketManager.create(parts[1], parts[2], parts[3]);
         return "OK TICKET CREATED -> " + ticket.getPrice().toPlainString();
     }
 
