@@ -1,5 +1,5 @@
 @startuml model
-title Amusement park - class model
+title Amusement park - class model (current implementation)
 
 package es.upm.parque {
 
@@ -7,21 +7,21 @@ package es.upm.parque {
   }
 
   class CommandProcessor {
-    - exitRequested : boolean
+    exitRequested : boolean
   }
 
   class SystemDate {
-    - date : LocalDate
+    date : LocalDate
   }
 
   class User {
-    - name : String
-    - surname : String
-    - dni : String {readOnly}
-    - email : String
-    - password : String
-    - phone : String
-    - card : String
+    name : String
+    surname : String
+    dni : String
+    email : String
+    password : String
+    phone : String
+    card : String
   }
 
   enum UserField {
@@ -33,93 +33,105 @@ package es.upm.parque {
     CARD
   }
 
-  class UserValidator <<utility>> {
+  class UserValidator {
   }
 
   class UserManager {
   }
 
   class UserRepository {
-    - file : Path
+    file : Path
   }
 
   class Group {
-    - id : String {readOnly}
-    - name : String
+    id : String
+    name : String
   }
 
   class GroupManager {
   }
 
   class GroupRepository {
-    - file : Path
+    file : Path
   }
 
   abstract class Ticket {
-    - id : String {readOnly}
-    - date : LocalDate {readOnly}
+    id : String
+    date : LocalDate
   }
 
   class IndividualTicket {
-    - price : BigDecimal {readOnly}
+    price : BigDecimal
   }
 
   class GroupTicket {
-    - totalPrice : BigDecimal {readOnly}
+    totalPrice : BigDecimal
   }
 
   class TicketManager {
-    - price : BigDecimal
+    price : BigDecimal
   }
 
   class TicketRepository {
-    - individualFile : Path
-    - groupFile : Path
+    individualFile : Path
+    groupFile : Path
   }
 
   class Attraction {
-    - id : String {readOnly}
-    - name : String
-    - capacity : int
+    id : String
+    name : String
+    capacity : int
   }
 
   class AttractionManager {
   }
 
   class AttractionRepository {
-    - file : Path
+    file : Path
   }
 }
 
-App ..> CommandProcessor : creates
+' Inheritance
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' Associations, aggregations and compositions (named after the owning field)
 CommandProcessor x--> "1" UserManager : userManager
 CommandProcessor x--> "1" GroupManager : groupManager
 CommandProcessor x--> "1" TicketManager : ticketManager
 CommandProcessor x--> "1" AttractionManager : attractionManager
 CommandProcessor x--> "1" SystemDate : systemDate
-CommandProcessor ..> UserField : uses
+
 UserManager x--> "1" UserRepository : repository
 UserManager x--> "0..*" User : users
-UserManager ..> UserValidator : uses
+
 GroupManager x--> "1" GroupRepository : repository
 GroupManager x--> "1" UserManager : userManager
 GroupManager x--> "0..*" Group : groups
 Group x--> "0..*" User : members
+
 TicketManager x--> "1" TicketRepository : repository
 TicketManager x--> "1" UserManager : userManager
-TicketManager x--> "1" SystemDate : systemDate
 TicketManager x--> "1" GroupManager : groupManager
+TicketManager x--> "1" SystemDate : systemDate
 TicketManager x--> "0..*" Ticket : tickets
-Ticket <|-- IndividualTicket
-Ticket <|-- GroupTicket
 IndividualTicket x--> "1" User : user
 GroupTicket o--> "1" Group : group
 GroupTicket *--> "1..*" IndividualTicket : tickets
+
 AttractionManager x--> "1" AttractionRepository : repository
 AttractionManager x--> "1" TicketManager : ticketManager
 AttractionManager x--> "1" SystemDate : systemDate
 AttractionManager x--> "0..*" Attraction : attractions
 Attraction x--> "0..*" User : present
-Attraction ..> Ticket : enter/exit
+
+' Usage, only for classes without incoming relationships
+App ..> CommandProcessor
+CommandProcessor ..> UserField
+UserManager ..> UserField
+UserManager ..> UserValidator
+GroupManager ..> UserValidator
+TicketManager ..> UserValidator
+AttractionManager ..> UserValidator
 
 @enduml
