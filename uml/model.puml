@@ -24,6 +24,15 @@ package es.upm.parque.business.controller {
   class GroupManager
   class TicketManager
   class AttractionManager
+
+  abstract class InvoiceBuilder {
+    - issueDate : LocalDate
+    - recipient : String
+  }
+
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
+  class InvoiceDirector
 }
 
 package es.upm.parque.business.model {
@@ -77,6 +86,20 @@ package es.upm.parque.business.model {
     - id : String
     - name : String
     - capacity : int
+  }
+
+  class Invoice {
+    - recipient : String
+    - issueDate : LocalDate
+  }
+
+  class InvoiceSection {
+    - title : String
+  }
+
+  class InvoiceLine {
+    - description : String
+    - amount : BigDecimal
   }
 }
 
@@ -141,10 +164,25 @@ AttractionManager "1" x--> "1" AttractionStorage : storage
 AttractionManager "1" x--> "0..*" Attraction : attractionsById
 Attraction "0..*" x--> "0..*" User : present
 
+'' Invoices (Builder)
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder "0..1" x--> "0..*" InvoiceSection : sections
+UserInvoiceBuilder "0..*" x--> "1" User : user
+UserInvoiceBuilder "0..*" x--> "0..*" Ticket : tickets
+GroupInvoiceBuilder "0..*" x--> "1" Group : group
+GroupInvoiceBuilder "0..*" x--> "0..*" Ticket : tickets
+Invoice "1" *--> "0..*" InvoiceSection : sections
+InvoiceSection "1" *--> "1..*" InvoiceLine : lines
+
 ' Usage of types without incoming relationships
 App ..> CommandProcessor
 App ..> DataDirectory
 ParkController ..> DataDirectory
+ParkController ..> InvoiceDirector
+ParkController ..> UserInvoiceBuilder
+ParkController ..> GroupInvoiceBuilder
+ParkController ..> Invoice
 CommandProcessor ..> UserField
 ParkController ..> UserField
 UserManager ..> UserField

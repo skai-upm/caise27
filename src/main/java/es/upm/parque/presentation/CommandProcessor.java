@@ -2,6 +2,9 @@ package es.upm.parque.presentation;
 
 import es.upm.parque.business.controller.ParkController;
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.Invoice;
+import es.upm.parque.business.model.InvoiceLine;
+import es.upm.parque.business.model.InvoiceSection;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
@@ -46,6 +49,8 @@ public class CommandProcessor {
     private static final String USAGE_ATTRACTION_ENTER = "ATTRACTION ENTER;Id;IdTicket";
     private static final String USAGE_ATTRACTION_EXIT = "ATTRACTION EXIT;Id;IdTicket";
     private static final String USAGE_ATTRACTION_STATUS = "ATTRACTION STATUS;Id";
+    private static final String USAGE_INVOICE_USER = "INVOICE CREATE;USER;Correo";
+    private static final String USAGE_INVOICE_GROUP = "INVOICE CREATE;GROUP;IdGrupo";
     private static final String USAGE_SYSTEM_DATE = "SYSTEM DATE;yyyy-MM-dd";
     private static final String USAGE_SYSTEM_PRICE = "SYSTEM PRICE;Importe";
     private static final String USAGE_HELP = "HELP";
@@ -68,6 +73,8 @@ public class CommandProcessor {
         USAGE_ATTRACTION_ENTER,
         USAGE_ATTRACTION_EXIT,
         USAGE_ATTRACTION_STATUS,
+        USAGE_INVOICE_USER,
+        USAGE_INVOICE_GROUP,
         USAGE_SYSTEM_DATE,
         USAGE_SYSTEM_PRICE,
         USAGE_HELP,
@@ -129,6 +136,9 @@ public class CommandProcessor {
             }
             if (operation.length == 2 && operation[0].equals("ATTRACTION")) {
                 return executeAttraction(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("INVOICE")) {
+                return executeInvoice(operation[1], parts);
             }
             if (operation.length == 2 && operation[0].equals("SYSTEM")) {
                 return executeSystem(operation[1], parts);
@@ -291,6 +301,36 @@ public class CommandProcessor {
             + "  Users present: " + (names.isEmpty() ? "(none)" : String.join(", ", names));
     }
 
+    private String executeInvoice(String action, String[] parts) {
+        if (!action.equals("CREATE")) {
+            return error("Unknown command: INVOICE " + action);
+        }
+        requireParams(parts, 2, USAGE_INVOICE_USER + " | " + USAGE_INVOICE_GROUP);
+        return switch (parts[1].trim().toUpperCase()) {
+            case "USER" -> formatInvoice(park.createUserInvoice(parts[2]));
+            case "GROUP" -> formatInvoice(park.createGroupInvoice(parts[2]));
+            default -> error("Unknown invoice recipient type " + parts[1] + ". Expected USER or GROUP");
+        };
+    }
+
+    private static String formatInvoice(Invoice invoice) {
+        String nl = System.lineSeparator();
+        StringBuilder text = new StringBuilder("INVOICE - ").append(invoice.getRecipient()).append(nl)
+            .append("  Date: ").append(invoice.getIssueDate()).append(nl);
+        for (InvoiceSection section : invoice.getSections()) {
+            text.append("  ").append(section.getTitle()).append(nl);
+            for (InvoiceLine line : section.getLines()) {
+                text.append("    ").append(line.getDescription()).append(": ").append(formatPrice(line.getAmount()))
+                    .append(nl);
+            }
+            text.append("    Subtotal: ").append(formatPrice(section.getSubtotal())).append(nl);
+        }
+        if (invoice.getSections().isEmpty()) {
+            text.append("  (no items)").append(nl);
+        }
+        return text.append("  TOTAL: ").append(formatPrice(invoice.getTotal())).toString();
+    }
+
     private String executeSystem(String action, String[] parts) {
         switch (action) {
             case "DATE" -> {
@@ -327,7 +367,7 @@ public class CommandProcessor {
     }
 
     private static String formatPrice(BigDecimal price) {
-        return price.setScale(2, RoundingMode.UNNECESSARY).toPlainString();
+        return price.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     private static UserField parseField(String text) {

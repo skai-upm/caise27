@@ -109,7 +109,8 @@ class CommandProcessorTest {
             "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
             "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id", "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION DELETE;Id",
-            "ATTRACTION ENTER;Id;IdTicket", "ATTRACTION EXIT;Id;IdTicket", "ATTRACTION STATUS;Id", "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP", "EXIT"}) {
+            "ATTRACTION ENTER;Id;IdTicket", "ATTRACTION EXIT;Id;IdTicket", "ATTRACTION STATUS;Id", "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo",
+            "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
         }
         assertFalse(processor.isExitRequested());
@@ -362,5 +363,42 @@ class CommandProcessorTest {
         processor.execute("SYSTEM DATE;2026-10-16");
         assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
         assertTrue(attractions.find("A01").getPresent().isEmpty());
+    }
+
+    @Test
+    void invoicesForUsersAndGroups() {
+        createFamilyG01();
+        processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.execute("SYSTEM PRICE;60.00");
+        processor.execute("TICKET CREATE;T002;ana@correo.com;2026-10-16");
+        processor.execute("SYSTEM PRICE;40.00");
+        processor.execute("GROUP ADD;G01;luis@correo.com");
+        processor.execute("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+
+        String user = processor.execute("INVOICE CREATE;USER;ana@correo.com");
+        assertTrue(user.startsWith("INVOICE - User Ana Garcia Lopez <ana@correo.com>"), user);
+        assertTrue(user.contains("Date: 2026-10-01"), user);
+        assertTrue(user.contains("Ticket T001 for 2026-10-15: 40.00") && user.contains("Ticket T002 for 2026-10-16: 60.00"), user);
+        assertFalse(user.contains("TG01"), user);
+        assertTrue(user.endsWith("TOTAL: 100.00"), user);
+
+        String group = processor.execute("INVOICE CREATE;GROUP;G01");
+        assertTrue(group.startsWith("INVOICE - Group G01 Familia Garcia"), group);
+        assertTrue(group.contains("Group ticket TG01 for 2026-10-15 (3 members, 10% discount): 108.00"), group);
+        assertFalse(group.contains("T001"), group);
+        assertTrue(group.endsWith("TOTAL: 108.00"), group);
+
+        String empty = processor.execute("INVOICE CREATE;USER;luis@correo.com");
+        assertTrue(empty.contains("(no items)") && empty.endsWith("TOTAL: 0.00"), empty);
+    }
+
+    @Test
+    void invoiceErrors() {
+        processor.execute(CREATE_ANA);
+        assertTrue(processor.execute("INVOICE CREATE;USER;nadie@correo.com").startsWith("ERROR: No user"));
+        assertTrue(processor.execute("INVOICE CREATE;GROUP;G99").startsWith("ERROR: No group"));
+        assertTrue(processor.execute("INVOICE CREATE;COMPANY;X").startsWith("ERROR: Unknown invoice recipient"));
+        assertTrue(processor.execute("INVOICE CREATE;USER").startsWith("ERROR: Expected 2"));
+        assertTrue(processor.execute("INVOICE DELETE;USER;ana@correo.com").startsWith("ERROR: Unknown command"));
     }
 }

@@ -5,6 +5,7 @@ import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Invoice;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
@@ -163,6 +164,24 @@ public class ParkController {
 
     public Attraction getAttraction(String id) {
         return attractions.require(id);
+    }
+
+    /** Builds the invoice of the registered user with that email, issued on the system date. */
+    public Invoice createUserInvoice(String email) {
+        User user = users.findByEmail(email);
+        if (user == null) {
+            throw new IllegalArgumentException("No user with email " + email);
+        }
+        return new InvoiceDirector().construct(new UserInvoiceBuilder(user, tickets.getTickets()), currentDate);
+    }
+
+    /** Builds the invoice of the group with that identifier, issued on the system date. */
+    public Invoice createGroupInvoice(String groupId) {
+        Group group = groups.find(groupId);
+        if (group == null) {
+            throw new IllegalArgumentException("No group with identifier " + groupId);
+        }
+        return new InvoiceDirector().construct(new GroupInvoiceBuilder(group, tickets.getTickets()), currentDate);
     }
 
     private void requireUnlocked(String groupId) {
