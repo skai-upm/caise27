@@ -22,6 +22,11 @@ public class CommandProcessor {
         "TICKET DELETE;Id",
         "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
         "GROUPTICKET DELETE;Id",
+        "ATTRACTION CREATE;Id;Nombre;Capacidad",
+        "ATTRACTION DELETE;Id",
+        "ATTRACTION ENTER;IdAtraccion;IdEntrada",
+        "ATTRACTION EXIT;IdAtraccion;IdEntrada",
+        "ATTRACTION STATUS;IdAtraccion",
         "SYSTEM DATE;yyyy-MM-dd",
         "SYSTEM PRICE;Importe",
         "HELP",
@@ -34,14 +39,16 @@ public class CommandProcessor {
     private final UserManager userManager;
     private final GroupManager groupManager;
     private final TicketManager ticketManager;
+    private final AttractionManager attractionManager;
     private final SystemDate systemDate;
     private boolean exitRequested;
 
     public CommandProcessor(UserManager userManager, GroupManager groupManager, TicketManager ticketManager,
-            SystemDate systemDate) {
+            AttractionManager attractionManager, SystemDate systemDate) {
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.ticketManager = ticketManager;
+        this.attractionManager = attractionManager;
         this.systemDate = systemDate;
     }
 
@@ -60,6 +67,9 @@ public class CommandProcessor {
             }
             if (operation.length == 2 && operation[0].equals("GROUPTICKET")) {
                 return processGroupTicket(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("ATTRACTION")) {
+                return processAttraction(operation[1], parts);
             }
             if (operation.length == 2 && operation[0].equals("SYSTEM") && operation[1].equals("DATE")) {
                 requireParams(parts, 1, "SYSTEM DATE;yyyy-MM-dd");
@@ -182,6 +192,42 @@ public class CommandProcessor {
             default -> {
                 return "ERROR: unknown command 'GROUPTICKET " + action + "'";
             }
+        }
+    }
+
+    private String processAttraction(String action, String[] p) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(p, 3, "ATTRACTION CREATE;Id;Nombre;Capacidad");
+                return "OK ATTRACTION CREATED -> " + attractionManager.create(p[1], p[2], parseCapacity(p[3]));
+            }
+            case "DELETE" -> {
+                requireParams(p, 1, "ATTRACTION DELETE;Id");
+                return "OK ATTRACTION DELETED -> " + attractionManager.delete(p[1]).getId();
+            }
+            case "ENTER" -> {
+                requireParams(p, 2, "ATTRACTION ENTER;IdAtraccion;IdEntrada");
+                return "OK ATTRACTION ENTERED -> " + attractionManager.enter(p[1], p[2]);
+            }
+            case "EXIT" -> {
+                requireParams(p, 2, "ATTRACTION EXIT;IdAtraccion;IdEntrada");
+                return "OK ATTRACTION EXITED -> " + attractionManager.exit(p[1], p[2]);
+            }
+            case "STATUS" -> {
+                requireParams(p, 1, "ATTRACTION STATUS;IdAtraccion");
+                return "OK " + attractionManager.status(p[1]);
+            }
+            default -> {
+                return "ERROR: unknown command 'ATTRACTION " + action + "'";
+            }
+        }
+    }
+
+    private static int parseCapacity(String text) {
+        try {
+            return Integer.parseInt(text.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("invalid capacity '" + text + "': it must be a positive integer");
         }
     }
 

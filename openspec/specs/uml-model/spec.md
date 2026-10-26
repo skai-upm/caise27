@@ -19,3 +19,7 @@ The repository SHALL contain a valid PlantUML class diagram at `uml/model.puml` 
 #### Scenario: Model includes the ticket hierarchy
 - **WHEN** `uml/model.puml` is inspected after group tickets are implemented
 - **THEN** it shows the abstract ticket with its individual and group subclasses, the aggregation from group ticket to group, and the composition from group ticket to its individual tickets with multiplicities
+
+#### Scenario: Model includes attractions
+- **WHEN** `uml/model.puml` is inspected after attractions are implemented
+- **THEN** it shows the attraction class with its collection of present users (`0..*`) and the classes that manage and persist attractions

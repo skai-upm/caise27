@@ -73,6 +73,20 @@ package es.upm.parque {
   }
 
   class TicketRepository {
+    - individualFile : Path
+    - groupFile : Path
+  }
+
+  class Attraction {
+    - id : String {readOnly}
+    - name : String
+    - capacity : int
+  }
+
+  class AttractionManager {
+  }
+
+  class AttractionRepository {
     - file : Path
   }
 }
@@ -81,6 +95,7 @@ App ..> CommandProcessor : creates
 CommandProcessor x--> "1" UserManager : userManager
 CommandProcessor x--> "1" GroupManager : groupManager
 CommandProcessor x--> "1" TicketManager : ticketManager
+CommandProcessor x--> "1" AttractionManager : attractionManager
 CommandProcessor x--> "1" SystemDate : systemDate
 CommandProcessor ..> UserField : uses
 UserManager x--> "1" UserRepository : repository
@@ -100,5 +115,11 @@ Ticket <|-- GroupTicket
 IndividualTicket x--> "1" User : user
 GroupTicket o--> "1" Group : group
 GroupTicket *--> "1..*" IndividualTicket : tickets
+AttractionManager x--> "1" AttractionRepository : repository
+AttractionManager x--> "1" TicketManager : ticketManager
+AttractionManager x--> "1" SystemDate : systemDate
+AttractionManager x--> "0..*" Attraction : attractions
+Attraction x--> "0..*" User : present
+Attraction ..> Ticket : enter/exit
 
 @enduml
