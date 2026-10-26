@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.parque.TestSupport;
 import es.upm.parque.business.controller.AttractionManager;
 import es.upm.parque.business.controller.GroupManager;
 import es.upm.parque.business.controller.InvoiceDirector;
@@ -47,7 +48,7 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() {
-        manager = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        manager = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")), TestSupport.FAST_HASHER);
         groups = GroupManager.getInstance().configure(manager, new GroupStorage(dir.resolve("groups.txt")));
         tickets = TicketManager.getInstance().configure(manager, groups,
             new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt")));

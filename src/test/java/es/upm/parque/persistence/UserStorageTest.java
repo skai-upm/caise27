@@ -38,7 +38,7 @@ class UserStorageTest {
         List<User> loaded = storage.load();
         assertEquals(2, loaded.size());
         assertEquals("87654321X", loaded.get(1).getDni());
-        assertEquals("Otra2#", loaded.get(1).getPassword());
+        assertEquals("Otra2#", loaded.get(1).getPasswordHash());
     }
 
     @Test

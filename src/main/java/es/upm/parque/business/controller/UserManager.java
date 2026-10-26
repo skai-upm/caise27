@@ -3,6 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
 import es.upm.parque.business.model.UserValidator;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.UserRepository;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,6 +23,7 @@ public class UserManager {
     private static final UserManager INSTANCE = new UserManager();
 
     private UserRepository repository;
+    private PasswordHasher hasher;
 
     private UserManager() {
     }
@@ -30,12 +32,24 @@ public class UserManager {
         return INSTANCE;
     }
 
-    /** Injects the repository and reloads the users from it, replacing any previous state. */
-    public UserManager configure(UserRepository repository) {
+    /**
+     * Injects the collaborators and reloads the users from the repository, replacing any previous state.
+     * Plain-text passwords found in the repository (written by older versions) are replaced by hashes.
+     */
+    public UserManager configure(UserRepository repository, PasswordHasher hasher) {
         this.repository = repository;
+        this.hasher = hasher;
         usersByDni.clear();
+        boolean migrated = false;
         for (User u : repository.load()) {
+            if (!hasher.isHash(u.getPasswordHash())) {
+                u.setPasswordHash(hasher.hash(u.getPasswordHash()));
+                migrated = true;
+            }
             usersByDni.put(u.getDni(), u);
+        }
+        if (migrated) {
+            persist();
         }
         return this;
     }
@@ -59,7 +73,7 @@ public class UserManager {
             throw new IllegalArgumentException("A user with DNI " + dni + " already exists");
         }
         requireEmailFree(email, null);
-        User user = new User(name, surname, dni, email, password, phone, card);
+        User user = new User(name, surname, dni, email, hasher().hash(password), phone, card);
         usersByDni.put(dni, user);
         persist();
         return user;
@@ -91,7 +105,7 @@ public class UserManager {
             }
             case PASSWORD -> {
                 requireValidPassword(value);
-                user.setPassword(value);
+                user.setPasswordHash(hasher().hash(value));
             }
             case PHONE -> {
                 requireNotBlank(value, "phone");
@@ -114,7 +128,7 @@ public class UserManager {
         if (user == null) {
             throw new IllegalArgumentException("No user with email " + email);
         }
-        if (!user.checkPassword(password)) {
+        if (!hasher().matches(password, user.getPasswordHash())) {
             throw new IllegalArgumentException("Incorrect password");
         }
         return user;
@@ -163,6 +177,13 @@ public class UserManager {
         if (!UserValidator.isValidCard(card)) {
             throw new IllegalArgumentException("Invalid card number: it must have exactly 16 digits");
         }
+    }
+
+    private PasswordHasher hasher() {
+        if (hasher == null) {
+            throw new IllegalStateException("UserManager is not configured");
+        }
+        return hasher;
     }
 
     private UserRepository repository() {

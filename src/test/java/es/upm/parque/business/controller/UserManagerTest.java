@@ -1,13 +1,18 @@
 package es.upm.parque.business.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.parque.TestSupport;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
 import es.upm.parque.persistence.UserStorage;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -23,7 +28,7 @@ class UserManagerTest {
     @BeforeEach
     void setUp() {
         storage = new UserStorage(dir.resolve("users.txt"));
-        manager = UserManager.getInstance().configure(storage);
+        manager = UserManager.getInstance().configure(storage, TestSupport.FAST_HASHER);
         manager.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
             "1234567890123456");
     }
@@ -75,12 +80,12 @@ class UserManagerTest {
         manager.update("ana.nueva@correo.com", "Nueva2#", UserField.SURNAME, "Garcia");
         manager.update("ana.nueva@correo.com", "Nueva2#", UserField.PHONE, "699999999");
 
-        User reloaded = UserManager.getInstance().configure(storage).getUsers().iterator().next();
+        User reloaded = UserManager.getInstance().configure(storage, TestSupport.FAST_HASHER).getUsers().iterator().next();
         assertEquals("Ana Maria", reloaded.getName());
         assertEquals("Garcia", reloaded.getSurname());
         assertEquals("12345678Z", reloaded.getDni());
         assertEquals("ana.nueva@correo.com", reloaded.getEmail());
-        assertEquals("Nueva2#", reloaded.getPassword());
+        assertTrue(TestSupport.FAST_HASHER.matches("Nueva2#", reloaded.getPasswordHash()));
         assertEquals("699999999", reloaded.getPhone());
         assertEquals("9999888877776666", reloaded.getCard());
     }
@@ -98,8 +103,41 @@ class UserManagerTest {
             () -> manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "Clave12"));
         assertThrows(IllegalArgumentException.class,
             () -> manager.update("ana@correo.com", "Clave1!", UserField.CARD, "1234 5678 9012 3456"));
-        User ana = UserManager.getInstance().configure(storage).getUsers().iterator().next();
+        User ana = UserManager.getInstance().configure(storage, TestSupport.FAST_HASHER).getUsers().iterator().next();
         assertEquals("Ana", ana.getName());
         assertEquals("ana@correo.com", ana.getEmail());
+    }
+
+    @Test
+    void passwordsAreStoredOnlyAsHashes() throws IOException {
+        String line = Files.readAllLines(dir.resolve("users.txt")).get(0);
+        assertTrue(line.startsWith("Ana;Garcia Lopez;12345678Z;ana@correo.com;$2a$"), line);
+        assertTrue(line.endsWith(";612345678;1234567890123456"), line);
+        assertFalse(line.contains("Clave1!"), line);
+    }
+
+    @Test
+    void passwordChangePersistsANewHash() {
+        String before = manager.findByEmail("ana@correo.com").getPasswordHash();
+        assertThrows(IllegalArgumentException.class,
+            () -> manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "clave12"));
+        assertEquals(before, manager.findByEmail("ana@correo.com").getPasswordHash());
+
+        manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "Nueva2#");
+        UserManager reloaded = UserManager.getInstance().configure(storage, TestSupport.FAST_HASHER);
+        assertFalse(before.equals(reloaded.findByEmail("ana@correo.com").getPasswordHash()));
+        assertThrows(IllegalArgumentException.class, () -> reloaded.authenticate("ana@correo.com", "Clave1!"));
+        assertEquals("12345678Z", reloaded.authenticate("ana@correo.com", "Nueva2#").getDni());
+    }
+
+    @Test
+    void legacyPlainTextPasswordsAreMigrated() throws IOException {
+        Path legacy = Files.write(dir.resolve("legacy.txt"),
+            List.of("Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"));
+        UserManager migrated = UserManager.getInstance().configure(new UserStorage(legacy), TestSupport.FAST_HASHER);
+        assertEquals("87654321X", migrated.authenticate("pedro@correo.com", "Otra2#").getDni());
+        String line = Files.readAllLines(legacy).get(0);
+        assertFalse(line.contains("Otra2#"), line);
+        assertTrue(line.contains(";$2a$"), line);
     }
 }

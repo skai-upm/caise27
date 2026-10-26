@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.parque.TestSupport;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.Invoice;
@@ -95,18 +96,18 @@ class SingletonTest {
     @Test
     void anyRepositoryImplementationCanBeInjectedAndReconfigurationReloads() {
         InMemoryUsers repository = new InMemoryUsers();
-        UserManager users = UserManager.getInstance().configure(repository);
+        UserManager users = UserManager.getInstance().configure(repository, TestSupport.FAST_HASHER);
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         assertEquals(1, repository.stored.size());
 
-        assertTrue(UserManager.getInstance().configure(new InMemoryUsers()).getUsers().isEmpty());
-        assertEquals(1, UserManager.getInstance().configure(repository).getUsers().size());
+        assertTrue(UserManager.getInstance().configure(new InMemoryUsers(), TestSupport.FAST_HASHER).getUsers().isEmpty());
+        assertEquals(1, UserManager.getInstance().configure(repository, TestSupport.FAST_HASHER).getUsers().size());
     }
 
     @Test
     void parkControllerUsesTheInjectedCollaborators() {
         InMemoryUsers repository = new InMemoryUsers();
-        UserManager users = UserManager.getInstance().configure(repository);
+        UserManager users = UserManager.getInstance().configure(repository, TestSupport.FAST_HASHER);
         GroupManager groups = GroupManager.getInstance().configure(users, NO_GROUPS);
         TicketManager tickets = TicketManager.getInstance().configure(users, groups, NO_TICKETS);
         AttractionManager attractions = AttractionManager.getInstance().configure(NO_ATTRACTIONS);

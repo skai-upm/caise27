@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.parque.TestSupport;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
@@ -26,7 +27,7 @@ class GroupManagerTest {
 
     @BeforeEach
     void setUp() {
-        users = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        users = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")), TestSupport.FAST_HASHER);
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
         groups = GroupManager.getInstance().configure(users, new GroupStorage(dir.resolve("groups.txt")));
@@ -75,7 +76,7 @@ class GroupManagerTest {
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
 
-        UserManager reloadedUsers = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        UserManager reloadedUsers = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")), TestSupport.FAST_HASHER);
         GroupManager reloaded = GroupManager.getInstance().configure(reloadedUsers, new GroupStorage(dir.resolve("groups.txt")));
         Group g = reloaded.find("G01");
         assertEquals(2, g.getMembers().size());

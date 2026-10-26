@@ -54,7 +54,12 @@ class AppTest {
         String fromStdin = run(new String[0], String.join("\n", COMMANDS) + "\n", dir.resolve("b"));
 
         assertEquals(fromFile, fromStdin);
-        assertEquals(Files.readAllLines(dir.resolve("a/users.txt")), Files.readAllLines(dir.resolve("b/users.txt")));
+        assertEquals(withoutHashes(dir.resolve("a/users.txt")), withoutHashes(dir.resolve("b/users.txt")));
+    }
+
+    /** Password hashes are salted, so two runs store different hashes for the same password. */
+    private static List<String> withoutHashes(Path usersFile) throws IOException {
+        return Files.readAllLines(usersFile).stream().map(line -> line.replaceAll(";\\$2a\\$[^;]*;", ";HASH;")).toList();
     }
 
     @Test

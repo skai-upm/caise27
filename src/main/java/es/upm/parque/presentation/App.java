@@ -6,6 +6,7 @@ import es.upm.parque.business.controller.InvoiceDirector;
 import es.upm.parque.business.controller.ParkController;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
+import es.upm.parque.business.security.BCryptPasswordHasher;
 import es.upm.parque.persistence.AttractionStorage;
 import es.upm.parque.persistence.DataDirectory;
 import es.upm.parque.persistence.GroupStorage;
@@ -84,7 +85,8 @@ public class App {
      * collaborations between controllers, into the single controller instances.
      */
     static ParkController configure(DataDirectory data) {
-        UserManager users = UserManager.getInstance().configure(new UserStorage(data.resolve(USERS_FILE_NAME)));
+        UserManager users = UserManager.getInstance()
+            .configure(new UserStorage(data.resolve(USERS_FILE_NAME)), new BCryptPasswordHasher());
         GroupManager groups = GroupManager.getInstance()
             .configure(users, new GroupStorage(data.resolve(GROUPS_FILE_NAME)));
         TicketManager tickets = TicketManager.getInstance().configure(users, groups,

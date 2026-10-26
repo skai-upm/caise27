@@ -54,7 +54,7 @@ package es.upm.parque.business.model {
     - surname : String
     - dni : String
     - email : String
-    - password : String
+    - passwordHash : String
     - phone : String
     - card : String
   }
@@ -115,6 +115,15 @@ package es.upm.parque.business.model {
   }
 }
 
+package es.upm.parque.business.security {
+
+  interface PasswordHasher
+
+  class BCryptPasswordHasher {
+    - logRounds : int
+  }
+}
+
 package es.upm.parque.persistence {
 
   class DataDirectory {
@@ -169,6 +178,8 @@ ParkController "1" x--> "1" AttractionManager : attractions
 UserRepository <|.. UserStorage
 UserManager "1" x--> "1" UserRepository : repository
 UserManager "1" x--> "0..*" User : usersByDni
+UserManager "1" x--> "1" PasswordHasher : hasher
+PasswordHasher <|.. BCryptPasswordHasher
 
 ' Groups
 GroupManager "1" x--> "1" UserManager : users
@@ -214,6 +225,7 @@ App ..> SyntaxHelpFormatter
 App ..> ExtendedHelpFormatter
 CommandProcessor ..> CommandCatalog
 App ..> DataDirectory
+App ..> BCryptPasswordHasher
 App ..> UserStorage
 App ..> GroupStorage
 App ..> TicketStorage

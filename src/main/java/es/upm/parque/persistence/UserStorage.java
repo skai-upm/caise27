@@ -48,7 +48,7 @@ public class UserStorage implements UserRepository {
         List<String> lines = new ArrayList<>();
         for (User u : users) {
             lines.add(String.join(SEPARATOR, u.getName(), u.getSurname(), u.getDni(), u.getEmail(),
-                u.getPassword(), u.getPhone(), u.getCard()));
+                u.getPasswordHash(), u.getPhone(), u.getCard()));
         }
         try {
             Path parent = file.toAbsolutePath().getParent();

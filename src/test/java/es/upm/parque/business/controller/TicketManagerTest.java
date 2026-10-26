@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.parque.TestSupport;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
@@ -39,7 +40,7 @@ class TicketManagerTest {
 
     @BeforeEach
     void setUp() {
-        users = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        users = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")), TestSupport.FAST_HASHER);
         ana = users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
             "1234567890123456");
         pedro = users.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
@@ -99,7 +100,7 @@ class TicketManagerTest {
     @Test
     void restartRestoresTicketsAndKeepsHistory() {
         tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, PRICE);
-        UserManager reloadedUsers = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        UserManager reloadedUsers = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")), TestSupport.FAST_HASHER);
         GroupManager reloadedGroups = GroupManager.getInstance().configure(reloadedUsers, new GroupStorage(dir.resolve("groups.txt")));
         TicketManager reloaded = reload(reloadedUsers, reloadedGroups);
         IndividualTicket t = (IndividualTicket) reloaded.find("T001");
@@ -172,7 +173,7 @@ class TicketManagerTest {
     @Test
     void groupTicketsSurviveRestartAndGroupDeletion() {
         tickets.createGroupTicket("TG01", "G01", OCT_15, OCT_1, PRICE);
-        UserManager reloadedUsers = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        UserManager reloadedUsers = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")), TestSupport.FAST_HASHER);
         GroupManager reloadedGroups = GroupManager.getInstance().configure(reloadedUsers, new GroupStorage(dir.resolve("groups.txt")));
         TicketManager reloaded = reload(reloadedUsers, reloadedGroups);
         GroupTicket gt = (GroupTicket) reloaded.find("TG01");

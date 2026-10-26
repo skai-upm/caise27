@@ -1,7 +1,8 @@
 package es.upm.parque.business.model;
 
 /**
- * A park user. The DNI is fixed at creation; every other field can be changed.
+ * A park user. The DNI is fixed at creation; every other field can be changed. The password is only kept
+ * as a hash.
  */
 public class User {
 
@@ -9,16 +10,17 @@ public class User {
     private String surname;
     private final String dni;
     private String email;
-    private String password;
+    private String passwordHash;
     private String phone;
     private String card;
 
-    public User(String name, String surname, String dni, String email, String password, String phone, String card) {
+    public User(String name, String surname, String dni, String email, String passwordHash, String phone,
+            String card) {
         this.name = name;
         this.surname = surname;
         this.dni = dni;
         this.email = email;
-        this.password = password;
+        this.passwordHash = passwordHash;
         this.phone = phone;
         this.card = card;
     }
@@ -51,12 +53,13 @@ public class User {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    /** @return the stored password hash (never the plain-text password) */
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public String getPhone() {
@@ -75,7 +78,4 @@ public class User {
         this.card = card;
     }
 
-    public boolean checkPassword(String candidate) {
-        return password.equals(candidate);
-    }
 }
