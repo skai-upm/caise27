@@ -16,8 +16,13 @@ import es.upm.parque.persistence.FileAttractionRepository;
 import es.upm.parque.persistence.FileGroupRepository;
 import es.upm.parque.persistence.FileTicketRepository;
 import es.upm.parque.persistence.FileUserRepository;
+import es.upm.parque.presentation.help.CommandCatalog;
+import es.upm.parque.presentation.help.ConciseHelpFormat;
+import es.upm.parque.presentation.help.ExtendedHelpFormat;
+import es.upm.parque.presentation.help.HelpGenerator;
 
 import java.nio.file.Path;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +50,9 @@ class CommandProcessorTest {
                 AttractionController.getInstance().configure(new FileAttractionRepository(dir.resolve("attractions.txt")), tickets, date),
                 InvoiceController.getInstance().configure(manager, groups, tickets, date, new DefaultInvoiceBuilder(),
                         new InvoiceDirector()),
-                date);
+                date,
+                Map.of("", new HelpGenerator(CommandCatalog.parkCommands(), new ConciseHelpFormat()),
+                        "EXTENDED", new HelpGenerator(CommandCatalog.parkCommands(), new ExtendedHelpFormat())));
     }
 
     @Test
@@ -264,5 +271,20 @@ class CommandProcessorTest {
         try (var files = java.nio.file.Files.list(dir)) {
             assertTrue(files.noneMatch(p -> p.getFileName().toString().contains("invoice")));
         }
+    }
+
+    @Test
+    void extendedHelpAddsDescriptionsAndCoversEveryCommandFamily() {
+        String help = processor.process("HELP");
+        String extended = processor.process("HELP EXTENDED");
+        assertTrue(help.contains("HELP EXTENDED") && !help.contains("after checking the password"), help);
+        assertTrue(extended.contains("USER DELETE;Correo;Contraseña") && extended.contains("after checking the password"),
+                extended);
+        for (String family : new String[] {"USER ", "GROUP ", "TICKET ", "GROUPTICKET ", "ATTRACTION ", "INVOICE ",
+                "SYSTEM DATE", "SYSTEM PRICE", "HELP", "EXIT"}) {
+            assertTrue(help.contains(family) && extended.contains(family), family);
+        }
+        assertTrue(processor.process("HELP MARKDOWN").startsWith("ERROR"));
+        assertTrue(processor.process("HELP EXTENDED;x").startsWith("ERROR"));
     }
 }

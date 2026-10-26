@@ -11,42 +11,19 @@ import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
+import es.upm.parque.presentation.help.HelpGenerator;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.Map;
 
 /**
  * Interprets text commands of the form {@code OPERATION;param1;param2;...} and returns a response line.
  */
 public class CommandProcessor {
-    private static final String[] COMMAND_SYNTAX = {
-        "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-        "USER DELETE;Correo;Contraseña",
-        "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
-        "GROUP CREATE;Id;Nombre",
-        "GROUP ADD;Id;Correo",
-        "GROUP REMOVE;Id;Correo",
-        "GROUP DELETE;Id",
-        "TICKET CREATE;Id;Correo;yyyy-MM-dd",
-        "TICKET DELETE;Id",
-        "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
-        "GROUPTICKET DELETE;Id",
-        "ATTRACTION CREATE;Id;Nombre;Capacidad",
-        "ATTRACTION DELETE;Id",
-        "ATTRACTION ENTER;IdAtraccion;IdEntrada",
-        "ATTRACTION EXIT;IdAtraccion;IdEntrada",
-        "ATTRACTION STATUS;IdAtraccion",
-        "INVOICE CREATE;USER;Correo",
-        "INVOICE CREATE;GROUP;IdGrupo",
-        "SYSTEM DATE;yyyy-MM-dd",
-        "SYSTEM PRICE;Importe",
-        "HELP",
-        "EXIT"
-    };
-
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
@@ -56,17 +33,20 @@ public class CommandProcessor {
     private final AttractionController attractionController;
     private final InvoiceController invoiceController;
     private final SystemDate systemDate;
+    private final Map<String, HelpGenerator> helpGenerators;
     private boolean exitRequested;
 
     public CommandProcessor(UserController userController, GroupController groupController,
             TicketController ticketController, AttractionController attractionController,
-            InvoiceController invoiceController, SystemDate systemDate) {
+            InvoiceController invoiceController, SystemDate systemDate,
+            Map<String, HelpGenerator> helpGenerators) {
         this.userController = userController;
         this.groupController = groupController;
         this.ticketController = ticketController;
         this.attractionController = attractionController;
         this.invoiceController = invoiceController;
         this.systemDate = systemDate;
+        this.helpGenerators = Map.copyOf(helpGenerators);
     }
 
     public String process(String line) {
@@ -102,9 +82,9 @@ public class CommandProcessor {
                 ticketController.setPrice(parsePrice(parts[1]));
                 return "OK SYSTEM PRICE -> " + ticketController.getPrice().toPlainString();
             }
-            if (operation.length == 1 && operation[0].equals("HELP")) {
-                requireParams(parts, 0, "HELP");
-                return help();
+            if (operation[0].equals("HELP") && operation.length <= 2) {
+                requireParams(parts, 0, "HELP or HELP EXTENDED");
+                return help(operation.length == 1 ? "" : operation[1]);
             }
             if (operation.length == 1 && operation[0].equals("EXIT")) {
                 requireParams(parts, 0, "EXIT");
@@ -125,12 +105,12 @@ public class CommandProcessor {
         return exitRequested;
     }
 
-    private static String help() {
-        StringBuilder sb = new StringBuilder("Available commands:");
-        for (String syntax : COMMAND_SYNTAX) {
-            sb.append(System.lineSeparator()).append("  ").append(syntax);
+    private String help(String mode) {
+        HelpGenerator generator = helpGenerators.get(mode);
+        if (generator == null) {
+            throw new IllegalArgumentException("unknown help mode '" + mode + "'");
         }
-        return sb.toString();
+        return generator.generate();
     }
 
     private String processUser(String action, String[] p) {

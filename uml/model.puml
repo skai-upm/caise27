@@ -11,6 +11,29 @@ package es.upm.parque.presentation {
   }
 }
 
+package es.upm.parque.presentation.help {
+
+  class CommandDescriptor {
+    syntax : String
+    description : String
+  }
+
+  class CommandCatalog {
+  }
+
+  interface HelpFormat {
+  }
+
+  class ConciseHelpFormat {
+  }
+
+  class ExtendedHelpFormat {
+  }
+
+  class HelpGenerator {
+  }
+}
+
 package es.upm.parque.business.model {
 
   class User {
@@ -169,6 +192,12 @@ CommandProcessor x--> "1" TicketController : ticketController
 CommandProcessor x--> "1" AttractionController : attractionController
 CommandProcessor x--> "1" InvoiceController : invoiceController
 CommandProcessor x--> "1" SystemDate : systemDate
+CommandProcessor x--> "0..*" HelpGenerator : helpGenerators
+HelpGenerator x--> "1" CommandCatalog : catalog
+HelpGenerator x--> "1" HelpFormat : format
+HelpFormat <|.. ConciseHelpFormat
+HelpFormat <|.. ExtendedHelpFormat
+CommandCatalog x--> "0..*" CommandDescriptor : commands
 
 UserController x--> "1" UserRepository : repository
 UserController x--> "0..*" User : users
@@ -212,6 +241,8 @@ AttractionRepository <|.. FileAttractionRepository
 ' Usage, only for classes without incoming relationships
 App ..> CommandProcessor
 App ..> TemporaryDataDirectory
+App ..> ConciseHelpFormat
+App ..> ExtendedHelpFormat
 App ..> FileUserRepository
 App ..> FileGroupRepository
 App ..> FileTicketRepository

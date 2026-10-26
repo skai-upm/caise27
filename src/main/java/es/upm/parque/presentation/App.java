@@ -13,6 +13,10 @@ import es.upm.parque.persistence.FileGroupRepository;
 import es.upm.parque.persistence.FileTicketRepository;
 import es.upm.parque.persistence.FileUserRepository;
 import es.upm.parque.persistence.TemporaryDataDirectory;
+import es.upm.parque.presentation.help.CommandCatalog;
+import es.upm.parque.presentation.help.ConciseHelpFormat;
+import es.upm.parque.presentation.help.ExtendedHelpFormat;
+import es.upm.parque.presentation.help.HelpGenerator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Entry point of the amusement-park application. Without a file argument commands are read from the terminal;
@@ -107,8 +112,12 @@ public class App {
                 new FileAttractionRepository(dataDir.resolve("attractions.txt")), ticketController, systemDate);
         InvoiceController invoiceController = InvoiceController.getInstance().configure(userController,
                 groupController, ticketController, systemDate, new DefaultInvoiceBuilder(), new InvoiceDirector());
+        CommandCatalog catalog = CommandCatalog.parkCommands();
+        Map<String, HelpGenerator> helpGenerators = Map.of(
+                "", new HelpGenerator(catalog, new ConciseHelpFormat()),
+                "EXTENDED", new HelpGenerator(catalog, new ExtendedHelpFormat()));
         return new CommandProcessor(userController, groupController, ticketController, attractionController,
-                invoiceController, systemDate);
+                invoiceController, systemDate, helpGenerators);
     }
 
     private static void processLines(BufferedReader in, CommandProcessor processor, PrintStream out)
