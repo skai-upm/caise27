@@ -1,5 +1,17 @@
 package es.upm.parque;
 
+import es.upm.parque.business.controller.AttractionController;
+import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.MainController;
+import es.upm.parque.business.controller.TicketController;
+import es.upm.parque.business.controller.UserController;
+import es.upm.parque.persistence.AttractionRepository;
+import es.upm.parque.persistence.DataDirectory;
+import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.TicketRepository;
+import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.presentation.CommandProcessor;
+import es.upm.parque.presentation.ExecutionOptions;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,13 +74,13 @@ public class App {
      * Builds every manager with repositories whose files live in the given directory.
      */
     static CommandProcessor createProcessor(Path dataDir, MainController mainController) {
-        UserManager userManager = new UserManager(new UserRepository(dataDir.resolve(USERS_FILE)));
-        GroupManager groupManager = new GroupManager(new GroupRepository(dataDir.resolve(GROUPS_FILE)), userManager);
-        TicketManager ticketManager = new TicketManager(new TicketRepository(dataDir.resolve(TICKETS_FILE),
-                dataDir.resolve(GROUP_TICKETS_FILE)), userManager, groupManager, mainController);
-        AttractionManager attractionManager = new AttractionManager(
-                new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE)), ticketManager, mainController);
-        return new CommandProcessor(userManager, groupManager, ticketManager, attractionManager, mainController);
+        UserController userController = new UserController(new UserRepository(dataDir.resolve(USERS_FILE)));
+        GroupController groupController = new GroupController(new GroupRepository(dataDir.resolve(GROUPS_FILE)), userController);
+        TicketController ticketController = new TicketController(new TicketRepository(dataDir.resolve(TICKETS_FILE),
+                dataDir.resolve(GROUP_TICKETS_FILE)), userController, groupController, mainController);
+        AttractionController attractionController = new AttractionController(
+                new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE)), ticketController, mainController);
+        return new CommandProcessor(userController, groupController, ticketController, attractionController, mainController);
     }
 
     /**

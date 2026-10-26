@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.parque.business.controller.UserController;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,7 +31,7 @@ class AppTest {
     @TempDir
     Path dir;
 
-    private UserManager manager(Path data) {
+    private UserController manager(Path data) {
         return new TestPark(data).users;
     }
 
@@ -72,7 +73,7 @@ class AppTest {
                 "EXIT", "USER DELETE;pedro@correo.com;Otra2#");
         String out = start(users, new String[] {file.toString()}, "USER DELETE;ana@correo.com;Clave1!\n");
         assertEquals("OK USER CREATED\nOK USER CREATED\nOK USER UPDATED\nOK EXIT\n", out);
-        UserManager after = manager(users);
+        UserController after = manager(users);
         assertEquals("699999999", after.findByEmail("ana@correo.com").getPhone());
         assertNotNull(after.findByEmail("pedro@correo.com"));
     }
