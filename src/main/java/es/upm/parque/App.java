@@ -69,21 +69,29 @@ public class App {
     }
 
     private static void run(ExecutionOptions options, Path dataDir, Clock clock, InputStream stdin, PrintStream out) {
-        new App(createProcessor(dataDir, new MainController(clock))).start(options.inputFile(), stdin, out);
+        new App(configure(dataDir, clock)).start(options.inputFile(), stdin, out);
     }
 
     /**
-     * Builds every manager with repositories whose files live in the given directory.
+     * Composition root: creates the repositories for the given data directory, injects them and the
+     * collaborating controllers into the singleton controllers, and returns the command processor.
+     * Normal and --fly executions only differ in the directory passed here.
      */
-    static CommandProcessor createProcessor(Path dataDir, MainController mainController) {
-        UserController userController = new UserController(new UserRepository(dataDir.resolve(USERS_FILE)));
-        GroupController groupController = new GroupController(new GroupRepository(dataDir.resolve(GROUPS_FILE)), userController);
-        TicketController ticketController = new TicketController(new TicketRepository(dataDir.resolve(TICKETS_FILE),
-                dataDir.resolve(GROUP_TICKETS_FILE)), userController, groupController, mainController);
-        AttractionController attractionController = new AttractionController(
-                new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE)), ticketController, mainController);
-        InvoiceController invoiceController = new InvoiceController(userController, groupController, ticketController,
-                StandardInvoiceBuilder::new);
+    public static CommandProcessor configure(Path dataDir, Clock clock) {
+        MainController mainController = MainController.getInstance();
+        mainController.configure(clock);
+        UserController userController = UserController.getInstance();
+        userController.configure(new UserRepository(dataDir.resolve(USERS_FILE)));
+        GroupController groupController = GroupController.getInstance();
+        groupController.configure(new GroupRepository(dataDir.resolve(GROUPS_FILE)), userController);
+        TicketController ticketController = TicketController.getInstance();
+        ticketController.configure(new TicketRepository(dataDir.resolve(TICKETS_FILE), dataDir.resolve(GROUP_TICKETS_FILE)),
+                userController, groupController, mainController);
+        AttractionController attractionController = AttractionController.getInstance();
+        attractionController.configure(new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE)), ticketController,
+                mainController);
+        InvoiceController invoiceController = InvoiceController.getInstance();
+        invoiceController.configure(userController, groupController, ticketController, StandardInvoiceBuilder::new);
         return new CommandProcessor(userController, groupController, ticketController, attractionController,
                 invoiceController, mainController);
     }

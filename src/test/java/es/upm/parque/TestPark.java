@@ -33,15 +33,18 @@ public final class TestPark {
     public final InvoiceController invoices;
     public final CommandProcessor processor;
 
+    /**
+     * Configures the singleton controllers over the data files of {@code dir}, exactly as the
+     * application does at startup.
+     */
     public TestPark(Path dir) {
-        controller = new MainController(CLOCK);
-        users = new UserController(new UserRepository(dir.resolve("users.txt")));
-        groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), users);
-        tickets = new TicketController(new TicketRepository(dir.resolve("tickets.txt"),
-                dir.resolve("grouptickets.txt")), users, groups, controller);
-        attractions = new AttractionController(new AttractionRepository(dir.resolve("attractions.txt")), tickets, controller);
-        invoices = new InvoiceController(users, groups, tickets, StandardInvoiceBuilder::new);
-        processor = new CommandProcessor(users, groups, tickets, attractions, invoices, controller);
+        processor = App.configure(dir, CLOCK);
+        controller = MainController.getInstance();
+        users = UserController.getInstance();
+        groups = GroupController.getInstance();
+        tickets = TicketController.getInstance();
+        attractions = AttractionController.getInstance();
+        invoices = InvoiceController.getInstance();
     }
 
     public App app() {

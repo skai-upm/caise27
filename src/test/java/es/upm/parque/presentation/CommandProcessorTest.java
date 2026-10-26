@@ -292,7 +292,7 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedErrorsDoNotPropagate() {
-        CommandProcessor broken = new CommandProcessor(null, null, null, null, null, new MainController(TestPark.CLOCK));
+        CommandProcessor broken = new CommandProcessor(null, null, null, null, null, MainController.getInstance());
         assertTrue(broken.process(ANA).startsWith("ERROR Unexpected error"));
     }
 }

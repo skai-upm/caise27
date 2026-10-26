@@ -21,16 +21,29 @@ import java.util.Map;
  * Business rules for individual and group tickets. Dates are always compared with the system date
  * held by the {@link MainController}. Every successful change is persisted.
  */
-public class TicketController {
+public final class TicketController {
 
-    private final TicketRepository repository;
-    private final UserController userController;
-    private final GroupController groupController;
-    private final MainController mainController;
+    private TicketRepository repository;
+    private UserController userController;
+    private GroupController groupController;
+    private MainController mainController;
     private List<IndividualTicket> individualTickets;
     private List<GroupTicket> groupTickets;
 
-    public TicketController(TicketRepository repository, UserController userController, GroupController groupController,
+    private TicketController() {
+    }
+
+    /**
+     * Returns the single instance of this controller.
+     */
+    public static TicketController getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /**
+     * Injects the repository and collaborating controllers chosen at startup and loads the stored data.
+     */
+    public void configure(TicketRepository repository, UserController userController, GroupController groupController,
                          MainController mainController) {
         this.repository = repository;
         this.userController = userController;
@@ -43,16 +56,19 @@ public class TicketController {
      * Every ticket, individual (including those inside group tickets) and group.
      */
     public List<Ticket> getTickets() {
+        requireConfigured();
         List<Ticket> all = new ArrayList<>(individualTickets);
         all.addAll(groupTickets);
         return all;
     }
 
     public List<IndividualTicket> getIndividualTickets() {
+        requireConfigured();
         return List.copyOf(individualTickets);
     }
 
     public List<GroupTicket> getGroupTickets() {
+        requireConfigured();
         return List.copyOf(groupTickets);
     }
 
@@ -60,14 +76,17 @@ public class TicketController {
      * Individual tickets bought directly for the user, excluding those inside group tickets.
      */
     public List<IndividualTicket> getStandaloneTicketsOf(User user) {
+        requireConfigured();
         return individualTickets.stream().filter(t -> t.getUser() == user && ownerOf(t) == null).toList();
     }
 
     public List<GroupTicket> getGroupTicketsOf(Group group) {
+        requireConfigured();
         return groupTickets.stream().filter(t -> t.getGroup() == group).toList();
     }
 
     public Ticket findById(String id) {
+        requireConfigured();
         return getTickets().stream().filter(t -> t.getId().equals(id)).findFirst().orElse(null);
     }
 
@@ -75,6 +94,7 @@ public class TicketController {
      * Buys an individual ticket for the user with the given email at the current price.
      */
     public IndividualTicket create(String id, String email, String dateText) {
+        requireConfigured();
         requireNewId(id);
         User user = userController.findByEmail(email);
         if (user == null) {
@@ -91,6 +111,7 @@ public class TicketController {
      * Buys a group ticket for the current members of a group, generating one individual ticket each.
      */
     public GroupTicket createGroupTicket(String id, String groupId, String dateText) {
+        requireConfigured();
         requireNewId(id);
         Group group = groupController.findById(groupId);
         if (group == null) {
@@ -121,6 +142,7 @@ public class TicketController {
      * Deletes a standalone individual ticket whose date is strictly later than the system date.
      */
     public void delete(String id) {
+        requireConfigured();
         IndividualTicket ticket = individualTickets.stream().filter(t -> t.getId().equals(id)).findFirst()
                 .orElseThrow(() -> new ParkException("No individual ticket with identifier " + id));
         GroupTicket owner = ownerOf(ticket);
@@ -137,6 +159,7 @@ public class TicketController {
      * Deletes a group ticket and its internal tickets if its date is strictly later than the system date.
      */
     public void deleteGroupTicket(String id) {
+        requireConfigured();
         GroupTicket ticket = groupTickets.stream().filter(t -> t.getId().equals(id)).findFirst()
                 .orElseThrow(() -> new ParkException("No group ticket with identifier " + id));
         requireStrictlyFuture(ticket);
@@ -149,6 +172,7 @@ public class TicketController {
      * True if the user has an individual ticket (standalone or internal) dated on or after the system date.
      */
     public boolean hasCurrentOrFutureTicket(User user) {
+        requireConfigured();
         LocalDate today = mainController.getCurrentDate();
         return individualTickets.stream().anyMatch(t -> t.getUser() == user && !t.getDate().isBefore(today));
     }
@@ -157,6 +181,7 @@ public class TicketController {
      * True if the group has a group ticket dated on or after the system date.
      */
     public boolean isGroupLocked(Group group) {
+        requireConfigured();
         LocalDate today = mainController.getCurrentDate();
         return groupTickets.stream().anyMatch(t -> t.getGroup() == group && !t.getDate().isBefore(today));
     }
@@ -165,6 +190,7 @@ public class TicketController {
      * Removes every ticket of a user that is being deleted, including from group ticket compositions.
      */
     public void removeTicketsOf(User user) {
+        requireConfigured();
         List<IndividualTicket> owned = individualTickets.stream().filter(t -> t.getUser() == user).toList();
         if (owned.isEmpty()) {
             return;
@@ -183,6 +209,7 @@ public class TicketController {
      * Removes the group tickets (and their internal tickets) of a group that is being deleted.
      */
     public void removeGroupTicketsOf(Group group) {
+        requireConfigured();
         List<GroupTicket> owned = groupTickets.stream().filter(t -> t.getGroup() == group).toList();
         if (owned.isEmpty()) {
             return;
@@ -242,5 +269,15 @@ public class TicketController {
             load();
             throw new ParkException("Could not save tickets: " + e.getMessage());
         }
+    }
+
+    private void requireConfigured() {
+        if (repository == null) {
+            throw new IllegalStateException("TicketController is not configured");
+        }
+    }
+
+    private static final class Holder {
+        static final TicketController INSTANCE = new TicketController();
     }
 }

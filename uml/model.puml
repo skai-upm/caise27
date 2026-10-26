@@ -116,6 +116,13 @@ package es.upm.parque.persistence {
   class DataDirectory
 }
 
+note as SingletonNote
+  MainController, UserController, GroupController, TicketController,
+  AttractionController and InvoiceController are singletons (getInstance).
+  App creates the repositories at startup and injects them, together with
+  the collaborating controllers shown below, through each configure method.
+end note
+
 ' Application wiring
 App "0..*" x--> "1" CommandProcessor : processor
 CommandProcessor "0..*" x--> "1" UserController : userController

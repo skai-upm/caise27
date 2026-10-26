@@ -12,21 +12,36 @@ import java.util.List;
 /**
  * Business rules for creating, deleting and updating users. Every successful change is persisted.
  */
-public class UserController {
+public final class UserController {
 
-    private final UserRepository repository;
+    private UserRepository repository;
     private List<User> users;
 
-    public UserController(UserRepository repository) {
+    private UserController() {
+    }
+
+    /**
+     * Returns the single instance of this controller.
+     */
+    public static UserController getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /**
+     * Injects the repository and collaborating controllers chosen at startup and loads the stored data.
+     */
+    public void configure(UserRepository repository) {
         this.repository = repository;
         this.users = new ArrayList<>(repository.loadAll());
     }
 
     public List<User> getUsers() {
+        requireConfigured();
         return List.copyOf(users);
     }
 
     public User findByEmail(String email) {
+        requireConfigured();
         for (User u : users) {
             if (u.getEmail().equalsIgnoreCase(email)) {
                 return u;
@@ -36,6 +51,7 @@ public class UserController {
     }
 
     public User findByDni(String dni) {
+        requireConfigured();
         for (User u : users) {
             if (u.getDni().equalsIgnoreCase(dni)) {
                 return u;
@@ -46,6 +62,7 @@ public class UserController {
 
     public void create(String name, String surname, String dni, String email,
                        String password, String phone, String card) {
+        requireConfigured();
         requireNotBlank(name, "first name");
         requireNotBlank(surname, "surname");
         requireNotBlank(dni, "DNI");
@@ -80,6 +97,7 @@ public class UserController {
      * Deletes the user after checking the credentials and returns it.
      */
     public User delete(String email, String password) {
+        requireConfigured();
         User user = authenticate(email, password);
         users.remove(user);
         persist();
@@ -87,6 +105,7 @@ public class UserController {
     }
 
     public void update(String email, String password, String fieldName, String newValue) {
+        requireConfigured();
         User user = authenticate(email, password);
         if ("DNI".equalsIgnoreCase(fieldName.trim())) {
             throw new ParkException("The DNI cannot be modified");
@@ -130,6 +149,7 @@ public class UserController {
      * Returns the user with that email if the password matches; otherwise rejects the operation.
      */
     public User authenticate(String email, String password) {
+        requireConfigured();
         User user = findByEmail(email);
         if (user == null) {
             throw new ParkException("No user with email " + email);
@@ -153,5 +173,15 @@ public class UserController {
         if (!UserValidator.isNotBlank(value)) {
             throw new ParkException("The " + label + " is required");
         }
+    }
+
+    private void requireConfigured() {
+        if (repository == null) {
+            throw new IllegalStateException("UserController is not configured");
+        }
+    }
+
+    private static final class Holder {
+        static final UserController INSTANCE = new UserController();
     }
 }

@@ -14,27 +14,43 @@ import java.util.Map;
 /**
  * Business rules for groups of registered users. Every successful change is persisted.
  */
-public class GroupController {
+public final class GroupController {
 
-    private final GroupRepository repository;
-    private final UserController userController;
+    private GroupRepository repository;
+    private UserController userController;
     private List<Group> groups;
 
-    public GroupController(GroupRepository repository, UserController userController) {
+    private GroupController() {
+    }
+
+    /**
+     * Returns the single instance of this controller.
+     */
+    public static GroupController getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /**
+     * Injects the repository and collaborating controllers chosen at startup and loads the stored data.
+     */
+    public void configure(GroupRepository repository, UserController userController) {
         this.repository = repository;
         this.userController = userController;
         this.groups = load();
     }
 
     public List<Group> getGroups() {
+        requireConfigured();
         return List.copyOf(groups);
     }
 
     public Group findById(String id) {
+        requireConfigured();
         return groups.stream().filter(g -> g.getId().equals(id)).findFirst().orElse(null);
     }
 
     public void create(String id, String name) {
+        requireConfigured();
         if (!UserValidator.isNotBlank(id) || !UserValidator.isNotBlank(name)) {
             throw new ParkException("The group identifier and name are required");
         }
@@ -46,11 +62,13 @@ public class GroupController {
     }
 
     public void delete(String id) {
+        requireConfigured();
         groups.remove(requireGroup(id));
         persist();
     }
 
     public void addMember(String id, String email) {
+        requireConfigured();
         Group group = requireGroup(id);
         User user = userController.findByEmail(email);
         if (user == null) {
@@ -64,6 +82,7 @@ public class GroupController {
     }
 
     public void removeMember(String id, String email) {
+        requireConfigured();
         Group group = requireGroup(id);
         User user = userController.findByEmail(email);
         if (user == null || !group.hasMember(user)) {
@@ -77,6 +96,7 @@ public class GroupController {
      * Removes a deleted user from every group that contains it.
      */
     public void removeUserFromAllGroups(User user) {
+        requireConfigured();
         boolean changed = false;
         for (Group g : groups) {
             changed |= g.removeMember(user);
@@ -109,5 +129,15 @@ public class GroupController {
             groups = load();
             throw new ParkException("Could not save groups: " + e.getMessage());
         }
+    }
+
+    private void requireConfigured() {
+        if (repository == null) {
+            throw new IllegalStateException("GroupController is not configured");
+        }
+    }
+
+    private static final class Holder {
+        static final GroupController INSTANCE = new GroupController();
     }
 }

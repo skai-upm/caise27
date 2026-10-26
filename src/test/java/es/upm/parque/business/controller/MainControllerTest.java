@@ -18,7 +18,8 @@ class MainControllerTest {
 
     @Test
     void startsWithClockDateAndCanChange() {
-        MainController controller = new MainController(Clock.fixed(Instant.parse("2026-08-26T19:03:15Z"), ZoneOffset.UTC));
+        MainController controller = MainController.getInstance();
+        controller.configure(Clock.fixed(Instant.parse("2026-08-26T19:03:15Z"), ZoneOffset.UTC));
         assertEquals(LocalDate.of(2026, 8, 26), controller.getCurrentDate());
         controller.setCurrentDate(LocalDate.of(2020, 1, 1));
         assertEquals(LocalDate.of(2020, 1, 1), controller.getCurrentDate());
@@ -34,7 +35,8 @@ class MainControllerTest {
 
     @Test
     void priceStartsAt40AndParsesStrictly() {
-        MainController controller = new MainController(Clock.systemUTC());
+        MainController controller = MainController.getInstance();
+        controller.configure(Clock.systemUTC());
         assertEquals(new BigDecimal("40.00"), controller.getTicketPrice());
         controller.setTicketPrice(Values.parsePrice("60"));
         assertEquals("60.00", Values.formatPrice(controller.getTicketPrice()));

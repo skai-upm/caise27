@@ -25,10 +25,16 @@ class UserControllerTest {
     private Path file;
     private UserController controller;
 
+    private static UserController configured(UserRepository repository) {
+        UserController users = UserController.getInstance();
+        users.configure(repository);
+        return users;
+    }
+
     @BeforeEach
     void setUp() {
         file = dir.resolve("users.txt");
-        controller = new UserController(new UserRepository(file));
+        controller = configured(new UserRepository(file));
     }
 
     private void createAna() {
@@ -39,7 +45,7 @@ class UserControllerTest {
     void createStoresAndPersists() {
         createAna();
         assertEquals(1, controller.getUsers().size());
-        User reloaded = new UserController(new UserRepository(file)).findByEmail("ana@correo.com");
+        User reloaded = configured(new UserRepository(file)).findByEmail("ana@correo.com");
         assertNotNull(reloaded);
         assertEquals("612345678", reloaded.getPhone());
     }
@@ -94,7 +100,7 @@ class UserControllerTest {
         createAna();
         controller.delete("ana@correo.com", "Clave1!");
         assertTrue(controller.getUsers().isEmpty());
-        assertTrue(new UserController(new UserRepository(file)).getUsers().isEmpty());
+        assertTrue(configured(new UserRepository(file)).getUsers().isEmpty());
     }
 
     @Test
@@ -115,7 +121,7 @@ class UserControllerTest {
         controller.update("ana.nueva@correo.com", "Clave1!", "PASSWORD", "Nueva2#");
         controller.update("ana.nueva@correo.com", "Nueva2#", "CARD", "9999888877776666");
 
-        User u = new UserController(new UserRepository(file)).findByEmail("ana.nueva@correo.com");
+        User u = configured(new UserRepository(file)).findByEmail("ana.nueva@correo.com");
         assertEquals("Ana Maria", u.getName());
         assertEquals("Lopez", u.getSurname());
         assertEquals("699999999", u.getPhone());
@@ -143,7 +149,7 @@ class UserControllerTest {
         assertThrows(ParkException.class, () -> controller.update("ana@correo.com", "Clave1!", "CARD", "1234"));
         assertThrows(ParkException.class, () -> controller.update("ana@correo.com", "Clave1!", "COLOR", "rojo"));
         assertThrows(ParkException.class, () -> controller.update("ana@correo.com", "Clave1!", "NAME", " "));
-        User ana = new UserController(new UserRepository(file)).findByEmail("ana@correo.com");
+        User ana = configured(new UserRepository(file)).findByEmail("ana@correo.com");
         assertEquals("Ana", ana.getName());
         assertEquals("Clave1!", ana.getPassword());
         assertEquals("1234567890123456", ana.getCard());

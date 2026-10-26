@@ -14,14 +14,27 @@ import java.util.List;
  * Business rules for attractions: creation, and entry and exit with tickets. Entry is only allowed
  * with tickets dated on the system date held by the {@link MainController}.
  */
-public class AttractionController {
+public final class AttractionController {
 
-    private final AttractionRepository repository;
-    private final TicketController ticketController;
-    private final MainController mainController;
+    private AttractionRepository repository;
+    private TicketController ticketController;
+    private MainController mainController;
     private List<Attraction> attractions;
 
-    public AttractionController(AttractionRepository repository, TicketController ticketController,
+    private AttractionController() {
+    }
+
+    /**
+     * Returns the single instance of this controller.
+     */
+    public static AttractionController getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /**
+     * Injects the repository and collaborating controllers chosen at startup and loads the stored data.
+     */
+    public void configure(AttractionRepository repository, TicketController ticketController,
                              MainController mainController) {
         this.repository = repository;
         this.ticketController = ticketController;
@@ -30,14 +43,17 @@ public class AttractionController {
     }
 
     public List<Attraction> getAttractions() {
+        requireConfigured();
         return List.copyOf(attractions);
     }
 
     public Attraction findById(String id) {
+        requireConfigured();
         return attractions.stream().filter(a -> a.getId().equals(id)).findFirst().orElse(null);
     }
 
     public void create(String id, String name, String capacityText) {
+        requireConfigured();
         if (!UserValidator.isNotBlank(id) || !UserValidator.isNotBlank(name)) {
             throw new ParkException("The attraction identifier and name are required");
         }
@@ -52,6 +68,7 @@ public class AttractionController {
      * Lets the users of a ticket dated today into an attraction. Returns how many entered.
      */
     public int enter(String attractionId, String ticketId) {
+        requireConfigured();
         Attraction attraction = requireAttraction(attractionId);
         Ticket ticket = requireTicket(ticketId);
         if (!ticket.getDate().equals(mainController.getCurrentDate())) {
@@ -65,6 +82,7 @@ public class AttractionController {
      * Lets the users of a ticket out of an attraction. Returns how many left.
      */
     public int exit(String attractionId, String ticketId) {
+        requireConfigured();
         Attraction attraction = requireAttraction(attractionId);
         Ticket ticket = requireTicket(ticketId);
         int left = attraction.release(ticket);
@@ -75,6 +93,7 @@ public class AttractionController {
     }
 
     public Attraction requireAttraction(String id) {
+        requireConfigured();
         Attraction attraction = findById(id);
         if (attraction == null) {
             throw new ParkException("No attraction with identifier " + id);
@@ -109,5 +128,15 @@ public class AttractionController {
             attractions = new ArrayList<>(repository.loadAll());
             throw new ParkException("Could not save attractions: " + e.getMessage());
         }
+    }
+
+    private void requireConfigured() {
+        if (repository == null) {
+            throw new IllegalStateException("AttractionController is not configured");
+        }
+    }
+
+    private static final class Holder {
+        static final AttractionController INSTANCE = new AttractionController();
     }
 }

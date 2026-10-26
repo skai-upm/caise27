@@ -15,14 +15,27 @@ import java.util.function.Supplier;
  * Director of invoice construction: decides which sections apply to each recipient type and feeds
  * them to an {@link InvoiceBuilder} step by step.
  */
-public class InvoiceController {
+public final class InvoiceController {
 
-    private final UserController userController;
-    private final GroupController groupController;
-    private final TicketController ticketController;
-    private final Supplier<InvoiceBuilder> builderFactory;
+    private UserController userController;
+    private GroupController groupController;
+    private TicketController ticketController;
+    private Supplier<InvoiceBuilder> builderFactory;
 
-    public InvoiceController(UserController userController, GroupController groupController,
+    private InvoiceController() {
+    }
+
+    /**
+     * Returns the single instance of this controller.
+     */
+    public static InvoiceController getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /**
+     * Injects the collaborators chosen at startup.
+     */
+    public void configure(UserController userController, GroupController groupController,
                              TicketController ticketController, Supplier<InvoiceBuilder> builderFactory) {
         this.userController = userController;
         this.groupController = groupController;
@@ -35,6 +48,7 @@ public class InvoiceController {
      * tickets are billed to the group and not repeated).
      */
     public Invoice forUser(String email) {
+        requireConfigured();
         User user = userController.findByEmail(email);
         if (user == null) {
             throw new ParkException("No user with email " + email);
@@ -55,6 +69,7 @@ public class InvoiceController {
      * Invoice of a group: its group ticket purchases with their totals.
      */
     public Invoice forGroup(String groupId) {
+        requireConfigured();
         Group group = groupController.findById(groupId);
         if (group == null) {
             throw new ParkException("No group with identifier " + groupId);
@@ -69,5 +84,15 @@ public class InvoiceController {
             }
         }
         return builder.build();
+    }
+
+    private void requireConfigured() {
+        if (builderFactory == null) {
+            throw new IllegalStateException("InvoiceController is not configured");
+        }
+    }
+
+    private static final class Holder {
+        static final InvoiceController INSTANCE = new InvoiceController();
     }
 }
