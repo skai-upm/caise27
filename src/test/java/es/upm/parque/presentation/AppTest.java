@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileUserRepository;
 
 import java.io.ByteArrayInputStream;
@@ -39,7 +40,7 @@ class AppTest {
     }
 
     private UserController reload(Path dataDir) {
-        return UserController.getInstance().configure(new FileUserRepository(dataDir.resolve("users.txt")));
+        return UserController.getInstance().configure(new FileUserRepository(dataDir.resolve("users.txt")), new BCryptPasswordEncoder(4));
     }
 
     @Test

@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileGroupRepository;
 import es.upm.parque.persistence.FileTicketRepository;
 import es.upm.parque.persistence.FileUserRepository;
@@ -37,7 +38,7 @@ class GroupTicketControllerTest {
     void setUp() {
         date = new SystemDate();
         date.set(OCT_1);
-        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
+        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")), new BCryptPasswordEncoder(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
@@ -50,7 +51,7 @@ class GroupTicketControllerTest {
     }
 
     private void restart() {
-        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
+        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")), new BCryptPasswordEncoder(4));
         groups = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), users);
         tickets = TicketController.getInstance().configure(new FileTicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
                 users, groups, date);

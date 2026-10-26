@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.UserField;
+import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileGroupRepository;
 import es.upm.parque.persistence.FileUserRepository;
 
@@ -27,7 +28,7 @@ class GroupControllerTest {
 
     @BeforeEach
     void setUp() {
-        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
+        users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")), new BCryptPasswordEncoder(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
@@ -84,7 +85,7 @@ class GroupControllerTest {
         groups.create("G02", "Vacio");
         assertEquals("G01;Familia Garcia;12345678Z,87654321X\nG02;Vacio;\n",
                 Files.readString(dir.resolve("groups.txt")));
-        UserController restartedUsers = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
+        UserController restartedUsers = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")), new BCryptPasswordEncoder(4));
         GroupController restarted = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), restartedUsers);
         Group g = restarted.findById("G01");
         assertEquals(2, g.getMembers().size());

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileGroupRepository;
 import es.upm.parque.persistence.FileTicketRepository;
 import es.upm.parque.persistence.FileUserRepository;
@@ -44,7 +45,7 @@ class SingletonControllersTest {
         SystemDate date = new SystemDate();
         date.set(LocalDate.of(2026, 10, 1));
         Path normal = dir.resolve("normal");
-        UserController users = UserController.getInstance().configure(new FileUserRepository(normal.resolve("u.txt")));
+        UserController users = UserController.getInstance().configure(new FileUserRepository(normal.resolve("u.txt")), new BCryptPasswordEncoder(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         GroupController groups = GroupController.getInstance()
@@ -54,14 +55,14 @@ class SingletonControllersTest {
                 .create("T001", "ana@correo.com", LocalDate.of(2026, 10, 15));
 
         Path fly = dir.resolve("fly");
-        users.configure(new FileUserRepository(fly.resolve("u.txt")));
+        users.configure(new FileUserRepository(fly.resolve("u.txt")), new BCryptPasswordEncoder(4));
         assertEquals(0, users.getUsers().size());
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         users.delete("ana@correo.com", "Clave1!");
         assertNull(users.findByEmail("ana@correo.com"));
 
-        users.configure(new FileUserRepository(normal.resolve("u.txt")));
+        users.configure(new FileUserRepository(normal.resolve("u.txt")), new BCryptPasswordEncoder(4));
         assertEquals(1, users.getUsers().size());
     }
 }

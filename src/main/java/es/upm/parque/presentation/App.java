@@ -8,6 +8,7 @@ import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
 import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileAttractionRepository;
 import es.upm.parque.persistence.FileGroupRepository;
 import es.upm.parque.persistence.FileTicketRepository;
@@ -102,7 +103,7 @@ public class App {
     static CommandProcessor initialize(Path dataDir) {
         SystemDate systemDate = new SystemDate();
         UserController userController = UserController.getInstance()
-                .configure(new FileUserRepository(dataDir.resolve("users.txt")));
+                .configure(new FileUserRepository(dataDir.resolve("users.txt")), new BCryptPasswordEncoder());
         GroupController groupController = GroupController.getInstance()
                 .configure(new FileGroupRepository(dataDir.resolve("groups.txt")), userController);
         TicketController ticketController = TicketController.getInstance().configure(

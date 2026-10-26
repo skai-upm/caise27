@@ -3,6 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
 import es.upm.parque.business.repository.UserRepository;
+import es.upm.parque.business.security.PasswordEncoder;
 import es.upm.parque.business.validation.UserValidator;
 
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ public class UserController {
     private static final UserController INSTANCE = new UserController();
 
     private UserRepository repository;
+    private PasswordEncoder passwordEncoder;
     private final List<User> users = new ArrayList<>();
     private final List<Function<User, String>> deletionChecks = new ArrayList<>();
 
@@ -28,13 +30,25 @@ public class UserController {
     }
 
     /**
-     * Injects the repository to use, reloads the users from it and discards previously registered checks.
+     * Injects the repository and password encoder, reloads the users (hashing any legacy plaintext password) and
+     * discards previously registered checks.
      */
-    public UserController configure(UserRepository repository) {
+    public UserController configure(UserRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
         users.clear();
         users.addAll(repository.load());
         deletionChecks.clear();
+        boolean migrated = false;
+        for (User u : users) {
+            if (!passwordEncoder.isHash(u.getPassword())) {
+                u.setPassword(passwordEncoder.hash(u.getPassword()));
+                migrated = true;
+            }
+        }
+        if (migrated) {
+            repository.save(users);
+        }
         return this;
     }
 
@@ -55,7 +69,7 @@ public class UserController {
         if (findByEmail(email) != null) {
             throw new IllegalArgumentException("a user with email " + email + " already exists");
         }
-        User user = new User(name, surname, dni, email, password, phone, card);
+        User user = new User(name, surname, dni, email, passwordEncoder.hash(password), phone, card);
         users.add(user);
         repository.save(users);
         return user;
@@ -102,7 +116,7 @@ public class UserController {
             }
             case PASSWORD -> {
                 requireValidPassword(value);
-                user.setPassword(value);
+                user.setPassword(passwordEncoder.hash(value));
             }
             case PHONE -> {
                 requireNotBlank(value, "telephone number");
@@ -144,7 +158,7 @@ public class UserController {
         if (user == null) {
             throw new IllegalArgumentException("no user with email " + email);
         }
-        if (!user.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new IllegalArgumentException("incorrect password for " + email);
         }
         return user;

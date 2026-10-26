@@ -12,6 +12,7 @@ import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
 import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileAttractionRepository;
 import es.upm.parque.persistence.FileGroupRepository;
 import es.upm.parque.persistence.FileTicketRepository;
@@ -41,7 +42,7 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() {
-        manager = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
+        manager = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")), new BCryptPasswordEncoder(4));
         groups = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")), manager);
         SystemDate date = new SystemDate();
         TicketController tickets = TicketController.getInstance().configure(
@@ -163,7 +164,7 @@ class CommandProcessorTest {
         assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
         assertEquals(0, groups.findById("G01").getMembers().size());
         GroupController reloaded = GroupController.getInstance().configure(new FileGroupRepository(dir.resolve("groups.txt")),
-                UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt"))));
+                UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")), new BCryptPasswordEncoder(4)));
         assertEquals(0, reloaded.findById("G01").getMembers().size());
     }
 

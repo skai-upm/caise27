@@ -7,6 +7,7 @@ import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
 import es.upm.parque.business.invoice.Invoice;
 import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileGroupRepository;
 import es.upm.parque.persistence.FileTicketRepository;
 import es.upm.parque.persistence.FileUserRepository;
@@ -33,7 +34,7 @@ class InvoiceControllerTest {
     void setUp() {
         SystemDate date = new SystemDate();
         date.set(LocalDate.of(2026, 10, 1));
-        UserController users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")));
+        UserController users = UserController.getInstance().configure(new FileUserRepository(dir.resolve("users.txt")), new BCryptPasswordEncoder(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",

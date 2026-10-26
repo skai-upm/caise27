@@ -24,18 +24,15 @@ The project SHALL include a basic unit-test structure that is executed by `mvn t
 - **THEN** the test phase executes the existing unit tests and the build reports success
 
 ### Requirement: Executable JAR
-Packaging the project SHALL produce a JAR whose manifest declares the application's main class, so it can be run with `java -jar`.
+Packaging the project SHALL produce a JAR whose manifest declares the application's main class and that contains the runtime dependencies, so it can be run with `java -jar` without extra classpath configuration.
 
 #### Scenario: Run the packaged JAR
 - **WHEN** a developer runs `mvn package` and then `java -jar` on the produced JAR
 - **THEN** the application's main class runs and terminates normally
 
-### Requirement: No domain functionality yet
-The initial project SHALL NOT contain application-domain functionality; the main class only provides a minimal entry point.
-
-#### Scenario: Minimal entry point
-- **WHEN** the application is run
-- **THEN** it prints a simple start-up message and exits without performing any domain operation
+#### Scenario: Dependencies available at run time
+- **WHEN** `java -jar target/parque.jar` creates a user
+- **THEN** the password is hashed without a `ClassNotFoundException`
 
 ### Requirement: JAR file name
 Packaging SHALL produce the executable JAR at `target/parque.jar`.
@@ -43,3 +40,10 @@ Packaging SHALL produce the executable JAR at `target/parque.jar`.
 #### Scenario: Documented command works
 - **WHEN** `mvn package` is run
 - **THEN** `java -jar target/parque.jar` starts the application
+
+### Requirement: BCrypt dependency
+`pom.xml` SHALL declare the BCrypt library used for password hashing as a Maven dependency.
+
+#### Scenario: Dependency declared
+- **WHEN** `pom.xml` is inspected
+- **THEN** it declares `org.mindrot:jbcrypt`

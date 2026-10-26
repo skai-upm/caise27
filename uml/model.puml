@@ -151,6 +151,16 @@ package es.upm.parque.business.repository {
   }
 }
 
+package es.upm.parque.business.security {
+
+  interface PasswordEncoder {
+  }
+
+  class BCryptPasswordEncoder {
+    cost : int
+  }
+}
+
 package es.upm.parque.business.validation {
 
   class UserValidator {
@@ -201,6 +211,8 @@ CommandCatalog x--> "0..*" CommandDescriptor : commands
 
 UserController x--> "1" UserRepository : repository
 UserController x--> "0..*" User : users
+UserController x--> "1" PasswordEncoder : passwordEncoder
+PasswordEncoder <|.. BCryptPasswordEncoder
 
 GroupController x--> "1" GroupRepository : repository
 GroupController x--> "1" UserController : userController
@@ -241,6 +253,7 @@ AttractionRepository <|.. FileAttractionRepository
 ' Usage, only for classes without incoming relationships
 App ..> CommandProcessor
 App ..> TemporaryDataDirectory
+App ..> BCryptPasswordEncoder
 App ..> ConciseHelpFormat
 App ..> ExtendedHelpFormat
 App ..> FileUserRepository

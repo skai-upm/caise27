@@ -1,6 +1,7 @@
 package es.upm.parque.business.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -8,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
+import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileUserRepository;
 
 import java.nio.file.Files;
@@ -19,6 +21,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 class UserControllerTest {
 
+    private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder(4);
+
     @TempDir
     Path dir;
     private Path file;
@@ -27,7 +31,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         file = dir.resolve("users.txt");
-        manager = UserController.getInstance().configure(new FileUserRepository(file));
+        manager = UserController.getInstance().configure(new FileUserRepository(file), ENCODER);
     }
 
     private void createAna() {
@@ -97,7 +101,8 @@ class UserControllerTest {
         assertEquals("Garcia", u.getSurname());
         assertEquals("699999999", u.getPhone());
         assertEquals("ana.nueva@correo.com", u.getEmail());
-        assertEquals("Nueva2#", u.getPassword());
+        assertTrue(ENCODER.matches("Nueva2#", u.getPassword()));
+        assertFalse(ENCODER.matches("Clave1!", u.getPassword()));
         assertEquals("9999888877776666", u.getCard());
     }
 
@@ -119,7 +124,7 @@ class UserControllerTest {
         User ana = manager.findByDni("12345678Z");
         assertEquals("Ana", ana.getName());
         assertEquals("ana@correo.com", ana.getEmail());
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(ENCODER.matches("Clave1!", ana.getPassword()));
         assertEquals("1234567890123456", ana.getCard());
         manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo.com");
     }
@@ -128,11 +133,40 @@ class UserControllerTest {
     void usersSurviveRestart() {
         createAna();
         manager.update("ana@correo.com", "Clave1!", UserField.PHONE, "699999999");
-        UserController restarted = UserController.getInstance().configure(new FileUserRepository(file));
+        UserController restarted = UserController.getInstance().configure(new FileUserRepository(file), ENCODER);
         User u = restarted.findByEmail("ana@correo.com");
         assertNotNull(u);
         assertEquals("699999999", u.getPhone());
         restarted.delete("ana@correo.com", "Clave1!");
-        assertNull(UserController.getInstance().configure(new FileUserRepository(file)).findByEmail("ana@correo.com"));
+        assertNull(UserController.getInstance().configure(new FileUserRepository(file), ENCODER).findByEmail("ana@correo.com"));
+    }
+
+    @Test
+    void passwordsAreStoredAsHashesAndVerified() throws Exception {
+        createAna();
+        String line = Files.readString(file).trim();
+        assertTrue(line.startsWith("Ana;Garcia Lopez;12345678Z;ana@correo.com;$2"), line);
+        assertTrue(line.endsWith(";612345678;1234567890123456"), line);
+        assertFalse(line.contains("Clave1!"));
+        String firstHash = manager.findByDni("12345678Z").getPassword();
+        assertThrows(IllegalArgumentException.class,
+                () -> manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "clave"));
+        assertEquals(firstHash, manager.findByDni("12345678Z").getPassword());
+        manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "Nueva2#");
+        String secondHash = manager.findByDni("12345678Z").getPassword();
+        assertFalse(firstHash.equals(secondHash));
+        assertFalse(Files.readString(file).contains("Nueva2#"));
+        assertTrue(Files.readString(file).contains(secondHash));
+        assertThrows(IllegalArgumentException.class, () -> manager.delete("ana@correo.com", "Clave1!"));
+        manager.delete("ana@correo.com", "Nueva2#");
+    }
+
+    @Test
+    void legacyPlaintextPasswordsAreMigrated() throws Exception {
+        Files.writeString(file, "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456\n");
+        UserController migrated = UserController.getInstance().configure(new FileUserRepository(file), ENCODER);
+        assertFalse(Files.readString(file).contains("Clave1!"));
+        assertTrue(ENCODER.isHash(migrated.findByDni("12345678Z").getPassword()));
+        migrated.delete("ana@correo.com", "Clave1!");
     }
 }
