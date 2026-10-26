@@ -112,7 +112,7 @@ class CommandProcessorTest {
             "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
             "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id", "SPEEDPASS CREATE;IdTicket;Cantidad", "SPEEDPASS DELETE;IdPase",
-            "SPECIALPASS CREATE;IdTicket", "SPECIALPASS DELETE;IdPase", "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION DELETE;Id",
+            "SPECIALPASS CREATE;IdTicket", "SPECIALPASS DELETE;IdPase", "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo", "ATTRACTION DELETE;Id",
             "ATTRACTION ENTER;Id;IdTicket", "ATTRACTION EXIT;Id;IdTicket", "ATTRACTION STATUS;Id", "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo",
             "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Importe", "HELP EXTENDED", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
@@ -448,5 +448,30 @@ class CommandProcessorTest {
         assertTrue(invoice.endsWith("TOTAL: 160.00"), invoice);
         assertTrue(processor.execute("SPEEDPASS LIST").startsWith("ERROR: Unknown command"));
         assertTrue(processor.execute("SPECIALPASS LIST").startsWith("ERROR: Unknown command"));
+    }
+
+    @Test
+    void typedAttractions() {
+        createFamilyG01();
+        processor.execute("SYSTEM DATE;2026-10-15");
+        processor.execute("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.execute("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertEquals("OK: Attraction A01 (GENERAL) created with capacity 20",
+            processor.execute("ATTRACTION CREATE;A01;Tornado;20"));
+        assertTrue(processor.execute("ATTRACTION CREATE;A02;Carrusel;10;group").startsWith("OK: Attraction A02 (GROUP)"));
+        assertTrue(processor.execute("ATTRACTION CREATE;A03;Noria;10;INDIVIDUAL").startsWith("OK"));
+        assertTrue(processor.execute("ATTRACTION CREATE;A04;VIP;10;SPECIAL").startsWith("OK"));
+        assertTrue(processor.execute("ATTRACTION CREATE;A05;X;10;VIP").startsWith("ERROR: Unknown attraction type"));
+        assertTrue(processor.execute("ATTRACTION CREATE;A05;X;10;GROUP;more").startsWith("ERROR: Expected 3"));
+
+        assertTrue(processor.execute("ATTRACTION ENTER;A02;T001").contains("does not admit"));
+        assertTrue(processor.execute("ATTRACTION ENTER;A03;TG01").contains("does not admit"));
+        assertTrue(processor.execute("ATTRACTION ENTER;A02;TG01").startsWith("OK"));
+        assertTrue(processor.execute("ATTRACTION ENTER;A03;T001").startsWith("OK"));
+        assertTrue(processor.execute("ATTRACTION ENTER;A04;T001").contains("requires an available Special Pass"));
+        processor.execute("SPECIALPASS CREATE;T001");
+        assertTrue(processor.execute("ATTRACTION ENTER;A04;T001").startsWith("OK"));
+        assertTrue(processor.execute("ATTRACTION STATUS;A04").startsWith("Attraction A04 - VIP (SPECIAL)"));
+        assertTrue(processor.execute("SPECIALPASS DELETE;T001-SPECIAL").startsWith("ERROR"));
     }
 }

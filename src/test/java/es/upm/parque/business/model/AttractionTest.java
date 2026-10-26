@@ -42,7 +42,7 @@ class AttractionTest {
 
     @Test
     void individualAndGroupEntryAreHandledUniformly() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction<?> a = AttractionType.GENERAL.create("A01", "Tornado", 20);
         List<Admission> admissions = List.of(new IndividualTicket("T001", DAY, PRICE, user(1)), groupTicket("TG01", 2));
         for (Admission admission : admissions) {
             a.enter(admission, DAY);
@@ -53,7 +53,7 @@ class AttractionTest {
 
     @Test
     void wrongDateIsRejected() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction<?> a = AttractionType.GENERAL.create("A01", "Tornado", 20);
         IndividualTicket t = new IndividualTicket("T001", DAY, PRICE, user(1));
         assertThrows(IllegalArgumentException.class, () -> a.enter(t, DAY.plusDays(1)));
         assertThrows(IllegalArgumentException.class, () -> a.enter(t, DAY.minusDays(1)));
@@ -62,7 +62,7 @@ class AttractionTest {
 
     @Test
     void groupEntryIsAtomic() {
-        Attraction a = new Attraction("A01", "Tornado", 4);
+        Attraction<?> a = AttractionType.GENERAL.create("A01", "Tornado", 4);
         a.enter(new IndividualTicket("T001", DAY, PRICE, user(1)), DAY);
         assertThrows(IllegalArgumentException.class, () -> a.enter(groupTicket("TG01", 4), DAY));
         assertEquals(1, a.getPresent().size());
@@ -74,7 +74,7 @@ class AttractionTest {
 
     @Test
     void sameUserCannotEnterTwiceAndExitFreesPlaces() {
-        Attraction a = new Attraction("A01", "Tornado", 5);
+        Attraction<?> a = AttractionType.GENERAL.create("A01", "Tornado", 5);
         User ana = user(1);
         IndividualTicket t = new IndividualTicket("T001", DAY, PRICE, ana);
         a.enter(t, DAY);
@@ -89,9 +89,61 @@ class AttractionTest {
 
     @Test
     void ticketWithoutRegisteredUsersIsRejected() {
-        Attraction a = new Attraction("A01", "Tornado", 5);
+        Attraction<?> a = AttractionType.GENERAL.create("A01", "Tornado", 5);
         IndividualTicket t = new IndividualTicket("T001", DAY, PRICE, user(1));
         t.detachOwner();
         assertThrows(IllegalArgumentException.class, () -> a.enter(t, DAY));
+    }
+
+    @Test
+    void typesRestrictTicketKinds() {
+        IndividualTicket individual = new IndividualTicket("T001", DAY, PRICE, user(1));
+        GroupTicket group = groupTicket("TG01", 2);
+        Attraction<?> groupOnly = AttractionType.GROUP.create("A02", "Carrusel", 10);
+        Attraction<?> individualOnly = AttractionType.INDIVIDUAL.create("A03", "Noria", 10);
+        Attraction<?> general = AttractionType.GENERAL.create("A01", "Tornado", 10);
+
+        assertThrows(IllegalArgumentException.class, () -> groupOnly.enter(individual, DAY));
+        assertThrows(IllegalArgumentException.class, () -> individualOnly.enter(group, DAY));
+        groupOnly.enter(group, DAY);
+        individualOnly.enter(individual, DAY);
+        individualOnly.enter(group.getComponents().get(0), DAY);
+        general.enter(individual, DAY);
+        general.enter(group, DAY);
+        assertEquals(2, groupOnly.getPresent().size());
+        assertEquals(2, individualOnly.getPresent().size());
+        assertEquals(3, general.getPresent().size());
+        assertEquals(AttractionType.GROUP, groupOnly.getType());
+    }
+
+    @Test
+    void specialAttractionRequiresAndConsumesSpecialPass() {
+        Attraction<?> special = AttractionType.SPECIAL.create("A04", "VIP", 10);
+        assertTrue(special instanceof SpecialAttraction);
+        IndividualTicket withPass = new IndividualTicket("T001", DAY, PRICE, user(1));
+        IndividualTicket withoutPass = new IndividualTicket("T002", DAY, PRICE, user(2));
+        SpecialPass pass = withPass.addSpecialPass();
+
+        assertThrows(IllegalArgumentException.class, () -> special.enter(withoutPass, DAY));
+        assertThrows(IllegalArgumentException.class, () -> special.enter(groupTicket("TG01", 2), DAY));
+        assertThrows(IllegalArgumentException.class, () -> special.enter(withPass, DAY.plusDays(1)));
+        assertEquals(PassStatus.AVAILABLE, pass.getStatus());
+        special.enter(withPass, DAY);
+        assertEquals(PassStatus.CONSUMED, pass.getStatus());
+        special.exit(withPass);
+        assertThrows(IllegalArgumentException.class, () -> special.enter(withPass, DAY));
+        assertTrue(special.getPresent().isEmpty());
+    }
+
+    @Test
+    void specialPassIsNotConsumedWhenCapacityIsShort() {
+        Attraction<?> special = AttractionType.SPECIAL.create("A04", "VIP", 1);
+        IndividualTicket first = new IndividualTicket("T001", DAY, PRICE, user(1));
+        first.addSpecialPass();
+        special.enter(first, DAY);
+        IndividualTicket second = new IndividualTicket("T002", DAY, PRICE, user(2));
+        SpecialPass pass = second.addSpecialPass();
+        assertThrows(IllegalArgumentException.class, () -> special.enter(second, DAY));
+        assertEquals(PassStatus.AVAILABLE, pass.getStatus());
     }
 }

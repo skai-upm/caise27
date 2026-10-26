@@ -6,20 +6,26 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A park attraction with a maximum capacity and the users currently inside. Users enter and leave through
- * any {@link Admission}; entry is all-or-nothing.
+ * A park attraction with a maximum capacity and the users currently inside. The type parameter is the kind
+ * of admission the attraction accepts; any other admission is rejected. Entry is all-or-nothing.
+ *
+ * @param <T> admissions accepted by this attraction
  */
-public class Attraction {
+public class Attraction<T extends Admission> {
 
     private final String id;
     private final String name;
     private final int capacity;
+    private final AttractionType type;
+    private final Class<T> acceptedType;
     private final List<User> present = new ArrayList<>();
 
-    public Attraction(String id, String name, int capacity) {
+    public Attraction(String id, String name, int capacity, AttractionType type, Class<T> acceptedType) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+        this.type = type;
+        this.acceptedType = acceptedType;
     }
 
     public String getId() {
@@ -34,6 +40,10 @@ public class Attraction {
         return capacity;
     }
 
+    public AttractionType getType() {
+        return type;
+    }
+
     public List<User> getPresent() {
         return Collections.unmodifiableList(present);
     }
@@ -42,12 +52,24 @@ public class Attraction {
         return capacity - present.size();
     }
 
+    /** @return true if this attraction accepts that kind of admission */
+    public boolean admits(Admission admission) {
+        return acceptedType.isInstance(admission);
+    }
+
     /**
      * Lets in every user of the admission, or nobody if any rule fails.
      *
      * @throws IllegalArgumentException describing the violated rule
      */
     public void enter(Admission admission, LocalDate today) {
+        if (!admits(admission)) {
+            throw new IllegalArgumentException("Attraction " + id + " (" + type + ") does not admit this kind of ticket");
+        }
+        enterAdmitted(acceptedType.cast(admission), today);
+    }
+
+    private void enterAdmitted(T admission, LocalDate today) {
         if (!admission.isValidOn(today)) {
             throw new IllegalArgumentException("The ticket is not valid on " + today);
         }
@@ -64,7 +86,19 @@ public class Attraction {
             throw new IllegalArgumentException("Not enough capacity in attraction " + id + ": " + users.size()
                 + " users, " + getAvailable() + " places available");
         }
+        checkAccess(admission);
         present.addAll(users);
+        onEntry(admission);
+    }
+
+    /** Extra access rule of a specific attraction kind; it must not change any state. */
+    protected void checkAccess(T admission) {
+        // no extra rule by default
+    }
+
+    /** Effect of a successful entry for a specific attraction kind. */
+    protected void onEntry(T admission) {
+        // no extra effect by default
     }
 
     /**

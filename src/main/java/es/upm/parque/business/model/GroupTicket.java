@@ -12,7 +12,7 @@ import java.util.List;
  * group at purchase time and refers to the group it was bought for. Its price is the sum of the individual
  * prices with a discount that depends on the number of members.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 

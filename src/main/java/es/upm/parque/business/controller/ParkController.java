@@ -2,6 +2,7 @@ package es.upm.parque.business.controller;
 
 import es.upm.parque.business.model.Admission;
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
@@ -15,6 +16,7 @@ import es.upm.parque.business.model.UserField;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -158,8 +160,21 @@ public class ParkController {
         return tickets.refundPass(passId, SpecialPass.class, currentDate);
     }
 
-    public Attraction createAttraction(String id, String name, String capacity) {
-        return attractions.create(id, name, capacity);
+    /** @param type attraction type name (case-insensitive), or null for a GENERAL attraction */
+    public Attraction<?> createAttraction(String id, String name, String capacity, String type) {
+        return attractions.create(id, name, capacity, parseType(type));
+    }
+
+    private static AttractionType parseType(String text) {
+        if (text == null) {
+            return AttractionType.GENERAL;
+        }
+        try {
+            return AttractionType.valueOf(text.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unknown attraction type " + text + ". Expected one of "
+                + Arrays.toString(AttractionType.values()));
+        }
     }
 
     public void deleteAttraction(String id) {
@@ -178,7 +193,7 @@ public class ParkController {
         return attractions.exit(attractionId, requireAdmission(ticketId));
     }
 
-    public Attraction getAttraction(String id) {
+    public Attraction<?> getAttraction(String id) {
         return attractions.require(id);
     }
 

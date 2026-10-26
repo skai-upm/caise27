@@ -1,6 +1,7 @@
 package es.upm.parque.persistence;
 
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -11,7 +12,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Stores attraction definitions in a text file, one per line: {@code Id;Nombre;Capacidad}.
+ * Stores attraction definitions in a text file, one per line: {@code Id;Nombre;Capacidad;Tipo}. Lines without
+ * type (written by older versions) are GENERAL attractions.
  * Users present are not stored: attractions always start empty.
  */
 public class AttractionStorage implements AttractionRepository {
@@ -25,18 +27,19 @@ public class AttractionStorage implements AttractionRepository {
     }
 
     @Override
-    public List<Attraction> load() {
-        List<Attraction> attractions = new ArrayList<>();
+    public List<Attraction<?>> load() {
+        List<Attraction<?>> attractions = new ArrayList<>();
         if (!Files.exists(file)) {
             return attractions;
         }
         try {
             for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
                 String[] f = line.split(SEPARATOR, -1);
-                if (f.length == 3 && !f[0].isBlank()) {
+                if ((f.length == 3 || f.length == 4) && !f[0].isBlank()) {
                     try {
-                        attractions.add(new Attraction(f[0], f[1], Integer.parseInt(f[2])));
-                    } catch (NumberFormatException e) {
+                        AttractionType type = f.length == 4 ? AttractionType.valueOf(f[3]) : AttractionType.GENERAL;
+                        attractions.add(type.create(f[0], f[1], Integer.parseInt(f[2])));
+                    } catch (IllegalArgumentException e) {
                         // malformed line: skipped
                     }
                 }
@@ -48,10 +51,11 @@ public class AttractionStorage implements AttractionRepository {
     }
 
     @Override
-    public void save(Collection<Attraction> attractions) {
+    public void save(Collection<Attraction<?>> attractions) {
         List<String> lines = new ArrayList<>();
-        for (Attraction a : attractions) {
-            lines.add(String.join(SEPARATOR, a.getId(), a.getName(), String.valueOf(a.getCapacity())));
+        for (Attraction<?> a : attractions) {
+            lines.add(String.join(SEPARATOR, a.getId(), a.getName(), String.valueOf(a.getCapacity()),
+                a.getType().name()));
         }
         try {
             Path parent = file.toAbsolutePath().getParent();

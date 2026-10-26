@@ -291,9 +291,12 @@ public class CommandProcessor {
     private String executeAttraction(String action, String[] parts) {
         switch (action) {
             case "CREATE" -> {
-                requireParams(parts, 3, CommandCatalog.ATTRACTION_CREATE.syntax());
-                Attraction a = park.createAttraction(parts[1], parts[2], parts[3]);
-                return ok("Attraction " + a.getId() + " created with capacity " + a.getCapacity());
+                if (parts.length != 5) {
+                    requireParams(parts, 3, CommandCatalog.ATTRACTION_CREATE.syntax() + " | "
+                        + CommandCatalog.ATTRACTION_CREATE_TYPED.syntax());
+                }
+                Attraction<?> a = park.createAttraction(parts[1], parts[2], parts[3], parts.length == 5 ? parts[4] : null);
+                return ok("Attraction " + a.getId() + " (" + a.getType() + ") created with capacity " + a.getCapacity());
             }
             case "DELETE" -> {
                 requireParams(parts, 1, CommandCatalog.ATTRACTION_DELETE.syntax());
@@ -320,13 +323,13 @@ public class CommandProcessor {
         }
     }
 
-    private static String formatStatus(Attraction a) {
+    private static String formatStatus(Attraction<?> a) {
         List<String> names = new ArrayList<>();
         for (User u : a.getPresent()) {
             names.add(u.getName() + " " + u.getSurname() + " <" + u.getEmail() + ">");
         }
         String nl = System.lineSeparator();
-        return "Attraction " + a.getId() + " - " + a.getName() + nl
+        return "Attraction " + a.getId() + " - " + a.getName() + " (" + a.getType() + ")" + nl
             + "  Capacity: " + a.getCapacity() + " | Present: " + a.getPresent().size()
             + " | Available: " + a.getAvailable() + nl
             + "  Users present: " + (names.isEmpty() ? "(none)" : String.join(", ", names));

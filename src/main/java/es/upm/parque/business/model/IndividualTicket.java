@@ -13,7 +13,7 @@ import java.util.List;
  * {@link GroupTicket} know the identifier of that group ticket. The ticket is composed of its personal passes:
  * any number of SpeedPasses and at most one Special Pass in its lifetime.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private static final BigDecimal SPEED_PASS_RATE = new BigDecimal("0.20");
 
@@ -71,6 +71,7 @@ public class IndividualTicket extends Ticket {
     }
 
     /** @return the Special Pass bought for this ticket (in any status), or null if none was bought */
+    @Override
     public SpecialPass getSpecialPass() {
         return specialPass;
     }

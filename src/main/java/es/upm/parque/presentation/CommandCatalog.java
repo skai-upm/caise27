@@ -59,6 +59,10 @@ public final class CommandCatalog {
         "Refunds an unused Special Pass if its ticket is dated after the system date; it cannot be bought again.");
     public static final CommandInfo ATTRACTION_CREATE = new CommandInfo(
         "ATTRACTION CREATE;Id;Nombre;Capacidad", "Creates an attraction with a positive maximum capacity.");
+    public static final CommandInfo ATTRACTION_CREATE_TYPED = new CommandInfo(
+        "ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo",
+        "Creates an attraction of type GENERAL (individual and group tickets), INDIVIDUAL, GROUP or SPECIAL "
+            + "(individual tickets with an available Special Pass, consumed on entry).");
     public static final CommandInfo ATTRACTION_DELETE = new CommandInfo(
         "ATTRACTION DELETE;Id", "Deletes an attraction that has nobody inside.");
     public static final CommandInfo ATTRACTION_ENTER = new CommandInfo(
@@ -83,7 +87,8 @@ public final class CommandCatalog {
 
     private static final List<CommandInfo> ALL = List.of(USER_CREATE, USER_DELETE, USER_UPDATE, GROUP_CREATE,
         GROUP_ADD, GROUP_REMOVE, GROUP_DELETE, TICKET_CREATE, TICKET_DELETE, GROUPTICKET_CREATE, GROUPTICKET_DELETE,
-        SPEEDPASS_CREATE, SPEEDPASS_DELETE, SPECIALPASS_CREATE, SPECIALPASS_DELETE, ATTRACTION_CREATE, ATTRACTION_DELETE, ATTRACTION_ENTER, ATTRACTION_EXIT, ATTRACTION_STATUS, INVOICE_USER,
+        SPEEDPASS_CREATE, SPEEDPASS_DELETE, SPECIALPASS_CREATE, SPECIALPASS_DELETE, ATTRACTION_CREATE,
+        ATTRACTION_CREATE_TYPED, ATTRACTION_DELETE, ATTRACTION_ENTER, ATTRACTION_EXIT, ATTRACTION_STATUS, INVOICE_USER,
         INVOICE_GROUP, SYSTEM_DATE, SYSTEM_PRICE, HELP, HELP_EXTENDED, EXIT);
 
     private CommandCatalog() {

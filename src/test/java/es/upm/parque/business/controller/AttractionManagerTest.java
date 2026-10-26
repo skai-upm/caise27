@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.persistence.AttractionStorage;
@@ -33,16 +34,16 @@ class AttractionManagerTest {
     @BeforeEach
     void setUp() {
         attractions = AttractionManager.getInstance().configure(new AttractionStorage(dir.resolve("attractions.txt")));
-        attractions.create("A01", "Tornado", "20");
+        attractions.create("A01", "Tornado", "20", AttractionType.GENERAL);
     }
 
     @Test
     void createValidatesInput() {
-        assertThrows(IllegalArgumentException.class, () -> attractions.create("A01", "Otra", "5"));
-        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", "Noria", "0"));
-        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", "Noria", "-3"));
-        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", "Noria", "muchos"));
-        assertThrows(IllegalArgumentException.class, () -> attractions.create("", "Noria", "5"));
+        assertThrows(IllegalArgumentException.class, () -> attractions.create("A01", "Otra", "5", AttractionType.GENERAL));
+        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", "Noria", "0", AttractionType.GENERAL));
+        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", "Noria", "-3", AttractionType.GENERAL));
+        assertThrows(IllegalArgumentException.class, () -> attractions.create("A02", "Noria", "muchos", AttractionType.GENERAL));
+        assertThrows(IllegalArgumentException.class, () -> attractions.create("", "Noria", "5", AttractionType.GENERAL));
         assertEquals(1, attractions.getAttractions().size());
         assertEquals("Tornado", attractions.find("A01").getName());
     }
@@ -67,9 +68,9 @@ class AttractionManagerTest {
     @Test
     void restartKeepsDefinitionsButStartsEmpty() throws IOException {
         attractions.enter("A01", new IndividualTicket("T001", DAY, BigDecimal.TEN, ana), DAY);
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
         AttractionManager reloaded = AttractionManager.getInstance().configure(new AttractionStorage(dir.resolve("attractions.txt")));
-        Attraction a = reloaded.find("A01");
+        Attraction<?> a = reloaded.find("A01");
         assertEquals(20, a.getCapacity());
         assertTrue(a.getPresent().isEmpty());
     }
@@ -79,5 +80,15 @@ class AttractionManagerTest {
         Path file = dir.resolve("other.txt");
         Files.write(file, List.of("A01;Tornado;x", "bad", "A02;Noria;8"));
         assertEquals(1, new AttractionStorage(file).load().size());
+    }
+
+    @Test
+    void typesArePersistedAndLegacyLinesAreGeneral() throws IOException {
+        attractions.create("A02", "Carrusel", "10", AttractionType.SPECIAL);
+        AttractionManager reloaded = AttractionManager.getInstance()
+            .configure(new AttractionStorage(dir.resolve("attractions.txt")));
+        assertEquals(AttractionType.SPECIAL, reloaded.find("A02").getType());
+        Path legacy = Files.write(dir.resolve("legacy.txt"), List.of("A09;Noria;8"));
+        assertEquals(AttractionType.GENERAL, new AttractionStorage(legacy).load().get(0).getType());
     }
 }

@@ -68,12 +68,12 @@ class SingletonTest {
 
     private static final AttractionRepository NO_ATTRACTIONS = new AttractionRepository() {
         @Override
-        public List<Attraction> load() {
+        public List<Attraction<?>> load() {
             return List.of();
         }
 
         @Override
-        public void save(Collection<Attraction> attractions) {
+        public void save(Collection<Attraction<?>> attractions) {
             // nothing to store
         }
     };
