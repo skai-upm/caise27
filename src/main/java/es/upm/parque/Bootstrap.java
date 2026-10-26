@@ -54,10 +54,10 @@ public final class Bootstrap {
         TicketManager tickets = TicketManager.initialize(
                 new TextFileTicketRepository(dataDir.resolve("tickets.txt")),
                 new TextFileGroupTicketRepository(dataDir.resolve("grouptickets.txt")), users, groups, systemDate);
-        AttractionManager attractions = AttractionManager.initialize(
-                new TextFileAttractionRepository(dataDir.resolve("attractions.txt")), tickets, systemDate);
         PassManager passes = PassManager.initialize(
                 new TextFilePassRepository(dataDir.resolve("passes.txt")), tickets, systemDate);
+        AttractionManager attractions = AttractionManager.initialize(
+                new TextFileAttractionRepository(dataDir.resolve("attractions.txt")), tickets, passes, systemDate);
         InvoiceManager invoices = InvoiceManager.initialize(users, groups, tickets, systemDate,
                 StandardInvoiceBuilder::new);
         Controllers controllers = new Controllers(users, groups, tickets, attractions, invoices, passes);

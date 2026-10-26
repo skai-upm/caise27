@@ -37,6 +37,11 @@ public class IndividualTicket extends Ticket implements IndividualAdmission {
         return List.of(holder);
     }
 
+    @Override
+    public List<IndividualTicket> getIndividualTickets() {
+        return List.of(this);
+    }
+
     public List<SpeedPass> getSpeedPasses() {
         return Collections.unmodifiableList(speedPasses);
     }
@@ -52,6 +57,7 @@ public class IndividualTicket extends Ticket implements IndividualAdmission {
     /**
      * The ticket's Special Pass, or null when it has none.
      */
+    @Override
     public SpecialPass getSpecialPass() {
         return specialPass;
     }

@@ -46,6 +46,21 @@ public abstract class Attraction<T extends Admission> {
     }
 
     /**
+     * Whether visitors may request SpeedPass use at this attraction.
+     */
+    public boolean allowsSpeed() {
+        return true;
+    }
+
+    /**
+     * Personal passes a normal entry with this admission must consume, or the reason it cannot enter.
+     * By default no pass is needed.
+     */
+    public EntryCheck checkPasses(T admission) {
+        return EntryCheck.passes(List.of());
+    }
+
+    /**
      * Lets in every user admitted by the ticket.
      */
     public void enter(T admission) {

@@ -338,4 +338,17 @@ class CommandProcessorTest {
         assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("SPECIALPASS DELETE;a;b"));
         assertTrue(processor.process("HELP").lines().anyMatch("SPEEDPASS CREATE;IdEntrada;Cantidad"::equals));
     }
+
+    @Test
+    void attractionEntryAcceptsTheSpeedOption() {
+        familyWithTicketFor("2026-10-15");
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("ATTRACTION CREATE;A01;Tornado;20");
+        processor.process("SPEEDPASS CREATE;TG01-1;1");
+        processor.process("SPEEDPASS CREATE;TG01-2;1");
+        assertEquals(CommandProcessor.INVALID_OPTION, processor.process("ATTRACTION ENTER;A01;TG01;FAST"));
+        assertEquals(CommandProcessor.WRONG_PARAMETERS, processor.process("ATTRACTION ENTER;A01;TG01;SPEED;x"));
+        assertEquals("OK ENTERED 2 USERS (2 SPEEDPASSES CONSUMED)", processor.process("ATTRACTION ENTER;A01;TG01;speed"));
+        assertTrue(processor.process("HELP").lines().anyMatch("ATTRACTION ENTER;IdAtraccion;IdEntrada;SPEED"::equals));
+    }
 }

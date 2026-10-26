@@ -140,6 +140,10 @@ package es.upm.parque.business.model {
   class SpeedPass
 
   class SpecialPass
+
+  class EntryCheck {
+    rejection : String
+  }
 }
 
 package es.upm.parque.business.controller {
@@ -274,6 +278,7 @@ GroupTicket "1" *--> "1..*" IndividualTicket : tickets
 ' Attractions
 AttractionManager "1" x--> "1" AttractionRepository : repository
 AttractionManager "1" x--> "1" TicketManager : tickets
+AttractionManager "1" x--> "1" PassManager : passes
 AttractionManager "1" x--> "1" SystemDate : systemDate
 AttractionManager "1" o--> "0..*" Attraction : attractionsById
 Attraction "0..*" o--> "0..*" User : present
@@ -294,6 +299,7 @@ IndividualTicket "1" *--> "0..1" SpecialPass : specialPass
 PassManager "1" x--> "1" PassRepository : repository
 PassManager "1" x--> "1" TicketManager : tickets
 PassManager "1" x--> "1" SystemDate : systemDate
+EntryCheck "0..*" o--> "0..*" PersonalPass : passes
 
 ' Controllers handed to the presentation layer at startup
 Controllers "0..1" x--> "1" UserManager : users
@@ -312,6 +318,7 @@ Bootstrap ..> BCryptPasswordHasher : injects into UserManager
 Bootstrap ..> TextFilePassRepository : creates
 Bootstrap ..> Controllers : hands to CommandProcessor
 AttractionManager ..> AttractionType : creates attractions by type
+Attraction ..> EntryCheck : checks pass rules
 AttractionType ..> GeneralAttraction : creates
 AttractionType ..> IndividualAttraction : creates
 AttractionType ..> GroupAttraction : creates

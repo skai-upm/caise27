@@ -39,6 +39,8 @@ public class CommandRegistry {
                 .register("ATTRACTION DELETE;Id", "Deletes an attraction with nobody inside.")
                 .register("ATTRACTION ENTER;IdAtraccion;IdEntrada",
                         "Lets in the users of a ticket valid today if they all fit in the attraction.")
+                .register("ATTRACTION ENTER;IdAtraccion;IdEntrada;SPEED",
+                        "Enters using one unused SpeedPass per visitor; not allowed at SPECIAL attractions.")
                 .register("ATTRACTION EXIT;IdAtraccion;IdEntrada", "Lets out the users of a ticket, freeing places.")
                 .register("ATTRACTION STATUS;IdAtraccion",
                         "Shows capacity, occupancy, available places and users inside an attraction.")

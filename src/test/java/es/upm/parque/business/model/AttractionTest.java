@@ -102,4 +102,28 @@ class AttractionTest {
         assertNull(Attraction.parseCapacity("0"));
         assertNull(Attraction.parseCapacity("x"));
     }
+
+    @Test
+    void admissionsExposeTheirIndividualTickets() {
+        assertEquals(List.of(individual), individual.getIndividualTickets());
+        assertEquals(group.getTickets(), group.getIndividualTickets());
+    }
+
+    @Test
+    void onlySpecialAttractionsRestrictPasses() {
+        Attraction<Admission> general = new GeneralAttraction("A01", "Tornado", 5);
+        assertTrue(general.allowsSpeed());
+        assertTrue(general.checkPasses(group).getPasses().isEmpty());
+        assertFalse(general.checkPasses(group).isRejected());
+        SpecialAttraction special = new SpecialAttraction("A04", "VIP", 5);
+        assertFalse(special.allowsSpeed());
+        assertEquals(SpecialAttraction.NO_SPECIAL_PASS, special.checkPasses(individual).getRejection());
+        SpecialPass pass = new SpecialPass("T001-SPECIAL", FORTY, false);
+        individual.setSpecialPass(pass);
+        assertEquals(List.of(pass), special.checkPasses(individual).getPasses());
+        pass.consume();
+        EntryCheck consumed = special.checkPasses(individual);
+        assertTrue(consumed.isRejected());
+        assertEquals(SpecialAttraction.SPECIAL_PASS_CONSUMED, consumed.getRejection());
+    }
 }

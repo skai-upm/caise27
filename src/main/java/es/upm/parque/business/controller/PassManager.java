@@ -141,6 +141,14 @@ public class PassManager {
         return ticket.isRefundable(systemDate.get()) ? null : TicketManager.NOT_REFUNDABLE;
     }
 
+    /**
+     * Marks every pass as used and stores the new status once.
+     */
+    public String consumeAll(List<PersonalPass> used) {
+        used.forEach(PersonalPass::consume);
+        return persist("OK PASSES CONSUMED");
+    }
+
     private static int nextSpeedNumber(IndividualTicket ticket) {
         int max = 0;
         String prefix = ticket.getId() + SPEED_PREFIX;

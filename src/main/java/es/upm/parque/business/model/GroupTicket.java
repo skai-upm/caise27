@@ -74,6 +74,11 @@ public class GroupTicket extends Ticket implements GroupAdmission {
     }
 
     @Override
+    public List<IndividualTicket> getIndividualTickets() {
+        return tickets;
+    }
+
+    @Override
     public List<User> getVisitors() {
         List<User> visitors = new ArrayList<>();
         for (IndividualTicket ticket : tickets) {

@@ -13,4 +13,9 @@ public interface Admission {
     LocalDate getDate();
 
     List<User> getVisitors();
+
+    /**
+     * The individual tickets this admission covers: the ticket itself, or every ticket of a group.
+     */
+    List<IndividualTicket> getIndividualTickets();
 }

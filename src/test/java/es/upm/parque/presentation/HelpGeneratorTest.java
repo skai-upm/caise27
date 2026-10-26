@@ -36,7 +36,7 @@ class HelpGeneratorTest {
     @Test
     void standardRegistryContainsEveryCommandOnce() {
         List<CommandInfo> commands = CommandRegistry.standard().getCommands();
-        assertEquals(28, commands.size());
+        assertEquals(29, commands.size());
         assertEquals(commands.size(), commands.stream().map(CommandInfo::getSyntax).distinct().count());
         assertTrue(commands.stream().allMatch(c -> !c.getDescription().isBlank()));
         CommandInfo extra = new CommandInfo("X", "x");

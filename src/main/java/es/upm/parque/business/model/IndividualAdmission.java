@@ -6,4 +6,9 @@ package es.upm.parque.business.model;
 public interface IndividualAdmission extends Admission {
 
     User getHolder();
+
+    /**
+     * The ticket's Special Pass, or null when it has none.
+     */
+    SpecialPass getSpecialPass();
 }

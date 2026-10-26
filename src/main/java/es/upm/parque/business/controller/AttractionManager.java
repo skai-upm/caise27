@@ -9,6 +9,10 @@ import java.util.Map;
 import es.upm.parque.business.model.Admission;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.AttractionType;
+import es.upm.parque.business.model.EntryCheck;
+import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.PersonalPass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
@@ -29,6 +33,8 @@ public class AttractionManager {
     public static final String INVALID_CAPACITY = "ERROR INVALID CAPACITY";
     public static final String INVALID_TYPE = "ERROR INVALID ATTRACTION TYPE";
     public static final String TYPE_NOT_ACCEPTED = "ERROR TICKET TYPE NOT ACCEPTED";
+    public static final String SPEED_NOT_ALLOWED = "ERROR SPEED NOT ALLOWED";
+    public static final String NO_SPEEDPASS = "ERROR NO SPEEDPASS AVAILABLE";
     public static final String NOT_VALID_TODAY = "ERROR TICKET NOT VALID TODAY";
     public static final String ALREADY_INSIDE = "ERROR USER ALREADY INSIDE";
     public static final String CAPACITY_EXCEEDED = "ERROR CAPACITY EXCEEDED";
@@ -38,6 +44,7 @@ public class AttractionManager {
 
     private final AttractionRepository repository;
     private final TicketManager tickets;
+    private final PassManager passes;
     private final SystemDate systemDate;
     private final Map<String, Attraction<?>> attractionsById = new LinkedHashMap<>();
 
@@ -46,8 +53,8 @@ public class AttractionManager {
      * Called once at application startup.
      */
     public static AttractionManager initialize(AttractionRepository repository, TicketManager tickets,
-                    SystemDate systemDate) throws IOException {
-        instance = new AttractionManager(repository, tickets, systemDate);
+                                               PassManager passes, SystemDate systemDate) throws IOException {
+        instance = new AttractionManager(repository, tickets, passes, systemDate);
         return instance;
     }
 
@@ -61,10 +68,12 @@ public class AttractionManager {
         return instance;
     }
 
-    private AttractionManager(AttractionRepository repository, TicketManager tickets, SystemDate systemDate)
+    private AttractionManager(AttractionRepository repository, TicketManager tickets, PassManager passes,
+                              SystemDate systemDate)
             throws IOException {
         this.repository = repository;
         this.tickets = tickets;
+        this.passes = passes;
         this.systemDate = systemDate;
         for (Attraction<?> attraction : repository.load()) {
             attractionsById.put(attraction.getId(), attraction);
@@ -110,6 +119,13 @@ public class AttractionManager {
     }
 
     public String enter(String attractionId, String ticketId) {
+        return enter(attractionId, ticketId, false);
+    }
+
+    /**
+     * Entry with a ticket; with {@code speed} the visitors use one SpeedPass each.
+     */
+    public String enter(String attractionId, String ticketId, boolean speed) {
         Attraction<?> attraction = attractionsById.get(attractionId);
         if (attraction == null) {
             return ATTRACTION_NOT_FOUND;
@@ -118,16 +134,20 @@ public class AttractionManager {
         if (ticket == null) {
             return TicketManager.TICKET_NOT_FOUND;
         }
-        return enter(attraction, ticket);
+        return enter(attraction, ticket, speed);
     }
 
     /**
      * Typed entry: the ticket is converted to the capability bound of the attraction before any
      * other rule is evaluated, so an attraction only ever admits tickets of its type parameter.
+     * Every rule is checked before anybody enters or any pass is consumed.
      */
-    private <T extends Admission> String enter(Attraction<T> attraction, Admission ticket) {
+    private <T extends Admission> String enter(Attraction<T> attraction, Admission ticket, boolean speed) {
         if (!attraction.accepts(ticket)) {
             return TYPE_NOT_ACCEPTED;
+        }
+        if (speed && !attraction.allowsSpeed()) {
+            return SPEED_NOT_ALLOWED;
         }
         T admission = attraction.cast(ticket);
         if (!admission.getDate().equals(systemDate.get())) {
@@ -140,8 +160,46 @@ public class AttractionManager {
         if (!attraction.hasRoomFor(admission)) {
             return CAPACITY_EXCEEDED;
         }
+        EntryCheck check = speed ? speedPassesFor(admission) : attraction.checkPasses(admission);
+        if (check.isRejected()) {
+            return check.getRejection();
+        }
         attraction.enter(admission);
-        return "OK ENTERED " + visitors.size() + " USERS";
+        List<PersonalPass> used = check.getPasses();
+        if (!used.isEmpty()) {
+            String stored = passes.consumeAll(used);
+            if (UserManager.STORAGE_FAILURE.equals(stored)) {
+                return stored;
+            }
+        }
+        return "OK ENTERED " + visitors.size() + " USERS" + describe(used);
+    }
+
+    /**
+     * One unused SpeedPass for every individual ticket of the admission, or a rejection.
+     */
+    private static EntryCheck speedPassesFor(Admission admission) {
+        List<PersonalPass> selected = new ArrayList<>();
+        for (IndividualTicket ticket : admission.getIndividualTickets()) {
+            SpeedPass free = ticket.getSpeedPasses().stream().filter(p -> !p.isConsumed()).findFirst().orElse(null);
+            if (free == null) {
+                return EntryCheck.rejected(NO_SPEEDPASS);
+            }
+            selected.add(free);
+        }
+        return EntryCheck.passes(selected);
+    }
+
+    private static String describe(List<PersonalPass> used) {
+        if (used.isEmpty()) {
+            return "";
+        }
+        if (used.size() > 1) {
+            return " (" + used.size() + " SPEEDPASSES CONSUMED)";
+        }
+        PersonalPass pass = used.get(0);
+        String label = SpeedPass.KIND.equals(pass.getKind()) ? "SPEEDPASS" : "SPECIAL PASS";
+        return " (" + label + " " + pass.getId() + " CONSUMED)";
     }
 
     public String exit(String attractionId, String ticketId) {

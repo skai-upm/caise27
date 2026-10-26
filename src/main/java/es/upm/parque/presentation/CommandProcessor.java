@@ -28,6 +28,8 @@ public class CommandProcessor {
     static final String INVALID_DATE = "ERROR INVALID DATE";
     static final String ACTIVE_TICKETS = "ERROR USER HAS ACTIVE TICKETS";
     static final String GROUP_LOCKED = "ERROR GROUP LOCKED";
+    static final String INVALID_OPTION = "ERROR INVALID OPTION";
+    static final String SPEED_OPTION = "SPEED";
 
     private final UserManager users;
     private final GroupManager groups;
@@ -79,7 +81,7 @@ public class CommandProcessor {
                 case "GROUPTICKET DELETE" -> withParameters(parts, 2, () -> tickets.deleteGroupTicket(parts[1]));
                 case "ATTRACTION CREATE" -> createAttraction(parts);
                 case "ATTRACTION DELETE" -> withParameters(parts, 2, () -> attractions.delete(parts[1]));
-                case "ATTRACTION ENTER" -> withParameters(parts, 3, () -> attractions.enter(parts[1], parts[2]));
+                case "ATTRACTION ENTER" -> enterAttraction(parts);
                 case "ATTRACTION EXIT" -> withParameters(parts, 3, () -> attractions.exit(parts[1], parts[2]));
                 case "ATTRACTION STATUS" -> withParameters(parts, 2, () -> attractions.status(parts[1]));
                 case "INVOICE CREATE" -> withParameters(parts, 3, () -> invoices.create(parts[1], parts[2]));
@@ -152,6 +154,16 @@ public class CommandProcessor {
             groups.removeUserFromAll(user);
         }
         return response;
+    }
+
+    private String enterAttraction(String[] p) {
+        if (p.length == 3) {
+            return attractions.enter(p[1], p[2]);
+        }
+        if (p.length != 4) {
+            return WRONG_PARAMETERS;
+        }
+        return SPEED_OPTION.equalsIgnoreCase(p[3]) ? attractions.enter(p[1], p[2], true) : INVALID_OPTION;
     }
 
     private String createAttraction(String[] p) {
