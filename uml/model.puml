@@ -1,20 +1,18 @@
 @startuml model
-' Class model of the amusement park application (es.upm.parque).
-' Attributes show only primitive and enumeration values; references to other
-' classes are drawn as associations named after the attribute that holds them.
-' The "x" end marks the class that does not know the other one.
-hide empty methods
+' Class model of the amusement park application (package es.upm.parque),
+' documenting the current implementation.
+' Conventions:
+' - attributes only of primitive, value (String, LocalDate, BigDecimal, Path) or enumeration type;
+'   references to other classes are drawn as relationships named after the holding attribute;
+' - the "x" end marks the class that does not hold the reference (direction of navigation);
+'   aggregation/composition diamonds sit on the holder;
+' - no methods; usage (dashed) arrows only for classes that have no incoming relationship.
+hide empty members
 skinparam classAttributeIconSize 0
 
 package es.upm.parque {
 
-  class App {
-    {static} USERS_FILE : Path
-    {static} GROUPS_FILE : Path
-    {static} TICKETS_FILE : Path
-    {static} GROUP_TICKETS_FILE : Path
-    {static} ATTRACTIONS_FILE : Path
-  }
+  class App
 
   class CommandProcessor {
     exitRequested : boolean
@@ -23,49 +21,32 @@ package es.upm.parque {
   class MainController {
     currentDate : LocalDate
     ticketPrice : BigDecimal
-    {static} DEFAULT_TICKET_PRICE : BigDecimal
   }
 
   class UserManager
+  class GroupManager
+  class TicketManager
+  class AttractionManager
+
   class UserRepository {
     file : Path
   }
-
-  class GroupManager
   class GroupRepository {
     file : Path
   }
-
-  class TicketManager
   class TicketRepository {
     individualFile : Path
     groupFile : Path
   }
-
-  abstract class Ticket {
-    id : String {readOnly}
-    date : LocalDate {readOnly}
-    price : BigDecimal {readOnly}
-  }
-
-  class IndividualTicket
-  class GroupTicket
-
-  class AttractionManager
   class AttractionRepository {
     file : Path
   }
-
-  class Attraction {
-    id : String {readOnly}
-    name : String {readOnly}
-    capacity : int {readOnly}
-  }
+  class TextFiles
 
   class User {
     name : String
     surname : String
-    dni : String {readOnly}
+    dni : String
     email : String
     password : String
     phone : String
@@ -81,44 +62,82 @@ package es.upm.parque {
     CARD
   }
 
+  class UserValidator
+
   class Group {
-    id : String {readOnly}
-    name : String {readOnly}
+    id : String
+    name : String
   }
 
-  class UserValidator <<utility>>
+  abstract class Ticket {
+    id : String
+    date : LocalDate
+    price : BigDecimal
+  }
+
+  class IndividualTicket
+  class GroupTicket
+
+  class Attraction {
+    id : String
+    name : String
+    capacity : int
+  }
+
   class ParkException
 }
 
+' Application wiring
 App "0..*" x--> "1" CommandProcessor : processor
 CommandProcessor "0..*" x--> "1" UserManager : userManager
 CommandProcessor "0..*" x--> "1" GroupManager : groupManager
-CommandProcessor "0..*" x--> "1" MainController : mainController
-UserManager "0..1" x--> "1" UserRepository : repository
-UserManager "0..1" x--> "0..*" User : users
-GroupManager "0..1" x--> "1" GroupRepository : repository
-GroupManager "0..*" x--> "1" UserManager : userManager
-GroupManager "0..1" x--> "0..*" Group : groups
-Group "0..*" x--> "0..*" User : members
 CommandProcessor "0..*" x--> "1" TicketManager : ticketManager
-TicketManager "0..1" x--> "1" TicketRepository : repository
-TicketManager "0..*" x--> "1" UserManager : userManager
-TicketManager "0..*" x--> "1" MainController : mainController
-TicketManager "0..*" x--> "1" GroupManager : groupManager
-TicketManager "0..1" x--> "0..*" IndividualTicket : individualTickets
-TicketManager "0..1" x--> "0..*" GroupTicket : groupTickets
+CommandProcessor "0..*" x--> "1" AttractionManager : attractionManager
+CommandProcessor "0..*" x--> "1" MainController : mainController
+
+' Managers
+UserManager x--> "1" UserRepository : repository
+UserManager x--> "0..*" User : users
+GroupManager x--> "1" GroupRepository : repository
+GroupManager x--> "1" UserManager : userManager
+GroupManager x--> "0..*" Group : groups
+TicketManager x--> "1" TicketRepository : repository
+TicketManager x--> "1" UserManager : userManager
+TicketManager x--> "1" GroupManager : groupManager
+TicketManager x--> "1" MainController : mainController
+TicketManager x--> "0..*" IndividualTicket : individualTickets
+TicketManager x--> "0..*" GroupTicket : groupTickets
+AttractionManager x--> "1" AttractionRepository : repository
+AttractionManager x--> "1" TicketManager : ticketManager
+AttractionManager x--> "1" MainController : mainController
+AttractionManager x--> "0..*" Attraction : attractions
+
+' Domain
+Group "0..*" x--> "0..*" User : members
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 IndividualTicket "0..*" x--> "1" User : user
 GroupTicket "0..*" o--> "1" Group : group
 GroupTicket "1" *--> "0..*" IndividualTicket : tickets
-CommandProcessor "0..*" x--> "1" AttractionManager : attractionManager
-AttractionManager "0..1" x--> "1" AttractionRepository : repository
-AttractionManager "0..*" x--> "1" TicketManager : ticketManager
-AttractionManager "0..*" x--> "1" MainController : mainController
-AttractionManager "0..1" x--> "0..*" Attraction : attractions
 Attraction "0..*" x--> "0..*" User : visitors
 RuntimeException <|-- ParkException
+
+' Usage of classes without incoming relationships
 UserManager ..> UserField
 UserManager ..> UserValidator
+GroupManager ..> UserValidator
+TicketManager ..> UserValidator
+AttractionManager ..> UserValidator
+UserRepository ..> TextFiles
+GroupRepository ..> TextFiles
+TicketRepository ..> TextFiles
+AttractionRepository ..> TextFiles
+CommandProcessor ..> ParkException
+MainController ..> ParkException
+UserManager ..> ParkException
+GroupManager ..> ParkException
+TicketManager ..> ParkException
+AttractionManager ..> ParkException
+Attraction ..> ParkException
+TicketRepository ..> ParkException
 @enduml
