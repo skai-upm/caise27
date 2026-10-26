@@ -24,6 +24,10 @@ public class CommandProcessor {
     private static final String USAGE_USER_CREATE = "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta";
     private static final String USAGE_USER_DELETE = "USER DELETE;Correo;Contraseña";
     private static final String USAGE_USER_UPDATE = "USER UPDATE;Correo;Contraseña;Campo;NuevoValor";
+    private static final String USAGE_GROUP_CREATE = "GROUP CREATE;Id;Nombre";
+    private static final String USAGE_GROUP_ADD = "GROUP ADD;Id;Correo";
+    private static final String USAGE_GROUP_REMOVE = "GROUP REMOVE;Id;Correo";
+    private static final String USAGE_GROUP_DELETE = "GROUP DELETE;Id";
     private static final String USAGE_SYSTEM_DATE = "SYSTEM DATE;yyyy-MM-dd";
     private static final String USAGE_HELP = "HELP";
     private static final String USAGE_EXIT = "EXIT";
@@ -32,6 +36,10 @@ public class CommandProcessor {
         USAGE_USER_CREATE,
         USAGE_USER_DELETE,
         USAGE_USER_UPDATE + "  (Campo: " + Arrays.toString(UserField.values()) + ")",
+        USAGE_GROUP_CREATE,
+        USAGE_GROUP_ADD,
+        USAGE_GROUP_REMOVE,
+        USAGE_GROUP_DELETE,
         USAGE_SYSTEM_DATE,
         USAGE_HELP,
         USAGE_EXIT);
@@ -40,16 +48,18 @@ public class CommandProcessor {
         DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private final UserManager users;
+    private final GroupManager groups;
     private LocalDate currentDate;
     private boolean exitRequested;
 
     /** Creates the controller with the operating system's current date as system date. */
-    public CommandProcessor(UserManager users) {
-        this(users, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups) {
+        this(users, groups, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, LocalDate initialDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, LocalDate initialDate) {
         this.users = users;
+        this.groups = groups;
         this.currentDate = initialDate;
     }
 
@@ -93,6 +103,9 @@ public class CommandProcessor {
             if (operation.length == 2 && operation[0].equals("USER")) {
                 return executeUser(operation[1], parts);
             }
+            if (operation.length == 2 && operation[0].equals("GROUP")) {
+                return executeGroup(operation[1], parts);
+            }
             if (operation.length == 2 && operation[0].equals("SYSTEM")) {
                 return executeSystem(operation[1], parts);
             }
@@ -131,7 +144,7 @@ public class CommandProcessor {
             }
             case "DELETE" -> {
                 requireParams(parts, 2, USAGE_USER_DELETE);
-                users.delete(parts[1], parts[2]);
+                groups.removeUserFromAll(users.delete(parts[1], parts[2]));
                 return ok("User " + parts[1] + " deleted");
             }
             case "UPDATE" -> {
@@ -142,6 +155,34 @@ public class CommandProcessor {
             }
             default -> {
                 return error("Unknown command: USER " + action);
+            }
+        }
+    }
+
+    private String executeGroup(String action, String[] parts) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(parts, 2, USAGE_GROUP_CREATE);
+                groups.create(parts[1], parts[2]);
+                return ok("Group " + parts[1] + " created");
+            }
+            case "ADD" -> {
+                requireParams(parts, 2, USAGE_GROUP_ADD);
+                groups.addMember(parts[1], parts[2]);
+                return ok("User " + parts[2] + " added to group " + parts[1]);
+            }
+            case "REMOVE" -> {
+                requireParams(parts, 2, USAGE_GROUP_REMOVE);
+                groups.removeMember(parts[1], parts[2]);
+                return ok("User " + parts[2] + " removed from group " + parts[1]);
+            }
+            case "DELETE" -> {
+                requireParams(parts, 1, USAGE_GROUP_DELETE);
+                groups.delete(parts[1]);
+                return ok("Group " + parts[1] + " deleted");
+            }
+            default -> {
+                return error("Unknown command: GROUP " + action);
             }
         }
     }

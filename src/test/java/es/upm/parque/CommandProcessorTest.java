@@ -26,12 +26,14 @@ class CommandProcessorTest {
     Path dir;
 
     private UserManager manager;
+    private GroupManager groups;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() {
         manager = new UserManager(new UserStorage(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        groups = new GroupManager(manager, new GroupStorage(dir.resolve("groups.txt")));
+        processor = new CommandProcessor(manager, groups);
     }
 
     @Test
@@ -85,7 +87,8 @@ class CommandProcessorTest {
     void helpListsAllCommands() {
         String help = processor.execute("HELP");
         for (String usage : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "SYSTEM DATE;yyyy-MM-dd", "HELP", "EXIT"}) {
+            "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo",
+            "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id", "SYSTEM DATE;yyyy-MM-dd", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
         }
         assertFalse(processor.isExitRequested());
@@ -121,7 +124,7 @@ class CommandProcessorTest {
     @Test
     void systemDateStartsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = new CommandProcessor(manager).getCurrentDate();
+        LocalDate date = new CommandProcessor(manager, groups).getCurrentDate();
         assertTrue(!date.isBefore(before) && !date.isAfter(LocalDate.now()));
     }
 
@@ -135,12 +138,35 @@ class CommandProcessorTest {
 
     @Test
     void invalidSystemDatesAreRejected() {
-        CommandProcessor fixed = new CommandProcessor(manager, LocalDate.of(2026, 1, 1));
+        CommandProcessor fixed = new CommandProcessor(manager, groups, LocalDate.of(2026, 1, 1));
         for (String value : new String[] {"15/09/2026", "2026-9-15", "2026-02-30", "hoy", ""}) {
             assertTrue(fixed.execute("SYSTEM DATE;" + value).startsWith("ERROR: Invalid date"), value);
         }
         assertTrue(fixed.execute("SYSTEM DATE").startsWith("ERROR: Expected 1"));
         assertTrue(fixed.execute("SYSTEM TIME;10:00").startsWith("ERROR: Unknown command"));
         assertEquals(LocalDate.of(2026, 1, 1), fixed.getCurrentDate());
+    }
+
+    @Test
+    void groupCommands() {
+        processor.execute(CREATE_ANA);
+        assertTrue(processor.execute("GROUP CREATE;G01;Familia Garcia").startsWith("OK"));
+        assertTrue(processor.execute("GROUP ADD;G01;ana@correo.com").startsWith("OK"));
+        assertTrue(processor.execute("GROUP ADD;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.execute("GROUP ADD;G01;nadie@correo.com").startsWith("ERROR"));
+        assertTrue(processor.execute("GROUP REMOVE;G01;ana@correo.com").startsWith("OK"));
+        assertTrue(processor.execute("GROUP DELETE;G01").startsWith("OK"));
+        assertTrue(processor.execute("GROUP DELETE;G01").startsWith("ERROR"));
+        assertTrue(processor.execute("GROUP CREATE;G02").startsWith("ERROR: Expected 2"));
+        assertTrue(processor.execute("GROUP LIST").startsWith("ERROR: Unknown command"));
+    }
+
+    @Test
+    void deletingAUserRemovesItFromGroups() {
+        processor.execute(CREATE_ANA);
+        processor.execute("GROUP CREATE;G01;Familia Garcia");
+        processor.execute("GROUP ADD;G01;ana@correo.com");
+        assertTrue(processor.execute("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+        assertTrue(groups.find("G01").getMembers().isEmpty());
     }
 }

@@ -77,4 +77,13 @@ class AppTest {
         String output = run(new String[] {dir.toString()}, "", dir.resolve("users.txt"));
         assertTrue(output.startsWith("ERROR: Cannot"), output);
     }
+
+    @Test
+    void groupsAreRestoredOnRestart() throws IOException {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], COMMANDS.get(0) + "\nGROUP CREATE;G01;Familia Garcia\nGROUP ADD;G01;ana@correo.com\n", users);
+        assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(dir.resolve("groups.txt")));
+        String output = run(new String[0], "GROUP ADD;G01;ana@correo.com\n", users);
+        assertTrue(output.contains("already in group"), output);
+    }
 }

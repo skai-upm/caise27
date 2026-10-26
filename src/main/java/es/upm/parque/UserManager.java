@@ -48,10 +48,12 @@ public class UserManager {
         return user;
     }
 
-    public void delete(String email, String password) {
+    /** @return the deleted user */
+    public User delete(String email, String password) {
         User user = authenticate(email, password);
         usersByDni.remove(user.getDni());
         persist();
+        return user;
     }
 
     public void update(String email, String password, UserField field, String value) {
@@ -97,7 +99,11 @@ public class UserManager {
         return user;
     }
 
-    private User findByEmail(String email) {
+    public User findByDni(String dni) {
+        return usersByDni.get(dni);
+    }
+
+    public User findByEmail(String email) {
         for (User u : usersByDni.values()) {
             if (u.getEmail().equalsIgnoreCase(email)) {
                 return u;

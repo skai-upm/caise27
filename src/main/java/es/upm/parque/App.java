@@ -17,6 +17,7 @@ import java.nio.file.Path;
 public class App {
 
     static final Path USERS_FILE = Path.of("data", "users.txt");
+    static final String GROUPS_FILE_NAME = "groups.txt";
 
     public static void main(String[] args) {
         run(args, System.in, System.out, USERS_FILE);
@@ -25,7 +26,9 @@ public class App {
     static void run(String[] args, InputStream stdin, PrintStream out, Path usersFile) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new UserManager(new UserStorage(usersFile)));
+            UserManager users = new UserManager(new UserStorage(usersFile));
+            GroupManager groups = new GroupManager(users, new GroupStorage(usersFile.resolveSibling(GROUPS_FILE_NAME)));
+            processor = new CommandProcessor(users, groups);
         } catch (UncheckedIOException e) {
             out.println("ERROR: " + e.getMessage());
             return;
