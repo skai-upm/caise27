@@ -3,8 +3,10 @@ package es.upm.parque.presentation;
 import es.upm.parque.business.BusinessException;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.Invoice;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
@@ -40,6 +42,7 @@ public class CommandProcessor {
     private static final String ATTRACTION_EXIT_SYNTAX = "ATTRACTION EXIT;IdAtraccion;IdEntrada";
     private static final String ATTRACTION_STATUS_SYNTAX = "ATTRACTION STATUS;IdAtraccion";
     private static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
+    private static final String INVOICE_CREATE_SYNTAX = "INVOICE CREATE;USER|GROUP;Correo|IdGrupo";
 
     /** Syntax of every available command, shown by HELP. */
     private static final List<String> COMMAND_SYNTAX = List.of(
@@ -59,6 +62,7 @@ public class CommandProcessor {
             ATTRACTION_ENTER_SYNTAX,
             ATTRACTION_EXIT_SYNTAX,
             ATTRACTION_STATUS_SYNTAX,
+            INVOICE_CREATE_SYNTAX,
             SYSTEM_DATE_SYNTAX,
             SYSTEM_PRICE_SYNTAX,
             "HELP",
@@ -68,15 +72,18 @@ public class CommandProcessor {
     private final GroupController groupController;
     private final TicketController ticketController;
     private final AttractionController attractionController;
+    private final InvoiceController invoiceController;
     private final SystemDate systemDate;
     private boolean exitRequested;
 
     public CommandProcessor(UserController userController, GroupController groupController, TicketController ticketController,
-                            AttractionController attractionController, SystemDate systemDate) {
+                            AttractionController attractionController, InvoiceController invoiceController,
+                            SystemDate systemDate) {
         this.userController = userController;
         this.groupController = groupController;
         this.ticketController = ticketController;
         this.attractionController = attractionController;
+        this.invoiceController = invoiceController;
         this.systemDate = systemDate;
     }
 
@@ -101,6 +108,7 @@ public class CommandProcessor {
                 case "ATTRACTION ENTER" -> enterAttraction(parts);
                 case "ATTRACTION EXIT" -> exitAttraction(parts);
                 case "ATTRACTION STATUS" -> attractionStatus(parts);
+                case "INVOICE CREATE" -> createInvoice(parts);
                 case "SYSTEM DATE" -> setSystemDate(parts);
                 case "SYSTEM PRICE" -> setSystemPrice(parts);
                 case "HELP" -> help(parts);
@@ -251,6 +259,18 @@ public class CommandProcessor {
                     .append(user.getSurname()).append(" (").append(user.getDni()).append(')');
         }
         return status.toString();
+    }
+
+    private String createInvoice(String[] parts) {
+        if (parts.length != 3) {
+            return usage(INVOICE_CREATE_SYNTAX);
+        }
+        Invoice invoice = switch (parts[1].trim()) {
+            case "USER" -> invoiceController.userInvoice(parts[2]);
+            case "GROUP" -> invoiceController.groupInvoice(parts[2]);
+            default -> throw new BusinessException("Invalid invoice recipient type: " + parts[1] + " (USER or GROUP)");
+        };
+        return "OK INVOICE" + System.lineSeparator() + String.join(System.lineSeparator(), invoice.toLines());
     }
 
     private String createTicket(String[] parts) {

@@ -2,8 +2,10 @@ package es.upm.parque;
 
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.TextInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
@@ -92,7 +94,10 @@ public class App {
                 userController, groupController, systemDate);
         AttractionController attractionController = new AttractionController(
                 new AttractionRepository(dataDir.resolve("attractions.txt")), ticketController, systemDate);
-        return new CommandProcessor(userController, groupController, ticketController, attractionController, systemDate);
+        InvoiceController invoiceController = new InvoiceController(
+                userController, groupController, ticketController, new TextInvoiceBuilder());
+        return new CommandProcessor(userController, groupController, ticketController, attractionController,
+                invoiceController, systemDate);
     }
 
     private static void runInteractive(CommandRunner runner) {

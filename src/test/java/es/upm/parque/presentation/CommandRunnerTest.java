@@ -2,8 +2,10 @@ package es.upm.parque.presentation;
 
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.TextInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
@@ -50,7 +52,8 @@ class CommandRunnerTest {
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
         AttractionController attractions = new AttractionController(
                 new AttractionRepository(dir.resolve("attractions.txt")), tickets, date);
-        CommandProcessor processor = new CommandProcessor(manager, groups, tickets, attractions, date);
+        CommandProcessor processor = new CommandProcessor(manager, groups, tickets, attractions,
+                new InvoiceController(manager, groups, tickets, new TextInvoiceBuilder()), date);
         runner = new CommandRunner(processor, new PrintStream(output, true, StandardCharsets.UTF_8));
     }
 

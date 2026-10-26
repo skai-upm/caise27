@@ -26,6 +26,29 @@ package es.upm.parque.business.controller {
     currentPrice : BigDecimal
   }
   class AttractionController
+  class InvoiceController
+}
+
+package es.upm.parque.business.invoice {
+  interface InvoiceBuilder
+  class TextInvoiceBuilder {
+    title : String
+    recipient : String
+    sectionTitle : String
+    total : BigDecimal
+  }
+  class Invoice {
+    title : String
+    recipient : String
+    total : BigDecimal
+  }
+  class InvoiceSection {
+    title : String
+  }
+  class InvoiceLine {
+    description : String
+    amount : BigDecimal
+  }
 }
 
 package es.upm.parque.business.validation {
@@ -94,6 +117,7 @@ package es.upm.parque.persistence {
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 RuntimeException <|-- BusinessException
+InvoiceBuilder <|.. TextInvoiceBuilder
 
 ' Associations (cross = holder of the attribute, arrow = navigable end)
 CommandRunner x--> "1" CommandProcessor : processor
@@ -101,6 +125,7 @@ CommandProcessor x--> "1" UserController : userController
 CommandProcessor x--> "1" GroupController : groupController
 CommandProcessor x--> "1" TicketController : ticketController
 CommandProcessor x--> "1" AttractionController : attractionController
+CommandProcessor x--> "1" InvoiceController : invoiceController
 CommandProcessor x--> "1" SystemDate : systemDate
 
 UserController x--> "1" UserRepository : repository
@@ -126,8 +151,19 @@ AttractionController x--> "1" SystemDate : systemDate
 AttractionController x--> "0..*" Attraction : attractions
 Attraction x--> "0..*" User : visitors
 
+InvoiceController x--> "1" UserController : userController
+InvoiceController x--> "1" GroupController : groupController
+InvoiceController x--> "1" TicketController : ticketController
+InvoiceController x--> "1" InvoiceBuilder : builder
+TextInvoiceBuilder x--> "0..*" InvoiceSection : sections
+TextInvoiceBuilder x--> "0..*" InvoiceLine : sectionLines
+Invoice "1" *--> "0..*" InvoiceSection : sections
+InvoiceSection "1" *--> "1..*" InvoiceLine : lines
+
 ' Usage of classes without incoming relationships
 App ..> CommandRunner
+TextInvoiceBuilder ..> Invoice
+InvoiceController ..> BusinessException
 UserController ..> UserValidator
 UserController ..> UserField
 UserController ..> BusinessException

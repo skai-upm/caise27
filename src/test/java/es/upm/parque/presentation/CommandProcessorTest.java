@@ -2,8 +2,10 @@ package es.upm.parque.presentation;
 
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.TextInvoiceBuilder;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.persistence.AttractionRepository;
@@ -46,7 +48,8 @@ class CommandProcessorTest {
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), users, groups, systemDate);
         AttractionController attractions = new AttractionController(
                 new AttractionRepository(dir.resolve("attractions.txt")), tickets, systemDate);
-        return new CommandProcessor(users, groups, tickets, attractions, systemDate);
+        return new CommandProcessor(users, groups, tickets, attractions,
+                new InvoiceController(users, groups, tickets, new TextInvoiceBuilder()), systemDate);
     }
 
     @Test
@@ -257,6 +260,31 @@ class CommandProcessorTest {
         assertEquals("OK ATTRACTION DELETED", restarted.process("ATTRACTION DELETE;A01"));
         assertTrue(restarted.process("ATTRACTION STATUS;A01").startsWith("ERROR"));
         assertTrue(processor.process("HELP").contains("ATTRACTION STATUS;IdAtraccion"));
+    }
+
+    @Test
+    void invoiceCommands() {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;Familia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-16");
+
+        assertEquals(String.join(System.lineSeparator(), "OK INVOICE", "Invoice: USER",
+                "Recipient: Ana Garcia Lopez (ana@correo.com)", "Individual tickets:", "  - T001 2026-10-15: 40.00",
+                "TOTAL: 40.00"), processor.process("INVOICE CREATE;USER;ana@correo.com"));
+        assertEquals(String.join(System.lineSeparator(), "OK INVOICE", "Invoice: GROUP", "Recipient: Familia (G01)",
+                "Group tickets:", "  - TG01 2026-10-16 2 members -0%: 80.00", "TOTAL: 80.00"),
+                processor.process("INVOICE CREATE;GROUP;G01"));
+        assertTrue(processor.process("INVOICE CREATE;USER;pedro@correo.com").contains("No billable items"));
+        assertTrue(processor.process("INVOICE CREATE;USER;nadie@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("INVOICE CREATE;GROUP;G99").startsWith("ERROR"));
+        assertTrue(processor.process("INVOICE CREATE;PARK;X").startsWith("ERROR"));
+        assertTrue(processor.process("INVOICE CREATE;USER").startsWith("ERROR Wrong number of parameters"));
+        assertTrue(processor.process("HELP").contains("INVOICE CREATE;USER|GROUP;Correo|IdGrupo"));
     }
 
     @Test
