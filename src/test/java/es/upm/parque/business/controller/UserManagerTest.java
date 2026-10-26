@@ -23,7 +23,7 @@ class UserManagerTest {
     @BeforeEach
     void setUp() {
         storage = new UserStorage(dir.resolve("users.txt"));
-        manager = new UserManager(storage);
+        manager = UserManager.getInstance().configure(storage);
         manager.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
             "1234567890123456");
     }
@@ -75,7 +75,7 @@ class UserManagerTest {
         manager.update("ana.nueva@correo.com", "Nueva2#", UserField.SURNAME, "Garcia");
         manager.update("ana.nueva@correo.com", "Nueva2#", UserField.PHONE, "699999999");
 
-        User reloaded = new UserManager(storage).getUsers().iterator().next();
+        User reloaded = UserManager.getInstance().configure(storage).getUsers().iterator().next();
         assertEquals("Ana Maria", reloaded.getName());
         assertEquals("Garcia", reloaded.getSurname());
         assertEquals("12345678Z", reloaded.getDni());
@@ -98,7 +98,7 @@ class UserManagerTest {
             () -> manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "Clave12"));
         assertThrows(IllegalArgumentException.class,
             () -> manager.update("ana@correo.com", "Clave1!", UserField.CARD, "1234 5678 9012 3456"));
-        User ana = new UserManager(storage).getUsers().iterator().next();
+        User ana = UserManager.getInstance().configure(storage).getUsers().iterator().next();
         assertEquals("Ana", ana.getName());
         assertEquals("ana@correo.com", ana.getEmail());
     }

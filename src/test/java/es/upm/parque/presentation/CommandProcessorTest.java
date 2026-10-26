@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.controller.AttractionManager;
 import es.upm.parque.business.controller.GroupManager;
+import es.upm.parque.business.controller.InvoiceDirector;
 import es.upm.parque.business.controller.ParkController;
 import es.upm.parque.business.controller.TicketManager;
 import es.upm.parque.business.controller.UserManager;
@@ -46,12 +47,12 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() {
-        manager = new UserManager(new UserStorage(dir.resolve("users.txt")));
-        groups = new GroupManager(manager, new GroupStorage(dir.resolve("groups.txt")));
-        tickets = new TicketManager(manager, groups,
+        manager = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        groups = GroupManager.getInstance().configure(manager, new GroupStorage(dir.resolve("groups.txt")));
+        tickets = TicketManager.getInstance().configure(manager, groups,
             new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt")));
-        attractions = new AttractionManager(new AttractionStorage(dir.resolve("attractions.txt")));
-        park = new ParkController(manager, groups, tickets, attractions, LocalDate.now());
+        attractions = AttractionManager.getInstance().configure(new AttractionStorage(dir.resolve("attractions.txt")));
+        park = ParkController.getInstance().configure(manager, groups, tickets, attractions, new InvoiceDirector(), LocalDate.now());
         processor = new CommandProcessor(park);
     }
 
@@ -146,7 +147,7 @@ class CommandProcessorTest {
     @Test
     void systemDateStartsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = ParkController.load(DataDirectory.permanent(dir)).getCurrentDate();
+        LocalDate date = App.configure(DataDirectory.permanent(dir)).getCurrentDate();
         assertTrue(!date.isBefore(before) && !date.isAfter(LocalDate.now()));
     }
 
@@ -160,7 +161,7 @@ class CommandProcessorTest {
 
     @Test
     void invalidSystemDatesAreRejected() {
-        ParkController fixedPark = new ParkController(manager, groups, tickets, attractions, LocalDate.of(2026, 1, 1));
+        ParkController fixedPark = ParkController.getInstance().configure(manager, groups, tickets, attractions, new InvoiceDirector(), LocalDate.of(2026, 1, 1));
         CommandProcessor fixed = new CommandProcessor(fixedPark);
         for (String value : new String[] {"15/09/2026", "2026-9-15", "2026-02-30", "hoy", ""}) {
             assertTrue(fixed.execute("SYSTEM DATE;" + value).startsWith("ERROR: Invalid date"), value);

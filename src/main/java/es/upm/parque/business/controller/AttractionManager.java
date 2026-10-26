@@ -4,7 +4,7 @@ import es.upm.parque.business.model.Admission;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserValidator;
-import es.upm.parque.persistence.AttractionStorage;
+import es.upm.parque.persistence.AttractionRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,19 +13,32 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Keeps the park's attractions. Definitions are persisted through {@link AttractionStorage};
+ * Keeps the park's attractions. Definitions are persisted through {@link AttractionRepository};
  * the users present are kept in memory only.
  */
 public class AttractionManager {
 
     private final Map<String, Attraction> attractionsById = new LinkedHashMap<>();
-    private final AttractionStorage storage;
 
-    public AttractionManager(AttractionStorage storage) {
-        this.storage = storage;
-        for (Attraction a : storage.load()) {
+    private static final AttractionManager INSTANCE = new AttractionManager();
+
+    private AttractionRepository repository;
+
+    private AttractionManager() {
+    }
+
+    public static AttractionManager getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the repository and reloads the attraction definitions from it; attractions start empty. */
+    public AttractionManager configure(AttractionRepository repository) {
+        this.repository = repository;
+        attractionsById.clear();
+        for (Attraction a : repository.load()) {
             attractionsById.put(a.getId(), a);
         }
+        return this;
     }
 
     public Collection<Attraction> getAttractions() {
@@ -95,7 +108,14 @@ public class AttractionManager {
         return capacity;
     }
 
+    private AttractionRepository repository() {
+        if (repository == null) {
+            throw new IllegalStateException("AttractionManager is not configured");
+        }
+        return repository;
+    }
+
     private void persist() {
-        storage.save(new ArrayList<>(attractionsById.values()));
+        repository().save(new ArrayList<>(attractionsById.values()));
     }
 }

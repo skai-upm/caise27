@@ -32,7 +32,7 @@ class AttractionManagerTest {
 
     @BeforeEach
     void setUp() {
-        attractions = new AttractionManager(new AttractionStorage(dir.resolve("attractions.txt")));
+        attractions = AttractionManager.getInstance().configure(new AttractionStorage(dir.resolve("attractions.txt")));
         attractions.create("A01", "Tornado", "20");
     }
 
@@ -68,7 +68,7 @@ class AttractionManagerTest {
     void restartKeepsDefinitionsButStartsEmpty() throws IOException {
         attractions.enter("A01", new IndividualTicket("T001", DAY, BigDecimal.TEN, ana), DAY);
         assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
-        AttractionManager reloaded = new AttractionManager(new AttractionStorage(dir.resolve("attractions.txt")));
+        AttractionManager reloaded = AttractionManager.getInstance().configure(new AttractionStorage(dir.resolve("attractions.txt")));
         Attraction a = reloaded.find("A01");
         assertEquals(20, a.getCapacity());
         assertTrue(a.getPresent().isEmpty());

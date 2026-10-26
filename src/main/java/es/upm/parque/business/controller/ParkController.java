@@ -9,11 +9,6 @@ import es.upm.parque.business.model.Invoice;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
-import es.upm.parque.persistence.AttractionStorage;
-import es.upm.parque.persistence.DataDirectory;
-import es.upm.parque.persistence.GroupStorage;
-import es.upm.parque.persistence.TicketStorage;
-import es.upm.parque.persistence.UserStorage;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -22,42 +17,43 @@ import java.time.LocalDate;
  * Main business controller. It owns the per-execution system variables (system date and current ticket price)
  * and applies the rules that involve several managers, such as the checks before deleting a user or modifying
  * a group. Failures are reported as {@link IllegalArgumentException} with a user-facing message.
+ * There is a single instance, whose collaborators are injected once at startup with {@link #configure}.
  */
 public class ParkController {
 
     public static final BigDecimal INITIAL_PRICE = new BigDecimal("40.00");
 
-    static final String USERS_FILE_NAME = "users.txt";
-    static final String GROUPS_FILE_NAME = "groups.txt";
-    static final String TICKETS_FILE_NAME = "tickets.txt";
-    static final String GROUP_TICKETS_FILE_NAME = "group_tickets.txt";
-    static final String ATTRACTIONS_FILE_NAME = "attractions.txt";
+    private static final ParkController INSTANCE = new ParkController();
 
-    private final UserManager users;
-    private final GroupManager groups;
-    private final TicketManager tickets;
-    private final AttractionManager attractions;
+    private UserManager users;
+    private GroupManager groups;
+    private TicketManager tickets;
+    private AttractionManager attractions;
+    private InvoiceDirector invoiceDirector;
     private LocalDate currentDate;
     private BigDecimal currentPrice = INITIAL_PRICE;
 
-    public ParkController(UserManager users, GroupManager groups, TicketManager tickets,
-            AttractionManager attractions, LocalDate initialDate) {
+    private ParkController() {
+    }
+
+    public static ParkController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the collaborators (already configured) and starts a new execution: system date
+     * {@code initialDate} and ticket price {@link #INITIAL_PRICE}.
+     */
+    public ParkController configure(UserManager users, GroupManager groups, TicketManager tickets,
+            AttractionManager attractions, InvoiceDirector invoiceDirector, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
+        this.invoiceDirector = invoiceDirector;
         this.currentDate = initialDate;
-    }
-
-    /** Builds the managers over the persistence files of {@code data}, starting on the operating system's date. */
-    public static ParkController load(DataDirectory data) {
-        UserManager users = new UserManager(new UserStorage(data.resolve(USERS_FILE_NAME)));
-        GroupManager groups = new GroupManager(users, new GroupStorage(data.resolve(GROUPS_FILE_NAME)));
-        TicketManager tickets = new TicketManager(users, groups,
-            new TicketStorage(data.resolve(TICKETS_FILE_NAME), data.resolve(GROUP_TICKETS_FILE_NAME)));
-        AttractionManager attractions =
-            new AttractionManager(new AttractionStorage(data.resolve(ATTRACTIONS_FILE_NAME)));
-        return new ParkController(users, groups, tickets, attractions, LocalDate.now());
+        this.currentPrice = INITIAL_PRICE;
+        return this;
     }
 
     /** The single system date that every time-dependent rule must use. */
@@ -172,7 +168,7 @@ public class ParkController {
         if (user == null) {
             throw new IllegalArgumentException("No user with email " + email);
         }
-        return new InvoiceDirector().construct(new UserInvoiceBuilder(user, tickets.getTickets()), currentDate);
+        return invoiceDirector.construct(new UserInvoiceBuilder(user, tickets.getTickets()), currentDate);
     }
 
     /** Builds the invoice of the group with that identifier, issued on the system date. */
@@ -181,7 +177,7 @@ public class ParkController {
         if (group == null) {
             throw new IllegalArgumentException("No group with identifier " + groupId);
         }
-        return new InvoiceDirector().construct(new GroupInvoiceBuilder(group, tickets.getTickets()), currentDate);
+        return invoiceDirector.construct(new GroupInvoiceBuilder(group, tickets.getTickets()), currentDate);
     }
 
     private void requireUnlocked(String groupId) {

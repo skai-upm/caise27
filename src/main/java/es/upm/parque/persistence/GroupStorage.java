@@ -16,7 +16,7 @@ import java.util.function.Function;
  * Stores groups in a text file, one group per line: {@code Id;Nombre;DNI1,DNI2,...}.
  * Members are saved by DNI and resolved back to the registered users when loading.
  */
-public class GroupStorage {
+public class GroupStorage implements GroupRepository {
 
     private static final String SEPARATOR = ";";
     private static final String MEMBER_SEPARATOR = ",";
@@ -30,6 +30,7 @@ public class GroupStorage {
     /**
      * @param userByDni resolves a stored DNI to the registered user, or null if it no longer exists
      */
+    @Override
     public List<Group> load(Function<String, User> userByDni) {
         List<Group> groups = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -56,6 +57,7 @@ public class GroupStorage {
         return groups;
     }
 
+    @Override
     public void save(Collection<Group> groups) {
         List<String> lines = new ArrayList<>();
         for (Group g : groups) {

@@ -26,10 +26,10 @@ class GroupManagerTest {
 
     @BeforeEach
     void setUp() {
-        users = new UserManager(new UserStorage(dir.resolve("users.txt")));
+        users = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
-        groups = new GroupManager(users, new GroupStorage(dir.resolve("groups.txt")));
+        groups = GroupManager.getInstance().configure(users, new GroupStorage(dir.resolve("groups.txt")));
         groups.create("G01", "Familia Garcia");
     }
 
@@ -75,8 +75,8 @@ class GroupManagerTest {
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
 
-        UserManager reloadedUsers = new UserManager(new UserStorage(dir.resolve("users.txt")));
-        GroupManager reloaded = new GroupManager(reloadedUsers, new GroupStorage(dir.resolve("groups.txt")));
+        UserManager reloadedUsers = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        GroupManager reloaded = GroupManager.getInstance().configure(reloadedUsers, new GroupStorage(dir.resolve("groups.txt")));
         Group g = reloaded.find("G01");
         assertEquals(2, g.getMembers().size());
         assertSame(reloadedUsers.findByDni("12345678Z"), g.getMembers().get(0));
@@ -90,7 +90,7 @@ class GroupManagerTest {
         groups.addMember("G02", "ana@correo.com");
         User ana = users.delete("ana@correo.com", "Clave1!");
         groups.removeUserFromAll(ana);
-        GroupManager reloaded = new GroupManager(users, new GroupStorage(dir.resolve("groups.txt")));
+        GroupManager reloaded = GroupManager.getInstance().configure(users, new GroupStorage(dir.resolve("groups.txt")));
         assertTrue(reloaded.find("G01").getMembers().isEmpty());
         assertTrue(reloaded.find("G02").getMembers().isEmpty());
     }

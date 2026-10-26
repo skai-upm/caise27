@@ -110,6 +110,11 @@ package es.upm.parque.persistence {
     - temporary : boolean
   }
 
+  interface UserRepository
+  interface GroupRepository
+  interface TicketRepository
+  interface AttractionRepository
+
   class UserStorage {
     - file : Path
   }
@@ -131,19 +136,27 @@ package es.upm.parque.persistence {
 ' Presentation -> business
 CommandProcessor "1" x--> "1" ParkController : park
 
-' Controller
+' Controller (single instances, collaborators injected at startup)
+ParkController "1" x--> "1" ParkController : INSTANCE
+UserManager "1" x--> "1" UserManager : INSTANCE
+GroupManager "1" x--> "1" GroupManager : INSTANCE
+TicketManager "1" x--> "1" TicketManager : INSTANCE
+AttractionManager "1" x--> "1" AttractionManager : INSTANCE
+ParkController "1" x--> "1" InvoiceDirector : invoiceDirector
 ParkController "1" x--> "1" UserManager : users
 ParkController "1" x--> "1" GroupManager : groups
 ParkController "1" x--> "1" TicketManager : tickets
 ParkController "1" x--> "1" AttractionManager : attractions
 
 ' Users
-UserManager "1" x--> "1" UserStorage : storage
+UserRepository <|.. UserStorage
+UserManager "1" x--> "1" UserRepository : repository
 UserManager "1" x--> "0..*" User : usersByDni
 
 ' Groups
 GroupManager "1" x--> "1" UserManager : users
-GroupManager "1" x--> "1" GroupStorage : storage
+GroupRepository <|.. GroupStorage
+GroupManager "1" x--> "1" GroupRepository : repository
 GroupManager "1" x--> "0..*" Group : groupsById
 Group "0..*" x--> "0..*" User : members
 
@@ -153,14 +166,16 @@ Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 TicketManager "1" x--> "1" UserManager : users
 TicketManager "1" x--> "1" GroupManager : groups
-TicketManager "1" x--> "1" TicketStorage : storage
+TicketRepository <|.. TicketStorage
+TicketManager "1" x--> "1" TicketRepository : repository
 TicketManager "1" x--> "0..*" Ticket : ticketsById
 IndividualTicket "0..*" x--> "0..1" User : owner
 GroupTicket "0..*" o--> "0..1" Group : group
 GroupTicket "0..1" *--> "1..*" IndividualTicket : components
 
 ' Attractions
-AttractionManager "1" x--> "1" AttractionStorage : storage
+AttractionRepository <|.. AttractionStorage
+AttractionManager "1" x--> "1" AttractionRepository : repository
 AttractionManager "1" x--> "0..*" Attraction : attractionsById
 Attraction "0..*" x--> "0..*" User : present
 
@@ -178,8 +193,10 @@ InvoiceSection "1" *--> "1..*" InvoiceLine : lines
 ' Usage of types without incoming relationships
 App ..> CommandProcessor
 App ..> DataDirectory
-ParkController ..> DataDirectory
-ParkController ..> InvoiceDirector
+App ..> UserStorage
+App ..> GroupStorage
+App ..> TicketStorage
+App ..> AttractionStorage
 ParkController ..> UserInvoiceBuilder
 ParkController ..> GroupInvoiceBuilder
 ParkController ..> Invoice

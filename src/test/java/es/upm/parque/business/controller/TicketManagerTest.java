@@ -39,12 +39,12 @@ class TicketManagerTest {
 
     @BeforeEach
     void setUp() {
-        users = new UserManager(new UserStorage(dir.resolve("users.txt")));
+        users = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
         ana = users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
             "1234567890123456");
         pedro = users.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
             "9876543210987654");
-        groups = new GroupManager(users, new GroupStorage(dir.resolve("groups.txt")));
+        groups = GroupManager.getInstance().configure(users, new GroupStorage(dir.resolve("groups.txt")));
         groups.create("G01", "Familia");
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
@@ -52,7 +52,7 @@ class TicketManagerTest {
     }
 
     private TicketManager reload(UserManager u, GroupManager g) {
-        return new TicketManager(u, g,
+        return TicketManager.getInstance().configure(u, g,
             new TicketStorage(dir.resolve("tickets.txt"), dir.resolve("group_tickets.txt")));
     }
 
@@ -99,8 +99,8 @@ class TicketManagerTest {
     @Test
     void restartRestoresTicketsAndKeepsHistory() {
         tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, PRICE);
-        UserManager reloadedUsers = new UserManager(new UserStorage(dir.resolve("users.txt")));
-        GroupManager reloadedGroups = new GroupManager(reloadedUsers, new GroupStorage(dir.resolve("groups.txt")));
+        UserManager reloadedUsers = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        GroupManager reloadedGroups = GroupManager.getInstance().configure(reloadedUsers, new GroupStorage(dir.resolve("groups.txt")));
         TicketManager reloaded = reload(reloadedUsers, reloadedGroups);
         IndividualTicket t = (IndividualTicket) reloaded.find("T001");
         assertSame(reloadedUsers.findByDni("12345678Z"), t.getOwner());
@@ -172,8 +172,8 @@ class TicketManagerTest {
     @Test
     void groupTicketsSurviveRestartAndGroupDeletion() {
         tickets.createGroupTicket("TG01", "G01", OCT_15, OCT_1, PRICE);
-        UserManager reloadedUsers = new UserManager(new UserStorage(dir.resolve("users.txt")));
-        GroupManager reloadedGroups = new GroupManager(reloadedUsers, new GroupStorage(dir.resolve("groups.txt")));
+        UserManager reloadedUsers = UserManager.getInstance().configure(new UserStorage(dir.resolve("users.txt")));
+        GroupManager reloadedGroups = GroupManager.getInstance().configure(reloadedUsers, new GroupStorage(dir.resolve("groups.txt")));
         TicketManager reloaded = reload(reloadedUsers, reloadedGroups);
         GroupTicket gt = (GroupTicket) reloaded.find("TG01");
         assertSame(reloadedGroups.find("G01"), gt.getGroup());

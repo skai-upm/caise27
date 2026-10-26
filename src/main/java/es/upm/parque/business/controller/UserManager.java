@@ -3,7 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
 import es.upm.parque.business.model.UserValidator;
-import es.upm.parque.persistence.UserStorage;
+import es.upm.parque.persistence.UserRepository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,19 +12,32 @@ import java.util.Map;
 
 /**
  * Keeps the registered users and applies the create, delete and update rules.
- * Every successful change is written through {@link UserStorage}.
+ * Every successful change is written through {@link UserRepository}.
  * Failures are reported as {@link IllegalArgumentException} with a user-facing message.
  */
 public class UserManager {
 
     private final Map<String, User> usersByDni = new LinkedHashMap<>();
-    private final UserStorage storage;
 
-    public UserManager(UserStorage storage) {
-        this.storage = storage;
-        for (User u : storage.load()) {
+    private static final UserManager INSTANCE = new UserManager();
+
+    private UserRepository repository;
+
+    private UserManager() {
+    }
+
+    public static UserManager getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the repository and reloads the users from it, replacing any previous state. */
+    public UserManager configure(UserRepository repository) {
+        this.repository = repository;
+        usersByDni.clear();
+        for (User u : repository.load()) {
             usersByDni.put(u.getDni(), u);
         }
+        return this;
     }
 
     public Collection<User> getUsers() {
@@ -152,7 +165,14 @@ public class UserManager {
         }
     }
 
+    private UserRepository repository() {
+        if (repository == null) {
+            throw new IllegalStateException("UserManager is not configured");
+        }
+        return repository;
+    }
+
     private void persist() {
-        storage.save(new ArrayList<>(usersByDni.values()));
+        repository().save(new ArrayList<>(usersByDni.values()));
     }
 }

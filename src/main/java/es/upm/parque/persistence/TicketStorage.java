@@ -23,7 +23,7 @@ import java.util.function.Function;
  * individual tickets as {@code Id;yyyy-MM-dd;Precio;DNI} and group tickets as
  * {@code Id;yyyy-MM-dd;IdGrupo;PrecioBase;Descuento;Id-1:DNI,Id-2:DNI,...}.
  */
-public class TicketStorage {
+public class TicketStorage implements TicketRepository {
 
     private static final String SEPARATOR = ";";
     private static final String COMPONENT_SEPARATOR = ",";
@@ -41,6 +41,7 @@ public class TicketStorage {
      * @param userByDni resolves a DNI to the registered user, or null if it no longer exists
      * @param groupById resolves a group identifier to the group, or null if it no longer exists
      */
+    @Override
     public List<Ticket> load(Function<String, User> userByDni, Function<String, Group> groupById) {
         List<Ticket> tickets = new ArrayList<>();
         for (String line : readLines(ticketsFile)) {
@@ -83,6 +84,7 @@ public class TicketStorage {
             components);
     }
 
+    @Override
     public void save(Collection<Ticket> tickets) {
         List<String> individual = new ArrayList<>();
         List<String> group = new ArrayList<>();

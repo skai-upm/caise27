@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Stores users in a text file, one user per line with fields separated by ';'.
  */
-public class UserStorage {
+public class UserStorage implements UserRepository {
 
     private static final String SEPARATOR = ";";
     private static final int FIELD_COUNT = 7;
@@ -24,6 +24,7 @@ public class UserStorage {
         this.file = file;
     }
 
+    @Override
     public List<User> load() {
         List<User> users = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -42,6 +43,7 @@ public class UserStorage {
         return users;
     }
 
+    @Override
     public void save(Collection<User> users) {
         List<String> lines = new ArrayList<>();
         for (User u : users) {

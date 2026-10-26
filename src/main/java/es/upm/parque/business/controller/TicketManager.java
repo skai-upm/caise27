@@ -6,7 +6,7 @@ import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserValidator;
-import es.upm.parque.persistence.TicketStorage;
+import es.upm.parque.persistence.TicketRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -23,17 +23,33 @@ import java.util.Map;
 public class TicketManager {
 
     private final Map<String, Ticket> ticketsById = new LinkedHashMap<>();
-    private final UserManager users;
-    private final GroupManager groups;
-    private final TicketStorage storage;
 
-    public TicketManager(UserManager users, GroupManager groups, TicketStorage storage) {
+    private static final TicketManager INSTANCE = new TicketManager();
+
+    private UserManager users;
+    private GroupManager groups;
+    private TicketRepository repository;
+
+    private TicketManager() {
+    }
+
+    public static TicketManager getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the collaborators and reloads the tickets from the repository, replacing any previous state.
+     * The user and group managers must already be configured.
+     */
+    public TicketManager configure(UserManager users, GroupManager groups, TicketRepository repository) {
         this.users = users;
         this.groups = groups;
-        this.storage = storage;
-        for (Ticket t : storage.load(users::findByDni, groups::find)) {
+        this.repository = repository;
+        ticketsById.clear();
+        for (Ticket t : repository.load(users::findByDni, groups::find)) {
             ticketsById.put(t.getId(), t);
         }
+        return this;
     }
 
     public Collection<Ticket> getTickets() {
@@ -55,7 +71,7 @@ public class TicketManager {
 
     public IndividualTicket create(String id, String email, LocalDate date, LocalDate today, BigDecimal price) {
         requireNewId(id);
-        User user = users.findByEmail(email);
+        User user = users().findByEmail(email);
         if (user == null) {
             throw new IllegalArgumentException("No user with email " + email);
         }
@@ -69,7 +85,7 @@ public class TicketManager {
     public GroupTicket createGroupTicket(String id, String groupId, LocalDate date, LocalDate today,
             BigDecimal price) {
         requireNewId(id);
-        Group group = groups.find(groupId);
+        Group group = groups().find(groupId);
         if (group == null) {
             throw new IllegalArgumentException("No group with identifier " + groupId);
         }
@@ -202,7 +218,28 @@ public class TicketManager {
         }
     }
 
+    private UserManager users() {
+        if (users == null) {
+            throw new IllegalStateException("TicketManager is not configured");
+        }
+        return users;
+    }
+
+    private GroupManager groups() {
+        if (groups == null) {
+            throw new IllegalStateException("TicketManager is not configured");
+        }
+        return groups;
+    }
+
+    private TicketRepository repository() {
+        if (repository == null) {
+            throw new IllegalStateException("TicketManager is not configured");
+        }
+        return repository;
+    }
+
     private void persist() {
-        storage.save(new ArrayList<>(ticketsById.values()));
+        repository().save(new ArrayList<>(ticketsById.values()));
     }
 }

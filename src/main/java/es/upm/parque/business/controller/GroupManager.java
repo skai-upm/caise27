@@ -3,7 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserValidator;
-import es.upm.parque.persistence.GroupStorage;
+import es.upm.parque.persistence.GroupRepository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,20 +12,36 @@ import java.util.Map;
 
 /**
  * Keeps the user groups and applies the group rules. Members are looked up in {@link UserManager}
- * so groups always hold the registered users. Every successful change is written through {@link GroupStorage}.
+ * so groups always hold the registered users. Every successful change is written through {@link GroupRepository}.
  */
 public class GroupManager {
 
     private final Map<String, Group> groupsById = new LinkedHashMap<>();
-    private final UserManager users;
-    private final GroupStorage storage;
 
-    public GroupManager(UserManager users, GroupStorage storage) {
+    private static final GroupManager INSTANCE = new GroupManager();
+
+    private UserManager users;
+    private GroupRepository repository;
+
+    private GroupManager() {
+    }
+
+    public static GroupManager getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the collaborators and reloads the groups from the repository, replacing any previous state.
+     * The user manager must already be configured.
+     */
+    public GroupManager configure(UserManager users, GroupRepository repository) {
         this.users = users;
-        this.storage = storage;
-        for (Group g : storage.load(users::findByDni)) {
+        this.repository = repository;
+        groupsById.clear();
+        for (Group g : repository.load(users::findByDni)) {
             groupsById.put(g.getId(), g);
         }
+        return this;
     }
 
     public Collection<Group> getGroups() {
@@ -57,7 +73,7 @@ public class GroupManager {
 
     public void addMember(String id, String email) {
         Group group = require(id);
-        User user = users.findByEmail(email);
+        User user = users().findByEmail(email);
         if (user == null) {
             throw new IllegalArgumentException("No user with email " + email);
         }
@@ -69,7 +85,7 @@ public class GroupManager {
 
     public void removeMember(String id, String email) {
         Group group = require(id);
-        User user = users.findByEmail(email);
+        User user = users().findByEmail(email);
         if (user == null || !group.removeMember(user)) {
             throw new IllegalArgumentException("User " + email + " is not in group " + id);
         }
@@ -95,7 +111,21 @@ public class GroupManager {
         return group;
     }
 
+    private UserManager users() {
+        if (users == null) {
+            throw new IllegalStateException("GroupManager is not configured");
+        }
+        return users;
+    }
+
+    private GroupRepository repository() {
+        if (repository == null) {
+            throw new IllegalStateException("GroupManager is not configured");
+        }
+        return repository;
+    }
+
     private void persist() {
-        storage.save(new ArrayList<>(groupsById.values()));
+        repository().save(new ArrayList<>(groupsById.values()));
     }
 }

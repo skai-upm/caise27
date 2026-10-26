@@ -1,7 +1,16 @@
 package es.upm.parque.presentation;
 
+import es.upm.parque.business.controller.AttractionManager;
+import es.upm.parque.business.controller.GroupManager;
+import es.upm.parque.business.controller.InvoiceDirector;
 import es.upm.parque.business.controller.ParkController;
+import es.upm.parque.business.controller.TicketManager;
+import es.upm.parque.business.controller.UserManager;
+import es.upm.parque.persistence.AttractionStorage;
 import es.upm.parque.persistence.DataDirectory;
+import es.upm.parque.persistence.GroupStorage;
+import es.upm.parque.persistence.TicketStorage;
+import es.upm.parque.persistence.UserStorage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +20,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -24,6 +34,11 @@ public class App {
     static final String FLY_FLAG = "--fly";
     static final Path DATA_DIR = Path.of("data");
     static final Path TMP_DIR = Path.of("tmp");
+    static final String USERS_FILE_NAME = "users.txt";
+    static final String GROUPS_FILE_NAME = "groups.txt";
+    static final String TICKETS_FILE_NAME = "tickets.txt";
+    static final String GROUP_TICKETS_FILE_NAME = "group_tickets.txt";
+    static final String ATTRACTIONS_FILE_NAME = "attractions.txt";
 
     public static void main(String[] args) {
         run(args, System.in, System.out, DATA_DIR, TMP_DIR);
@@ -49,7 +64,7 @@ public class App {
         Thread cleanup = new Thread(data::close);
         Runtime.getRuntime().addShutdownHook(cleanup);
         try (data) {
-            CommandProcessor processor = new CommandProcessor(ParkController.load(data));
+            CommandProcessor processor = new CommandProcessor(configure(data));
             if (commandFile == null) {
                 runSource(processor, new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8)), out,
                     "standard input");
@@ -61,6 +76,22 @@ public class App {
         } finally {
             Runtime.getRuntime().removeShutdownHook(cleanup);
         }
+    }
+
+    /**
+     * Startup configuration: creates the file repositories of {@code data} and injects them, and the
+     * collaborations between controllers, into the single controller instances.
+     */
+    static ParkController configure(DataDirectory data) {
+        UserManager users = UserManager.getInstance().configure(new UserStorage(data.resolve(USERS_FILE_NAME)));
+        GroupManager groups = GroupManager.getInstance()
+            .configure(users, new GroupStorage(data.resolve(GROUPS_FILE_NAME)));
+        TicketManager tickets = TicketManager.getInstance().configure(users, groups,
+            new TicketStorage(data.resolve(TICKETS_FILE_NAME), data.resolve(GROUP_TICKETS_FILE_NAME)));
+        AttractionManager attractions = AttractionManager.getInstance()
+            .configure(new AttractionStorage(data.resolve(ATTRACTIONS_FILE_NAME)));
+        return ParkController.getInstance()
+            .configure(users, groups, tickets, attractions, new InvoiceDirector(), LocalDate.now());
     }
 
     private static void runFile(CommandProcessor processor, Path commandFile, PrintStream out) {
