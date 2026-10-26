@@ -16,13 +16,15 @@ final class TestPark {
     final MainController controller;
     final UserManager users;
     final GroupManager groups;
+    final TicketManager tickets;
     final CommandProcessor processor;
 
     TestPark(Path dir) {
         controller = new MainController(CLOCK);
         users = new UserManager(new UserRepository(dir.resolve("users.txt")));
         groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
-        processor = new CommandProcessor(users, groups, controller);
+        tickets = new TicketManager(new TicketRepository(dir.resolve("tickets.txt")), users, controller);
+        processor = new CommandProcessor(users, groups, tickets, controller);
     }
 
     App app() {

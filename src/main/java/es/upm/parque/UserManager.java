@@ -121,7 +121,10 @@ public class UserManager {
         persist();
     }
 
-    private User authenticate(String email, String password) {
+    /**
+     * Returns the user with that email if the password matches; otherwise rejects the operation.
+     */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null) {
             throw new ParkException("No user with email " + email);

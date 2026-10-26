@@ -2,6 +2,7 @@
 
 ## Purpose
 
+
 Defines how park users are registered, deleted and updated through commands, including validation of personal data, uniqueness by DNI and email, DNI immutability, and persistence of users between executions.
 
 ## Requirements
@@ -91,7 +92,7 @@ No two users SHALL share the same DNI, and no two users SHALL share the same ema
 - **THEN** the user is not created and an `ERROR` line is printed
 
 ### Requirement: Delete user
-The command `USER DELETE;Correo;Contraseña` SHALL delete the user with that email only when the user exists and the password matches the stored password, and SHALL update the persistent file; otherwise no user is deleted and an `ERROR` line is printed.
+The command `USER DELETE;Correo;Contraseña` SHALL delete the user with that email only when the user exists, the password matches the stored password, and the user has no ticket dated on or after the system date; it SHALL update the persistent file. When the deletion succeeds, the user's remaining (past) tickets SHALL also be removed. Otherwise no user is deleted and an `ERROR` line is printed.
 
 #### Scenario: Successful deletion
 - **WHEN** `USER DELETE;ana@correo.com;Clave1!` is received and that user exists with password `Clave1!`
@@ -104,6 +105,18 @@ The command `USER DELETE;Correo;Contraseña` SHALL delete the user with that ema
 #### Scenario: Wrong password
 - **WHEN** `USER DELETE` is received with a registered email and an incorrect password
 - **THEN** no user is deleted and an `ERROR` line is printed
+
+#### Scenario: Future ticket blocks deletion
+- **WHEN** the system date is 2026-10-01, Ana has ticket `T001` dated 2026-10-15, and `USER DELETE;ana@correo.com;Clave1!` is received
+- **THEN** the deletion is rejected with an `ERROR` line and Ana remains registered
+
+#### Scenario: Ticket for today blocks deletion
+- **WHEN** the system date is 2026-10-15 and Ana has a ticket dated 2026-10-15
+- **THEN** `USER DELETE` for Ana is rejected with an `ERROR` line
+
+#### Scenario: Past ticket does not block deletion
+- **WHEN** the system date is 2026-10-16 and Ana's only ticket is dated 2026-10-15
+- **THEN** `USER DELETE` for Ana succeeds and her past ticket is removed
 
 ### Requirement: Update user
 The command `USER UPDATE;Correo;Contraseña;Campo;NuevoValor` SHALL first verify that the user exists and the password matches, then validate the new value for the field, apply the change and update the persistent file. Editable fields are `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE` and `CARD` (matched case-insensitively). On any failure no data changes and an `ERROR` line is printed.

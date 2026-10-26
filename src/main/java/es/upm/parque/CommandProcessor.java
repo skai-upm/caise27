@@ -15,7 +15,10 @@ public class CommandProcessor {
     static final String GROUP_ADD_SYNTAX = "GROUP ADD;IdentificadorGrupo;Correo";
     static final String GROUP_REMOVE_SYNTAX = "GROUP REMOVE;IdentificadorGrupo;Correo";
     static final String GROUP_DELETE_SYNTAX = "GROUP DELETE;IdentificadorGrupo";
+    static final String TICKET_CREATE_SYNTAX = "TICKET CREATE;IdentificadorEntrada;Correo;yyyy-MM-dd";
+    static final String TICKET_DELETE_SYNTAX = "TICKET DELETE;IdentificadorEntrada";
     static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
+    static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
     static final String HELP_SYNTAX = "HELP";
     static final String EXIT_SYNTAX = "EXIT";
 
@@ -23,16 +26,20 @@ public class CommandProcessor {
     static final List<String> COMMAND_SYNTAX = List.of(
             USER_CREATE_SYNTAX, USER_DELETE_SYNTAX, USER_UPDATE_SYNTAX,
             GROUP_CREATE_SYNTAX, GROUP_ADD_SYNTAX, GROUP_REMOVE_SYNTAX, GROUP_DELETE_SYNTAX,
-            SYSTEM_DATE_SYNTAX, HELP_SYNTAX, EXIT_SYNTAX);
+            TICKET_CREATE_SYNTAX, TICKET_DELETE_SYNTAX,
+            SYSTEM_DATE_SYNTAX, SYSTEM_PRICE_SYNTAX, HELP_SYNTAX, EXIT_SYNTAX);
 
     private final UserManager userManager;
     private final GroupManager groupManager;
+    private final TicketManager ticketManager;
     private final MainController mainController;
     private boolean exitRequested;
 
-    public CommandProcessor(UserManager userManager, GroupManager groupManager, MainController mainController) {
+    public CommandProcessor(UserManager userManager, GroupManager groupManager, TicketManager ticketManager,
+                            MainController mainController) {
         this.userManager = userManager;
         this.groupManager = groupManager;
+        this.ticketManager = ticketManager;
         this.mainController = mainController;
     }
 
@@ -90,7 +97,17 @@ public class CommandProcessor {
                 groupManager.delete(p[1]);
                 yield "OK GROUP DELETED";
             }
+            case "TICKET CREATE" -> "OK TICKET CREATED -> "
+                    + MainController.formatPrice(ticketManager.create(p[1], p[2], p[3]).getPrice());
+            case "TICKET DELETE" -> {
+                ticketManager.delete(p[1]);
+                yield "OK TICKET DELETED";
+            }
             case "SYSTEM DATE" -> setSystemDate(p[1]);
+            case "SYSTEM PRICE" -> {
+                mainController.setTicketPrice(MainController.parsePrice(p[1]));
+                yield "OK SYSTEM PRICE SET -> " + MainController.formatPrice(mainController.getTicketPrice());
+            }
             case "HELP" -> "OK Available commands:" + System.lineSeparator()
                     + String.join(System.lineSeparator(), COMMAND_SYNTAX);
             case "EXIT" -> {
@@ -102,8 +119,13 @@ public class CommandProcessor {
     }
 
     private String deleteUser(String email, String password) {
-        User deleted = userManager.delete(email, password);
-        groupManager.removeUserFromAllGroups(deleted);
+        User user = userManager.authenticate(email, password);
+        if (ticketManager.hasCurrentOrFutureTicket(user)) {
+            throw new ParkException("User " + email + " has tickets dated on or after the system date");
+        }
+        userManager.delete(email, password);
+        groupManager.removeUserFromAllGroups(user);
+        ticketManager.removeTicketsOf(user);
         return "OK USER DELETED";
     }
 

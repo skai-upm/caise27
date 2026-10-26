@@ -11,6 +11,7 @@ package es.upm.parque {
   class App {
     {static} USERS_FILE : Path
     {static} GROUPS_FILE : Path
+    {static} TICKETS_FILE : Path
   }
 
   class CommandProcessor {
@@ -19,6 +20,8 @@ package es.upm.parque {
 
   class MainController {
     currentDate : LocalDate
+    ticketPrice : BigDecimal
+    {static} DEFAULT_TICKET_PRICE : BigDecimal
   }
 
   class UserManager
@@ -29,6 +32,17 @@ package es.upm.parque {
   class GroupManager
   class GroupRepository {
     file : Path
+  }
+
+  class TicketManager
+  class TicketRepository {
+    file : Path
+  }
+
+  class Ticket {
+    id : String {readOnly}
+    date : LocalDate {readOnly}
+    price : BigDecimal {readOnly}
   }
 
   class User {
@@ -69,6 +83,12 @@ GroupManager "0..1" x--> "1" GroupRepository : repository
 GroupManager "0..*" x--> "1" UserManager : userManager
 GroupManager "0..1" x--> "0..*" Group : groups
 Group "0..*" x--> "0..*" User : members
+CommandProcessor "0..*" x--> "1" TicketManager : ticketManager
+TicketManager "0..1" x--> "1" TicketRepository : repository
+TicketManager "0..*" x--> "1" UserManager : userManager
+TicketManager "0..*" x--> "1" MainController : mainController
+TicketManager "0..1" x--> "0..*" Ticket : tickets
+Ticket "0..*" x--> "1" User : user
 RuntimeException <|-- ParkException
 UserManager ..> UserField
 UserManager ..> UserValidator

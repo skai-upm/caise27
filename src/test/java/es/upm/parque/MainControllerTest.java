@@ -3,6 +3,7 @@ package es.upm.parque;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -27,6 +28,21 @@ class MainControllerTest {
         assertEquals(LocalDate.of(2026, 9, 15), date);
         assertEquals("2026-09-15", MainController.formatDate(date));
         assertEquals(LocalDate.of(2028, 2, 29), MainController.parseDate("2028-02-29"));
+    }
+
+    @Test
+    void priceStartsAt40AndParsesStrictly() {
+        MainController controller = new MainController(Clock.systemUTC());
+        assertEquals(new BigDecimal("40.00"), controller.getTicketPrice());
+        controller.setTicketPrice(MainController.parsePrice("60"));
+        assertEquals("60.00", MainController.formatPrice(controller.getTicketPrice()));
+        assertEquals(new BigDecimal("60.50"), MainController.parsePrice("60.5"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"abc", "-5", "0", "1.234", "", "0.00"})
+    void rejectsInvalidPrices(String text) {
+        assertThrows(ParkException.class, () -> MainController.parsePrice(text));
     }
 
     @ParameterizedTest

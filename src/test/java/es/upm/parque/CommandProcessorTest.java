@@ -153,8 +153,40 @@ class CommandProcessorTest {
     }
 
     @Test
+    void ticketCommandsAndPrice() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2026-10-01");
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertTrue(processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15").startsWith("ERROR"));
+        assertEquals("OK SYSTEM PRICE SET -> 60.00", processor.process("SYSTEM PRICE;60.00"));
+        assertEquals("OK TICKET CREATED -> 60.00", processor.process("TICKET CREATE;T002;ana@correo.com;2026-10-20"));
+        assertTrue(processor.process("SYSTEM PRICE;-5").startsWith("ERROR"));
+        assertEquals("OK TICKET DELETED", processor.process("TICKET DELETE;T002"));
+        assertTrue(processor.process("TICKET DELETE;T999").startsWith("ERROR"));
+        String help = processor.process("HELP");
+        assertTrue(help.contains("TICKET CREATE;IdentificadorEntrada;Correo;yyyy-MM-dd"));
+        assertTrue(help.contains("TICKET DELETE;IdentificadorEntrada"));
+        assertTrue(help.contains("SYSTEM PRICE;Precio"));
+    }
+
+    @Test
+    void ticketsBlockUserDeletionUntilPast() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET DELETE;T001").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertEquals("ERROR Incorrect password", processor.process("USER DELETE;ana@correo.com;Mala1!"));
+        assertEquals("OK USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(new TestPark(dir).tickets.getTickets().isEmpty());
+    }
+
+    @Test
     void unexpectedErrorsDoNotPropagate() {
-        CommandProcessor broken = new CommandProcessor(null, null, new MainController(TestPark.CLOCK));
+        CommandProcessor broken = new CommandProcessor(null, null, null, new MainController(TestPark.CLOCK));
         assertTrue(broken.process(ANA).startsWith("ERROR Unexpected error"));
     }
 }
