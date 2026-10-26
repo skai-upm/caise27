@@ -1,6 +1,7 @@
 package es.upm.parque;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -54,6 +55,23 @@ class CommandProcessorTest {
     void reportsUnknownCommand() {
         assertEquals("ERROR Unknown command: FOO BAR", processor.process("FOO BAR;1"));
         assertEquals("ERROR Unknown command: USER", processor.process("USER"));
+    }
+
+    @Test
+    void helpListsEveryCommand() {
+        String help = processor.process("HELP");
+        assertTrue(help.contains("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta"));
+        assertTrue(help.contains("USER DELETE;Correo;Contraseña"));
+        assertTrue(help.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
+        assertTrue(help.contains("HELP"));
+        assertTrue(help.contains("EXIT"));
+    }
+
+    @Test
+    void exitSetsExitFlag() {
+        assertFalse(processor.isExitRequested());
+        assertEquals("OK EXIT", processor.process("EXIT"));
+        assertTrue(processor.isExitRequested());
     }
 
     @Test
