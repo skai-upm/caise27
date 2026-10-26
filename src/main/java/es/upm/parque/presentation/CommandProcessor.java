@@ -2,8 +2,10 @@ package es.upm.parque.presentation;
 
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.invoice.Invoice;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
@@ -37,6 +39,8 @@ public class CommandProcessor {
         "ATTRACTION ENTER;IdAtraccion;IdEntrada",
         "ATTRACTION EXIT;IdAtraccion;IdEntrada",
         "ATTRACTION STATUS;IdAtraccion",
+        "INVOICE CREATE;USER;Correo",
+        "INVOICE CREATE;GROUP;IdGrupo",
         "SYSTEM DATE;yyyy-MM-dd",
         "SYSTEM PRICE;Importe",
         "HELP",
@@ -50,15 +54,18 @@ public class CommandProcessor {
     private final GroupController groupController;
     private final TicketController ticketController;
     private final AttractionController attractionController;
+    private final InvoiceController invoiceController;
     private final SystemDate systemDate;
     private boolean exitRequested;
 
     public CommandProcessor(UserController userController, GroupController groupController,
-            TicketController ticketController, AttractionController attractionController, SystemDate systemDate) {
+            TicketController ticketController, AttractionController attractionController,
+            InvoiceController invoiceController, SystemDate systemDate) {
         this.userController = userController;
         this.groupController = groupController;
         this.ticketController = ticketController;
         this.attractionController = attractionController;
+        this.invoiceController = invoiceController;
         this.systemDate = systemDate;
     }
 
@@ -80,6 +87,10 @@ public class CommandProcessor {
             }
             if (operation.length == 2 && operation[0].equals("ATTRACTION")) {
                 return processAttraction(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("INVOICE") && operation[1].equals("CREATE")) {
+                requireParams(parts, 2, "INVOICE CREATE;USER;Correo or INVOICE CREATE;GROUP;IdGrupo");
+                return processInvoice(parts[1].trim(), parts[2]);
             }
             if (operation.length == 2 && operation[0].equals("SYSTEM") && operation[1].equals("DATE")) {
                 requireParams(parts, 1, "SYSTEM DATE;yyyy-MM-dd");
@@ -231,6 +242,16 @@ public class CommandProcessor {
                 return "ERROR: unknown command 'ATTRACTION " + action + "'";
             }
         }
+    }
+
+    private String processInvoice(String recipientType, String recipient) {
+        Invoice invoice = switch (recipientType) {
+            case "USER" -> invoiceController.userInvoice(recipient);
+            case "GROUP" -> invoiceController.groupInvoice(recipient);
+            default -> throw new IllegalArgumentException(
+                    "invalid invoice recipient '" + recipientType + "': use USER or GROUP");
+        };
+        return "OK INVOICE CREATED" + System.lineSeparator() + invoice.format();
     }
 
     private static int parseCapacity(String text) {

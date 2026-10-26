@@ -2,6 +2,9 @@ package es.upm.parque.presentation;
 
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
+import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
+import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.model.SystemDate;
@@ -75,8 +78,10 @@ public class App {
                 userController, groupController, systemDate);
         AttractionController attractionController = new AttractionController(
                 new AttractionRepository(dataDir.resolve("attractions.txt")), ticketController, systemDate);
+        InvoiceController invoiceController = new InvoiceController(userController, groupController, ticketController,
+                systemDate, new DefaultInvoiceBuilder(), new InvoiceDirector());
         CommandProcessor processor = new CommandProcessor(userController, groupController, ticketController,
-                attractionController, systemDate);
+                attractionController, invoiceController, systemDate);
         if (commandFile == null) {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8))) {
                 processLines(in, processor, out);

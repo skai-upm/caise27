@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.InvoiceController;
+import es.upm.parque.business.invoice.DefaultInvoiceBuilder;
+import es.upm.parque.business.invoice.InvoiceDirector;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.model.SystemDate;
@@ -39,7 +42,10 @@ class CommandProcessorTest {
         TicketController tickets = new TicketController(
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
         processor = new CommandProcessor(manager, groups, tickets,
-                new AttractionController(new AttractionRepository(dir.resolve("attractions.txt")), tickets, date), date);
+                new AttractionController(new AttractionRepository(dir.resolve("attractions.txt")), tickets, date),
+                new InvoiceController(manager, groups, tickets, date, new DefaultInvoiceBuilder(),
+                        new InvoiceDirector()),
+                date);
     }
 
     @Test
@@ -92,7 +98,8 @@ class CommandProcessorTest {
                 "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id", "SYSTEM PRICE;Importe",
                 "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id",
                 "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION DELETE;Id", "ATTRACTION ENTER;IdAtraccion;IdEntrada",
-                "ATTRACTION EXIT;IdAtraccion;IdEntrada", "ATTRACTION STATUS;IdAtraccion"}) {
+                "ATTRACTION EXIT;IdAtraccion;IdEntrada", "ATTRACTION STATUS;IdAtraccion", "INVOICE CREATE;USER;Correo",
+                "INVOICE CREATE;GROUP;IdGrupo"}) {
             assertTrue(help.contains(syntax), syntax);
         }
     }
@@ -230,5 +237,32 @@ class CommandProcessorTest {
         assertTrue(processor.process("ATTRACTION STATUS").startsWith("ERROR"));
         assertTrue(processor.process("ATTRACTION ENTER;A99;T001").startsWith("ERROR"));
         assertTrue(processor.process("ATTRACTION ENTER;A01;T999").startsWith("ERROR"));
+    }
+
+    @Test
+    void invoiceCommands() throws Exception {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;Amigos");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        String userInvoice = processor.process("INVOICE CREATE;USER;ana@correo.com");
+        assertTrue(userInvoice.startsWith("OK INVOICE CREATED") && userInvoice.contains("T001")
+                && !userInvoice.contains("TG01") && userInvoice.contains("TOTAL: 40.00"), userInvoice);
+        String groupInvoice = processor.process("INVOICE CREATE;GROUP;G01");
+        assertTrue(groupInvoice.contains("TG01") && !groupInvoice.contains("TG01-1")
+                && groupInvoice.contains("TOTAL: 80.00"), groupInvoice);
+        String empty = processor.process("INVOICE CREATE;USER;pedro@correo.com");
+        assertTrue(empty.contains("TOTAL: 0.00") && !empty.contains("tickets:"), empty);
+        assertTrue(processor.process("INVOICE CREATE;USER;nadie@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("INVOICE CREATE;GROUP;G99").startsWith("ERROR"));
+        assertTrue(processor.process("INVOICE CREATE;SHOP;x").startsWith("ERROR"));
+        assertTrue(processor.process("INVOICE CREATE;USER").startsWith("ERROR"));
+        try (var files = java.nio.file.Files.list(dir)) {
+            assertTrue(files.noneMatch(p -> p.getFileName().toString().contains("invoice")));
+        }
     }
 }

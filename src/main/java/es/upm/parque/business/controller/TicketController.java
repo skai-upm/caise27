@@ -135,6 +135,27 @@ public class TicketController {
         return false;
     }
 
+    /** The user's individual tickets that were not generated inside a group ticket. */
+    public List<IndividualTicket> directTicketsOf(User user) {
+        List<IndividualTicket> result = new ArrayList<>();
+        for (Ticket t : tickets) {
+            if (t instanceof IndividualTicket it && it.getUser() == user && groupTicketContaining(it) == null) {
+                result.add(it);
+            }
+        }
+        return result;
+    }
+
+    public List<GroupTicket> groupTicketsOf(Group group) {
+        List<GroupTicket> result = new ArrayList<>();
+        for (Ticket t : tickets) {
+            if (t instanceof GroupTicket gt && gt.getGroup() == group) {
+                result.add(gt);
+            }
+        }
+        return result;
+    }
+
     public Ticket findById(String id) {
         for (Ticket t : tickets) {
             if (t.getId().equals(id)) {
