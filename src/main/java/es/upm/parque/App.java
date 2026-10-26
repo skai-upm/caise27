@@ -20,7 +20,7 @@ public class App {
     public static void main(String[] args) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new UserManager(new UserRepository(USERS_FILE)));
+            processor = new CommandProcessor(new UserManager(new UserRepository(USERS_FILE)), SystemDate.today());
         } catch (IOException e) {
             System.out.println("ERROR Could not load users: " + e.getMessage());
             return;

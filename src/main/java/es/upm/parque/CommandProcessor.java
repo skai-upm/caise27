@@ -13,20 +13,24 @@ public class CommandProcessor {
     private static final String USER_CREATE_SYNTAX = "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta";
     private static final String USER_DELETE_SYNTAX = "USER DELETE;Correo;Contraseña";
     private static final String USER_UPDATE_SYNTAX = "USER UPDATE;Correo;Contraseña;Campo;NuevoValor";
+    private static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
 
     /** Syntax of every available command, shown by HELP. */
     private static final List<String> COMMAND_SYNTAX = List.of(
             USER_CREATE_SYNTAX,
             USER_DELETE_SYNTAX,
             USER_UPDATE_SYNTAX,
+            SYSTEM_DATE_SYNTAX,
             "HELP",
             "EXIT");
 
     private final UserManager userManager;
+    private final SystemDate systemDate;
     private boolean exitRequested;
 
-    public CommandProcessor(UserManager userManager) {
+    public CommandProcessor(UserManager userManager, SystemDate systemDate) {
         this.userManager = userManager;
+        this.systemDate = systemDate;
     }
 
     public String process(String line) {
@@ -37,11 +41,12 @@ public class CommandProcessor {
                 case "USER CREATE" -> createUser(parts);
                 case "USER DELETE" -> deleteUser(parts);
                 case "USER UPDATE" -> updateUser(parts);
+                case "SYSTEM DATE" -> setSystemDate(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> "ERROR Unknown command: " + operation;
             };
-        } catch (UserException e) {
+        } catch (UserException | IllegalArgumentException e) {
             return "ERROR " + e.getMessage();
         }
     }
@@ -68,6 +73,14 @@ public class CommandProcessor {
         }
         userManager.update(parts[1], parts[2], parts[3], parts[4]);
         return "OK USER UPDATED";
+    }
+
+    private String setSystemDate(String[] parts) {
+        if (parts.length != 2) {
+            return usage(SYSTEM_DATE_SYNTAX);
+        }
+        systemDate.set(SystemDate.parse(parts[1].trim()));
+        return "OK SYSTEM DATE " + SystemDate.format(systemDate.get());
     }
 
     private String help(String[] parts) {

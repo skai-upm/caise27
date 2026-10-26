@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,11 +20,12 @@ class CommandProcessorTest {
     @TempDir
     Path dir;
 
+    private final SystemDate systemDate = new SystemDate(LocalDate.of(2026, 9, 1));
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws IOException {
-        processor = new CommandProcessor(new UserManager(new UserRepository(dir.resolve("users.txt"))));
+        processor = new CommandProcessor(new UserManager(new UserRepository(dir.resolve("users.txt"))), systemDate);
     }
 
     @Test
@@ -72,6 +74,23 @@ class CommandProcessorTest {
         assertFalse(processor.isExitRequested());
         assertEquals("OK EXIT", processor.process("EXIT"));
         assertTrue(processor.isExitRequested());
+    }
+
+    @Test
+    void systemDateCanMoveForwardAndBackward() {
+        assertEquals("OK SYSTEM DATE 2026-09-15", processor.process("SYSTEM DATE;2026-09-15"));
+        assertEquals(LocalDate.of(2026, 9, 15), systemDate.get());
+        assertEquals("OK SYSTEM DATE 2026-01-01", processor.process("SYSTEM DATE;2026-01-01"));
+        assertEquals(LocalDate.of(2026, 1, 1), systemDate.get());
+    }
+
+    @Test
+    void invalidSystemDateIsRejected() {
+        assertTrue(processor.process("SYSTEM DATE;15/09/2026").startsWith("ERROR Invalid date"));
+        assertTrue(processor.process("SYSTEM DATE;2026-02-30").startsWith("ERROR Invalid date"));
+        assertTrue(processor.process("SYSTEM DATE").startsWith("ERROR Wrong number of parameters"));
+        assertEquals(LocalDate.of(2026, 9, 1), systemDate.get());
+        assertTrue(processor.process("HELP").contains("SYSTEM DATE;yyyy-MM-dd"));
     }
 
     @Test

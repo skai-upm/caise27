@@ -9,6 +9,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ class CommandRunnerTest {
     void setUp() throws IOException {
         manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
         output = new ByteArrayOutputStream();
-        runner = new CommandRunner(new CommandProcessor(manager), new PrintStream(output, true, StandardCharsets.UTF_8));
+        runner = new CommandRunner(new CommandProcessor(manager, new SystemDate(LocalDate.of(2026, 9, 1))), new PrintStream(output, true, StandardCharsets.UTF_8));
     }
 
     private List<String> run(String input) throws IOException {
