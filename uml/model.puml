@@ -302,6 +302,7 @@ PassController x--> "1" SystemDate : systemDate
 
 AttractionController x--> "1" AttractionRepository : repository
 AttractionController x--> "1" TicketController : ticketController
+AttractionController x--> "1" PassController : passController
 AttractionController x--> "1" SystemDate : systemDate
 AttractionController x--> "0..*" Attraction : attractions
 Attraction x--> "0..*" User : present

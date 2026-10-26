@@ -322,4 +322,37 @@ class CommandProcessorTest {
         assertTrue(processor.process("ATTRACTION ENTER;A04;TG01").startsWith("ERROR"));
         assertTrue(processor.process("ATTRACTION STATUS;A02").contains("Type: GROUP"));
     }
+
+    @Test
+    void entryWithPassesReportsConsumption() {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;Amigos");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("ATTRACTION CREATE;A01;Tornado;20");
+        processor.process("ATTRACTION CREATE;A02;Familiar;20;GROUP");
+        processor.process("ATTRACTION CREATE;A04;Magia;20;SPECIAL");
+        processor.process("SPEEDPASS CREATE;T001;1");
+        processor.process("SPEEDPASS CREATE;TG01-1;1");
+        assertTrue(processor.process("ATTRACTION ENTER;A02;TG01;SPEED").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001;FAST").startsWith("ERROR"));
+        String speed = processor.process("ATTRACTION ENTER;A01;T001;speed");
+        assertTrue(speed.startsWith("OK") && speed.endsWith("[SpeedPass consumed: T001-SP1]"), speed);
+        processor.process("SPEEDPASS CREATE;TG01-2;1");
+        String group = processor.process("ATTRACTION ENTER;A02;TG01;SPEED");
+        assertTrue(group.endsWith("[SpeedPass consumed: TG01-1-SP1, TG01-2-SP1]"), group);
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-14");
+        processor.process("SPECIALPASS CREATE;T001");
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001;SPEED").startsWith("ERROR"));
+        String special = processor.process("ATTRACTION ENTER;A04;T001");
+        assertTrue(special.endsWith("[Special Pass consumed: T001-SPECIAL]"), special);
+        processor.process("ATTRACTION EXIT;A04;T001");
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001").startsWith("ERROR"));
+    }
 }

@@ -14,4 +14,7 @@ public interface AttractionAccess {
 
     /** The users admitted with this access. */
     List<User> getUsers();
+
+    /** The individual tickets behind this access: itself for an individual ticket, its members' for a group. */
+    List<IndividualTicket> getIndividualTickets();
 }

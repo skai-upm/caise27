@@ -62,6 +62,11 @@ public class GroupTicket extends Ticket implements GroupAccess {
     }
 
     @Override
+    public List<IndividualTicket> getIndividualTickets() {
+        return tickets;
+    }
+
+    @Override
     public BigDecimal getPrice() {
         return totalPrice;
     }

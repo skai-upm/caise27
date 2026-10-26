@@ -36,6 +36,11 @@ public class IndividualTicket extends Ticket implements IndividualAccess {
         return List.of(user);
     }
 
+    @Override
+    public List<IndividualTicket> getIndividualTickets() {
+        return List.of(this);
+    }
+
     public List<SpeedPass> getSpeedPasses() {
         return Collections.unmodifiableList(speedPasses);
     }

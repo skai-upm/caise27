@@ -7,10 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.AttractionType;
+import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.BCryptPasswordEncoder;
 import es.upm.parque.persistence.FileAttractionRepository;
 import es.upm.parque.persistence.FileGroupRepository;
+import es.upm.parque.persistence.FilePassRepository;
 import es.upm.parque.persistence.FileTicketRepository;
 import es.upm.parque.persistence.FileUserRepository;
 
@@ -46,7 +48,10 @@ class AttractionControllerTest {
     }
 
     private AttractionController newController() {
-        return AttractionController.getInstance().configure(new FileAttractionRepository(dir.resolve("attractions.txt")), tickets, date);
+        PassController passes = PassController.getInstance()
+                .configure(new FilePassRepository(dir.resolve("passes.txt")), tickets, date);
+        return AttractionController.getInstance()
+                .configure(new FileAttractionRepository(dir.resolve("attractions.txt")), tickets, passes, date);
     }
 
     @Test
@@ -108,5 +113,19 @@ class AttractionControllerTest {
         assertEquals(AttractionType.SPECIAL, newController().findById("A01").getType());
         java.nio.file.Files.writeString(dir.resolve("attractions.txt"), "A09;Antigua;5\n");
         assertEquals(AttractionType.GENERAL, newController().findById("A09").getType());
+    }
+
+    @Test
+    void consumedPassesArePersisted() {
+        attractions.create("A01", "Tornado", 20, AttractionType.GENERAL);
+        PassController.getInstance().buySpeedPasses("T001", 1);
+        date.set(OCT_15);
+        assertEquals(1, attractions.enter("A01", "T001", true).size());
+        PassController.getInstance().configure(new FilePassRepository(dir.resolve("passes.txt")),
+                TicketController.getInstance().configure(new FileTicketRepository(dir.resolve("tickets.txt"),
+                        dir.resolve("grouptickets.txt")), UserController.getInstance(), GroupController.getInstance(),
+                        date), date);
+        IndividualTicket restored = (IndividualTicket) TicketController.getInstance().findById("T001");
+        assertTrue(restored.getSpeedPasses().get(0).isConsumed());
     }
 }

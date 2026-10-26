@@ -55,7 +55,10 @@ public class CommandCatalog {
                         "Creates an attraction of type GENERAL (any ticket), INDIVIDUAL, GROUP or SPECIAL.")
                 .register("ATTRACTION DELETE;Id", "Deletes an attraction that has nobody inside.")
                 .register("ATTRACTION ENTER;IdAtraccion;IdEntrada",
-                        "Lets the ticket's users in if the ticket is for today and there is room for all of them.")
+                        "Lets the ticket's users in if the ticket is for today and there is room for all of them;"
+                                + " at SPECIAL attractions the ticket's Special Pass is consumed.")
+                .register("ATTRACTION ENTER;IdAtraccion;IdEntrada;SPEED",
+                        "Enters using one unused SpeedPass per admitted user (not allowed at SPECIAL attractions).")
                 .register("ATTRACTION EXIT;IdAtraccion;IdEntrada", "The ticket's users leave the attraction.")
                 .register("ATTRACTION STATUS;IdAtraccion",
                         "Shows capacity, occupancy, free places and the users inside the attraction.")

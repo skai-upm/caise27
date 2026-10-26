@@ -53,19 +53,34 @@ public abstract class Attraction<T extends AttractionAccess> {
 
     /**
      * Runtime entry point: lets the access in only if it is of the accepted kind.
+     *
+     * @param speed whether SpeedPass use is requested
+     * @return the passes consumed by the entry
      */
-    public void admit(AttractionAccess access) {
+    public List<Pass> admit(AttractionAccess access, boolean speed) {
         if (!accepts(access)) {
             throw new IllegalArgumentException(getType() + " attraction " + id + " does not accept ticket "
                     + access.getId());
         }
-        enter(acceptedType.cast(access));
+        return enter(acceptedType.cast(access), speed);
+    }
+
+    public List<Pass> admit(AttractionAccess access) {
+        return admit(access, false);
+    }
+
+    public List<Pass> enter(T access) {
+        return enter(access, false);
     }
 
     /**
-     * Lets every user of the access in, or nobody: all checks are done before the attraction changes.
+     * Lets every user of the access in, or nobody. Passes and room are checked before the attraction changes, and
+     * the selected passes are consumed only once the users are inside.
+     *
+     * @return the passes consumed by the entry
      */
-    public void enter(T access) {
+    public List<Pass> enter(T access, boolean speed) {
+        List<Pass> passes = passesToConsume(access, speed);
         List<User> users = access.getUsers();
         for (User u : users) {
             if (present.contains(u)) {
@@ -77,6 +92,35 @@ public abstract class Attraction<T extends AttractionAccess> {
                     + " free places but ticket " + access.getId() + " needs " + users.size());
         }
         present.addAll(users);
+        for (Pass pass : passes) {
+            pass.consume();
+        }
+        return passes;
+    }
+
+    /**
+     * Selects, without consuming them, the passes the entry needs. By default SPEED requires one unused SpeedPass
+     * on every individual ticket of the access.
+     */
+    protected List<Pass> passesToConsume(T access, boolean speed) {
+        List<Pass> passes = new ArrayList<>();
+        if (!speed) {
+            return passes;
+        }
+        for (IndividualTicket ticket : access.getIndividualTickets()) {
+            SpeedPass unused = null;
+            for (SpeedPass pass : ticket.getSpeedPasses()) {
+                if (!pass.isConsumed()) {
+                    unused = pass;
+                    break;
+                }
+            }
+            if (unused == null) {
+                throw new IllegalArgumentException("ticket " + ticket.getId() + " has no unused SpeedPass");
+            }
+            passes.add(unused);
+        }
+        return passes;
     }
 
     /** Removes the access's users that are inside and returns how many left. Any kind of access may leave. */

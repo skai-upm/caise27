@@ -2,6 +2,7 @@ package es.upm.parque.business.controller;
 
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.AttractionType;
+import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
@@ -19,6 +20,7 @@ public class AttractionController {
 
     private AttractionRepository repository;
     private TicketController ticketController;
+    private PassController passController;
     private SystemDate systemDate;
     private final List<Attraction<?>> attractions = new ArrayList<>();
 
@@ -33,9 +35,10 @@ public class AttractionController {
      * Injects the repository and collaborators and reloads the attractions (always empty of users).
      */
     public AttractionController configure(AttractionRepository repository, TicketController ticketController,
-            SystemDate systemDate) {
+            PassController passController, SystemDate systemDate) {
         this.repository = repository;
         this.ticketController = ticketController;
+        this.passController = passController;
         this.systemDate = systemDate;
         attractions.clear();
         attractions.addAll(repository.load());
@@ -71,15 +74,28 @@ public class AttractionController {
         return attraction;
     }
 
-    public Attraction<?> enter(String attractionId, String ticketId) {
+    public List<Pass> enter(String attractionId, String ticketId) {
+        return enter(attractionId, ticketId, false);
+    }
+
+    /**
+     * Lets the ticket's users into the attraction, using SpeedPasses when {@code speed} is requested and the
+     * Special Pass at special attractions. Consumed passes are persisted.
+     *
+     * @return the passes consumed by the entry
+     */
+    public List<Pass> enter(String attractionId, String ticketId, boolean speed) {
         Attraction<?> attraction = require(attractionId);
         Ticket ticket = requireTicket(ticketId);
         if (!ticket.getDate().equals(systemDate.get())) {
             throw new IllegalArgumentException("ticket " + ticketId + " is for " + ticket.getDate()
                     + " and is not valid on " + systemDate.get());
         }
-        attraction.admit(ticket);
-        return attraction;
+        List<Pass> consumed = attraction.admit(ticket, speed);
+        if (!consumed.isEmpty()) {
+            passController.save();
+        }
+        return consumed;
     }
 
     public Attraction<?> exit(String attractionId, String ticketId) {

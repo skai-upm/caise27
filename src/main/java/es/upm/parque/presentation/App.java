@@ -111,12 +111,13 @@ public class App {
         TicketController ticketController = TicketController.getInstance().configure(
                 new FileTicketRepository(dataDir.resolve("tickets.txt"), dataDir.resolve("grouptickets.txt")),
                 userController, groupController, systemDate);
-        AttractionController attractionController = AttractionController.getInstance().configure(
-                new FileAttractionRepository(dataDir.resolve("attractions.txt")), ticketController, systemDate);
-        InvoiceController invoiceController = InvoiceController.getInstance().configure(userController,
-                groupController, ticketController, systemDate, new DefaultInvoiceBuilder(), new InvoiceDirector());
         PassController passController = PassController.getInstance()
                 .configure(new FilePassRepository(dataDir.resolve("passes.txt")), ticketController, systemDate);
+        AttractionController attractionController = AttractionController.getInstance().configure(
+                new FileAttractionRepository(dataDir.resolve("attractions.txt")), ticketController, passController,
+                systemDate);
+        InvoiceController invoiceController = InvoiceController.getInstance().configure(userController,
+                groupController, ticketController, systemDate, new DefaultInvoiceBuilder(), new InvoiceDirector());
         CommandCatalog catalog = CommandCatalog.parkCommands();
         Map<String, HelpGenerator> helpGenerators = Map.of(
                 "", new HelpGenerator(catalog, new ConciseHelpFormat()),

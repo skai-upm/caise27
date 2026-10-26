@@ -101,3 +101,10 @@ Each association, aggregation or composition SHALL be named after the field that
 #### Scenario: Generic hierarchy in the diagram
 - **WHEN** `uml/model.puml` is inspected after attraction types are implemented
 - **THEN** it shows `Attraction<T extends AttractionAccess>` with `GeneralAttraction`, `IndividualAttraction`, `GroupAttraction` and `SpecialAttraction`, and the tickets realising `IndividualAccess` and `GroupAccess`
+
+### Requirement: Model shows pass-based access
+`uml/model.puml` SHALL show the attraction controller's association with the pass controller used to persist consumed passes.
+
+#### Scenario: Collaboration in the diagram
+- **WHEN** `uml/model.puml` is inspected after pass-based access is implemented
+- **THEN** it shows `AttractionController` associated with `PassController`

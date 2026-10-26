@@ -10,6 +10,7 @@ import es.upm.parque.business.invoice.Invoice;
 import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.SpecialPass;
 import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.SystemDate;
@@ -22,6 +23,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -223,8 +225,15 @@ public class CommandProcessor {
                 return "OK ATTRACTION DELETED -> " + attractionController.delete(p[1]).getId();
             }
             case "ENTER" -> {
-                requireParams(p, 2, "ATTRACTION ENTER;IdAtraccion;IdEntrada");
-                return "OK ATTRACTION ENTERED -> " + attractionController.enter(p[1], p[2]);
+                if (p.length != 3 && p.length != 4) {
+                    requireParams(p, 2, "ATTRACTION ENTER;IdAtraccion;IdEntrada[;SPEED]");
+                }
+                boolean speed = p.length == 4;
+                if (speed && !p[3].trim().equalsIgnoreCase("SPEED")) {
+                    throw new IllegalArgumentException("unknown entry option '" + p[3] + "': only SPEED is allowed");
+                }
+                List<Pass> consumed = attractionController.enter(p[1], p[2], speed);
+                return "OK ATTRACTION ENTERED -> " + attractionController.findById(p[1]) + consumedPasses(consumed);
             }
             case "EXIT" -> {
                 requireParams(p, 2, "ATTRACTION EXIT;IdAtraccion;IdEntrada");
@@ -299,6 +308,17 @@ public class CommandProcessor {
                     "invalid invoice recipient '" + recipientType + "': use USER or GROUP");
         };
         return "OK INVOICE CREATED" + System.lineSeparator() + invoice.format();
+    }
+
+    private static String consumedPasses(List<Pass> consumed) {
+        if (consumed.isEmpty()) {
+            return "";
+        }
+        List<String> ids = new ArrayList<>();
+        for (Pass pass : consumed) {
+            ids.add(pass.getId());
+        }
+        return " [" + consumed.get(0).getKind() + " consumed: " + String.join(", ", ids) + "]";
     }
 
     private static AttractionType parseAttractionType(String text) {

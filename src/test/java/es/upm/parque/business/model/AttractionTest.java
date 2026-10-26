@@ -81,6 +81,7 @@ class AttractionTest {
         assertThrows(IllegalArgumentException.class, () -> onlyIndividual.admit(group));
         onlyGroup.admit(group);
         assertThrows(IllegalArgumentException.class, () -> onlyGroup.admit(individual));
+        individual.setSpecialPass(new SpecialPass("T001-SPECIAL", SpecialPass.priceFor(individual), false));
         special.admit(individual);
         assertThrows(IllegalArgumentException.class, () -> special.admit(group));
         assertEquals(1, special.getPresent().size());
