@@ -15,23 +15,38 @@ import es.upm.parque.business.model.User;
  */
 public class InvoiceController {
 
-    private final UserController userController;
-    private final GroupController groupController;
-    private final TicketController ticketController;
-    private final InvoiceBuilder builder;
+    private static final InvoiceController INSTANCE = new InvoiceController();
 
-    public InvoiceController(UserController userController, GroupController groupController,
-                             TicketController ticketController, InvoiceBuilder builder) {
+    private UserController userController;
+    private GroupController groupController;
+    private TicketController ticketController;
+    private InvoiceBuilder builder;
+
+    private InvoiceController() {
+    }
+
+    public static InvoiceController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the collaborators of the controller and (re)loads its data. Called during application
+     * initialization.
+     */
+    public InvoiceController configure(UserController userController, GroupController groupController,
+                                       TicketController ticketController, InvoiceBuilder builder) {
         this.userController = userController;
         this.groupController = groupController;
         this.ticketController = ticketController;
         this.builder = builder;
+        return this;
     }
 
     /**
      * Invoice of the individual tickets bought directly for the user (tickets of group purchases excluded).
      */
     public Invoice userInvoice(String email) {
+        requireConfigured();
         User user = userController.findByEmail(email);
         if (user == null) {
             throw new BusinessException("No user with email " + email);
@@ -51,6 +66,7 @@ public class InvoiceController {
      * Invoice of the group's group-ticket purchases, with their discounted amounts.
      */
     public Invoice groupInvoice(String groupId) {
+        requireConfigured();
         Group group = groupController.find(groupId);
         if (group == null) {
             throw new BusinessException("No group with identifier " + groupId);
@@ -65,5 +81,11 @@ public class InvoiceController {
             }
         }
         return builder.build();
+    }
+
+    private void requireConfigured() {
+        if (builder == null) {
+            throw new IllegalStateException("InvoiceController is not configured");
+        }
     }
 }

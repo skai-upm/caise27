@@ -44,16 +44,16 @@ class CommandRunnerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        manager = new UserController(new UserRepository(dir.resolve("users.txt")));
+        manager = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
         output = new ByteArrayOutputStream();
         SystemDate date = new SystemDate(LocalDate.of(2026, 9, 1));
-        GroupController groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), manager);
-        TicketController tickets = new TicketController(
+        GroupController groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), manager);
+        TicketController tickets = TicketController.getInstance().configure(
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
-        AttractionController attractions = new AttractionController(
+        AttractionController attractions = AttractionController.getInstance().configure(
                 new AttractionRepository(dir.resolve("attractions.txt")), tickets, date);
         CommandProcessor processor = new CommandProcessor(manager, groups, tickets, attractions,
-                new InvoiceController(manager, groups, tickets, new TextInvoiceBuilder()), date);
+                InvoiceController.getInstance().configure(manager, groups, tickets, new TextInvoiceBuilder()), date);
         runner = new CommandRunner(processor, new PrintStream(output, true, StandardCharsets.UTF_8));
     }
 

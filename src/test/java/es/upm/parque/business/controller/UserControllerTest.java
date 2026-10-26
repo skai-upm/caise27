@@ -29,14 +29,14 @@ class UserControllerTest {
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        manager = new UserController(new UserRepository(file));
+        manager = UserController.getInstance().configure(new UserRepository(file));
         manager.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
     }
 
     @Test
     void createStoresAndPersistsUser() throws IOException {
         assertNotNull(manager.findByEmail("ana@correo.com"));
-        UserController reloaded = new UserController(new UserRepository(file));
+        UserController reloaded = UserController.getInstance().configure(new UserRepository(file));
         assertEquals(1, reloaded.getUsers().size());
     }
 

@@ -42,14 +42,14 @@ class CommandProcessorTest {
     }
 
     private CommandProcessor newProcessor() throws IOException {
-        UserController users = new UserController(new UserRepository(dir.resolve("users.txt")));
-        GroupController groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), users);
-        TicketController tickets = new TicketController(
+        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        GroupController groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);
+        TicketController tickets = TicketController.getInstance().configure(
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), users, groups, systemDate);
-        AttractionController attractions = new AttractionController(
+        AttractionController attractions = AttractionController.getInstance().configure(
                 new AttractionRepository(dir.resolve("attractions.txt")), tickets, systemDate);
         return new CommandProcessor(users, groups, tickets, attractions,
-                new InvoiceController(users, groups, tickets, new TextInvoiceBuilder()), systemDate);
+                InvoiceController.getInstance().configure(users, groups, tickets, new TextInvoiceBuilder()), systemDate);
     }
 
     @Test
@@ -152,8 +152,8 @@ class CommandProcessorTest {
     }
 
     private GroupController newProcessorGroups() throws IOException {
-        UserController users = new UserController(new UserRepository(dir.resolve("users.txt")));
-        return new GroupController(new GroupRepository(dir.resolve("groups.txt")), users);
+        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        return GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);
     }
 
     @Test

@@ -20,13 +20,13 @@ package es.upm.parque.business {
 }
 
 package es.upm.parque.business.controller {
-  class UserController
-  class GroupController
-  class TicketController {
+  class UserController <<Singleton>>
+  class GroupController <<Singleton>>
+  class TicketController <<Singleton>> {
     currentPrice : BigDecimal
   }
-  class AttractionController
-  class InvoiceController
+  class AttractionController <<Singleton>>
+  class InvoiceController <<Singleton>>
 }
 
 package es.upm.parque.business.invoice {

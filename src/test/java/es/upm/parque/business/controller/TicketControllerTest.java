@@ -39,15 +39,15 @@ class TicketControllerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        users = new UserController(new UserRepository(dir.resolve("users.txt")));
+        users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         ana = users.findByEmail("ana@correo.com");
-        groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), users);
+        groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);
         tickets = newTicketManager();
     }
 
     private TicketController newTicketManager() throws IOException {
-        return new TicketController(new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
+        return TicketController.getInstance().configure(new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
                 users, groups, date);
     }
 

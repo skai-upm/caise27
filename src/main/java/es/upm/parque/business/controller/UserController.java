@@ -16,19 +16,36 @@ import java.util.List;
  */
 public class UserController {
 
-    private final UserRepository repository;
-    private final List<User> users;
+    private static final UserController INSTANCE = new UserController();
 
-    public UserController(UserRepository repository) throws IOException {
+    private UserRepository repository;
+    private final List<User> users = new ArrayList<>();
+
+    private UserController() {
+    }
+
+    public static UserController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the collaborators of the controller and (re)loads its data. Called during application
+     * initialization.
+     */
+    public UserController configure(UserRepository repository) throws IOException {
         this.repository = repository;
-        this.users = new ArrayList<>(repository.loadAll());
+        users.clear();
+        users.addAll(repository.loadAll());
+        return this;
     }
 
     public List<User> getUsers() {
+        requireConfigured();
         return List.copyOf(users);
     }
 
     public User findByEmail(String email) {
+        requireConfigured();
         for (User user : users) {
             if (user.getEmail().equals(email)) {
                 return user;
@@ -38,6 +55,7 @@ public class UserController {
     }
 
     public User findByDni(String dni) {
+        requireConfigured();
         for (User user : users) {
             if (user.getDni().equals(dni)) {
                 return user;
@@ -48,6 +66,7 @@ public class UserController {
 
     public void create(String name, String surname, String dni, String email,
                        String password, String phone, String card) {
+        requireConfigured();
         requireNotBlank(name, "first name");
         requireNotBlank(surname, "surname");
         requireNotBlank(phone, "telephone number");
@@ -77,11 +96,13 @@ public class UserController {
      * Removes a registered user and saves the change.
      */
     public void delete(User user) {
+        requireConfigured();
         users.remove(user);
         save();
     }
 
     public void update(String email, String password, String fieldName, String newValue) {
+        requireConfigured();
         User user = authenticate(email, password);
         UserField field = UserField.fromName(fieldName);
         if (field == null) {
@@ -122,6 +143,7 @@ public class UserController {
      * Returns the user with that email if the password matches; otherwise the operation is rejected.
      */
     public User authenticate(String email, String password) {
+        requireConfigured();
         User user = findByEmail(email);
         if (user == null) {
             throw new BusinessException("No user with email " + email);
@@ -143,6 +165,12 @@ public class UserController {
             repository.saveAll(users);
         } catch (IOException e) {
             throw new UncheckedIOException("Could not save users", e);
+        }
+    }
+
+    private void requireConfigured() {
+        if (repository == null) {
+            throw new IllegalStateException("UserController is not configured");
         }
     }
 }

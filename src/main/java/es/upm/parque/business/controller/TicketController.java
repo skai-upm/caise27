@@ -26,33 +26,52 @@ public class TicketController {
 
     private static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
 
-    private final TicketRepository repository;
-    private final UserController userController;
-    private final GroupController groupController;
-    private final SystemDate systemDate;
+    private static final TicketController INSTANCE = new TicketController();
+
+    private TicketRepository repository;
+    private UserController userController;
+    private GroupController groupController;
+    private SystemDate systemDate;
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private BigDecimal currentPrice = DEFAULT_PRICE;
 
-    public TicketController(TicketRepository repository, UserController userController, GroupController groupController,
-                         SystemDate systemDate) throws IOException {
+    private TicketController() {
+    }
+
+    public static TicketController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the collaborators of the controller and (re)loads its data. Called during application
+     * initialization.
+     */
+    public TicketController configure(TicketRepository repository, UserController userController,
+                                      GroupController groupController, SystemDate systemDate) throws IOException {
         this.repository = repository;
         this.userController = userController;
         this.groupController = groupController;
         this.systemDate = systemDate;
+        tickets.clear();
         for (Ticket ticket : repository.loadAll(userController::findByDni, groupController::find)) {
             tickets.put(ticket.getId(), ticket);
         }
+        currentPrice = DEFAULT_PRICE;
+        return this;
     }
 
     public Ticket find(String id) {
+        requireConfigured();
         return tickets.get(id);
     }
 
     public List<Ticket> getTickets() {
+        requireConfigured();
         return new ArrayList<>(tickets.values());
     }
 
     public BigDecimal getCurrentPrice() {
+        requireConfigured();
         return currentPrice;
     }
 
@@ -60,6 +79,7 @@ public class TicketController {
      * Sets the price of individual tickets sold from now on. It must be positive with at most two decimals.
      */
     public void setCurrentPrice(String amount) {
+        requireConfigured();
         BigDecimal price;
         try {
             price = new BigDecimal(amount.trim());
@@ -73,6 +93,7 @@ public class TicketController {
     }
 
     public IndividualTicket create(String id, String email, String dateText) {
+        requireConfigured();
         requireNewId(id);
         User user = userController.findByEmail(email);
         if (user == null) {
@@ -86,6 +107,7 @@ public class TicketController {
     }
 
     public void delete(String id) {
+        requireConfigured();
         if (!(tickets.get(id) instanceof IndividualTicket ticket)) {
             throw new BusinessException("No individual ticket with identifier " + id);
         }
@@ -103,6 +125,7 @@ public class TicketController {
      * Buys a group ticket, generating one individual ticket per current member of the group.
      */
     public GroupTicket createGroupTicket(String id, String groupId, String dateText) {
+        requireConfigured();
         requireNewId(id);
         Group group = groupController.find(groupId);
         if (group == null) {
@@ -132,6 +155,7 @@ public class TicketController {
      * Deletes a future group ticket together with the individual tickets it is composed of.
      */
     public void deleteGroupTicket(String id) {
+        requireConfigured();
         if (!(tickets.get(id) instanceof GroupTicket groupTicket)) {
             throw new BusinessException("No group ticket with identifier " + id);
         }
@@ -145,6 +169,7 @@ public class TicketController {
      * True if the user holds an individual ticket (standalone or from a group) dated on or after the system date.
      */
     public boolean hasCurrentOrFutureTicket(User user) {
+        requireConfigured();
         LocalDate today = systemDate.get();
         return tickets.values().stream()
                 .anyMatch(ticket -> ticket instanceof IndividualTicket individual
@@ -155,6 +180,7 @@ public class TicketController {
      * True if the group has a group ticket dated on or after the system date, so it cannot be modified.
      */
     public boolean isGroupLocked(Group group) {
+        requireConfigured();
         LocalDate today = systemDate.get();
         return tickets.values().stream()
                 .anyMatch(ticket -> ticket instanceof GroupTicket groupTicket
@@ -165,6 +191,7 @@ public class TicketController {
      * Returns the group ticket that contains the given individual ticket, or {@code null} if it is standalone.
      */
     public GroupTicket findOwner(IndividualTicket ticket) {
+        requireConfigured();
         for (Ticket candidate : tickets.values()) {
             if (candidate instanceof GroupTicket groupTicket && groupTicket.contains(ticket)) {
                 return groupTicket;
@@ -205,6 +232,12 @@ public class TicketController {
             repository.saveAll(tickets.values());
         } catch (IOException e) {
             throw new UncheckedIOException("Could not save tickets", e);
+        }
+    }
+
+    private void requireConfigured() {
+        if (repository == null) {
+            throw new IllegalStateException("TicketController is not configured");
         }
     }
 }

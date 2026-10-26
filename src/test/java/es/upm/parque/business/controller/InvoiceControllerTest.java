@@ -35,17 +35,17 @@ class InvoiceControllerTest {
     @BeforeEach
     void setUp() throws IOException {
         SystemDate date = new SystemDate(LocalDate.of(2026, 10, 1));
-        UserController users = new UserController(new UserRepository(dir.resolve("users.txt")));
+        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
         users.create("Luis", "Ruiz", "00000000T", "luis@correo.com", "Clave1!", "600000000", "1111222233334444");
-        groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), users);
+        groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);
         groups.create("G01", "Familia");
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
         groups.addMember("G01", "luis@correo.com");
-        tickets = new TicketController(new TicketRepository(dir.resolve("t.txt"), dir.resolve("gt.txt")), users, groups, date);
-        invoices = new InvoiceController(users, groups, tickets, new TextInvoiceBuilder());
+        tickets = TicketController.getInstance().configure(new TicketRepository(dir.resolve("t.txt"), dir.resolve("gt.txt")), users, groups, date);
+        invoices = InvoiceController.getInstance().configure(users, groups, tickets, new TextInvoiceBuilder());
     }
 
     @Test

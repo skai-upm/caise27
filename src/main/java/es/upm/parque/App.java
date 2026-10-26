@@ -83,19 +83,25 @@ public class App {
     }
 
     /**
-     * Builds the command processor with every repository stored in {@code dataDir}.
+     * Creates the repositories for {@code dataDir} and injects them, together with the other collaborators, into the
+     * single instance of each controller. Returns the command processor wired to those controllers.
      */
     static CommandProcessor buildProcessor(Path dataDir) throws IOException {
-        UserController userController = new UserController(new UserRepository(dataDir.resolve("users.txt")));
-        GroupController groupController = new GroupController(new GroupRepository(dataDir.resolve("groups.txt")), userController);
+        UserRepository userRepository = new UserRepository(dataDir.resolve("users.txt"));
+        GroupRepository groupRepository = new GroupRepository(dataDir.resolve("groups.txt"));
+        TicketRepository ticketRepository =
+                new TicketRepository(dataDir.resolve("tickets.txt"), dataDir.resolve("grouptickets.txt"));
+        AttractionRepository attractionRepository = new AttractionRepository(dataDir.resolve("attractions.txt"));
         SystemDate systemDate = SystemDate.today();
-        TicketController ticketController = new TicketController(
-                new TicketRepository(dataDir.resolve("tickets.txt"), dataDir.resolve("grouptickets.txt")),
-                userController, groupController, systemDate);
-        AttractionController attractionController = new AttractionController(
-                new AttractionRepository(dataDir.resolve("attractions.txt")), ticketController, systemDate);
-        InvoiceController invoiceController = new InvoiceController(
-                userController, groupController, ticketController, new TextInvoiceBuilder());
+
+        UserController userController = UserController.getInstance().configure(userRepository);
+        GroupController groupController = GroupController.getInstance().configure(groupRepository, userController);
+        TicketController ticketController = TicketController.getInstance()
+                .configure(ticketRepository, userController, groupController, systemDate);
+        AttractionController attractionController = AttractionController.getInstance()
+                .configure(attractionRepository, ticketController, systemDate);
+        InvoiceController invoiceController = InvoiceController.getInstance()
+                .configure(userController, groupController, ticketController, new TextInvoiceBuilder());
         return new CommandProcessor(userController, groupController, ticketController, attractionController,
                 invoiceController, systemDate);
     }
