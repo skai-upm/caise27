@@ -3,6 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.BusinessException;
 import es.upm.parque.business.model.User;
 import es.upm.parque.business.model.UserField;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.business.validation.UserValidator;
 import es.upm.parque.persistence.UserRepository;
 
@@ -19,6 +20,7 @@ public class UserController {
     private static final UserController INSTANCE = new UserController();
 
     private UserRepository repository;
+    private PasswordHasher hasher;
     private final List<User> users = new ArrayList<>();
 
     private UserController() {
@@ -32,11 +34,29 @@ public class UserController {
      * Injects the collaborators of the controller and (re)loads its data. Called during application
      * initialization.
      */
-    public UserController configure(UserRepository repository) throws IOException {
+    public UserController configure(UserRepository repository, PasswordHasher hasher) throws IOException {
         this.repository = repository;
+        this.hasher = hasher;
         users.clear();
         users.addAll(repository.loadAll());
+        hashPlaintextPasswords();
         return this;
+    }
+
+    /**
+     * Replaces passwords stored in plaintext (data saved before passwords were hashed) by their hash.
+     */
+    private void hashPlaintextPasswords() throws IOException {
+        boolean changed = false;
+        for (User user : users) {
+            if (!hasher.isHash(user.getPassword())) {
+                user.setPassword(hasher.hash(user.getPassword()));
+                changed = true;
+            }
+        }
+        if (changed) {
+            repository.saveAll(users);
+        }
     }
 
     public List<User> getUsers() {
@@ -88,7 +108,7 @@ public class UserController {
         if (findByEmail(email) != null) {
             throw new BusinessException("A user with email " + email + " already exists");
         }
-        users.add(new User(name, surname, dni, email, password, phone, card));
+        users.add(new User(name, surname, dni, email, hasher.hash(password), phone, card));
         save();
     }
 
@@ -127,7 +147,7 @@ public class UserController {
                 if (!UserValidator.isValidPassword(newValue)) {
                     throw new BusinessException("Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol");
                 }
-                user.setPassword(newValue);
+                user.setPassword(hasher.hash(newValue));
             }
             case CARD -> {
                 if (!UserValidator.isValidCard(newValue)) {
@@ -148,7 +168,7 @@ public class UserController {
         if (user == null) {
             throw new BusinessException("No user with email " + email);
         }
-        if (!user.getPassword().equals(password)) {
+        if (!hasher.matches(password, user.getPassword())) {
             throw new BusinessException("Incorrect password");
         }
         return user;

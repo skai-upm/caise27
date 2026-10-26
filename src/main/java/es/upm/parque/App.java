@@ -7,6 +7,7 @@ import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.TextInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.TemporaryDataDirectory;
@@ -44,6 +45,7 @@ public class App {
     private static final Path DATA_DIR = Path.of("data");
     private static final Path FLY_BASE_DIR = Path.of("tmp");
     private static final String FLY_OPTION = "--fly";
+    private static final int PASSWORD_COST = 10;
 
     public static void main(String[] args) {
         boolean fly = args.length > 0 && FLY_OPTION.equals(args[0]);
@@ -99,7 +101,8 @@ public class App {
         AttractionRepository attractionRepository = new AttractionRepository(dataDir.resolve("attractions.txt"));
         SystemDate systemDate = SystemDate.today();
 
-        UserController userController = UserController.getInstance().configure(userRepository);
+        UserController userController =
+                UserController.getInstance().configure(userRepository, new PasswordHasher(PASSWORD_COST));
         GroupController groupController = GroupController.getInstance().configure(groupRepository, userController);
         TicketController ticketController = TicketController.getInstance()
                 .configure(ticketRepository, userController, groupController, systemDate);

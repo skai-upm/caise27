@@ -3,6 +3,7 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.BusinessException;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.TicketRepository;
@@ -34,7 +35,7 @@ class AttractionControllerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")), new PasswordHasher(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         GroupController groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);
         tickets = TicketController.getInstance().configure(new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),

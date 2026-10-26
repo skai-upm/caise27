@@ -6,6 +6,7 @@ import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.User;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
@@ -39,7 +40,7 @@ class TicketControllerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")), new PasswordHasher(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         ana = users.findByEmail("ana@correo.com");
         groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);

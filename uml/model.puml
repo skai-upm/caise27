@@ -64,6 +64,12 @@ package es.upm.parque.business.invoice {
   }
 }
 
+package es.upm.parque.business.security {
+  class PasswordHasher {
+    logRounds : int
+  }
+}
+
 package es.upm.parque.business.validation {
   class UserValidator
 }
@@ -148,6 +154,7 @@ HelpGenerator x--> "0..*" HelpFormatter : formatters
 CommandCatalog x--> "0..*" CommandInfo : commands
 
 UserController x--> "1" UserRepository : repository
+UserController x--> "1" PasswordHasher : hasher
 UserController x--> "0..*" User : users
 
 GroupController x--> "1" GroupRepository : repository

@@ -28,15 +28,15 @@ The project SHALL include a basic unit-test structure and `mvn test` SHALL compi
 - **THEN** the build finishes successfully with all tests passing
 
 ### Requirement: Executable JAR
-Packaging the project SHALL produce a JAR whose manifest declares the application's main class, so the JAR can be launched with `java -jar`.
+Packaging the project SHALL produce a JAR whose manifest declares the application's main class and which contains the runtime dependencies, so the JAR can be launched with `java -jar`.
 
 #### Scenario: Run packaged JAR
 - **WHEN** `mvn package` is executed and the resulting JAR is run with `java -jar`
 - **THEN** the application's main class starts and exits normally without requiring a classpath argument
 
-### Requirement: No domain functionality yet
-The initial project SHALL NOT contain application-domain functionality; the main class only provides a minimal entry point.
+### Requirement: BCrypt dependency
+The `pom.xml` SHALL declare the BCrypt library used for password hashing as a compile-scope Maven dependency.
 
-#### Scenario: Minimal entry point
-- **WHEN** the packaged application is run
-- **THEN** it performs no domain operations and terminates normally
+#### Scenario: Dependency declared
+- **WHEN** `pom.xml` is inspected
+- **THEN** it declares the `org.mindrot:jbcrypt` dependency

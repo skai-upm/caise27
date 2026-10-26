@@ -2,6 +2,7 @@ package es.upm.parque.business.controller;
 
 import es.upm.parque.business.BusinessException;
 import es.upm.parque.business.model.Group;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.UserRepository;
 
@@ -28,7 +29,7 @@ class GroupControllerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")), new PasswordHasher(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
         groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);
@@ -73,7 +74,7 @@ class GroupControllerTest {
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
 
-        UserController reloadedUsers = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        UserController reloadedUsers = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")), new PasswordHasher(4));
         GroupController reloaded = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), reloadedUsers);
         Group group = reloaded.find("G01");
         assertEquals("Familia Garcia", group.getName());

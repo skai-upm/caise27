@@ -9,6 +9,7 @@ import es.upm.parque.business.invoice.Invoice;
 import es.upm.parque.business.invoice.InvoiceLine;
 import es.upm.parque.business.invoice.TextInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
@@ -35,7 +36,7 @@ class InvoiceControllerTest {
     @BeforeEach
     void setUp() throws IOException {
         SystemDate date = new SystemDate(LocalDate.of(2026, 10, 1));
-        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")), new PasswordHasher(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
         users.create("Luis", "Ruiz", "00000000T", "luis@correo.com", "Clave1!", "600000000", "1111222233334444");

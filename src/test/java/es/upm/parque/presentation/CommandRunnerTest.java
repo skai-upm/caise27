@@ -7,6 +7,7 @@ import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.TextInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.TicketRepository;
@@ -52,7 +53,7 @@ class CommandRunnerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        manager = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        manager = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")), new PasswordHasher(4));
         output = new ByteArrayOutputStream();
         SystemDate date = new SystemDate(LocalDate.of(2026, 9, 1));
         GroupController groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), manager);

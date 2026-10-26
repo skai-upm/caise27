@@ -8,6 +8,7 @@ import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.TextInvoiceBuilder;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.TicketRepository;
@@ -50,7 +51,7 @@ class CommandProcessorTest {
     }
 
     private CommandProcessor newProcessor() throws IOException {
-        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")), new PasswordHasher(4));
         GroupController groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);
         TicketController tickets = TicketController.getInstance().configure(
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), users, groups, systemDate);
@@ -170,7 +171,7 @@ class CommandProcessorTest {
     }
 
     private GroupController newProcessorGroups() throws IOException {
-        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")));
+        UserController users = UserController.getInstance().configure(new UserRepository(dir.resolve("users.txt")), new PasswordHasher(4));
         return GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);
     }
 
