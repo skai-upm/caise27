@@ -12,6 +12,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -84,7 +85,7 @@ class CommandProcessorTest {
     void helpListsAllCommands() {
         String help = processor.execute("HELP");
         for (String usage : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT"}) {
+            "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "SYSTEM DATE;yyyy-MM-dd", "HELP", "EXIT"}) {
             assertTrue(help.contains(usage), usage);
         }
         assertFalse(processor.isExitRequested());
@@ -115,5 +116,31 @@ class CommandProcessorTest {
         assertTrue(output.contains("Available commands"));
         assertTrue(output.trim().endsWith("OK: Bye"), output);
         assertEquals(1, manager.getUsers().size());
+    }
+
+    @Test
+    void systemDateStartsWithOperatingSystemDate() {
+        LocalDate before = LocalDate.now();
+        LocalDate date = new CommandProcessor(manager).getCurrentDate();
+        assertTrue(!date.isBefore(before) && !date.isAfter(LocalDate.now()));
+    }
+
+    @Test
+    void systemDateCanMoveForwardAndBackward() {
+        assertEquals("OK: System date set to 2026-09-15", processor.execute("SYSTEM DATE;2026-09-15"));
+        assertEquals(LocalDate.of(2026, 9, 15), processor.getCurrentDate());
+        assertTrue(processor.execute("SYSTEM DATE;2025-01-01").startsWith("OK"));
+        assertEquals(LocalDate.of(2025, 1, 1), processor.getCurrentDate());
+    }
+
+    @Test
+    void invalidSystemDatesAreRejected() {
+        CommandProcessor fixed = new CommandProcessor(manager, LocalDate.of(2026, 1, 1));
+        for (String value : new String[] {"15/09/2026", "2026-9-15", "2026-02-30", "hoy", ""}) {
+            assertTrue(fixed.execute("SYSTEM DATE;" + value).startsWith("ERROR: Invalid date"), value);
+        }
+        assertTrue(fixed.execute("SYSTEM DATE").startsWith("ERROR: Expected 1"));
+        assertTrue(fixed.execute("SYSTEM TIME;10:00").startsWith("ERROR: Unknown command"));
+        assertEquals(LocalDate.of(2026, 1, 1), fixed.getCurrentDate());
     }
 }
