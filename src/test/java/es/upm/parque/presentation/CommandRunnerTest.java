@@ -3,6 +3,7 @@ package es.upm.parque.presentation;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
+import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.TextInvoiceBuilder;
@@ -10,6 +11,7 @@ import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.PassRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 import es.upm.parque.presentation.help.CommandCatalog;
@@ -61,8 +63,11 @@ class CommandRunnerTest {
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
         AttractionController attractions = AttractionController.getInstance().configure(
                 new AttractionRepository(dir.resolve("attractions.txt")), tickets, date);
-        CommandProcessor processor = new CommandProcessor(manager, groups, tickets, attractions,
-                InvoiceController.getInstance().configure(manager, groups, tickets, new TextInvoiceBuilder()), date, HELP);
+        PassController passes = PassController.getInstance()
+                .configure(new PassRepository(dir.resolve("passes.txt")), tickets, date);
+        BusinessControllers controllers = new BusinessControllers(manager, groups, tickets, attractions,
+                InvoiceController.getInstance().configure(manager, groups, tickets, passes, new TextInvoiceBuilder()), passes);
+        CommandProcessor processor = new CommandProcessor(controllers, date, HELP);
         runner = new CommandRunner(processor, new PrintStream(output, true, StandardCharsets.UTF_8));
     }
 

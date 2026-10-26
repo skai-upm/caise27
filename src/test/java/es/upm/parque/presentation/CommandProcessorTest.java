@@ -3,6 +3,7 @@ package es.upm.parque.presentation;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
+import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.TextInvoiceBuilder;
@@ -11,6 +12,7 @@ import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.PassRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 import es.upm.parque.presentation.help.CommandCatalog;
@@ -57,8 +59,11 @@ class CommandProcessorTest {
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), users, groups, systemDate);
         AttractionController attractions = AttractionController.getInstance().configure(
                 new AttractionRepository(dir.resolve("attractions.txt")), tickets, systemDate);
-        return new CommandProcessor(users, groups, tickets, attractions,
-                InvoiceController.getInstance().configure(users, groups, tickets, new TextInvoiceBuilder()), systemDate, HELP);
+        PassController passes = PassController.getInstance()
+                .configure(new PassRepository(dir.resolve("passes.txt")), tickets, systemDate);
+        BusinessControllers controllers = new BusinessControllers(users, groups, tickets, attractions,
+                InvoiceController.getInstance().configure(users, groups, tickets, passes, new TextInvoiceBuilder()), passes);
+        return new CommandProcessor(controllers, systemDate, HELP);
     }
 
     @Test
@@ -304,6 +309,24 @@ class CommandProcessorTest {
         assertTrue(processor.process("INVOICE CREATE;PARK;X").startsWith("ERROR"));
         assertTrue(processor.process("INVOICE CREATE;USER").startsWith("ERROR Wrong number of parameters"));
         assertTrue(processor.process("HELP").contains("INVOICE CREATE;USER|GROUP;Correo|IdGrupo"));
+    }
+
+    @Test
+    void passCommands() {
+        processor.process(CREATE_ANA);
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertEquals("OK SPEEDPASS CREATED -> 10 passes, 80.00", processor.process("SPEEDPASS CREATE;T001;10"));
+        assertEquals("OK SPEEDPASS CREATED -> 1 passes, 8.00", processor.process("SPEEDPASS CREATE;T001;1"));
+        assertTrue(processor.process("SPEEDPASS CREATE;T001;2").startsWith("ERROR"));
+        assertEquals("OK SPECIALPASS CREATED -> 40.00", processor.process("SPECIALPASS CREATE;T001"));
+        assertTrue(processor.process("SPECIALPASS CREATE;T001").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET DELETE;T001").startsWith("ERROR Ticket T001 has passes"));
+        assertEquals("OK SPEEDPASS DELETED -> refunded 8.00", processor.process("SPEEDPASS DELETE;T001-SP3"));
+        assertEquals("OK SPECIALPASS DELETED -> refunded 40.00", processor.process("SPECIALPASS DELETE;T001"));
+        assertTrue(processor.process("SPEEDPASS DELETE;T001-SP3").startsWith("ERROR"));
+        assertTrue(processor.process("INVOICE CREATE;USER;ana@correo.com").contains("TOTAL: 120.00"));
+        assertTrue(processor.process("HELP").contains("SPEEDPASS CREATE;IdEntrada;1|10"));
     }
 
     @Test

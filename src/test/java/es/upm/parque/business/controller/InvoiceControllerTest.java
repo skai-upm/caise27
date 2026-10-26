@@ -11,6 +11,7 @@ import es.upm.parque.business.invoice.TextInvoiceBuilder;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.PassRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 
@@ -31,6 +32,7 @@ class InvoiceControllerTest {
 
     private TicketController tickets;
     private GroupController groups;
+    private PassController passes;
     private InvoiceController invoices;
 
     @BeforeEach
@@ -46,7 +48,8 @@ class InvoiceControllerTest {
         groups.addMember("G01", "pedro@correo.com");
         groups.addMember("G01", "luis@correo.com");
         tickets = TicketController.getInstance().configure(new TicketRepository(dir.resolve("t.txt"), dir.resolve("gt.txt")), users, groups, date);
-        invoices = InvoiceController.getInstance().configure(users, groups, tickets, new TextInvoiceBuilder());
+        passes = PassController.getInstance().configure(new PassRepository(dir.resolve("passes.txt")), tickets, date);
+        invoices = InvoiceController.getInstance().configure(users, groups, tickets, passes, new TextInvoiceBuilder());
     }
 
     @Test
@@ -68,6 +71,23 @@ class InvoiceControllerTest {
         assertEquals(List.of(new InvoiceLine("TG01 2026-10-16 3 members -10%", new BigDecimal("108.00"))),
                 invoice.getSections().get(0).lines());
         assertEquals(new BigDecimal("108.00"), invoice.getTotal());
+    }
+
+    @Test
+    void userInvoiceListsPersonalPassesOfAllHerTickets() {
+        tickets.create("T001", "ana@correo.com", "2026-10-15");
+        tickets.createGroupTicket("TG01", "G01", "2026-10-16");
+        passes.buySpecialPass("T001");
+        passes.buySpeedPasses("TG01-1", "1");
+        passes.buySpeedPasses("TG01-2", "1");
+        Invoice invoice = invoices.userInvoice("ana@correo.com");
+        assertEquals(2, invoice.getSections().size());
+        assertEquals("Personal passes", invoice.getSections().get(1).title());
+        assertEquals(List.of(new InvoiceLine("T001-SPECIAL SPECIALPASS (T001)", new BigDecimal("40.00")),
+                new InvoiceLine("TG01-1-SP1 SPEEDPASS (TG01-1)", new BigDecimal("8.00"))),
+                invoice.getSections().get(1).lines());
+        assertEquals(new BigDecimal("88.00"), invoice.getTotal());
+        assertEquals(new BigDecimal("108.00"), invoices.groupInvoice("G01").getTotal());
     }
 
     @Test

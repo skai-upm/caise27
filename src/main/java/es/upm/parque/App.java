@@ -3,6 +3,7 @@ package es.upm.parque;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
+import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.TextInvoiceBuilder;
@@ -10,9 +11,11 @@ import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.PassRepository;
 import es.upm.parque.persistence.TemporaryDataDirectory;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.presentation.BusinessControllers;
 import es.upm.parque.presentation.CommandProcessor;
 import es.upm.parque.presentation.CommandRunner;
 import es.upm.parque.presentation.help.CommandCatalog;
@@ -99,6 +102,7 @@ public class App {
         TicketRepository ticketRepository =
                 new TicketRepository(dataDir.resolve("tickets.txt"), dataDir.resolve("grouptickets.txt"));
         AttractionRepository attractionRepository = new AttractionRepository(dataDir.resolve("attractions.txt"));
+        PassRepository passRepository = new PassRepository(dataDir.resolve("passes.txt"));
         SystemDate systemDate = SystemDate.today();
 
         UserController userController =
@@ -108,12 +112,15 @@ public class App {
                 .configure(ticketRepository, userController, groupController, systemDate);
         AttractionController attractionController = AttractionController.getInstance()
                 .configure(attractionRepository, ticketController, systemDate);
+        PassController passController = PassController.getInstance()
+                .configure(passRepository, ticketController, systemDate);
         InvoiceController invoiceController = InvoiceController.getInstance()
-                .configure(userController, groupController, ticketController, new TextInvoiceBuilder());
+                .configure(userController, groupController, ticketController, passController, new TextInvoiceBuilder());
         HelpGenerator helpGenerator = new HelpGenerator(CommandCatalog.standard(),
                 Map.of("", new SyntaxHelpFormatter(), "EXTENDED", new ExtendedHelpFormatter()));
-        return new CommandProcessor(userController, groupController, ticketController, attractionController,
-                invoiceController, systemDate, helpGenerator);
+        BusinessControllers controllers = new BusinessControllers(userController, groupController, ticketController,
+                attractionController, invoiceController, passController);
+        return new CommandProcessor(controllers, systemDate, helpGenerator);
     }
 
     private static void runInteractive(CommandRunner runner) {

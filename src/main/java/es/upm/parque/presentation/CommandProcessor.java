@@ -4,6 +4,7 @@ import es.upm.parque.business.BusinessException;
 import es.upm.parque.business.controller.AttractionController;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
+import es.upm.parque.business.controller.PassController;
 import es.upm.parque.business.controller.TicketController;
 import es.upm.parque.business.controller.UserController;
 import es.upm.parque.business.invoice.Invoice;
@@ -11,7 +12,10 @@ import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 import es.upm.parque.presentation.help.HelpGenerator;
 
@@ -32,18 +36,18 @@ public class CommandProcessor {
     private final TicketController ticketController;
     private final AttractionController attractionController;
     private final InvoiceController invoiceController;
+    private final PassController passController;
     private final SystemDate systemDate;
     private final HelpGenerator helpGenerator;
     private boolean exitRequested;
 
-    public CommandProcessor(UserController userController, GroupController groupController, TicketController ticketController,
-                            AttractionController attractionController, InvoiceController invoiceController,
-                            SystemDate systemDate, HelpGenerator helpGenerator) {
-        this.userController = userController;
-        this.groupController = groupController;
-        this.ticketController = ticketController;
-        this.attractionController = attractionController;
-        this.invoiceController = invoiceController;
+    public CommandProcessor(BusinessControllers controllers, SystemDate systemDate, HelpGenerator helpGenerator) {
+        this.userController = controllers.users();
+        this.groupController = controllers.groups();
+        this.ticketController = controllers.tickets();
+        this.attractionController = controllers.attractions();
+        this.invoiceController = controllers.invoices();
+        this.passController = controllers.passes();
         this.systemDate = systemDate;
         this.helpGenerator = helpGenerator;
     }
@@ -70,6 +74,10 @@ public class CommandProcessor {
                 case "ATTRACTION EXIT" -> exitAttraction(parts);
                 case "ATTRACTION STATUS" -> attractionStatus(parts);
                 case "INVOICE CREATE" -> createInvoice(parts);
+                case "SPEEDPASS CREATE" -> buySpeedPasses(parts);
+                case "SPEEDPASS DELETE" -> refundSpeedPass(parts);
+                case "SPECIALPASS CREATE" -> buySpecialPass(parts);
+                case "SPECIALPASS DELETE" -> refundSpecialPass(parts);
                 case "SYSTEM DATE" -> setSystemDate(parts);
                 case "SYSTEM PRICE" -> setSystemPrice(parts);
                 case "EXIT" -> exit(parts);
@@ -163,6 +171,7 @@ public class CommandProcessor {
         if (parts.length != 2) {
             return usage("GROUPTICKET DELETE");
         }
+        requireNoPasses(parts[1]);
         ticketController.deleteGroupTicket(parts[1]);
         return "OK GROUP TICKET DELETED";
     }
@@ -221,6 +230,46 @@ public class CommandProcessor {
         return status.toString();
     }
 
+    private void requireNoPasses(String ticketId) {
+        Ticket ticket = ticketController.find(ticketId);
+        if (ticket != null && passController.hasPasses(ticket)) {
+            throw new BusinessException("Ticket " + ticketId + " has passes; refund them before deleting the ticket");
+        }
+    }
+
+    private String buySpeedPasses(String[] parts) {
+        if (parts.length != 3) {
+            return usage("SPEEDPASS CREATE");
+        }
+        List<SpeedPass> bought = passController.buySpeedPasses(parts[1], parts[2]);
+        return "OK SPEEDPASS CREATED -> " + bought.size() + " passes, "
+                + PassController.total(bought).toPlainString();
+    }
+
+    private String buySpecialPass(String[] parts) {
+        if (parts.length != 2) {
+            return usage("SPECIALPASS CREATE");
+        }
+        Pass pass = passController.buySpecialPass(parts[1]);
+        return "OK SPECIALPASS CREATED -> " + pass.getPrice().toPlainString();
+    }
+
+    private String refundSpeedPass(String[] parts) {
+        if (parts.length != 2) {
+            return usage("SPEEDPASS DELETE");
+        }
+        Pass pass = passController.refundSpeedPass(parts[1]);
+        return "OK SPEEDPASS DELETED -> refunded " + pass.getPrice().toPlainString();
+    }
+
+    private String refundSpecialPass(String[] parts) {
+        if (parts.length != 2) {
+            return usage("SPECIALPASS DELETE");
+        }
+        Pass pass = passController.refundSpecialPass(parts[1]);
+        return "OK SPECIALPASS DELETED -> refunded " + pass.getPrice().toPlainString();
+    }
+
     private String createInvoice(String[] parts) {
         if (parts.length != 3) {
             return usage("INVOICE CREATE");
@@ -245,6 +294,7 @@ public class CommandProcessor {
         if (parts.length != 2) {
             return usage("TICKET DELETE");
         }
+        requireNoPasses(parts[1]);
         ticketController.delete(parts[1]);
         return "OK TICKET DELETED";
     }

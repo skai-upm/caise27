@@ -6,6 +6,7 @@ import es.upm.parque.business.invoice.InvoiceBuilder;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
@@ -20,6 +21,7 @@ public class InvoiceController {
     private UserController userController;
     private GroupController groupController;
     private TicketController ticketController;
+    private PassController passController;
     private InvoiceBuilder builder;
 
     private InvoiceController() {
@@ -34,16 +36,19 @@ public class InvoiceController {
      * initialization.
      */
     public InvoiceController configure(UserController userController, GroupController groupController,
-                                       TicketController ticketController, InvoiceBuilder builder) {
+                                       TicketController ticketController, PassController passController,
+                                       InvoiceBuilder builder) {
         this.userController = userController;
         this.groupController = groupController;
         this.ticketController = ticketController;
+        this.passController = passController;
         this.builder = builder;
         return this;
     }
 
     /**
-     * Invoice of the individual tickets bought directly for the user (tickets of group purchases excluded).
+     * Invoice of the individual tickets bought directly for the user (tickets of group purchases excluded) and of
+     * the personal passes of all the user's individual tickets.
      */
     public Invoice userInvoice(String email) {
         requireConfigured();
@@ -57,6 +62,13 @@ public class InvoiceController {
             if (ticket instanceof IndividualTicket individual && individual.getUser() == user
                     && ticketController.findOwner(individual) == null) {
                 builder.addLine(individual.getId() + " " + SystemDate.format(individual.getDate()), individual.getPrice());
+            }
+        }
+        builder.startSection("Personal passes");
+        for (Pass pass : passController.getPasses()) {
+            if (pass.getTicket().getUser() == user) {
+                builder.addLine(pass.getId() + " " + pass.getType() + " (" + pass.getTicket().getId() + ")",
+                        pass.getPrice());
             }
         }
         return builder.build();

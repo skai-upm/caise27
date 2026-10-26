@@ -9,6 +9,7 @@ package es.upm.parque {
 }
 
 package es.upm.parque.presentation {
+  class BusinessControllers <<record>>
   class CommandRunner
   class CommandProcessor {
     exitRequested : boolean
@@ -40,6 +41,7 @@ package es.upm.parque.business.controller {
   }
   class AttractionController <<Singleton>>
   class InvoiceController <<Singleton>>
+  class PassController <<Singleton>>
 }
 
 package es.upm.parque.business.invoice {
@@ -109,6 +111,13 @@ package es.upm.parque.business.model {
   class GroupTicket {
     discountPercent : int
   }
+  abstract class Pass {
+    id : String
+    price : BigDecimal
+    consumed : boolean
+  }
+  class SpeedPass
+  class SpecialPass
   class Attraction {
     id : String
     name : String
@@ -127,6 +136,9 @@ package es.upm.parque.persistence {
     ticketsFile : Path
     groupTicketsFile : Path
   }
+  class PassRepository {
+    file : Path
+  }
   class AttractionRepository {
     file : Path
   }
@@ -135,6 +147,8 @@ package es.upm.parque.persistence {
 ' Inheritance
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
 RuntimeException <|-- BusinessException
 InvoiceBuilder <|.. TextInvoiceBuilder
 HelpFormatter <|.. SyntaxHelpFormatter
@@ -186,8 +200,24 @@ TextInvoiceBuilder x--> "0..*" InvoiceLine : sectionLines
 Invoice "1" *--> "0..*" InvoiceSection : sections
 InvoiceSection "1" *--> "1..*" InvoiceLine : lines
 
+CommandProcessor x--> "1" PassController : passController
+InvoiceController x--> "1" PassController : passController
+PassController x--> "1" PassRepository : repository
+PassController x--> "1" TicketController : ticketController
+PassController x--> "1" SystemDate : systemDate
+PassController x--> "0..*" Pass : passes
+Pass x--> "1" IndividualTicket : ticket
+BusinessControllers x--> "1" UserController : users
+BusinessControllers x--> "1" GroupController : groups
+BusinessControllers x--> "1" TicketController : tickets
+BusinessControllers x--> "1" AttractionController : attractions
+BusinessControllers x--> "1" InvoiceController : invoices
+BusinessControllers x--> "1" PassController : passes
+
 ' Usage of classes without incoming relationships
 App ..> CommandRunner
+App ..> BusinessControllers
+CommandProcessor ..> BusinessControllers
 TextInvoiceBuilder ..> Invoice
 InvoiceController ..> BusinessException
 UserController ..> UserValidator
