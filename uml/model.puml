@@ -1,0 +1,132 @@
+@startuml model
+title Parque - class model (current implementation)
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+package es.upm.parque {
+
+  class App
+
+  class CommandProcessor {
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+    - exitRequested : boolean
+  }
+
+  class UserManager
+  class UserStorage {
+    - file : Path
+  }
+
+  class User {
+    - name : String
+    - surname : String
+    - dni : String
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class UserValidator
+
+  class GroupManager
+  class GroupStorage {
+    - file : Path
+  }
+
+  class Group {
+    - id : String
+    - name : String
+  }
+
+  interface Admission
+
+  abstract class Ticket {
+    - id : String
+    - date : LocalDate
+  }
+
+  class IndividualTicket {
+    - price : BigDecimal
+    - ownerDni : String
+    - groupTicketId : String
+  }
+
+  class GroupTicket {
+    - groupId : String
+    - basePrice : BigDecimal
+    - discountPercent : int
+  }
+
+  class TicketManager
+  class TicketStorage {
+    - ticketsFile : Path
+    - groupTicketsFile : Path
+  }
+
+  class AttractionManager
+  class AttractionStorage {
+    - file : Path
+  }
+
+  class Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+  }
+}
+
+' Controller
+CommandProcessor "1" x--> "1" UserManager : users
+CommandProcessor "1" x--> "1" GroupManager : groups
+CommandProcessor "1" x--> "1" TicketManager : tickets
+CommandProcessor "1" x--> "1" AttractionManager : attractions
+
+' Users
+UserManager "1" x--> "1" UserStorage : storage
+UserManager "1" x--> "0..*" User : usersByDni
+
+' Groups
+GroupManager "1" x--> "1" UserManager : users
+GroupManager "1" x--> "1" GroupStorage : storage
+GroupManager "1" x--> "0..*" Group : groupsById
+Group "0..*" x--> "0..*" User : members
+
+' Tickets
+Admission <|.. Ticket
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+TicketManager "1" x--> "1" UserManager : users
+TicketManager "1" x--> "1" GroupManager : groups
+TicketManager "1" x--> "1" TicketStorage : storage
+TicketManager "1" x--> "0..*" Ticket : ticketsById
+IndividualTicket "0..*" x--> "0..1" User : owner
+GroupTicket "0..*" o--> "0..1" Group : group
+GroupTicket "0..1" *--> "1..*" IndividualTicket : components
+
+' Attractions
+AttractionManager "1" x--> "1" AttractionStorage : storage
+AttractionManager "1" x--> "0..*" Attraction : attractionsById
+Attraction "0..*" x--> "0..*" User : present
+
+' Usage of types without incoming relationships
+App ..> CommandProcessor
+CommandProcessor ..> UserField
+UserManager ..> UserField
+UserManager ..> UserValidator
+GroupManager ..> UserValidator
+TicketManager ..> UserValidator
+AttractionManager ..> UserValidator
+
+@enduml
