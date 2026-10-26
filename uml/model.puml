@@ -8,6 +8,11 @@ package es.upm.parque {
 
   class App
 
+  class DataDirectory {
+    - path : Path
+    - temporary : boolean
+  }
+
   class CommandProcessor {
     - currentDate : LocalDate
     - currentPrice : BigDecimal
@@ -122,6 +127,7 @@ Attraction "0..*" x--> "0..*" User : present
 
 ' Usage of types without incoming relationships
 App ..> CommandProcessor
+App ..> DataDirectory
 CommandProcessor ..> UserField
 UserManager ..> UserField
 UserManager ..> UserValidator

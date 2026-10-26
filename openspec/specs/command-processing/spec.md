@@ -7,7 +7,7 @@ Defines how the terminal application receives API-like text commands, splits the
 ## Requirements
 
 ### Requirement: Terminal command input
-When started without arguments, the application SHALL read commands from standard input, one command per line, and SHALL print a response for every non-empty command, continuing to wait for commands until it receives `EXIT` or the input ends.
+When started without a command-file argument (no arguments, or only `--fly`), the application SHALL read commands from standard input, one command per line, and SHALL print a response for every non-empty command, continuing to wait for commands until it receives `EXIT` or the input ends.
 
 #### Scenario: Command processed from terminal
 - **WHEN** the user types `USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456`
@@ -48,7 +48,7 @@ The application SHALL respond with an error message, and continue accepting comm
 - **THEN** it is ignored and the application keeps running
 
 ### Requirement: File command input
-When started with at least one argument, the application SHALL treat the first argument as the path of a text file, read it line by line and execute each non-blank line as a command in file order, stopping at `EXIT` or at the end of the file.
+When started with an argument other than `--fly`, the application SHALL treat the first such argument as the path of a text file, read it line by line and execute each non-blank line as a command in file order, stopping at `EXIT` or at the end of the file.
 
 #### Scenario: Commands executed in order
 - **WHEN** the application is started with `input_basico.txt` containing two `USER CREATE` commands, a `USER UPDATE` of the first user's phone and `EXIT`
@@ -84,7 +84,7 @@ The `EXIT` command SHALL end command processing in a controlled manner; no comma
 - **THEN** only Ana is created and the application terminates after EXIT
 
 ### Requirement: Invalid command file
-If the file given as first argument does not exist, cannot be opened or cannot be read, the application SHALL print an error message identifying the file and terminate without showing an unhandled Java exception.
+If the command file argument does not exist, cannot be opened or cannot be read, the application SHALL print an error message identifying the file and terminate without showing an unhandled Java exception.
 
 #### Scenario: Nonexistent file
 - **WHEN** the application is started with `no_existe.txt` and that file does not exist
