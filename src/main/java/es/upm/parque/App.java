@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 
 /**
  * Entry point. Without arguments commands are read interactively from standard input; with an
@@ -25,8 +26,9 @@ public class App {
     }
 
     public static void main(String[] args) {
+        MainController mainController = new MainController(Clock.systemDefaultZone());
         UserManager userManager = new UserManager(new UserRepository(USERS_FILE));
-        new App(new CommandProcessor(userManager)).start(args, System.in, System.out);
+        new App(new CommandProcessor(userManager, mainController)).start(args, System.in, System.out);
     }
 
     /**

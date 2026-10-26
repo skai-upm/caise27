@@ -49,23 +49,23 @@ public class UserManager {
         requireNotBlank(phone, "telephone");
         requireNotBlank(card, "card number");
         if (!UserValidator.isValidDni(dni)) {
-            throw new UserException("Invalid DNI: " + dni);
+            throw new ParkException("Invalid DNI: " + dni);
         }
         if (!UserValidator.isValidEmail(email)) {
-            throw new UserException("Invalid email: " + email);
+            throw new ParkException("Invalid email: " + email);
         }
         if (!UserValidator.isValidPassword(password)) {
-            throw new UserException("Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol");
+            throw new ParkException("Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol");
         }
         if (!UserValidator.isValidCard(card)) {
-            throw new UserException("Invalid card number: it must be exactly 16 digits");
+            throw new ParkException("Invalid card number: it must be exactly 16 digits");
         }
         String normalizedDni = dni.toUpperCase();
         if (findByDni(normalizedDni) != null) {
-            throw new UserException("A user with DNI " + normalizedDni + " already exists");
+            throw new ParkException("A user with DNI " + normalizedDni + " already exists");
         }
         if (findByEmail(email) != null) {
-            throw new UserException("A user with email " + email + " already exists");
+            throw new ParkException("A user with email " + email + " already exists");
         }
         users.add(new User(name, surname, normalizedDni, email, password, phone, card));
         persist();
@@ -80,11 +80,11 @@ public class UserManager {
     public void update(String email, String password, String fieldName, String newValue) {
         User user = authenticate(email, password);
         if ("DNI".equalsIgnoreCase(fieldName.trim())) {
-            throw new UserException("The DNI cannot be modified");
+            throw new ParkException("The DNI cannot be modified");
         }
         UserField field = UserField.parse(fieldName);
         if (field == null) {
-            throw new UserException("Unknown field: " + fieldName);
+            throw new ParkException("Unknown field: " + fieldName);
         }
         requireNotBlank(newValue, "new value");
         switch (field) {
@@ -93,23 +93,23 @@ public class UserManager {
             case PHONE -> user.setPhone(newValue);
             case EMAIL -> {
                 if (!UserValidator.isValidEmail(newValue)) {
-                    throw new UserException("Invalid email: " + newValue);
+                    throw new ParkException("Invalid email: " + newValue);
                 }
                 User other = findByEmail(newValue);
                 if (other != null && other != user) {
-                    throw new UserException("A user with email " + newValue + " already exists");
+                    throw new ParkException("A user with email " + newValue + " already exists");
                 }
                 user.setEmail(newValue);
             }
             case PASSWORD -> {
                 if (!UserValidator.isValidPassword(newValue)) {
-                    throw new UserException("Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol");
+                    throw new ParkException("Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol");
                 }
                 user.setPassword(newValue);
             }
             case CARD -> {
                 if (!UserValidator.isValidCard(newValue)) {
-                    throw new UserException("Invalid card number: it must be exactly 16 digits");
+                    throw new ParkException("Invalid card number: it must be exactly 16 digits");
                 }
                 user.setCard(newValue);
             }
@@ -120,10 +120,10 @@ public class UserManager {
     private User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null) {
-            throw new UserException("No user with email " + email);
+            throw new ParkException("No user with email " + email);
         }
         if (!user.getPassword().equals(password)) {
-            throw new UserException("Incorrect password");
+            throw new ParkException("Incorrect password");
         }
         return user;
     }
@@ -133,13 +133,13 @@ public class UserManager {
             repository.saveAll(users);
         } catch (UncheckedIOException e) {
             users = new ArrayList<>(repository.loadAll());
-            throw new UserException("Could not save users: " + e.getMessage());
+            throw new ParkException("Could not save users: " + e.getMessage());
         }
     }
 
     private static void requireNotBlank(String value, String label) {
         if (!UserValidator.isNotBlank(value)) {
-            throw new UserException("The " + label + " is required");
+            throw new ParkException("The " + label + " is required");
         }
     }
 }

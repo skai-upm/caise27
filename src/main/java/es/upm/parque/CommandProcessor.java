@@ -11,18 +11,22 @@ public class CommandProcessor {
     static final String USER_CREATE_SYNTAX = "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta";
     static final String USER_DELETE_SYNTAX = "USER DELETE;Correo;Contraseña";
     static final String USER_UPDATE_SYNTAX = "USER UPDATE;Correo;Contraseña;Campo;NuevoValor";
+    static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
     static final String HELP_SYNTAX = "HELP";
     static final String EXIT_SYNTAX = "EXIT";
 
     /** Syntax of every supported command, in the order HELP shows them. */
     static final List<String> COMMAND_SYNTAX = List.of(
-            USER_CREATE_SYNTAX, USER_DELETE_SYNTAX, USER_UPDATE_SYNTAX, HELP_SYNTAX, EXIT_SYNTAX);
+            USER_CREATE_SYNTAX, USER_DELETE_SYNTAX, USER_UPDATE_SYNTAX, SYSTEM_DATE_SYNTAX,
+            HELP_SYNTAX, EXIT_SYNTAX);
 
     private final UserManager userManager;
+    private final MainController mainController;
     private boolean exitRequested;
 
-    public CommandProcessor(UserManager userManager) {
+    public CommandProcessor(UserManager userManager, MainController mainController) {
         this.userManager = userManager;
+        this.mainController = mainController;
     }
 
     /**
@@ -55,6 +59,10 @@ public class CommandProcessor {
                     userManager.update(parts[1], parts[2], parts[3], parts[4]);
                     yield "OK USER UPDATED";
                 }
+                case "SYSTEM DATE" -> {
+                    requireParams(parts, SYSTEM_DATE_SYNTAX);
+                    yield setSystemDate(parts[1]);
+                }
                 case "HELP" -> {
                     requireParams(parts, HELP_SYNTAX);
                     yield "OK Available commands:" + System.lineSeparator()
@@ -67,11 +75,16 @@ public class CommandProcessor {
                 }
                 default -> "ERROR Unknown command: " + parts[0];
             };
-        } catch (UserException e) {
+        } catch (ParkException e) {
             return "ERROR " + e.getMessage();
         } catch (RuntimeException e) {
             return "ERROR Unexpected error: " + e.getMessage();
         }
+    }
+
+    private String setSystemDate(String text) {
+        mainController.setCurrentDate(MainController.parseDate(text));
+        return "OK SYSTEM DATE SET -> " + MainController.formatDate(mainController.getCurrentDate());
     }
 
     /**
@@ -80,7 +93,7 @@ public class CommandProcessor {
     private static void requireParams(String[] parts, String syntax) {
         int expected = syntax.split(";", -1).length - 1;
         if (parts.length - 1 != expected) {
-            throw new UserException("Wrong number of parameters (expected " + expected + ", got "
+            throw new ParkException("Wrong number of parameters (expected " + expected + ", got "
                     + (parts.length - 1) + "). Usage: " + syntax);
         }
     }

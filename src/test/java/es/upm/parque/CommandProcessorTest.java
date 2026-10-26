@@ -5,6 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,12 +23,14 @@ class CommandProcessorTest {
     Path dir;
 
     private UserManager manager;
+    private MainController controller;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() {
         manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        controller = new MainController(Clock.fixed(Instant.parse("2026-09-01T10:00:00Z"), ZoneOffset.UTC));
+        processor = new CommandProcessor(manager, controller);
     }
 
     @Test
@@ -93,8 +99,31 @@ class CommandProcessorTest {
     }
 
     @Test
+    void systemDateMovesForwardAndBackward() {
+        assertEquals(LocalDate.of(2026, 9, 1), controller.getCurrentDate());
+        assertEquals("OK SYSTEM DATE SET -> 2026-09-15", processor.process("SYSTEM DATE;2026-09-15"));
+        assertEquals(LocalDate.of(2026, 9, 15), controller.getCurrentDate());
+        assertEquals("OK SYSTEM DATE SET -> 2025-01-01", processor.process("system date; 2025-01-01 "));
+        assertEquals(LocalDate.of(2025, 1, 1), controller.getCurrentDate());
+    }
+
+    @Test
+    void invalidSystemDateLeavesDateUnchanged() {
+        assertTrue(processor.process("SYSTEM DATE;15/09/2026").startsWith("ERROR Invalid date"));
+        assertTrue(processor.process("SYSTEM DATE;2026-9-15").startsWith("ERROR Invalid date"));
+        assertTrue(processor.process("SYSTEM DATE;2026-02-30").startsWith("ERROR Invalid date"));
+        assertTrue(processor.process("SYSTEM DATE").startsWith("ERROR Wrong number of parameters"));
+        assertEquals(LocalDate.of(2026, 9, 1), controller.getCurrentDate());
+    }
+
+    @Test
+    void helpListsSystemDate() {
+        assertTrue(processor.process("HELP").contains("SYSTEM DATE;yyyy-MM-dd"));
+    }
+
+    @Test
     void unexpectedErrorsDoNotPropagate() {
-        CommandProcessor broken = new CommandProcessor(null);
+        CommandProcessor broken = new CommandProcessor(null, new MainController(Clock.systemDefaultZone()));
         assertTrue(broken.process(ANA).startsWith("ERROR Unexpected error"));
     }
 }

@@ -63,7 +63,7 @@ class UserManagerTest {
             "Ana,Garcia,12345678Z,ana@correo.com,Clave1!,6,123456789012345"
     })
     void invalidDataIsNotStored(String n, String s, String d, String e, String p, String t, String c) {
-        assertThrows(UserException.class, () -> manager.create(n, s, d, e, p, t, c));
+        assertThrows(ParkException.class, () -> manager.create(n, s, d, e, p, t, c));
         assertTrue(manager.getUsers().isEmpty());
         assertTrue(Files.notExists(file));
     }
@@ -71,7 +71,7 @@ class UserManagerTest {
     @Test
     void duplicateDniRejected() {
         createAna();
-        UserException ex = assertThrows(UserException.class, () ->
+        ParkException ex = assertThrows(ParkException.class, () ->
                 manager.create("Otra", "X", "12345678Z", "otro@correo.com", "Clave1!", "6", "1234567890123456"));
         assertTrue(ex.getMessage().contains("DNI"));
         assertEquals(1, manager.getUsers().size());
@@ -80,7 +80,7 @@ class UserManagerTest {
     @Test
     void duplicateEmailRejectedCaseInsensitive() {
         createAna();
-        UserException ex = assertThrows(UserException.class, () ->
+        ParkException ex = assertThrows(ParkException.class, () ->
                 manager.create("Pedro", "X", "87654321X", "ANA@correo.com", "Clave1!", "6", "1234567890123456"));
         assertTrue(ex.getMessage().contains("email"));
         assertEquals(1, manager.getUsers().size());
@@ -97,8 +97,8 @@ class UserManagerTest {
     @Test
     void deleteUnknownEmailOrWrongPasswordRejected() {
         createAna();
-        assertThrows(UserException.class, () -> manager.delete("nadie@correo.com", "Clave1!"));
-        assertThrows(UserException.class, () -> manager.delete("ana@correo.com", "Mala1!"));
+        assertThrows(ParkException.class, () -> manager.delete("nadie@correo.com", "Clave1!"));
+        assertThrows(ParkException.class, () -> manager.delete("ana@correo.com", "Mala1!"));
         assertEquals(1, manager.getUsers().size());
     }
 
@@ -132,14 +132,14 @@ class UserManagerTest {
     void updateFailuresChangeNothing() {
         createAna();
         manager.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "6", "9876543210987654");
-        assertThrows(UserException.class, () -> manager.update("nadie@correo.com", "Clave1!", "NAME", "X"));
-        assertThrows(UserException.class, () -> manager.update("ana@correo.com", "Mala1!", "NAME", "X"));
-        assertThrows(UserException.class, () -> manager.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo"));
-        assertThrows(UserException.class, () -> manager.update("ana@correo.com", "Clave1!", "EMAIL", "pedro@correo.com"));
-        assertThrows(UserException.class, () -> manager.update("ana@correo.com", "Clave1!", "PASSWORD", "clave"));
-        assertThrows(UserException.class, () -> manager.update("ana@correo.com", "Clave1!", "CARD", "1234"));
-        assertThrows(UserException.class, () -> manager.update("ana@correo.com", "Clave1!", "COLOR", "rojo"));
-        assertThrows(UserException.class, () -> manager.update("ana@correo.com", "Clave1!", "NAME", " "));
+        assertThrows(ParkException.class, () -> manager.update("nadie@correo.com", "Clave1!", "NAME", "X"));
+        assertThrows(ParkException.class, () -> manager.update("ana@correo.com", "Mala1!", "NAME", "X"));
+        assertThrows(ParkException.class, () -> manager.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo"));
+        assertThrows(ParkException.class, () -> manager.update("ana@correo.com", "Clave1!", "EMAIL", "pedro@correo.com"));
+        assertThrows(ParkException.class, () -> manager.update("ana@correo.com", "Clave1!", "PASSWORD", "clave"));
+        assertThrows(ParkException.class, () -> manager.update("ana@correo.com", "Clave1!", "CARD", "1234"));
+        assertThrows(ParkException.class, () -> manager.update("ana@correo.com", "Clave1!", "COLOR", "rojo"));
+        assertThrows(ParkException.class, () -> manager.update("ana@correo.com", "Clave1!", "NAME", " "));
         User ana = new UserManager(new UserRepository(file)).findByEmail("ana@correo.com");
         assertEquals("Ana", ana.getName());
         assertEquals("Clave1!", ana.getPassword());
@@ -149,7 +149,7 @@ class UserManagerTest {
     @Test
     void dniCannotBeModified() {
         createAna();
-        UserException ex = assertThrows(UserException.class, () ->
+        ParkException ex = assertThrows(ParkException.class, () ->
                 manager.update("ana@correo.com", "Clave1!", "DNI", "87654321X"));
         assertTrue(ex.getMessage().contains("DNI cannot be modified"));
         assertNull(manager.findByDni("87654321X"));
@@ -160,7 +160,7 @@ class UserManagerTest {
         createAna();
         assertTrue(file.toFile().setWritable(false));
         try {
-            assertThrows(UserException.class, () ->
+            assertThrows(ParkException.class, () ->
                     manager.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "6", "9876543210987654"));
             assertNull(manager.findByEmail("pedro@correo.com"));
             assertNotNull(manager.findByEmail("ana@correo.com"));

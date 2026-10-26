@@ -16,6 +16,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,7 +36,7 @@ class AppTest {
     }
 
     private String start(Path users, String[] args, String stdin) {
-        App app = new App(new CommandProcessor(manager(users)));
+        App app = new App(new CommandProcessor(manager(users), new MainController(Clock.systemDefaultZone())));
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         app.start(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(bytes, true, StandardCharsets.UTF_8));
@@ -105,7 +106,7 @@ class AppTest {
 
     @Test
     void readFailureIsReported() {
-        App app = new App(new CommandProcessor(manager(dir.resolve("u.txt"))));
+        App app = new App(new CommandProcessor(manager(dir.resolve("u.txt")), new MainController(Clock.systemDefaultZone())));
         Reader failing = new Reader() {
             @Override
             public int read(char[] buf, int off, int len) throws IOException {
@@ -124,7 +125,7 @@ class AppTest {
 
     @Test
     void runOverReaderStopsAtExit() {
-        App app = new App(new CommandProcessor(manager(dir.resolve("u.txt"))));
+        App app = new App(new CommandProcessor(manager(dir.resolve("u.txt")), new MainController(Clock.systemDefaultZone())));
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         app.run(new BufferedReader(new StringReader("EXIT\nHELP\n")), new PrintStream(bytes, true, StandardCharsets.UTF_8));
         assertEquals("OK EXIT", bytes.toString(StandardCharsets.UTF_8).trim());
