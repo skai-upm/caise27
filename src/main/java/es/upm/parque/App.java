@@ -1,5 +1,18 @@
 package es.upm.parque;
 
+import es.upm.parque.business.controller.AttractionController;
+import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.TicketController;
+import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.persistence.AttractionRepository;
+import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.TemporaryDataDirectory;
+import es.upm.parque.persistence.TicketRepository;
+import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.presentation.CommandProcessor;
+import es.upm.parque.presentation.CommandRunner;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -71,15 +84,15 @@ public class App {
      * Builds the command processor with every repository stored in {@code dataDir}.
      */
     static CommandProcessor buildProcessor(Path dataDir) throws IOException {
-        UserManager userManager = new UserManager(new UserRepository(dataDir.resolve("users.txt")));
-        GroupManager groupManager = new GroupManager(new GroupRepository(dataDir.resolve("groups.txt")), userManager);
+        UserController userController = new UserController(new UserRepository(dataDir.resolve("users.txt")));
+        GroupController groupController = new GroupController(new GroupRepository(dataDir.resolve("groups.txt")), userController);
         SystemDate systemDate = SystemDate.today();
-        TicketManager ticketManager = new TicketManager(
+        TicketController ticketController = new TicketController(
                 new TicketRepository(dataDir.resolve("tickets.txt"), dataDir.resolve("grouptickets.txt")),
-                userManager, groupManager, systemDate);
-        AttractionManager attractionManager = new AttractionManager(
-                new AttractionRepository(dataDir.resolve("attractions.txt")), ticketManager, systemDate);
-        return new CommandProcessor(userManager, groupManager, ticketManager, attractionManager, systemDate);
+                userController, groupController, systemDate);
+        AttractionController attractionController = new AttractionController(
+                new AttractionRepository(dataDir.resolve("attractions.txt")), ticketController, systemDate);
+        return new CommandProcessor(userController, groupController, ticketController, attractionController, systemDate);
     }
 
     private static void runInteractive(CommandRunner runner) {

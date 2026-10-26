@@ -1,0 +1,75 @@
+package es.upm.parque.presentation;
+
+import es.upm.parque.business.controller.AttractionController;
+import es.upm.parque.business.controller.GroupController;
+import es.upm.parque.business.controller.TicketController;
+import es.upm.parque.business.controller.UserController;
+import es.upm.parque.business.model.SystemDate;
+import es.upm.parque.persistence.AttractionRepository;
+import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.TicketRepository;
+import es.upm.parque.persistence.UserRepository;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+class CommandRunnerTest {
+
+    private static final String CREATE_ANA =
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
+    private static final String CREATE_PEDRO =
+            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
+
+    @TempDir
+    Path dir;
+
+    private UserController manager;
+    private ByteArrayOutputStream output;
+    private CommandRunner runner;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        manager = new UserController(new UserRepository(dir.resolve("users.txt")));
+        output = new ByteArrayOutputStream();
+        SystemDate date = new SystemDate(LocalDate.of(2026, 9, 1));
+        GroupController groups = new GroupController(new GroupRepository(dir.resolve("groups.txt")), manager);
+        TicketController tickets = new TicketController(
+                new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
+        AttractionController attractions = new AttractionController(
+                new AttractionRepository(dir.resolve("attractions.txt")), tickets, date);
+        CommandProcessor processor = new CommandProcessor(manager, groups, tickets, attractions, date);
+        runner = new CommandRunner(processor, new PrintStream(output, true, StandardCharsets.UTF_8));
+    }
+
+    private List<String> run(String input) throws IOException {
+        runner.run(new BufferedReader(new StringReader(input)));
+        return output.toString(StandardCharsets.UTF_8).lines().toList();
+    }
+
+    @Test
+    void executesCommandsInOrderAndSkipsBlankLines() throws IOException {
+        List<String> lines = run(CREATE_ANA + "\n\n   \n" + CREATE_PEDRO + "\nUSER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\n");
+        assertEquals(List.of("OK USER CREATED", "OK USER CREATED", "OK USER UPDATED"), lines);
+        assertEquals("699999999", manager.findByEmail("ana@correo.com").getPhone());
+    }
+
+    @Test
+    void stopsAtExit() throws IOException {
+        List<String> lines = run(CREATE_ANA + "\nEXIT\n" + CREATE_PEDRO + "\n");
+        assertEquals(List.of("OK USER CREATED", "OK EXIT"), lines);
+        assertEquals(1, manager.getUsers().size());
+    }
+}
