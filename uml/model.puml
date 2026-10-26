@@ -55,10 +55,17 @@ package es.upm.parque {
     - file : Path
   }
 
-  class Ticket {
+  abstract class Ticket {
     - id : String {readOnly}
     - date : LocalDate {readOnly}
+  }
+
+  class IndividualTicket {
     - price : BigDecimal {readOnly}
+  }
+
+  class GroupTicket {
+    - totalPrice : BigDecimal {readOnly}
   }
 
   class TicketManager {
@@ -86,7 +93,12 @@ Group x--> "0..*" User : members
 TicketManager x--> "1" TicketRepository : repository
 TicketManager x--> "1" UserManager : userManager
 TicketManager x--> "1" SystemDate : systemDate
+TicketManager x--> "1" GroupManager : groupManager
 TicketManager x--> "0..*" Ticket : tickets
-Ticket x--> "1" User : user
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+IndividualTicket x--> "1" User : user
+GroupTicket o--> "1" Group : group
+GroupTicket *--> "1..*" IndividualTicket : tickets
 
 @enduml

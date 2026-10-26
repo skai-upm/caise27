@@ -2,6 +2,7 @@ package es.upm.parque;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Business rules for groups of users. Every successful change is saved through the repository.
@@ -10,11 +11,20 @@ public class GroupManager {
     private final GroupRepository repository;
     private final UserManager userManager;
     private final List<Group> groups;
+    private final List<Function<Group, String>> modificationChecks = new ArrayList<>();
 
     public GroupManager(GroupRepository repository, UserManager userManager) {
         this.repository = repository;
         this.userManager = userManager;
         this.groups = new ArrayList<>(repository.load(userManager::findByDni));
+    }
+
+    /**
+     * Registers a rule that can veto changing a group's members or deleting it: it returns the reason for refusing,
+     * or null to allow it.
+     */
+    public void addModificationCheck(Function<Group, String> check) {
+        modificationChecks.add(check);
     }
 
     public Group create(String id, String name) {
@@ -34,14 +44,14 @@ public class GroupManager {
     }
 
     public Group delete(String id) {
-        Group group = require(id);
+        Group group = requireModifiable(id);
         groups.remove(group);
         repository.save(groups);
         return group;
     }
 
     public Group addMember(String id, String email) {
-        Group group = require(id);
+        Group group = requireModifiable(id);
         User user = userManager.findByEmail(email);
         if (user == null) {
             throw new IllegalArgumentException("no user with email " + email);
@@ -54,7 +64,7 @@ public class GroupManager {
     }
 
     public Group removeMember(String id, String email) {
-        Group group = require(id);
+        Group group = requireModifiable(id);
         User user = userManager.findByEmail(email);
         if (user == null || !group.removeMember(user)) {
             throw new IllegalArgumentException(email + " is not a member of group " + id);
@@ -84,6 +94,17 @@ public class GroupManager {
 
     public List<Group> getGroups() {
         return List.copyOf(groups);
+    }
+
+    private Group requireModifiable(String id) {
+        Group group = require(id);
+        for (Function<Group, String> check : modificationChecks) {
+            String reason = check.apply(group);
+            if (reason != null) {
+                throw new IllegalArgumentException("group " + id + " cannot be modified: " + reason);
+            }
+        }
+        return group;
     }
 
     private Group require(String id) {

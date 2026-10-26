@@ -26,8 +26,9 @@ public class App {
         UserManager userManager = new UserManager(new UserRepository(dataDir.resolve("users.txt")));
         GroupManager groupManager = new GroupManager(new GroupRepository(dataDir.resolve("groups.txt")), userManager);
         SystemDate systemDate = new SystemDate();
-        TicketManager ticketManager =
-                new TicketManager(new TicketRepository(dataDir.resolve("tickets.txt")), userManager, systemDate);
+        TicketManager ticketManager = new TicketManager(
+                new TicketRepository(dataDir.resolve("tickets.txt"), dataDir.resolve("grouptickets.txt")),
+                userManager, groupManager, systemDate);
         CommandProcessor processor = new CommandProcessor(userManager, groupManager, ticketManager, systemDate);
         if (args.length == 0) {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8))) {

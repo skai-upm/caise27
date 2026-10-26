@@ -7,59 +7,94 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Business rules for individual tickets. Date checks always use the shared {@link SystemDate}.
+ * Business rules for individual and group tickets. Date checks always use the shared {@link SystemDate}.
  */
 public class TicketManager {
     static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
 
     private final TicketRepository repository;
     private final UserManager userManager;
+    private final GroupManager groupManager;
     private final SystemDate systemDate;
     private final List<Ticket> tickets;
     private BigDecimal price = DEFAULT_PRICE;
 
-    public TicketManager(TicketRepository repository, UserManager userManager, SystemDate systemDate) {
+    public TicketManager(TicketRepository repository, UserManager userManager, GroupManager groupManager,
+            SystemDate systemDate) {
         this.repository = repository;
         this.userManager = userManager;
+        this.groupManager = groupManager;
         this.systemDate = systemDate;
-        this.tickets = new ArrayList<>(repository.load(userManager::findByDni));
+        this.tickets = new ArrayList<>(repository.load(userManager::findByDni, groupManager::findById));
         userManager.addDeletionCheck(
                 user -> hasCurrentOrFutureTickets(user) ? "the user has current or future tickets" : null);
+        groupManager.addModificationCheck(
+                group -> hasCurrentOrFutureGroupTickets(group) ? "the group has current or future group tickets" : null);
     }
 
-    public Ticket create(String id, String email, LocalDate date) {
-        if (!UserValidator.isNotBlank(id)) {
-            throw new IllegalArgumentException("the ticket identifier cannot be empty");
-        }
-        if (findById(id) != null) {
-            throw new IllegalArgumentException("ticket " + id + " already exists");
-        }
+    public IndividualTicket create(String id, String email, LocalDate date) {
+        requireNewId(id);
         User user = userManager.findByEmail(email);
         if (user == null) {
             throw new IllegalArgumentException("no user with email " + email);
         }
-        if (date.isBefore(systemDate.get())) {
-            throw new IllegalArgumentException("the ticket date " + date + " is before the system date "
-                    + systemDate.get());
-        }
-        Ticket ticket = new Ticket(id, date, user, price);
+        requireUsableDate(date);
+        IndividualTicket ticket = new IndividualTicket(id, date, user, price);
         tickets.add(ticket);
         repository.save(tickets);
         return ticket;
     }
 
-    public Ticket delete(String id) {
-        Ticket ticket = findById(id);
-        if (ticket == null) {
-            throw new IllegalArgumentException("ticket " + id + " does not exist");
+    public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) {
+        requireNewId(id);
+        Group group = groupManager.findById(groupId);
+        if (group == null) {
+            throw new IllegalArgumentException("group " + groupId + " does not exist");
         }
-        if (!ticket.isFuture(systemDate.get())) {
-            throw new IllegalArgumentException("ticket " + id + " for " + ticket.getDate()
-                    + " can only be deleted before its date (system date " + systemDate.get() + ")");
+        if (group.getMembers().isEmpty()) {
+            throw new IllegalArgumentException("group " + groupId + " has no members");
         }
-        tickets.remove(ticket);
+        requireUsableDate(date);
+        List<IndividualTicket> parts = new ArrayList<>();
+        int n = 1;
+        for (User member : group.getMembers()) {
+            String partId = id + "-" + n++;
+            requireNewId(partId);
+            parts.add(new IndividualTicket(partId, date, member, price));
+        }
+        GroupTicket groupTicket = GroupTicket.purchase(id, date, group, parts);
+        tickets.addAll(parts);
+        tickets.add(groupTicket);
         repository.save(tickets);
-        return ticket;
+        return groupTicket;
+    }
+
+    public IndividualTicket delete(String id) {
+        Ticket ticket = findById(id);
+        if (!(ticket instanceof IndividualTicket individual)) {
+            throw new IllegalArgumentException("individual ticket " + id + " does not exist");
+        }
+        GroupTicket owner = groupTicketContaining(individual);
+        if (owner != null) {
+            throw new IllegalArgumentException("ticket " + id + " belongs to group ticket " + owner.getId()
+                    + "; delete the group ticket instead");
+        }
+        requireFuture(individual);
+        tickets.remove(individual);
+        repository.save(tickets);
+        return individual;
+    }
+
+    public GroupTicket deleteGroupTicket(String id) {
+        Ticket ticket = findById(id);
+        if (!(ticket instanceof GroupTicket groupTicket)) {
+            throw new IllegalArgumentException("group ticket " + id + " does not exist");
+        }
+        requireFuture(groupTicket);
+        tickets.removeAll(groupTicket.getTickets());
+        tickets.remove(groupTicket);
+        repository.save(tickets);
+        return groupTicket;
     }
 
     public BigDecimal getPrice() {
@@ -75,7 +110,16 @@ public class TicketManager {
 
     public boolean hasCurrentOrFutureTickets(User user) {
         for (Ticket t : tickets) {
-            if (t.getUser() == user && t.isCurrentOrFuture(systemDate.get())) {
+            if (t instanceof IndividualTicket it && it.getUser() == user && t.isCurrentOrFuture(systemDate.get())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasCurrentOrFutureGroupTickets(Group group) {
+        for (Ticket t : tickets) {
+            if (t instanceof GroupTicket gt && gt.getGroup() == group && t.isCurrentOrFuture(systemDate.get())) {
                 return true;
             }
         }
@@ -93,5 +137,37 @@ public class TicketManager {
 
     public List<Ticket> getTickets() {
         return List.copyOf(tickets);
+    }
+
+    private GroupTicket groupTicketContaining(IndividualTicket ticket) {
+        for (Ticket t : tickets) {
+            if (t instanceof GroupTicket gt && gt.getTickets().contains(ticket)) {
+                return gt;
+            }
+        }
+        return null;
+    }
+
+    private void requireNewId(String id) {
+        if (!UserValidator.isNotBlank(id)) {
+            throw new IllegalArgumentException("the ticket identifier cannot be empty");
+        }
+        if (findById(id) != null) {
+            throw new IllegalArgumentException("ticket " + id + " already exists");
+        }
+    }
+
+    private void requireUsableDate(LocalDate date) {
+        if (date.isBefore(systemDate.get())) {
+            throw new IllegalArgumentException("the ticket date " + date + " is before the system date "
+                    + systemDate.get());
+        }
+    }
+
+    private void requireFuture(Ticket ticket) {
+        if (!ticket.isFuture(systemDate.get())) {
+            throw new IllegalArgumentException("ticket " + ticket.getId() + " for " + ticket.getDate()
+                    + " can only be deleted before its date (system date " + systemDate.get() + ")");
+        }
     }
 }

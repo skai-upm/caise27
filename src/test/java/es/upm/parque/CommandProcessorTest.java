@@ -27,7 +27,8 @@ class CommandProcessorTest {
         groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), manager);
         SystemDate date = new SystemDate();
         processor = new CommandProcessor(manager, groups,
-                new TicketManager(new TicketRepository(dir.resolve("tickets.txt")), manager, date), date);
+                new TicketManager(new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
+                        manager, groups, date), date);
     }
 
     @Test
@@ -77,7 +78,8 @@ class CommandProcessorTest {
         for (String syntax : new String[] {"USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
                 "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT",
                 "SYSTEM DATE;yyyy-MM-dd", "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo",
-                "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id", "SYSTEM PRICE;Importe"}) {
+                "GROUP DELETE;Id", "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id", "SYSTEM PRICE;Importe",
+                "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;Id"}) {
             assertTrue(help.contains(syntax), syntax);
         }
     }
@@ -159,5 +161,30 @@ class CommandProcessorTest {
         assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
         processor.process("SYSTEM DATE;2026-10-16");
         assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+    }
+
+    @Test
+    void groupTicketCommands() {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("USER CREATE;Luis;Perez;11111111H;luis@correo.com;Luis3$;634567890;1111222233334444");
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUP ADD;G01;luis@correo.com");
+        processor.process("SYSTEM DATE;2026-10-01");
+        assertEquals("OK GROUP TICKET CREATED -> 108.00",
+                processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        assertTrue(processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15").startsWith("ERROR"));
+        assertTrue(processor.process("GROUPTICKET CREATE;TG02;G99;2026-10-15").startsWith("ERROR"));
+        assertTrue(processor.process("GROUPTICKET CREATE;TG02;G01").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET DELETE;TG01-1").startsWith("ERROR"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        assertTrue(processor.process("GROUPTICKET DELETE;TG01").startsWith("OK"));
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").startsWith("OK"));
+        assertTrue(processor.process("GROUPTICKET DELETE;TG01").startsWith("ERROR"));
     }
 }

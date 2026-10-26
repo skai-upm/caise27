@@ -20,6 +20,8 @@ public class CommandProcessor {
         "GROUP DELETE;Id",
         "TICKET CREATE;Id;Correo;yyyy-MM-dd",
         "TICKET DELETE;Id",
+        "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
+        "GROUPTICKET DELETE;Id",
         "SYSTEM DATE;yyyy-MM-dd",
         "SYSTEM PRICE;Importe",
         "HELP",
@@ -55,6 +57,9 @@ public class CommandProcessor {
             }
             if (operation.length == 2 && operation[0].equals("TICKET")) {
                 return processTicket(operation[1], parts);
+            }
+            if (operation.length == 2 && operation[0].equals("GROUPTICKET")) {
+                return processGroupTicket(operation[1], parts);
             }
             if (operation.length == 2 && operation[0].equals("SYSTEM") && operation[1].equals("DATE")) {
                 requireParams(parts, 1, "SYSTEM DATE;yyyy-MM-dd");
@@ -150,7 +155,7 @@ public class CommandProcessor {
         switch (action) {
             case "CREATE" -> {
                 requireParams(p, 3, "TICKET CREATE;Id;Correo;yyyy-MM-dd");
-                Ticket t = ticketManager.create(p[1], p[2], parseDate(p[3]));
+                IndividualTicket t = ticketManager.create(p[1], p[2], parseDate(p[3]));
                 return "OK TICKET CREATED -> " + t.getPrice().toPlainString();
             }
             case "DELETE" -> {
@@ -159,6 +164,23 @@ public class CommandProcessor {
             }
             default -> {
                 return "ERROR: unknown command 'TICKET " + action + "'";
+            }
+        }
+    }
+
+    private String processGroupTicket(String action, String[] p) {
+        switch (action) {
+            case "CREATE" -> {
+                requireParams(p, 3, "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd");
+                GroupTicket t = ticketManager.createGroupTicket(p[1], p[2], parseDate(p[3]));
+                return "OK GROUP TICKET CREATED -> " + t.getPrice().toPlainString();
+            }
+            case "DELETE" -> {
+                requireParams(p, 1, "GROUPTICKET DELETE;Id");
+                return "OK GROUP TICKET DELETED -> " + ticketManager.deleteGroupTicket(p[1]).getId();
+            }
+            default -> {
+                return "ERROR: unknown command 'GROUPTICKET " + action + "'";
             }
         }
     }

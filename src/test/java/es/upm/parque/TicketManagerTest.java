@@ -37,12 +37,13 @@ class TicketManagerTest {
     }
 
     private TicketManager newTicketManager(UserManager userManager) {
-        return new TicketManager(new TicketRepository(dir.resolve("tickets.txt")), userManager, date);
+        return new TicketManager(new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
+                userManager, new GroupManager(new GroupRepository(dir.resolve("groups.txt")), userManager), date);
     }
 
     @Test
     void createsTicketAtCurrentPrice() {
-        Ticket t = tickets.create("T001", "ana@correo.com", OCT_15);
+        IndividualTicket t = tickets.create("T001", "ana@correo.com", OCT_15);
         assertEquals(new BigDecimal("40.00"), t.getPrice());
         assertSame(users.findByEmail("ana@correo.com"), t.getUser());
         assertEquals(OCT_15, t.getDate());
@@ -108,14 +109,14 @@ class TicketManagerTest {
                 Files.readString(dir.resolve("tickets.txt")));
         UserManager restartedUsers = new UserManager(new UserRepository(dir.resolve("users.txt")));
         TicketManager restarted = newTicketManager(restartedUsers);
-        assertSame(restartedUsers.findByDni("12345678Z"), restarted.findById("T001").getUser());
+        assertSame(restartedUsers.findByDni("12345678Z"), restarted.findById("T001").getUsers().get(0));
         assertEquals("60.00", restarted.findById("T002").getPrice().toPlainString());
 
         date.set(LocalDate.of(2026, 11, 1));
         restartedUsers.delete("ana@correo.com", "Clave1!");
         TicketManager afterDeletion = newTicketManager(new UserManager(new UserRepository(dir.resolve("users.txt"))));
-        Ticket history = afterDeletion.findById("T001");
-        assertEquals("12345678Z", history.getUser().getDni());
-        assertEquals(TicketRepository.DELETED_USER_NAME, history.getUser().getName());
+        User holder = afterDeletion.findById("T001").getUsers().get(0);
+        assertEquals("12345678Z", holder.getDni());
+        assertEquals(TicketRepository.DELETED_USER_NAME, holder.getName());
     }
 }
