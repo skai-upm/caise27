@@ -13,6 +13,7 @@ import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.User;
+import es.upm.parque.presentation.help.HelpGenerator;
 
 import java.util.List;
 
@@ -24,49 +25,7 @@ public class CommandProcessor {
 
     private static final String SEPARATOR = ";";
 
-    private static final String USER_CREATE_SYNTAX = "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta";
-    private static final String USER_DELETE_SYNTAX = "USER DELETE;Correo;Contraseña";
-    private static final String USER_UPDATE_SYNTAX = "USER UPDATE;Correo;Contraseña;Campo;NuevoValor";
-    private static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
-    private static final String GROUP_CREATE_SYNTAX = "GROUP CREATE;IdGrupo;Nombre";
-    private static final String GROUP_ADD_SYNTAX = "GROUP ADD;IdGrupo;Correo";
-    private static final String GROUP_REMOVE_SYNTAX = "GROUP REMOVE;IdGrupo;Correo";
-    private static final String GROUP_DELETE_SYNTAX = "GROUP DELETE;IdGrupo";
-    private static final String TICKET_CREATE_SYNTAX = "TICKET CREATE;IdEntrada;Correo;yyyy-MM-dd";
-    private static final String TICKET_DELETE_SYNTAX = "TICKET DELETE;IdEntrada";
-    private static final String GROUPTICKET_CREATE_SYNTAX = "GROUPTICKET CREATE;IdEntradaGrupo;IdGrupo;yyyy-MM-dd";
-    private static final String GROUPTICKET_DELETE_SYNTAX = "GROUPTICKET DELETE;IdEntradaGrupo";
-    private static final String ATTRACTION_CREATE_SYNTAX = "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad";
-    private static final String ATTRACTION_DELETE_SYNTAX = "ATTRACTION DELETE;IdAtraccion";
-    private static final String ATTRACTION_ENTER_SYNTAX = "ATTRACTION ENTER;IdAtraccion;IdEntrada";
-    private static final String ATTRACTION_EXIT_SYNTAX = "ATTRACTION EXIT;IdAtraccion;IdEntrada";
-    private static final String ATTRACTION_STATUS_SYNTAX = "ATTRACTION STATUS;IdAtraccion";
-    private static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
-    private static final String INVOICE_CREATE_SYNTAX = "INVOICE CREATE;USER|GROUP;Correo|IdGrupo";
 
-    /** Syntax of every available command, shown by HELP. */
-    private static final List<String> COMMAND_SYNTAX = List.of(
-            USER_CREATE_SYNTAX,
-            USER_DELETE_SYNTAX,
-            USER_UPDATE_SYNTAX,
-            GROUP_CREATE_SYNTAX,
-            GROUP_ADD_SYNTAX,
-            GROUP_REMOVE_SYNTAX,
-            GROUP_DELETE_SYNTAX,
-            TICKET_CREATE_SYNTAX,
-            TICKET_DELETE_SYNTAX,
-            GROUPTICKET_CREATE_SYNTAX,
-            GROUPTICKET_DELETE_SYNTAX,
-            ATTRACTION_CREATE_SYNTAX,
-            ATTRACTION_DELETE_SYNTAX,
-            ATTRACTION_ENTER_SYNTAX,
-            ATTRACTION_EXIT_SYNTAX,
-            ATTRACTION_STATUS_SYNTAX,
-            INVOICE_CREATE_SYNTAX,
-            SYSTEM_DATE_SYNTAX,
-            SYSTEM_PRICE_SYNTAX,
-            "HELP",
-            "EXIT");
 
     private final UserController userController;
     private final GroupController groupController;
@@ -74,17 +33,19 @@ public class CommandProcessor {
     private final AttractionController attractionController;
     private final InvoiceController invoiceController;
     private final SystemDate systemDate;
+    private final HelpGenerator helpGenerator;
     private boolean exitRequested;
 
     public CommandProcessor(UserController userController, GroupController groupController, TicketController ticketController,
                             AttractionController attractionController, InvoiceController invoiceController,
-                            SystemDate systemDate) {
+                            SystemDate systemDate, HelpGenerator helpGenerator) {
         this.userController = userController;
         this.groupController = groupController;
         this.ticketController = ticketController;
         this.attractionController = attractionController;
         this.invoiceController = invoiceController;
         this.systemDate = systemDate;
+        this.helpGenerator = helpGenerator;
     }
 
     public String process(String line) {
@@ -111,9 +72,8 @@ public class CommandProcessor {
                 case "INVOICE CREATE" -> createInvoice(parts);
                 case "SYSTEM DATE" -> setSystemDate(parts);
                 case "SYSTEM PRICE" -> setSystemPrice(parts);
-                case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
-                default -> "ERROR Unknown command: " + operation;
+                default -> isHelp(operation) ? help(operation, parts) : "ERROR Unknown command: " + operation;
             };
         } catch (BusinessException | IllegalArgumentException e) {
             return "ERROR " + e.getMessage();
@@ -122,7 +82,7 @@ public class CommandProcessor {
 
     private String createUser(String[] parts) {
         if (parts.length != 8) {
-            return usage(USER_CREATE_SYNTAX);
+            return usage("USER CREATE");
         }
         userController.create(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
         return "OK USER CREATED";
@@ -130,7 +90,7 @@ public class CommandProcessor {
 
     private String deleteUser(String[] parts) {
         if (parts.length != 3) {
-            return usage(USER_DELETE_SYNTAX);
+            return usage("USER DELETE");
         }
         User user = userController.authenticate(parts[1], parts[2]);
         if (ticketController.hasCurrentOrFutureTicket(user)) {
@@ -143,7 +103,7 @@ public class CommandProcessor {
 
     private String updateUser(String[] parts) {
         if (parts.length != 5) {
-            return usage(USER_UPDATE_SYNTAX);
+            return usage("USER UPDATE");
         }
         userController.update(parts[1], parts[2], parts[3], parts[4]);
         return "OK USER UPDATED";
@@ -151,7 +111,7 @@ public class CommandProcessor {
 
     private String createGroup(String[] parts) {
         if (parts.length != 3) {
-            return usage(GROUP_CREATE_SYNTAX);
+            return usage("GROUP CREATE");
         }
         groupController.create(parts[1], parts[2]);
         return "OK GROUP CREATED";
@@ -159,7 +119,7 @@ public class CommandProcessor {
 
     private String addToGroup(String[] parts) {
         if (parts.length != 3) {
-            return usage(GROUP_ADD_SYNTAX);
+            return usage("GROUP ADD");
         }
         requireUnlocked(parts[1]);
         groupController.addMember(parts[1], parts[2]);
@@ -168,7 +128,7 @@ public class CommandProcessor {
 
     private String removeFromGroup(String[] parts) {
         if (parts.length != 3) {
-            return usage(GROUP_REMOVE_SYNTAX);
+            return usage("GROUP REMOVE");
         }
         requireUnlocked(parts[1]);
         groupController.removeMember(parts[1], parts[2]);
@@ -177,7 +137,7 @@ public class CommandProcessor {
 
     private String deleteGroup(String[] parts) {
         if (parts.length != 2) {
-            return usage(GROUP_DELETE_SYNTAX);
+            return usage("GROUP DELETE");
         }
         requireUnlocked(parts[1]);
         groupController.delete(parts[1]);
@@ -193,7 +153,7 @@ public class CommandProcessor {
 
     private String createGroupTicket(String[] parts) {
         if (parts.length != 4) {
-            return usage(GROUPTICKET_CREATE_SYNTAX);
+            return usage("GROUPTICKET CREATE");
         }
         GroupTicket ticket = ticketController.createGroupTicket(parts[1], parts[2], parts[3]);
         return "OK GROUP TICKET CREATED -> " + ticket.getPrice().toPlainString();
@@ -201,7 +161,7 @@ public class CommandProcessor {
 
     private String deleteGroupTicket(String[] parts) {
         if (parts.length != 2) {
-            return usage(GROUPTICKET_DELETE_SYNTAX);
+            return usage("GROUPTICKET DELETE");
         }
         ticketController.deleteGroupTicket(parts[1]);
         return "OK GROUP TICKET DELETED";
@@ -209,7 +169,7 @@ public class CommandProcessor {
 
     private String createAttraction(String[] parts) {
         if (parts.length != 4) {
-            return usage(ATTRACTION_CREATE_SYNTAX);
+            return usage("ATTRACTION CREATE");
         }
         attractionController.create(parts[1], parts[2], parts[3]);
         return "OK ATTRACTION CREATED";
@@ -217,7 +177,7 @@ public class CommandProcessor {
 
     private String deleteAttraction(String[] parts) {
         if (parts.length != 2) {
-            return usage(ATTRACTION_DELETE_SYNTAX);
+            return usage("ATTRACTION DELETE");
         }
         attractionController.delete(parts[1]);
         return "OK ATTRACTION DELETED";
@@ -225,7 +185,7 @@ public class CommandProcessor {
 
     private String enterAttraction(String[] parts) {
         if (parts.length != 3) {
-            return usage(ATTRACTION_ENTER_SYNTAX);
+            return usage("ATTRACTION ENTER");
         }
         int entered = attractionController.enter(parts[1], parts[2]);
         return "OK ATTRACTION ENTERED -> " + entered + " users";
@@ -233,7 +193,7 @@ public class CommandProcessor {
 
     private String exitAttraction(String[] parts) {
         if (parts.length != 3) {
-            return usage(ATTRACTION_EXIT_SYNTAX);
+            return usage("ATTRACTION EXIT");
         }
         int left = attractionController.exit(parts[1], parts[2]);
         return "OK ATTRACTION EXITED -> " + left + " users";
@@ -241,7 +201,7 @@ public class CommandProcessor {
 
     private String attractionStatus(String[] parts) {
         if (parts.length != 2) {
-            return usage(ATTRACTION_STATUS_SYNTAX);
+            return usage("ATTRACTION STATUS");
         }
         Attraction attraction = attractionController.require(parts[1]);
         List<User> visitors = attraction.getVisitors();
@@ -263,7 +223,7 @@ public class CommandProcessor {
 
     private String createInvoice(String[] parts) {
         if (parts.length != 3) {
-            return usage(INVOICE_CREATE_SYNTAX);
+            return usage("INVOICE CREATE");
         }
         Invoice invoice = switch (parts[1].trim()) {
             case "USER" -> invoiceController.userInvoice(parts[2]);
@@ -275,7 +235,7 @@ public class CommandProcessor {
 
     private String createTicket(String[] parts) {
         if (parts.length != 4) {
-            return usage(TICKET_CREATE_SYNTAX);
+            return usage("TICKET CREATE");
         }
         IndividualTicket ticket = ticketController.create(parts[1], parts[2], parts[3]);
         return "OK TICKET CREATED -> " + ticket.getPrice().toPlainString();
@@ -283,7 +243,7 @@ public class CommandProcessor {
 
     private String deleteTicket(String[] parts) {
         if (parts.length != 2) {
-            return usage(TICKET_DELETE_SYNTAX);
+            return usage("TICKET DELETE");
         }
         ticketController.delete(parts[1]);
         return "OK TICKET DELETED";
@@ -291,7 +251,7 @@ public class CommandProcessor {
 
     private String setSystemPrice(String[] parts) {
         if (parts.length != 2) {
-            return usage(SYSTEM_PRICE_SYNTAX);
+            return usage("SYSTEM PRICE");
         }
         ticketController.setCurrentPrice(parts[1]);
         return "OK SYSTEM PRICE " + ticketController.getCurrentPrice().toPlainString();
@@ -299,18 +259,28 @@ public class CommandProcessor {
 
     private String setSystemDate(String[] parts) {
         if (parts.length != 2) {
-            return usage(SYSTEM_DATE_SYNTAX);
+            return usage("SYSTEM DATE");
         }
         systemDate.set(SystemDate.parse(parts[1].trim()));
         return "OK SYSTEM DATE " + SystemDate.format(systemDate.get());
     }
 
-    private String help(String[] parts) {
+    private static boolean isHelp(String operation) {
+        return operation.equals("HELP") || operation.startsWith("HELP ");
+    }
+
+    private String help(String operation, String[] parts) {
         if (parts.length != 1) {
-            return usage("HELP");
+            return usage(operation);
         }
-        return "Available commands:" + System.lineSeparator()
-                + String.join(System.lineSeparator(), COMMAND_SYNTAX);
+        String mode = operation.substring("HELP".length()).trim();
+        String text = helpGenerator.generate(mode);
+        if (text == null) {
+            return "ERROR Unknown help mode: " + mode + " (available: HELP, "
+                    + String.join(", ", helpGenerator.modes().stream().filter(m -> !m.isEmpty())
+                            .map(m -> "HELP " + m).toList()) + ")";
+        }
+        return text;
     }
 
     private String exit(String[] parts) {
@@ -328,7 +298,7 @@ public class CommandProcessor {
         return exitRequested;
     }
 
-    private static String usage(String syntax) {
-        return "ERROR Wrong number of parameters. Usage: " + syntax;
+    private String usage(String operation) {
+        return "ERROR Wrong number of parameters. Usage: " + helpGenerator.getCatalog().syntaxOf(operation);
     }
 }

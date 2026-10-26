@@ -69,7 +69,7 @@ If the command file does not exist, cannot be opened or cannot be read, the appl
 - **THEN** it prints an `ERROR` line naming the file and terminates normally
 
 ### Requirement: HELP command
-The `HELP` command SHALL print every currently available command with its basic usage syntax, including at least `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta`, `USER DELETE;Correo;Contraseña`, `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, `HELP` and `EXIT`.
+The `HELP` command SHALL print every registered command with its basic usage syntax, including at least `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta`, `USER DELETE;Correo;Contraseña`, `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, `HELP`, `HELP EXTENDED` and `EXIT`.
 
 #### Scenario: Show help
 - **WHEN** `HELP` is processed
@@ -85,3 +85,21 @@ The `EXIT` command SHALL terminate command processing in a controlled manner; no
 #### Scenario: Exit in interactive mode
 - **WHEN** the user types `EXIT`
 - **THEN** the application stops reading standard input and terminates
+
+### Requirement: HELP EXTENDED command
+The `HELP EXTENDED` command SHALL print, for every registered command, its syntax followed by a brief description of its behavior. Both `HELP` and `HELP EXTENDED` SHALL be produced from the same registry of commands.
+
+#### Scenario: Extended help
+- **WHEN** `HELP EXTENDED` is processed
+- **THEN** every command listed by `HELP` appears with its syntax and a description
+
+#### Scenario: Unknown help mode
+- **WHEN** `HELP VERBOSE` is processed
+- **THEN** an `ERROR` line lists the available help modes
+
+### Requirement: Injected help formats
+The component that builds help text SHALL receive the formatting behavior for each help mode through dependency injection during application initialization, so that a new help format can be added by registering a new formatter without changing general command processing.
+
+#### Scenario: New format registered
+- **WHEN** an additional formatter is registered for a new help mode at startup
+- **THEN** `HELP <mode>` uses it without changes to the command processor

@@ -12,6 +12,10 @@ import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.presentation.help.CommandCatalog;
+import es.upm.parque.presentation.help.ExtendedHelpFormatter;
+import es.upm.parque.presentation.help.HelpGenerator;
+import es.upm.parque.presentation.help.SyntaxHelpFormatter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -20,12 +24,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.nio.file.Path;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class CommandProcessorTest {
+
+    private static final HelpGenerator HELP = new HelpGenerator(CommandCatalog.standard(),
+            Map.of("", new SyntaxHelpFormatter(), "EXTENDED", new ExtendedHelpFormatter()));
 
     private static final String CREATE_ANA =
             "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
@@ -49,7 +57,7 @@ class CommandProcessorTest {
         AttractionController attractions = AttractionController.getInstance().configure(
                 new AttractionRepository(dir.resolve("attractions.txt")), tickets, systemDate);
         return new CommandProcessor(users, groups, tickets, attractions,
-                InvoiceController.getInstance().configure(users, groups, tickets, new TextInvoiceBuilder()), systemDate);
+                InvoiceController.getInstance().configure(users, groups, tickets, new TextInvoiceBuilder()), systemDate, HELP);
     }
 
     @Test
@@ -91,6 +99,16 @@ class CommandProcessorTest {
         assertTrue(help.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
         assertTrue(help.contains("HELP"));
         assertTrue(help.contains("EXIT"));
+    }
+
+    @Test
+    void extendedHelpAndUnknownMode() {
+        String extended = processor.process("HELP EXTENDED");
+        assertTrue(extended.startsWith("Available commands (extended):"));
+        assertTrue(extended.contains("USER DELETE;Correo;Contraseña" + System.lineSeparator() + "    Deletes the user"));
+        assertTrue(processor.process("HELP").contains("HELP EXTENDED"));
+        assertEquals("ERROR Unknown help mode: VERBOSE (available: HELP, HELP EXTENDED)", processor.process("HELP VERBOSE"));
+        assertTrue(processor.process("HELP;x").startsWith("ERROR Wrong number of parameters. Usage: HELP"));
     }
 
     @Test

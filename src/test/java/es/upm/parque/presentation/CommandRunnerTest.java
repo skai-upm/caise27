@@ -11,6 +11,10 @@ import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
+import es.upm.parque.presentation.help.CommandCatalog;
+import es.upm.parque.presentation.help.ExtendedHelpFormatter;
+import es.upm.parque.presentation.help.HelpGenerator;
+import es.upm.parque.presentation.help.SyntaxHelpFormatter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -23,12 +27,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class CommandRunnerTest {
+
+    private static final HelpGenerator HELP = new HelpGenerator(CommandCatalog.standard(),
+            Map.of("", new SyntaxHelpFormatter(), "EXTENDED", new ExtendedHelpFormatter()));
 
     private static final String CREATE_ANA =
             "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
@@ -53,7 +61,7 @@ class CommandRunnerTest {
         AttractionController attractions = AttractionController.getInstance().configure(
                 new AttractionRepository(dir.resolve("attractions.txt")), tickets, date);
         CommandProcessor processor = new CommandProcessor(manager, groups, tickets, attractions,
-                InvoiceController.getInstance().configure(manager, groups, tickets, new TextInvoiceBuilder()), date);
+                InvoiceController.getInstance().configure(manager, groups, tickets, new TextInvoiceBuilder()), date, HELP);
         runner = new CommandRunner(processor, new PrintStream(output, true, StandardCharsets.UTF_8));
     }
 

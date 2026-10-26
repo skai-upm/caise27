@@ -15,6 +15,19 @@ package es.upm.parque.presentation {
   }
 }
 
+package es.upm.parque.presentation.help {
+  class HelpGenerator
+  class CommandCatalog
+  class CommandInfo {
+    operation : String
+    syntax : String
+    description : String
+  }
+  interface HelpFormatter
+  class SyntaxHelpFormatter
+  class ExtendedHelpFormatter
+}
+
 package es.upm.parque.business {
   class BusinessException
 }
@@ -118,6 +131,8 @@ Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 RuntimeException <|-- BusinessException
 InvoiceBuilder <|.. TextInvoiceBuilder
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
 
 ' Associations (cross = holder of the attribute, arrow = navigable end)
 CommandRunner x--> "1" CommandProcessor : processor
@@ -127,6 +142,10 @@ CommandProcessor x--> "1" TicketController : ticketController
 CommandProcessor x--> "1" AttractionController : attractionController
 CommandProcessor x--> "1" InvoiceController : invoiceController
 CommandProcessor x--> "1" SystemDate : systemDate
+CommandProcessor x--> "1" HelpGenerator : helpGenerator
+HelpGenerator x--> "1" CommandCatalog : catalog
+HelpGenerator x--> "0..*" HelpFormatter : formatters
+CommandCatalog x--> "0..*" CommandInfo : commands
 
 UserController x--> "1" UserRepository : repository
 UserController x--> "0..*" User : users

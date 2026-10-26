@@ -14,6 +14,10 @@ import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 import es.upm.parque.presentation.CommandProcessor;
 import es.upm.parque.presentation.CommandRunner;
+import es.upm.parque.presentation.help.CommandCatalog;
+import es.upm.parque.presentation.help.ExtendedHelpFormatter;
+import es.upm.parque.presentation.help.HelpGenerator;
+import es.upm.parque.presentation.help.SyntaxHelpFormatter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,6 +28,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Starts the application.
@@ -102,8 +107,10 @@ public class App {
                 .configure(attractionRepository, ticketController, systemDate);
         InvoiceController invoiceController = InvoiceController.getInstance()
                 .configure(userController, groupController, ticketController, new TextInvoiceBuilder());
+        HelpGenerator helpGenerator = new HelpGenerator(CommandCatalog.standard(),
+                Map.of("", new SyntaxHelpFormatter(), "EXTENDED", new ExtendedHelpFormatter()));
         return new CommandProcessor(userController, groupController, ticketController, attractionController,
-                invoiceController, systemDate);
+                invoiceController, systemDate, helpGenerator);
     }
 
     private static void runInteractive(CommandRunner runner) {
