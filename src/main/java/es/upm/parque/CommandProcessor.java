@@ -19,6 +19,10 @@ public class CommandProcessor {
     static final String TICKET_DELETE_SYNTAX = "TICKET DELETE;IdentificadorEntrada";
     static final String GROUPTICKET_CREATE_SYNTAX = "GROUPTICKET CREATE;IdentificadorEntradaGrupo;IdentificadorGrupo;yyyy-MM-dd";
     static final String GROUPTICKET_DELETE_SYNTAX = "GROUPTICKET DELETE;IdentificadorEntradaGrupo";
+    static final String ATTRACTION_CREATE_SYNTAX = "ATTRACTION CREATE;IdentificadorAtraccion;Nombre;Capacidad";
+    static final String ATTRACTION_ENTER_SYNTAX = "ATTRACTION ENTER;IdentificadorAtraccion;IdentificadorEntrada";
+    static final String ATTRACTION_EXIT_SYNTAX = "ATTRACTION EXIT;IdentificadorAtraccion;IdentificadorEntrada";
+    static final String ATTRACTION_STATUS_SYNTAX = "ATTRACTION STATUS;IdentificadorAtraccion";
     static final String SYSTEM_DATE_SYNTAX = "SYSTEM DATE;yyyy-MM-dd";
     static final String SYSTEM_PRICE_SYNTAX = "SYSTEM PRICE;Precio";
     static final String HELP_SYNTAX = "HELP";
@@ -29,19 +33,22 @@ public class CommandProcessor {
             USER_CREATE_SYNTAX, USER_DELETE_SYNTAX, USER_UPDATE_SYNTAX,
             GROUP_CREATE_SYNTAX, GROUP_ADD_SYNTAX, GROUP_REMOVE_SYNTAX, GROUP_DELETE_SYNTAX,
             TICKET_CREATE_SYNTAX, TICKET_DELETE_SYNTAX, GROUPTICKET_CREATE_SYNTAX, GROUPTICKET_DELETE_SYNTAX,
+            ATTRACTION_CREATE_SYNTAX, ATTRACTION_ENTER_SYNTAX, ATTRACTION_EXIT_SYNTAX, ATTRACTION_STATUS_SYNTAX,
             SYSTEM_DATE_SYNTAX, SYSTEM_PRICE_SYNTAX, HELP_SYNTAX, EXIT_SYNTAX);
 
     private final UserManager userManager;
     private final GroupManager groupManager;
     private final TicketManager ticketManager;
+    private final AttractionManager attractionManager;
     private final MainController mainController;
     private boolean exitRequested;
 
     public CommandProcessor(UserManager userManager, GroupManager groupManager, TicketManager ticketManager,
-                            MainController mainController) {
+                            AttractionManager attractionManager, MainController mainController) {
         this.userManager = userManager;
         this.groupManager = groupManager;
         this.ticketManager = ticketManager;
+        this.attractionManager = attractionManager;
         this.mainController = mainController;
     }
 
@@ -110,6 +117,13 @@ public class CommandProcessor {
                 ticketManager.deleteGroupTicket(p[1]);
                 yield "OK GROUP TICKET DELETED";
             }
+            case "ATTRACTION CREATE" -> {
+                attractionManager.create(p[1], p[2], p[3]);
+                yield "OK ATTRACTION CREATED";
+            }
+            case "ATTRACTION ENTER" -> "OK ENTERED " + p[1] + " -> " + users(attractionManager.enter(p[1], p[2]));
+            case "ATTRACTION EXIT" -> "OK EXITED " + p[1] + " -> " + users(attractionManager.exit(p[1], p[2]));
+            case "ATTRACTION STATUS" -> attractionStatus(attractionManager.requireAttraction(p[1]));
             case "SYSTEM DATE" -> setSystemDate(p[1]);
             case "SYSTEM PRICE" -> {
                 mainController.setTicketPrice(MainController.parsePrice(p[1]));
@@ -152,6 +166,28 @@ public class CommandProcessor {
         if (group != null && ticketManager.isGroupLocked(group)) {
             throw new ParkException("Group " + groupId + " is locked by a group ticket dated on or after the system date");
         }
+    }
+
+    private static String users(int count) {
+        return count + (count == 1 ? " user" : " users");
+    }
+
+    private static String attractionStatus(Attraction a) {
+        StringBuilder out = new StringBuilder("OK ATTRACTION STATUS " + a.getId());
+        String nl = System.lineSeparator();
+        out.append(nl).append("Name: ").append(a.getName())
+                .append(nl).append("Capacity: ").append(a.getCapacity())
+                .append(nl).append("Present: ").append(a.getOccupancy())
+                .append(nl).append("Available: ").append(a.getAvailablePlaces())
+                .append(nl).append("Users present:");
+        if (a.getVisitors().isEmpty()) {
+            out.append(nl).append("- none");
+        }
+        for (User u : a.getVisitors()) {
+            out.append(nl).append("- ").append(u.getName()).append(' ').append(u.getSurname())
+                    .append(" (").append(u.getEmail()).append(')');
+        }
+        return out.toString();
     }
 
     private String setSystemDate(String text) {

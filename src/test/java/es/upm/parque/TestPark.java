@@ -17,6 +17,7 @@ final class TestPark {
     final UserManager users;
     final GroupManager groups;
     final TicketManager tickets;
+    final AttractionManager attractions;
     final CommandProcessor processor;
 
     TestPark(Path dir) {
@@ -25,7 +26,8 @@ final class TestPark {
         groups = new GroupManager(new GroupRepository(dir.resolve("groups.txt")), users);
         tickets = new TicketManager(new TicketRepository(dir.resolve("tickets.txt"),
                 dir.resolve("grouptickets.txt")), users, groups, controller);
-        processor = new CommandProcessor(users, groups, tickets, controller);
+        attractions = new AttractionManager(new AttractionRepository(dir.resolve("attractions.txt")), tickets, controller);
+        processor = new CommandProcessor(users, groups, tickets, attractions, controller);
     }
 
     App app() {

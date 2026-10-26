@@ -13,6 +13,7 @@ package es.upm.parque {
     {static} GROUPS_FILE : Path
     {static} TICKETS_FILE : Path
     {static} GROUP_TICKETS_FILE : Path
+    {static} ATTRACTIONS_FILE : Path
   }
 
   class CommandProcessor {
@@ -49,6 +50,17 @@ package es.upm.parque {
 
   class IndividualTicket
   class GroupTicket
+
+  class AttractionManager
+  class AttractionRepository {
+    file : Path
+  }
+
+  class Attraction {
+    id : String {readOnly}
+    name : String {readOnly}
+    capacity : int {readOnly}
+  }
 
   class User {
     name : String
@@ -100,6 +112,12 @@ Ticket <|-- GroupTicket
 IndividualTicket "0..*" x--> "1" User : user
 GroupTicket "0..*" o--> "1" Group : group
 GroupTicket "1" *--> "0..*" IndividualTicket : tickets
+CommandProcessor "0..*" x--> "1" AttractionManager : attractionManager
+AttractionManager "0..1" x--> "1" AttractionRepository : repository
+AttractionManager "0..*" x--> "1" TicketManager : ticketManager
+AttractionManager "0..*" x--> "1" MainController : mainController
+AttractionManager "0..1" x--> "0..*" Attraction : attractions
+Attraction "0..*" x--> "0..*" User : visitors
 RuntimeException <|-- ParkException
 UserManager ..> UserField
 UserManager ..> UserValidator

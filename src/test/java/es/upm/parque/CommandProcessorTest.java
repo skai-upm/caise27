@@ -225,8 +225,39 @@ class CommandProcessorTest {
     }
 
     @Test
+    void attractionStatusReflectsEntriesAndExits() {
+        processor.process(ANA);
+        processor.process(PEDRO);
+        processor.process(LUIS);
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUP CREATE;G01;Amigos");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUP ADD;G01;luis@correo.com");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertEquals("OK ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A01;Tornado;20"));
+        assertEquals("OK ENTERED A01 -> 1 user", processor.process("ATTRACTION ENTER;A01;T001"));
+        assertEquals("OK ENTERED A01 -> 2 users", processor.process("ATTRACTION ENTER;A01;TG01"));
+        String nl = System.lineSeparator();
+        assertEquals(String.join(nl, "OK ATTRACTION STATUS A01", "Name: Tornado", "Capacity: 20", "Present: 3",
+                "Available: 17", "Users present:", "- Ana Garcia Lopez (ana@correo.com)",
+                "- Pedro Lopez Martin (pedro@correo.com)", "- Luis Perez (luis@correo.com)"),
+                processor.process("ATTRACTION STATUS;A01"));
+        assertEquals("OK EXITED A01 -> 1 user", processor.process("ATTRACTION EXIT;A01;T001"));
+        String status = processor.process("ATTRACTION STATUS;A01");
+        assertTrue(status.contains("Present: 2" + nl + "Available: 18"));
+        processor.process("ATTRACTION EXIT;A01;TG01");
+        assertTrue(processor.process("ATTRACTION STATUS;A01").endsWith("Users present:" + nl + "- none"));
+        assertTrue(processor.process("ATTRACTION STATUS;A99").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION CREATE;A02;Mini;2").startsWith("OK"));
+        processor.process("ATTRACTION ENTER;A02;T001");
+        assertTrue(processor.process("ATTRACTION ENTER;A02;TG01").startsWith("ERROR Not enough places"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION STATUS;IdentificadorAtraccion"));
+    }
+
+    @Test
     void unexpectedErrorsDoNotPropagate() {
-        CommandProcessor broken = new CommandProcessor(null, null, null, new MainController(TestPark.CLOCK));
+        CommandProcessor broken = new CommandProcessor(null, null, null, null, new MainController(TestPark.CLOCK));
         assertTrue(broken.process(ANA).startsWith("ERROR Unexpected error"));
     }
 }

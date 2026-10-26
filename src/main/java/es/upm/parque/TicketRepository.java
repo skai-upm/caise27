@@ -1,10 +1,6 @@
 package es.upm.parque;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +34,7 @@ public class TicketRepository {
     public TicketData load(Map<String, User> usersByDni, Map<String, Group> groupsById) {
         Map<String, GroupTicket> groupTickets = new HashMap<>();
         List<GroupTicket> group = new ArrayList<>();
-        for (String line : readLines(groupFile)) {
+        for (String line : TextFiles.readLines(groupFile)) {
             GroupTicket ticket = parseGroupTicket(line, groupsById);
             if (ticket != null) {
                 group.add(ticket);
@@ -46,7 +42,7 @@ public class TicketRepository {
             }
         }
         List<IndividualTicket> individual = new ArrayList<>();
-        for (String line : readLines(individualFile)) {
+        for (String line : TextFiles.readLines(individualFile)) {
             String[] f = line.split(";", -1);
             IndividualTicket ticket = parseIndividual(f, usersByDni);
             if (ticket != null && attachToOwner(ticket, f, groupTickets)) {
@@ -84,8 +80,8 @@ public class TicketRepository {
                 .map(t -> String.join(";", t.getId(), t.getUser().getDni(), MainController.formatDate(t.getDate()),
                         MainController.formatPrice(t.getPrice()), owners.getOrDefault(t, "")))
                 .toList();
-        write(groupFile, groupLines);
-        write(individualFile, individualLines);
+        TextFiles.writeLines(groupFile, groupLines);
+        TextFiles.writeLines(individualFile, individualLines);
     }
 
     private static IndividualTicket parseIndividual(String[] f, Map<String, User> usersByDni) {
@@ -110,29 +106,6 @@ public class TicketRepository {
                     new BigDecimal(f[3]), List.of());
         } catch (ParkException | NumberFormatException e) {
             return null;
-        }
-    }
-
-    private static List<String> readLines(Path file) {
-        if (!Files.exists(file)) {
-            return List.of();
-        }
-        try {
-            return Files.readAllLines(file, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot read tickets file " + file, e);
-        }
-    }
-
-    private static void write(Path file, List<String> lines) {
-        try {
-            Path parent = file.toAbsolutePath().getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Files.write(file, lines, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot write tickets file " + file, e);
         }
     }
 }

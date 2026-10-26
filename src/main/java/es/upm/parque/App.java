@@ -21,6 +21,7 @@ public class App {
     static final Path GROUPS_FILE = Path.of("data", "groups.txt");
     static final Path TICKETS_FILE = Path.of("data", "tickets.txt");
     static final Path GROUP_TICKETS_FILE = Path.of("data", "grouptickets.txt");
+    static final Path ATTRACTIONS_FILE = Path.of("data", "attractions.txt");
 
     private final CommandProcessor processor;
 
@@ -34,7 +35,9 @@ public class App {
         GroupManager groupManager = new GroupManager(new GroupRepository(GROUPS_FILE), userManager);
         TicketManager ticketManager = new TicketManager(new TicketRepository(TICKETS_FILE, GROUP_TICKETS_FILE),
                 userManager, groupManager, mainController);
-        new App(new CommandProcessor(userManager, groupManager, ticketManager, mainController))
+        AttractionManager attractionManager = new AttractionManager(new AttractionRepository(ATTRACTIONS_FILE),
+                ticketManager, mainController);
+        new App(new CommandProcessor(userManager, groupManager, ticketManager, attractionManager, mainController))
                 .start(args, System.in, System.out);
     }
 
