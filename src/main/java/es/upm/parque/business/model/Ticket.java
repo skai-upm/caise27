@@ -36,6 +36,11 @@ public abstract class Ticket implements Accessible {
     public abstract List<User> getHolders();
 
     /**
+     * The individual tickets this ticket stands for: itself, or the tickets composing a group ticket.
+     */
+    public abstract List<IndividualTicket> getIndividualTickets();
+
+    /**
      * True if the ticket is for {@code today} or a later day.
      */
     public boolean isCurrentOrFuture(LocalDate today) {

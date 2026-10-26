@@ -3,6 +3,7 @@ package es.upm.parque.business.model;
 import es.upm.parque.business.BusinessException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -87,6 +88,18 @@ class AttractionTest {
         assertSame(single, admitted);
         assertThrows(BusinessException.class, () -> special.admit(group));
         assertEquals(AttractionType.SPECIAL, special.getType());
+    }
+
+    @Test
+    void passHooksAndIndividualTickets() {
+        assertTrue(new GeneralAttraction("A", "A", 1).acceptsSpeed());
+        assertFalse(new GroupAttraction("A", "A", 1).requiresSpecialPass());
+        assertFalse(new SpecialAttraction("A", "A", 1).acceptsSpeed());
+        assertTrue(new SpecialAttraction("A", "A", 1).requiresSpecialPass());
+        IndividualTicket single = new IndividualTicket("T001", TODAY, user(0), PRICE);
+        assertEquals(List.of(single), single.getIndividualTickets());
+        GroupTicket group = groupTicket("TG01", 3, 1);
+        assertEquals(group.getTickets(), group.getIndividualTickets());
     }
 
     @Test

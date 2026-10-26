@@ -57,10 +57,10 @@ class CommandProcessorTest {
         GroupController groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), users);
         TicketController tickets = TicketController.getInstance().configure(
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), users, groups, systemDate);
-        AttractionController attractions = AttractionController.getInstance().configure(
-                new AttractionRepository(dir.resolve("attractions.txt")), tickets, systemDate);
         PassController passes = PassController.getInstance()
                 .configure(new PassRepository(dir.resolve("passes.txt")), tickets, systemDate);
+        AttractionController attractions = AttractionController.getInstance().configure(
+                new AttractionRepository(dir.resolve("attractions.txt")), tickets, passes, systemDate);
         BusinessControllers controllers = new BusinessControllers(users, groups, tickets, attractions,
                 InvoiceController.getInstance().configure(users, groups, tickets, passes, new TextInvoiceBuilder()), passes);
         return new CommandProcessor(controllers, systemDate, HELP);
@@ -350,10 +350,54 @@ class CommandProcessorTest {
                 processor.process("ATTRACTION ENTER;A05;TG01"));
         assertEquals("OK ATTRACTION ENTERED -> 1 users", processor.process("ATTRACTION ENTER;A05;T001"));
         assertTrue(processor.process("ATTRACTION ENTER;A06;TG01").startsWith("ERROR"));
-        assertEquals("OK ATTRACTION ENTERED -> 1 users", processor.process("ATTRACTION ENTER;A06;T001"));
+        processor.process("SPECIALPASS CREATE;T001");
+        assertEquals("OK ATTRACTION ENTERED -> 1 users, Special Pass consumed: T001-SPECIAL",
+                processor.process("ATTRACTION ENTER;A06;T001"));
         assertTrue(processor.process("ATTRACTION STATUS;A06").contains("Type: SPECIAL"));
 
         assertTrue(newProcessor().process("ATTRACTION STATUS;A03").contains("Type: GROUP"));
+    }
+
+    @Test
+    void entryWithPasses() {
+        processor.process(CREATE_ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("USER CREATE;Luis;Ruiz;00000000T;luis@correo.com;Clave1!;600000000;1111222233334444");
+        processor.process("GROUP CREATE;G01;Familia");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUP ADD;G01;luis@correo.com");
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("ATTRACTION CREATE;A01;Tornado;20");
+        processor.process("ATTRACTION CREATE;A02;Mini;1");
+        processor.process("ATTRACTION CREATE;A06;Torre;10;SPECIAL");
+        processor.process("SPEEDPASS CREATE;T001;1");
+        processor.process("SPEEDPASS CREATE;T001;1");
+        processor.process("SPEEDPASS CREATE;TG01-1;1");
+
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001;FAST").startsWith("ERROR Wrong number of parameters"));
+        assertEquals("OK ATTRACTION ENTERED -> 1 users, SpeedPasses consumed: T001-SP1",
+                processor.process("ATTRACTION ENTER;A01;T001;SPEED"));
+        assertEquals("ERROR Ticket TG01-2 has no unused SpeedPass", processor.process("ATTRACTION ENTER;A01;TG01;SPEED"));
+        assertTrue(processor.process("ATTRACTION STATUS;A01").contains("Present: 1"));
+        processor.process("SPEEDPASS CREATE;TG01-2;1");
+        assertEquals("OK ATTRACTION ENTERED -> 2 users, SpeedPasses consumed: TG01-1-SP1, TG01-2-SP1",
+                processor.process("ATTRACTION ENTER;A01;TG01;SPEED"));
+
+        processor.process("ATTRACTION ENTER;A02;TG01-1");
+        assertTrue(processor.process("ATTRACTION ENTER;A02;T001;SPEED").startsWith("ERROR Not enough capacity"));
+        processor.process("ATTRACTION EXIT;A01;T001");
+        assertEquals("OK ATTRACTION ENTERED -> 1 users, SpeedPasses consumed: T001-SP2",
+                processor.process("ATTRACTION ENTER;A01;T001;SPEED"), "failed entry must not consume T001-SP2");
+
+        assertEquals("ERROR Attraction A06 (SPECIAL) does not accept SPEED", processor.process("ATTRACTION ENTER;A06;T001;SPEED"));
+        assertEquals("ERROR Ticket T001 has no unused Special Pass", processor.process("ATTRACTION ENTER;A06;T001"));
+        processor.process("SPECIALPASS CREATE;T001");
+        assertEquals("OK ATTRACTION ENTERED -> 1 users, Special Pass consumed: T001-SPECIAL",
+                processor.process("ATTRACTION ENTER;A06;T001"));
+        processor.process("ATTRACTION EXIT;A06;T001");
+        assertEquals("ERROR Ticket T001 has no unused Special Pass", processor.process("ATTRACTION ENTER;A06;T001"));
     }
 
     @Test

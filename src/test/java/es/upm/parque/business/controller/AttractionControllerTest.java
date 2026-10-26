@@ -6,10 +6,12 @@ import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.security.PasswordHasher;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.PassRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,6 +33,7 @@ class AttractionControllerTest {
 
     private final SystemDate date = new SystemDate(LocalDate.of(2026, 10, 15));
     private TicketController tickets;
+    private PassController passes;
     private AttractionController attractions;
 
     @BeforeEach
@@ -41,11 +44,13 @@ class AttractionControllerTest {
         tickets = TicketController.getInstance().configure(new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")),
                 users, groups, date);
         tickets.create("T001", "ana@correo.com", "2026-10-15");
+        passes = PassController.getInstance().configure(new PassRepository(dir.resolve("passes.txt")), tickets, date);
         attractions = newManager();
     }
 
     private AttractionController newManager() throws IOException {
-        return AttractionController.getInstance().configure(new AttractionRepository(dir.resolve("attractions.txt")), tickets, date);
+        return AttractionController.getInstance()
+                .configure(new AttractionRepository(dir.resolve("attractions.txt")), tickets, passes, date);
     }
 
     @Test
@@ -70,6 +75,29 @@ class AttractionControllerTest {
         assertEquals(1, attractions.exit("A01", "T001"));
         assertThrows(BusinessException.class, () -> attractions.enter("A99", "T001"));
         assertThrows(BusinessException.class, () -> attractions.enter("A01", "T999"));
+    }
+
+    @Test
+    void speedEntryConsumesOnlyOnSuccess() {
+        attractions.create("A01", "Tornado", "1");
+        attractions.create("A02", "Torre", "5", "SPECIAL");
+        passes.buySpeedPasses("T001", "1");
+        EntryResult result = attractions.enter("A01", "T001", true);
+        assertEquals(1, result.users());
+        assertEquals("T001-SP1", result.consumedPasses().get(0).getId());
+        assertTrue(passes.find("T001-SP1").isConsumed());
+        attractions.exit("A01", "T001");
+        assertThrows(BusinessException.class, () -> attractions.enter("A01", "T001", true));
+        passes.buySpeedPasses("T001", "1");
+        attractions.enter("A01", "T001", false);
+        assertThrows(BusinessException.class, () -> attractions.enter("A01", "T001", true));
+        assertFalse(passes.find("T001-SP2").isConsumed());
+        assertThrows(BusinessException.class, () -> attractions.enter("A02", "T001", true));
+        assertThrows(BusinessException.class, () -> attractions.enter("A02", "T001", false));
+        passes.buySpecialPass("T001");
+        assertEquals("T001-SPECIAL", attractions.enter("A02", "T001", false).consumedPasses().get(0).getId());
+        assertTrue(passes.find("T001-SPECIAL").isConsumed());
+        assertFalse(passes.find("T001-SP2").isConsumed());
     }
 
     @Test

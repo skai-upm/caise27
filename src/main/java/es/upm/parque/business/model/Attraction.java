@@ -31,6 +31,20 @@ public abstract class Attraction<T extends Accessible> {
 
     public abstract AttractionType getType();
 
+    /**
+     * Whether entries may request the use of SpeedPasses.
+     */
+    public boolean acceptsSpeed() {
+        return true;
+    }
+
+    /**
+     * Whether every entry must use the ticket's Special Pass.
+     */
+    public boolean requiresSpecialPass() {
+        return false;
+    }
+
     public String getId() {
         return id;
     }

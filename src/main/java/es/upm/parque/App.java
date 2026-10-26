@@ -110,10 +110,10 @@ public class App {
         GroupController groupController = GroupController.getInstance().configure(groupRepository, userController);
         TicketController ticketController = TicketController.getInstance()
                 .configure(ticketRepository, userController, groupController, systemDate);
-        AttractionController attractionController = AttractionController.getInstance()
-                .configure(attractionRepository, ticketController, systemDate);
         PassController passController = PassController.getInstance()
                 .configure(passRepository, ticketController, systemDate);
+        AttractionController attractionController = AttractionController.getInstance()
+                .configure(attractionRepository, ticketController, passController, systemDate);
         InvoiceController invoiceController = InvoiceController.getInstance()
                 .configure(userController, groupController, ticketController, passController, new TextInvoiceBuilder());
         HelpGenerator helpGenerator = new HelpGenerator(CommandCatalog.standard(),

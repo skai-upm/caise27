@@ -44,8 +44,9 @@ public class CommandCatalog {
                         "Creates an attraction with a positive capacity; GENERAL (any ticket) unless another type is given."),
                 new CommandInfo("ATTRACTION DELETE", "ATTRACTION DELETE;IdAtraccion",
                         "Deletes an attraction with nobody inside."),
-                new CommandInfo("ATTRACTION ENTER", "ATTRACTION ENTER;IdAtraccion;IdEntrada",
-                        "Admits all users of a ticket valid today if there is room for all of them."),
+                new CommandInfo("ATTRACTION ENTER", "ATTRACTION ENTER;IdAtraccion;IdEntrada[;SPEED]",
+                        "Admits all users of a ticket valid today if there is room for all; SPEED uses one SpeedPass "
+                                + "per ticket; SPECIAL attractions use the ticket's Special Pass."),
                 new CommandInfo("ATTRACTION EXIT", "ATTRACTION EXIT;IdAtraccion;IdEntrada",
                         "Lets the ticket's users leave the attraction, freeing their places."),
                 new CommandInfo("ATTRACTION STATUS", "ATTRACTION STATUS;IdAtraccion",

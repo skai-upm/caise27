@@ -61,10 +61,10 @@ class CommandRunnerTest {
         GroupController groups = GroupController.getInstance().configure(new GroupRepository(dir.resolve("groups.txt")), manager);
         TicketController tickets = TicketController.getInstance().configure(
                 new TicketRepository(dir.resolve("tickets.txt"), dir.resolve("grouptickets.txt")), manager, groups, date);
-        AttractionController attractions = AttractionController.getInstance().configure(
-                new AttractionRepository(dir.resolve("attractions.txt")), tickets, date);
         PassController passes = PassController.getInstance()
                 .configure(new PassRepository(dir.resolve("passes.txt")), tickets, date);
+        AttractionController attractions = AttractionController.getInstance().configure(
+                new AttractionRepository(dir.resolve("attractions.txt")), tickets, passes, date);
         BusinessControllers controllers = new BusinessControllers(manager, groups, tickets, attractions,
                 InvoiceController.getInstance().configure(manager, groups, tickets, passes, new TextInvoiceBuilder()), passes);
         CommandProcessor processor = new CommandProcessor(controllers, date, HELP);

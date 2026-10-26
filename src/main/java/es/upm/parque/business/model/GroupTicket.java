@@ -60,6 +60,11 @@ public class GroupTicket extends Ticket implements GroupAccess {
     }
 
     @Override
+    public List<IndividualTicket> getIndividualTickets() {
+        return getTickets();
+    }
+
+    @Override
     public List<User> getHolders() {
         return tickets.stream().map(IndividualTicket::getUser).toList();
     }

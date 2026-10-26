@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.parque.business.BusinessException;
+import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.SystemDate;
@@ -111,6 +112,20 @@ class PassControllerTest {
         assertTrue(passes.hasPasses(tickets.find("TG01")));
         assertTrue(passes.hasPasses(tickets.find("TG01-2")));
         assertFalse(passes.hasPasses(tickets.find("T001")));
+    }
+
+    @Test
+    void lookupAndConsumption() throws IOException {
+        IndividualTicket t001 = (IndividualTicket) tickets.find("T001");
+        assertNull(passes.firstUnusedSpeedPass(t001));
+        assertNull(passes.specialPassOf(t001));
+        passes.buySpeedPasses("T001", "1");
+        passes.buySpeedPasses("T001", "1");
+        passes.buySpecialPass("T001");
+        assertEquals("T001-SP1", passes.firstUnusedSpeedPass(t001).getId());
+        passes.consume(List.of(passes.firstUnusedSpeedPass(t001), passes.specialPassOf(t001)));
+        assertEquals("T001-SP2", passes.firstUnusedSpeedPass(t001).getId());
+        assertTrue(newPassController().find("T001-SPECIAL").isConsumed());
     }
 
     @Test

@@ -140,6 +140,36 @@ public class PassController {
         return refund(pass);
     }
 
+    /**
+     * The first unused SpeedPass of the ticket in purchase order, or {@code null} if it has none.
+     */
+    public Pass firstUnusedSpeedPass(IndividualTicket ticket) {
+        requireConfigured();
+        return passesOf(ticket).stream()
+                .filter(pass -> pass instanceof SpeedPass && !pass.isConsumed())
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * The ticket's Special Pass, or {@code null} if it has none.
+     */
+    public Pass specialPassOf(IndividualTicket ticket) {
+        requireConfigured();
+        return passes.get(ticket.getId() + SPECIAL_SUFFIX);
+    }
+
+    /**
+     * Marks the passes as consumed and saves the change.
+     */
+    public void consume(List<Pass> used) {
+        requireConfigured();
+        used.forEach(Pass::consume);
+        if (!used.isEmpty()) {
+            save();
+        }
+    }
+
     public static BigDecimal total(List<? extends Pass> bought) {
         return bought.stream().map(Pass::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
     }

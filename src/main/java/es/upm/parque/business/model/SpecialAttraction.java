@@ -13,4 +13,14 @@ public class SpecialAttraction extends Attraction<IndividualAccess> {
     public AttractionType getType() {
         return AttractionType.SPECIAL;
     }
+
+    @Override
+    public boolean acceptsSpeed() {
+        return false;
+    }
+
+    @Override
+    public boolean requiresSpecialPass() {
+        return true;
+    }
 }

@@ -2,6 +2,7 @@ package es.upm.parque.presentation;
 
 import es.upm.parque.business.BusinessException;
 import es.upm.parque.business.controller.AttractionController;
+import es.upm.parque.business.controller.EntryResult;
 import es.upm.parque.business.controller.GroupController;
 import es.upm.parque.business.controller.InvoiceController;
 import es.upm.parque.business.controller.PassController;
@@ -13,6 +14,7 @@ import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.SpecialPass;
 import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
@@ -28,6 +30,7 @@ import java.util.List;
 public class CommandProcessor {
 
     private static final String SEPARATOR = ";";
+    private static final String SPEED_OPTION = "SPEED";
 
 
 
@@ -196,11 +199,19 @@ public class CommandProcessor {
     }
 
     private String enterAttraction(String[] parts) {
-        if (parts.length != 3) {
+        boolean speed = parts.length == 4 && SPEED_OPTION.equals(parts[3].trim());
+        if (parts.length != 3 && !speed) {
             return usage("ATTRACTION ENTER");
         }
-        int entered = attractionController.enter(parts[1], parts[2]);
-        return "OK ATTRACTION ENTERED -> " + entered + " users";
+        EntryResult result = attractionController.enter(parts[1], parts[2], speed);
+        StringBuilder response = new StringBuilder("OK ATTRACTION ENTERED -> ").append(result.users()).append(" users");
+        List<Pass> consumed = result.consumedPasses();
+        if (!consumed.isEmpty()) {
+            boolean special = consumed.get(0) instanceof SpecialPass;
+            response.append(special ? ", Special Pass consumed: " : ", SpeedPasses consumed: ")
+                    .append(String.join(", ", consumed.stream().map(Pass::getId).toList()));
+        }
+        return response.toString();
     }
 
     private String exitAttraction(String[] parts) {

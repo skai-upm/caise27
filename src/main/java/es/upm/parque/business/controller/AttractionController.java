@@ -3,6 +3,8 @@ package es.upm.parque.business.controller;
 import es.upm.parque.business.BusinessException;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.AttractionType;
+import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.SystemDate;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.persistence.AttractionRepository;
@@ -23,6 +25,7 @@ public class AttractionController {
 
     private AttractionRepository repository;
     private TicketController ticketController;
+    private PassController passController;
     private SystemDate systemDate;
     private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
 
@@ -38,9 +41,10 @@ public class AttractionController {
      * initialization.
      */
     public AttractionController configure(AttractionRepository repository, TicketController ticketController,
-                                          SystemDate systemDate) throws IOException {
+                                          PassController passController, SystemDate systemDate) throws IOException {
         this.repository = repository;
         this.ticketController = ticketController;
+        this.passController = passController;
         this.systemDate = systemDate;
         attractions.clear();
         for (Attraction<?> attraction : repository.loadAll()) {
@@ -102,9 +106,46 @@ public class AttractionController {
     }
 
     public int enter(String attractionId, String ticketId) {
+        return enter(attractionId, ticketId, false).users();
+    }
+
+    /**
+     * Admits the users of the ticket, using passes when required or requested. Every condition (attraction type,
+     * passes, date, duplicates, capacity) is checked before anyone enters; passes are consumed only on success.
+     *
+     * @param speed whether one SpeedPass per individual ticket must be used
+     */
+    public EntryResult enter(String attractionId, String ticketId, boolean speed) {
         requireConfigured();
         Attraction<?> attraction = require(attractionId);
-        return attraction.enterWith(requireTicket(ticketId), systemDate.get());
+        Ticket ticket = requireTicket(ticketId);
+        attraction.admit(ticket);
+        List<Pass> toConsume = new ArrayList<>();
+        if (speed) {
+            if (!attraction.acceptsSpeed()) {
+                throw new BusinessException("Attraction " + attractionId + " (" + attraction.getType()
+                        + ") does not accept SPEED");
+            }
+            for (IndividualTicket individual : ticket.getIndividualTickets()) {
+                Pass speedPass = passController.firstUnusedSpeedPass(individual);
+                if (speedPass == null) {
+                    throw new BusinessException("Ticket " + individual.getId() + " has no unused SpeedPass");
+                }
+                toConsume.add(speedPass);
+            }
+        }
+        if (attraction.requiresSpecialPass()) {
+            for (IndividualTicket individual : ticket.getIndividualTickets()) {
+                Pass special = passController.specialPassOf(individual);
+                if (special == null || special.isConsumed()) {
+                    throw new BusinessException("Ticket " + individual.getId() + " has no unused Special Pass");
+                }
+                toConsume.add(special);
+            }
+        }
+        int entered = attraction.enterWith(ticket, systemDate.get());
+        passController.consume(toConsume);
+        return new EntryResult(entered, toConsume);
     }
 
     public int exit(String attractionId, String ticketId) {
