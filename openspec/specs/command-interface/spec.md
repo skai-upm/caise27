@@ -3,6 +3,7 @@
 ## Purpose
 
 
+
 Defines how the application receives text commands from the terminal, splits them into an operation and its parameters, and reports each result or error without terminating unexpectedly.
 
 ## Requirements
@@ -56,7 +57,7 @@ An unknown operation, or a known operation with a wrong number of parameters, SH
 - **THEN** the application prints an `ERROR` line and continues reading commands
 
 ### Requirement: Execution mode selection
-The execution mode SHALL depend on the program arguments: with no arguments the application SHALL use interactive mode on standard input; with at least one argument the first argument SHALL be interpreted as the path of a command file.
+The execution mode SHALL depend on the program arguments. The argument `--fly`, if present, selects temporary persistence and is not a file path. Of the remaining arguments, if there are none the application SHALL use interactive mode on standard input; otherwise the first one SHALL be interpreted as the path of a command file.
 
 #### Scenario: No arguments
 - **WHEN** the application is started without arguments
@@ -65,6 +66,14 @@ The execution mode SHALL depend on the program arguments: with no arguments the 
 #### Scenario: File argument
 - **WHEN** the application is started with the argument `input_basico.txt`
 - **THEN** it reads commands from that file and not from standard input
+
+#### Scenario: Fly option alone
+- **WHEN** the application is started with `--fly`
+- **THEN** it reads commands from standard input using temporary persistence
+
+#### Scenario: Fly option with file
+- **WHEN** the application is started with `--fly input_fase2.txt`
+- **THEN** it reads commands from `input_fase2.txt` using temporary persistence
 
 ### Requirement: File command input
 In file mode the application SHALL open the file, read it line by line, and execute each non-blank line as a command in the order in which the lines appear, printing each response, until it processes `EXIT` or reaches the end of the file.

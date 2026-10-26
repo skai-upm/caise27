@@ -37,7 +37,7 @@ class AppTest {
     private String start(Path data, String[] args, String stdin) {
         App app = new TestPark(data).app();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        app.start(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
+        app.start(args.length == 0 ? null : args[0], new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(bytes, true, StandardCharsets.UTF_8));
         return bytes.toString(StandardCharsets.UTF_8).replace("\r\n", "\n");
     }

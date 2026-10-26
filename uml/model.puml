@@ -14,6 +14,13 @@ package es.upm.parque {
 
   class App
 
+  class ExecutionOptions {
+    fly : boolean
+    inputFile : String
+  }
+
+  class DataDirectory
+
   class CommandProcessor {
     exitRequested : boolean
   }
@@ -123,6 +130,8 @@ Attraction "0..*" x--> "0..*" User : visitors
 RuntimeException <|-- ParkException
 
 ' Usage of classes without incoming relationships
+App ..> ExecutionOptions
+App ..> DataDirectory
 UserManager ..> UserField
 UserManager ..> UserValidator
 GroupManager ..> UserValidator

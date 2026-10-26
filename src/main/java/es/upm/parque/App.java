@@ -11,17 +11,17 @@ import java.nio.file.Path;
 import java.time.Clock;
 
 /**
- * Entry point. Without arguments commands are read interactively from standard input; with an
- * argument, the first argument is a file whose lines are executed as commands. Both modes share
- * the same processing.
+ * Entry point. Without a file argument commands are read interactively from standard input;
+ * otherwise the file's lines are executed as commands. Both modes share the same processing.
+ * With {@code --fly}, every repository works on a temporary directory deleted at the end of the run.
  */
 public class App {
 
-    static final Path USERS_FILE = Path.of("data", "users.txt");
-    static final Path GROUPS_FILE = Path.of("data", "groups.txt");
-    static final Path TICKETS_FILE = Path.of("data", "tickets.txt");
-    static final Path GROUP_TICKETS_FILE = Path.of("data", "grouptickets.txt");
-    static final Path ATTRACTIONS_FILE = Path.of("data", "attractions.txt");
+    static final String USERS_FILE = "users.txt";
+    static final String GROUPS_FILE = "groups.txt";
+    static final String TICKETS_FILE = "tickets.txt";
+    static final String GROUP_TICKETS_FILE = "grouptickets.txt";
+    static final String ATTRACTIONS_FILE = "attractions.txt";
 
     private final CommandProcessor processor;
 
@@ -30,26 +30,56 @@ public class App {
     }
 
     public static void main(String[] args) {
-        MainController mainController = new MainController(Clock.systemDefaultZone());
-        UserManager userManager = new UserManager(new UserRepository(USERS_FILE));
-        GroupManager groupManager = new GroupManager(new GroupRepository(GROUPS_FILE), userManager);
-        TicketManager ticketManager = new TicketManager(new TicketRepository(TICKETS_FILE, GROUP_TICKETS_FILE),
-                userManager, groupManager, mainController);
-        AttractionManager attractionManager = new AttractionManager(new AttractionRepository(ATTRACTIONS_FILE),
-                ticketManager, mainController);
-        new App(new CommandProcessor(userManager, groupManager, ticketManager, attractionManager, mainController))
-                .start(args, System.in, System.out);
+        execute(args, Path.of(""), Clock.systemDefaultZone(), System.in, System.out);
     }
 
     /**
-     * Selects the execution mode from the arguments and runs it.
+     * Runs the application: parses the options, chooses the data directory (permanent, or a new
+     * temporary one for {@code --fly}), processes the commands and removes the temporary directory.
      */
-    public void start(String[] args, InputStream stdin, PrintStream out) {
-        if (args.length == 0) {
+    public static void execute(String[] args, Path baseDir, Clock clock, InputStream stdin, PrintStream out) {
+        ExecutionOptions options = ExecutionOptions.parse(args);
+        if (!options.fly()) {
+            run(options, baseDir.resolve(DataDirectory.PERMANENT), clock, stdin, out);
+            return;
+        }
+        Path dataDir = DataDirectory.createTemporary(baseDir, clock);
+        Thread cleanup = new Thread(() -> DataDirectory.deleteRecursively(dataDir));
+        Runtime.getRuntime().addShutdownHook(cleanup);
+        try {
+            run(options, dataDir, clock, stdin, out);
+        } finally {
+            DataDirectory.deleteRecursively(dataDir);
+            Runtime.getRuntime().removeShutdownHook(cleanup);
+        }
+    }
+
+    private static void run(ExecutionOptions options, Path dataDir, Clock clock, InputStream stdin, PrintStream out) {
+        new App(createProcessor(dataDir, new MainController(clock))).start(options.inputFile(), stdin, out);
+    }
+
+    /**
+     * Builds every manager with repositories whose files live in the given directory.
+     */
+    static CommandProcessor createProcessor(Path dataDir, MainController mainController) {
+        UserManager userManager = new UserManager(new UserRepository(dataDir.resolve(USERS_FILE)));
+        GroupManager groupManager = new GroupManager(new GroupRepository(dataDir.resolve(GROUPS_FILE)), userManager);
+        TicketManager ticketManager = new TicketManager(new TicketRepository(dataDir.resolve(TICKETS_FILE),
+                dataDir.resolve(GROUP_TICKETS_FILE)), userManager, groupManager, mainController);
+        AttractionManager attractionManager = new AttractionManager(
+                new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE)), ticketManager, mainController);
+        return new CommandProcessor(userManager, groupManager, ticketManager, attractionManager, mainController);
+    }
+
+    /**
+     * Reads commands from the given file, or from standard input when {@code inputFile} is null.
+     */
+    public void start(String inputFile, InputStream stdin, PrintStream out) {
+        if (inputFile == null) {
             run(new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8)), out);
             return;
         }
-        Path file = Path.of(args[0]);
+        Path file = Path.of(inputFile);
         if (Files.notExists(file)) {
             out.println("ERROR Input file not found: " + file);
             return;
