@@ -68,6 +68,14 @@ public class IndividualTicket extends Ticket implements IndividualAdmission {
     }
 
     /**
+     * Removes every pass of this ticket (used when the ticket itself is deleted).
+     */
+    public void clearPasses() {
+        speedPasses.clear();
+        specialPass = null;
+    }
+
+    /**
      * Every pass of this ticket: its SpeedPasses followed by its Special Pass, if any.
      */
     public List<Pass> getPasses() {

@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -112,6 +113,9 @@ public class TicketRepository {
         return true;
     }
 
+    /**
+     * Stores all tickets and passes; the three files are replaced together or not at all.
+     */
     public void save(List<IndividualTicket> individual, List<GroupTicket> group) {
         Map<IndividualTicket, String> owners = new HashMap<>();
         List<String> groupLines = new ArrayList<>();
@@ -131,9 +135,11 @@ public class TicketRepository {
                         Values.formatPrice(pass.getPrice()), String.valueOf(pass.isConsumed())));
             }
         }
-        TextFiles.writeLines(groupFile, groupLines);
-        TextFiles.writeLines(individualFile, individualLines);
-        TextFiles.writeLines(passFile, passLines);
+        Map<Path, List<String>> contents = new LinkedHashMap<>();
+        contents.put(groupFile, groupLines);
+        contents.put(individualFile, individualLines);
+        contents.put(passFile, passLines);
+        TextFiles.writeAll(contents);
     }
 
     private static IndividualTicket parseIndividual(String[] f, Map<String, User> usersByDni) {

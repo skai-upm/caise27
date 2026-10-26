@@ -1,11 +1,13 @@
 @startuml model
-' Class model of the amusement park application (package es.upm.parque),
-' documenting the current implementation.
+' Class model of the amusement park application (Delivery 3), documenting the
+' current implementation, organised in presentation, business and persistence
+' layers.
 ' Conventions:
 ' - attributes only of primitive, value (String, LocalDate, BigDecimal, Path) or enumeration type;
 '   references to other classes are drawn as relationships named after the holding attribute;
 ' - the "x" end marks the class that does not hold the reference (direction of navigation);
 '   aggregation/composition diamonds sit on the holder;
+' - generic specialisations show the bound type argument (<<bind>>);
 ' - no methods; usage (dashed) arrows only for classes that have no incoming relationship.
 hide empty members
 skinparam classAttributeIconSize 0
@@ -88,6 +90,7 @@ package es.upm.parque.business.model {
   class IndividualAttraction
   class GroupAttraction
   class SpecialAttraction
+  class Values
   class EntryResult {
     admitted : int
   }
@@ -252,6 +255,11 @@ RuntimeException <|-- ParkException
 App ..> ExecutionOptions
 App ..> DataDirectory
 App ..> StandardInvoiceBuilder
+AttractionController ..> Values
+CommandProcessor ..> Values
+InvoiceController ..> Values
+TicketController ..> Values
+TicketRepository ..> Values
 AttractionController ..> AttractionType
 Attraction ..> EntryResult
 AttractionController ..> EntryResult

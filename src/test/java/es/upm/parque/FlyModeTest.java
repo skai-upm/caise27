@@ -97,6 +97,19 @@ class FlyModeTest {
     }
 
     @Test
+    void passesInFlyModeDoNotTouchPermanentData() throws IOException {
+        execute(new String[0], new ByteArrayInputStream((ANA + "\nSYSTEM DATE;2026-10-01\n"
+                + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nSPEEDPASS CREATE;T001;1\n").getBytes(StandardCharsets.UTF_8)));
+        List<String> permanent = Files.readAllLines(base.resolve("data").resolve("passes.txt"));
+        String out = execute(new String[] {"--fly"}, new ByteArrayInputStream((ANA + "\nSYSTEM DATE;2026-10-15\n"
+                + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nSPEEDPASS CREATE;T001;10\nSPECIALPASS CREATE;T001\n"
+                + "ATTRACTION CREATE;A01;Magia;5;SPECIAL\nATTRACTION ENTER;A01;T001\n").getBytes(StandardCharsets.UTF_8)));
+        assertTrue(out.contains("consumed Special Pass XP1"), out);
+        assertEquals(permanent, Files.readAllLines(base.resolve("data").resolve("passes.txt")));
+        assertTrue(tmpIsEmpty());
+    }
+
+    @Test
     void flyRunStartsEmpty() {
         execute(new String[0], new ByteArrayInputStream((ANA + "\n").getBytes(StandardCharsets.UTF_8)));
         String out = execute(new String[] {"--fly"},

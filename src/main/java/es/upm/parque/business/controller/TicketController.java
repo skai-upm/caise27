@@ -163,7 +163,8 @@ public final class TicketController {
     }
 
     /**
-     * Deletes a standalone individual ticket whose date is strictly later than the system date.
+     * Deletes a standalone individual ticket whose date is strictly later than the system date,
+     * together with its passes. If saving fails, the stored state is reloaded unchanged.
      */
     public void delete(String id) {
         requireConfigured();
@@ -175,20 +176,24 @@ public final class TicketController {
                     + "; delete the group ticket instead");
         }
         requireStrictlyFuture(ticket);
+        ticket.clearPasses();
         individualTickets.remove(ticket);
         persist();
     }
 
     /**
-     * Deletes a group ticket and its internal tickets if its date is strictly later than the system date.
+     * Deletes a group ticket whose date is strictly later than the system date: first the passes of
+     * its internal tickets, then those tickets, then the group ticket. If saving fails, the stored
+     * state is reloaded unchanged.
      */
     public void deleteGroupTicket(String id) {
         requireConfigured();
         GroupTicket ticket = groupTickets.stream().filter(t -> t.getId().equals(id)).findFirst()
                 .orElseThrow(() -> new ParkException("No group ticket with identifier " + id));
         requireStrictlyFuture(ticket);
-        groupTickets.remove(ticket);
+        ticket.getTickets().forEach(IndividualTicket::clearPasses);
         individualTickets.removeAll(ticket.getTickets());
+        groupTickets.remove(ticket);
         persist();
     }
 

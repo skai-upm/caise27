@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -115,13 +116,42 @@ class TicketRepositoryTest {
     }
 
     @Test
-    void ioErrorsAreUnchecked() {
-        TicketRepository broken = new TicketRepository(dir, dir, dir);
+    void ioErrorsAreUnchecked() throws IOException {
+        TicketRepository unreadable = new TicketRepository(dir, dir, dir);
         Map<String, User> users = Map.of();
         Map<String, Group> groups = Map.of();
+        assertThrows(UncheckedIOException.class, () -> unreadable.load(users, groups));
+
+        Path blocker = Files.writeString(dir.resolve("blocker"), "not a directory");
+        TicketRepository unwritable = new TicketRepository(blocker.resolve("t.txt"), blocker.resolve("g.txt"),
+                blocker.resolve("p.txt"));
         List<IndividualTicket> none = List.of();
         List<GroupTicket> noGroups = List.of();
-        assertThrows(UncheckedIOException.class, () -> broken.load(users, groups));
-        assertThrows(UncheckedIOException.class, () -> broken.save(none, noGroups));
+        assertThrows(UncheckedIOException.class, () -> unwritable.save(none, noGroups));
+    }
+
+    @Test
+    void failedSaveLeavesEveryFileUnchanged() throws IOException {
+        IndividualTicket a = new IndividualTicket("TG01-1", DAY, ana, FORTY);
+        a.addSpeedPass(new SpeedPass("SP1", new BigDecimal("8.00"), false));
+        GroupTicket group = new GroupTicket("TG01", DAY, family, FORTY, List.of(a));
+        repo().save(List.of(a), List.of(group));
+        Path data = dir.resolve("data");
+        List<String> groupsBefore = Files.readAllLines(data.resolve("grouptickets.txt"));
+        List<String> passesBefore = Files.readAllLines(data.resolve("passes.txt"));
+        assertTrue(data.resolve("tickets.txt").toFile().setWritable(false));
+        try {
+            List<IndividualTicket> none = List.of();
+            List<GroupTicket> noGroups = List.of();
+            assertThrows(UncheckedIOException.class, () -> repo().save(none, noGroups));
+        } finally {
+            assertTrue(data.resolve("tickets.txt").toFile().setWritable(true));
+        }
+        assertEquals(groupsBefore, Files.readAllLines(data.resolve("grouptickets.txt")));
+        assertEquals(passesBefore, Files.readAllLines(data.resolve("passes.txt")));
+        assertEquals(1, Files.readAllLines(data.resolve("tickets.txt")).size());
+        try (Stream<Path> files = Files.list(data)) {
+            assertTrue(files.noneMatch(f -> f.toString().endsWith(".tmp")));
+        }
     }
 }
