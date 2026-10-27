@@ -19,9 +19,13 @@ public class CommandProcessor {
     }
 
     /**
-     * Executes one command line and returns the response to show.
+     * Executes one command line and returns the response to show, or null when there
+     * is nothing to show (blank line).
      */
     public String process(String line) {
+        if (line.trim().isEmpty()) {
+            return null;
+        }
         String[] parts = line.split(";", -1);
         for (int i = 0; i < parts.length; i++) {
             parts[i] = parts[i].trim();

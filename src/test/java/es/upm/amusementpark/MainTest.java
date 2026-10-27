@@ -80,4 +80,33 @@ class MainTest {
         assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
                 Files.readString(data.resolve("users.txt")).trim());
     }
+
+    private static final String SEQUENCE = CREATE_ANA + "\n\n   \n"
+            + "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654\n"
+            + "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\n"
+            + "USER DELETE;pedro@correo.com;Otra2#\n"
+            + "USER DELETE;ana@correo.com;Clave1!\n";
+
+    private static final String EXPECTED =
+            "USER CREATED\nUSER CREATED\nUSER UPDATED\nUSER DELETED\nUSER DELETED\n";
+
+    @Test
+    void fileCommandsRunInOrderIgnoringBlankLines(@TempDir Path dir) throws IOException {
+        Path input = dir.resolve("input.txt");
+        Files.writeString(input, SEQUENCE);
+        assertEquals(0, run("", input.toString()));
+        assertEquals(EXPECTED, output());
+    }
+
+    @Test
+    void interactiveAndFileModesBehaveIdentically(@TempDir Path dir) throws IOException {
+        assertEquals(0, run(SEQUENCE));
+        String interactive = output();
+        out.reset();
+        Path input = dir.resolve("input.txt");
+        Files.writeString(input, SEQUENCE);
+        assertEquals(0, run("", input.toString()));
+        assertEquals(interactive, output());
+        assertEquals(EXPECTED, interactive);
+    }
 }

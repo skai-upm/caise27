@@ -147,4 +147,10 @@ class CommandProcessorTest {
         assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Nueva2#;CARD;9999888877776666"));
         assertEquals("9999888877776666", users.findByDni("12345678Z").getCardNumber());
     }
+
+    @Test
+    void blankLinesProduceNoOutput() {
+        assertEquals(null, processor.process(""));
+        assertEquals(null, processor.process("   \t "));
+    }
 }
