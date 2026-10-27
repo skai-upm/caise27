@@ -128,3 +128,10 @@ The HELP output SHALL also include `TICKET CREATE;<identifier>;<email>;<date>` a
 #### Scenario: Help shows ticket commands
 - **WHEN** the user enters `HELP`
 - **THEN** the output contains `TICKET CREATE;<identifier>;<email>;<date>` and `TICKET DELETE;<identifier>`
+
+### Requirement: HELP lists group ticket commands
+The HELP output SHALL also include `GROUPTICKET CREATE;<identifier>;<group>;<date>` and `GROUPTICKET DELETE;<identifier>`.
+
+#### Scenario: Help shows group ticket commands
+- **WHEN** the user enters `HELP`
+- **THEN** the output contains `GROUPTICKET CREATE;<identifier>;<group>;<date>` and `GROUPTICKET DELETE;<identifier>`
