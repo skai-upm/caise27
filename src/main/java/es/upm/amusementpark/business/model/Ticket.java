@@ -8,7 +8,7 @@ import java.util.List;
  * Common abstraction of every ticket type: a unique identifier, the date on
  * which the ticket can be used and its price.
  */
-public abstract class Ticket {
+public abstract class Ticket implements AccessTicket {
 
     private final String identifier;
     private final LocalDate date;
@@ -28,7 +28,7 @@ public abstract class Ticket {
 
     public abstract BigDecimal getPrice();
 
-    /** The users this ticket admits to an attraction. */
+    @Override
     public abstract List<User> getHolders();
 
     /** Active tickets are dated on or after the given current date. */

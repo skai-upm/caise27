@@ -1,6 +1,9 @@
 package es.upm.amusementpark.persistence;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.SpecialAttraction;
+import es.upm.amusementpark.business.model.GeneralAttraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
@@ -61,11 +64,11 @@ class ParkStorageTest {
 
     @Test
     void attractionsRoundTripEmpty() {
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> attraction = new GeneralAttraction("A01", "Dragon Rojo", 20);
         attraction.enter(List.of(ana));
         AttractionFileStorage storage = new AttractionFileStorage(dir.resolve("attractions.txt"));
         storage.save(List.of(attraction));
-        Attraction loaded = storage.load().get(0);
+        Attraction<?> loaded = storage.load().get(0);
         assertEquals("Dragon Rojo", loaded.getName());
         assertEquals(20, loaded.getCapacity());
         assertTrue(loaded.getOccupants().isEmpty());
@@ -139,7 +142,7 @@ class ParkStorageTest {
         tickets.save(new IndividualTicket("T001", DAY, ana, PRICE));
         AttractionRepository attractions = new AttractionRepository(
                 new AttractionFileStorage(dir.resolve("attractions.txt")));
-        attractions.save(new Attraction("A01", "Dragon Rojo", 20));
+        attractions.save(new GeneralAttraction("A01", "Dragon Rojo", 20));
 
         GroupRepository groups2 = new GroupRepository(new GroupFileStorage(dir.resolve("groups.txt")), users);
         assertTrue(groups2.findById("G01").orElseThrow().contains(ana));
@@ -147,5 +150,19 @@ class ParkStorageTest {
                 .exists("T001"));
         assertTrue(new AttractionRepository(new AttractionFileStorage(dir.resolve("attractions.txt")))
                 .findById("A01").isPresent());
+    }
+
+    @Test
+    void attractionTypeIsStoredAndMissingTypeMeansGeneral() throws Exception {
+        AttractionFileStorage storage = new AttractionFileStorage(dir.resolve("attractions.txt"));
+        storage.save(List.of(new SpecialAttraction("A04", "Pasaje del Terror", 15)));
+        assertEquals(List.of("A04;Pasaje del Terror;15;SPECIAL"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(AttractionType.SPECIAL, storage.load().get(0).getType());
+        Files.write(dir.resolve("attractions.txt"), List.of("A01;Dragon Rojo;20", "A09;Bad;3;VIP"));
+        List<Attraction<?>> loaded = storage.load();
+        assertEquals(1, loaded.size());
+        assertEquals(AttractionType.GENERAL, loaded.get(0).getType());
+        assertEquals(20, loaded.get(0).getCapacity());
+        assertEquals(1, storage.getSkippedLines());
     }
 }

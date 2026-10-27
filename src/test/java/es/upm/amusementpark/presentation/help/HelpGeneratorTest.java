@@ -26,6 +26,7 @@ class HelpGeneratorTest {
             "  GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "  GROUPTICKET DELETE;<identifier>",
             "  ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "  ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
             "  ATTRACTION ENTER;<attraction>;<ticket>",
             "  ATTRACTION EXIT;<attraction>;<email>",
             "  ATTRACTION LIST;<attraction>",

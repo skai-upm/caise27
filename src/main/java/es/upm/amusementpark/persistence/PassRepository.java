@@ -1,6 +1,6 @@
 package es.upm.amusementpark.persistence;
 
-import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.IndividualAccess;
 import es.upm.amusementpark.business.model.Pass;
 
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class PassRepository {
     }
 
     /** Passes associated with the ticket, found by traversing all passes. */
-    public List<Pass> findByTicket(IndividualTicket ticket) {
+    public List<Pass> findByTicket(IndividualAccess ticket) {
         List<Pass> result = new ArrayList<>();
         for (Pass pass : passes.values()) {
             if (pass.getTicket() == ticket) {

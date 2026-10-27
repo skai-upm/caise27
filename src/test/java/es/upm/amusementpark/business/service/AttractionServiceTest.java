@@ -2,6 +2,7 @@ package es.upm.amusementpark.business.service;
 
 import es.upm.amusementpark.business.exception.AttractionOperationException;
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.persistence.GroupRepository;
 import es.upm.amusementpark.persistence.UserRepository;
@@ -43,7 +44,7 @@ class AttractionServiceTest {
         park.setCurrentDate(DAY);
     }
 
-    private Attraction a01() {
+    private Attraction<?> a01() {
         return park.getAttractions().findById("A01").orElseThrow();
     }
 
@@ -73,7 +74,7 @@ class AttractionServiceTest {
         attractions.createAttraction("A03", "Pequena", 1);
         attractions.enter("A03", "T002");
         assertThrows(AttractionOperationException.class, () -> attractions.enter("A03", "T001"));
-        Attraction a03 = park.getAttractions().findById("A03").orElseThrow();
+        Attraction<?> a03 = park.getAttractions().findById("A03").orElseThrow();
         assertFalse(a03.isInside(ana));
         assertTrue(a03.isInside(pedro));
     }
@@ -140,5 +141,24 @@ class AttractionServiceTest {
     void exitOfUserNotInsideOrUnknownAttractionIsRejected() {
         assertThrows(AttractionOperationException.class, () -> attractions.exit("A01", "luis@correo.com"));
         assertThrows(AttractionOperationException.class, () -> attractions.exit("A99", "ana@correo.com"));
+    }
+
+    @Test
+    void attractionTypesRestrictEntryThroughTheService() throws Exception {
+        buyGroupTicket();
+        attractions.createAttraction("A02", "Montana Rusa Individual", 12, AttractionType.INDIVIDUAL);
+        attractions.createAttraction("A03", "Rafting Familiar", 24, AttractionType.GROUP);
+        attractions.createAttraction("A04", "Pasaje del Terror", 15, AttractionType.SPECIAL);
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A02", "TG01"));
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A03", "T001"));
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A04", "T001"));
+        attractions.enter("A03", "TG01");
+        attractions.enter("A02", "T002");
+        park.setCurrentDate(DAY.minusDays(1));
+        PassService.getInstance().buySpecialPass("PE01", "T001");
+        park.setCurrentDate(DAY);
+        attractions.enter("A04", "T001");
+        assertTrue(park.getAttractions().findById("A04").orElseThrow().isInside(ana));
+        assertEquals(AttractionType.SPECIAL, park.getAttractions().findById("A04").orElseThrow().getType());
     }
 }

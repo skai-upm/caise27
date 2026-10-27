@@ -1,6 +1,7 @@
 package es.upm.amusementpark.presentation;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.service.ParkController;
 import es.upm.amusementpark.persistence.UserRepository;
@@ -86,6 +87,7 @@ class CommandProcessorTest {
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
             "ATTRACTION ENTER;<attraction>;<ticket>",
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
@@ -371,7 +373,7 @@ class CommandProcessorTest {
     void attractionListShowsOccupantEmailsWithoutChangingThem() {
         processor.process(ANA);
         processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
-        Attraction a01 = ParkController.getInstance().getAttractions().findById("A01").orElseThrow();
+        Attraction<?> a01 = ParkController.getInstance().getAttractions().findById("A01").orElseThrow();
         a01.enter(List.of(ParkController.getInstance().getUsers().findByEmail("ana@correo.com").orElseThrow()));
         buffer.reset();
         processor.process("ATTRACTION LIST;A01");
@@ -522,6 +524,25 @@ class CommandProcessorTest {
         assertTrue(lines[5].startsWith("ERROR"));
         assertTrue(lines[6].startsWith("ERROR"));
         assertTrue(lines[7].startsWith("ERROR"));
+    }
+
+    @Test
+    void attractionCreateAcceptsAnOptionalType() {
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        processor.process("ATTRACTION CREATE;A02;Montana Rusa Individual;12;INDIVIDUAL");
+        processor.process("ATTRACTION CREATE;A03;Rafting Familiar;24;GROUP");
+        processor.process("ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL");
+        processor.process("ATTRACTION CREATE;A05;Noria;10;VIP");
+        String[] lines = output().split(System.lineSeparator());
+        for (int i = 0; i < 4; i++) {
+            assertEquals("ATTRACTION CREATED", lines[i]);
+        }
+        assertTrue(lines[4].startsWith("ERROR"));
+        assertEquals(AttractionType.GENERAL,
+                ParkController.getInstance().getAttractions().findById("A01").orElseThrow().getType());
+        assertEquals(AttractionType.SPECIAL,
+                ParkController.getInstance().getAttractions().findById("A04").orElseThrow().getType());
+        assertTrue(ParkController.getInstance().getAttractions().findById("A05").isEmpty());
     }
 
     @Test

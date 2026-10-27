@@ -87,7 +87,7 @@ public final class ParkController {
         UserService.getInstance().configure(users, groups, this, new BCryptPasswordHasher());
         GroupService.getInstance().configure(users, groups, this);
         TicketService.getInstance().configure(users, groups, tickets, passes, this);
-        AttractionService.getInstance().configure(attractions, tickets, this);
+        AttractionService.getInstance().configure(attractions, tickets, passes, this);
         InvoiceService.getInstance().configure(users, groups, tickets, passes, this);
         PassService.getInstance().configure(passes, tickets, this);
     }

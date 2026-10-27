@@ -11,7 +11,7 @@ import java.util.List;
  * included in the purchase. It references the purchasing group while that
  * group exists.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private Group group;
     private final List<IndividualTicket> composition;
@@ -34,6 +34,7 @@ public class GroupTicket extends Ticket {
         this.group = null;
     }
 
+    @Override
     public List<IndividualTicket> getComposition() {
         return composition;
     }

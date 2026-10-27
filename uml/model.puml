@@ -49,10 +49,27 @@ package es.upm.amusementpark.business.model {
   class SpeedPass
   class SpecialPass
 
-  class Attraction {
+  interface AccessTicket
+  interface IndividualAccess
+  interface GroupAccess
+  interface PassLookup
+
+  abstract class Attraction<T extends AccessTicket> {
     - identifier : String {readOnly}
     - name : String
     - capacity : int {readOnly}
+    - accessType : Class<T> {readOnly}
+  }
+  class GeneralAttraction <<Attraction<AccessTicket>>>
+  class IndividualAttraction <<Attraction<IndividualAccess>>>
+  class GroupAttraction <<Attraction<GroupAccess>>>
+  class SpecialAttraction <<Attraction<IndividualAccess>>>
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 }
 
@@ -165,6 +182,22 @@ package es.upm.amusementpark.presentation {
 ' ----- Ticket hierarchy -----
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+
+' ----- Access capabilities and generic attractions -----
+AccessTicket <|-- IndividualAccess
+AccessTicket <|-- GroupAccess
+AccessTicket <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction
+Attraction <|-- IndividualAttraction
+Attraction <|-- GroupAttraction
+Attraction <|-- SpecialAttraction
+Attraction ..> AttractionType
+AttractionType ..> Attraction : creates
+Attraction ..> PassLookup
+SpecialAttraction ..> SpecialPass
+AttractionService --> "1" PassRepository : passes
 
 ' ----- Domain relationships (directed) -----
 Group "0..*" --> "0..*" User : members

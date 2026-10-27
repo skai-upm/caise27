@@ -4,6 +4,7 @@ import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.exception.PersistenceException;
 import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
@@ -174,9 +175,7 @@ public class CommandProcessor {
                 out.println("GROUP TICKET DELETED");
                 return true;
             case "ATTRACTION CREATE":
-                requireElements(parts, 4, "ATTRACTION CREATE;<identifier>;<name>;<capacity>");
-                attractionService.createAttraction(parts[1], parts[2], parseCapacity(parts[3]));
-                out.println("ATTRACTION CREATED");
+                createAttraction(parts);
                 return true;
             case "ATTRACTION ENTER":
                 enterAttraction(parts);
@@ -284,6 +283,23 @@ public class CommandProcessor {
         out.println("GROUP TICKET CREATED. TOTAL PRICE: " + ticket.getPrice() + " EUR");
     }
 
+    private void createAttraction(String[] parts) throws ParkException, InvalidCommandException {
+        if (parts.length != 4 && parts.length != 5) {
+            throw new InvalidCommandException("invalid syntax. Expected ATTRACTION CREATE;<identifier>;<name>;<capacity>"
+                    + " or ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>");
+        }
+        AttractionType type = AttractionType.GENERAL;
+        if (parts.length == 5) {
+            type = AttractionType.fromName(parts[4]);
+            if (type == null) {
+                throw new InvalidCommandException("invalid attraction type " + parts[4]
+                        + ". Expected one of " + Arrays.toString(AttractionType.values()) + ".");
+            }
+        }
+        attractionService.createAttraction(parts[1], parts[2], parseCapacity(parts[3]), type);
+        out.println("ATTRACTION CREATED");
+    }
+
     private void enterAttraction(String[] parts) throws ParkException, InvalidCommandException {
         requireElements(parts, 3, "ATTRACTION ENTER;<attraction>;<ticket>");
         List<User> entered = attractionService.enter(parts[1], parts[2]);
@@ -292,7 +308,7 @@ public class CommandProcessor {
 
     private void attractionStatus(String[] parts) throws ParkException, InvalidCommandException {
         requireElements(parts, 2, "ATTRACTION STATUS;<attractionIdentifier>");
-        Attraction attraction = attractionService.findAttraction(parts[1]);
+        Attraction<?> attraction = attractionService.findAttraction(parts[1]);
         out.println("ATTRACTION " + attraction.getIdentifier() + " - " + attraction.getName());
         out.println("Capacity: " + attraction.getCapacity());
         out.println("Users inside: " + attraction.getOccupants().size());
@@ -302,7 +318,7 @@ public class CommandProcessor {
 
     private void listAttraction(String[] parts) throws ParkException, InvalidCommandException {
         requireElements(parts, 2, "ATTRACTION LIST;<attraction>");
-        Attraction attraction = attractionService.findAttraction(parts[1]);
+        Attraction<?> attraction = attractionService.findAttraction(parts[1]);
         if (attraction.getOccupants().isEmpty()) {
             out.println("No users inside attraction " + attraction.getIdentifier() + ".");
             return;

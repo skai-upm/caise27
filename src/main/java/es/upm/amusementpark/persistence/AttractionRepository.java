@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 public class AttractionRepository {
 
-    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
     private final AttractionFileStorage storage;
 
     /** Creates a repository that keeps attractions in memory only. */
@@ -25,21 +25,21 @@ public class AttractionRepository {
 
     public AttractionRepository(AttractionFileStorage storage) {
         this.storage = storage;
-        for (Attraction attraction : storage.load()) {
+        for (Attraction<?> attraction : storage.load()) {
             attractions.put(attraction.getIdentifier(), attraction);
         }
     }
 
-    public void save(Attraction attraction) {
+    public void save(Attraction<?> attraction) {
         attractions.put(attraction.getIdentifier(), attraction);
         persist();
     }
 
-    public Optional<Attraction> findById(String identifier) {
+    public Optional<Attraction<?>> findById(String identifier) {
         return Optional.ofNullable(attractions.get(identifier));
     }
 
-    public List<Attraction> findAll() {
+    public List<Attraction<?>> findAll() {
         return new ArrayList<>(attractions.values());
     }
 

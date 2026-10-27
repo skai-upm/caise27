@@ -8,7 +8,7 @@ import java.util.List;
  * A ticket bought for a single user. The ticket knows its user; the user does
  * not know its tickets.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final User user;
     private final BigDecimal price;
@@ -20,6 +20,7 @@ public class IndividualTicket extends Ticket {
         this.price = price;
     }
 
+    @Override
     public User getUser() {
         return user;
     }

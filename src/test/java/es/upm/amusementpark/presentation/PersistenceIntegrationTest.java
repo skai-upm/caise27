@@ -89,7 +89,7 @@ class PersistenceIntegrationTest {
         assertTrue(tg01.getGroup() == g01);
         assertEquals(2, tg01.getComposition().size());
         assertTrue(park().getTickets().exists("TG01:87654321X"));
-        Attraction a01 = park().getAttractions().findById("A01").orElseThrow();
+        Attraction<?> a01 = park().getAttractions().findById("A01").orElseThrow();
         assertEquals("Dragon Rojo", a01.getName());
         assertEquals(20, a01.getCapacity());
         assertTrue(a01.getOccupants().isEmpty());
