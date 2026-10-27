@@ -153,4 +153,23 @@ class CommandProcessorTest {
         assertEquals(null, processor.process(""));
         assertEquals(null, processor.process("   \t "));
     }
+
+    @Test
+    void helpListsAvailableCommands() {
+        String help = processor.process("HELP");
+        for (String expected : new String[] {
+                "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
+                "USER DELETE;<email>;<password>",
+                "USER UPDATE;<email>;<password>;<field>;<value>",
+                "\nHELP", "\nEXIT"}) {
+            assertTrue(help.contains(expected), expected);
+        }
+    }
+
+    @Test
+    void exitSetsFlag() {
+        assertEquals(false, processor.isExitRequested());
+        assertEquals(null, processor.process("EXIT"));
+        assertTrue(processor.isExitRequested());
+    }
 }

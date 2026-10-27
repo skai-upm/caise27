@@ -51,7 +51,7 @@ public class Main {
     private static int process(BufferedReader reader, CommandProcessor processor, PrintStream out, PrintStream err) {
         try {
             String line;
-            while ((line = reader.readLine()) != null) {
+            while (!processor.isExitRequested() && (line = reader.readLine()) != null) {
                 String response = processor.process(line);
                 if (response != null) {
                     out.println(response);

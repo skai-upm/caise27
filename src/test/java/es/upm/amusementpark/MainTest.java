@@ -109,4 +109,31 @@ class MainTest {
         assertEquals(interactive, output());
         assertEquals(EXPECTED, interactive);
     }
+
+    private static final String EXIT_SEQUENCE = CREATE_ANA + "\nEXIT\n"
+            + "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654\n";
+
+    @Test
+    void exitStopsFileProcessing(@TempDir Path dir) throws IOException {
+        Path input = dir.resolve("input.txt");
+        Files.writeString(input, EXIT_SEQUENCE);
+        assertEquals(0, run("", input.toString()));
+        assertEquals("USER CREATED\n", output());
+        assertEquals(1, Files.readAllLines(data.resolve("users.txt")).size());
+    }
+
+    @Test
+    void exitStopsInteractiveProcessing() throws IOException {
+        assertEquals(0, run(EXIT_SEQUENCE));
+        assertEquals("USER CREATED\n", output());
+        assertEquals(1, Files.readAllLines(data.resolve("users.txt")).size());
+    }
+
+    @Test
+    void helpIsPrintedInFileMode(@TempDir Path dir) throws IOException {
+        Path input = dir.resolve("input.txt");
+        Files.writeString(input, "HELP\n");
+        assertEquals(0, run("", input.toString()));
+        assertTrue(output().contains("USER DELETE;<email>;<password>"));
+    }
 }

@@ -12,7 +12,16 @@ import es.upm.amusementpark.repository.UserRepository;
  */
 public class CommandProcessor {
 
+    static final String HELP_TEXT = String.join("\n",
+            "Available commands:",
+            "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
+            "USER DELETE;<email>;<password>",
+            "USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "HELP",
+            "EXIT");
+
     private final UserRepository users;
+    private boolean exitRequested;
 
     public CommandProcessor(UserRepository users) {
         this.users = users;
@@ -38,12 +47,22 @@ public class CommandProcessor {
                     return deleteUser(parts);
                 case "USER UPDATE":
                     return updateUser(parts);
+                case "HELP":
+                    return HELP_TEXT;
+                case "EXIT":
+                    exitRequested = true;
+                    return null;
                 default:
                     return "ERROR: Unknown command";
             }
         } catch (PersistenceException e) {
             return "ERROR: Could not save users";
         }
+    }
+
+    /** True once EXIT has been processed; no further command must be executed. */
+    public boolean isExitRequested() {
+        return exitRequested;
     }
 
     private String createUser(String[] parts) {
