@@ -92,4 +92,59 @@ class CommandProcessorTest {
         assertTrue(processor.process("USER DELETE;ana@correo.com;").startsWith("ERROR"));
         assertEquals(1, users.size());
     }
+
+    private static final String PEDRO =
+            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
+
+    @Test
+    void updatesSimpleFields() {
+        processor.process(ANA);
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria"));
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Clave1!;SURNAME;Garcia"));
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999"));
+        var ana = users.findByDni("12345678Z");
+        assertEquals("Ana Maria", ana.getFirstName());
+        assertEquals("Garcia", ana.getSurnames());
+        assertEquals("699999999", ana.getPhone());
+    }
+
+    @Test
+    void updateRejectsBadFormatFieldsAndDni() {
+        processor.process(ANA);
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;PHONE").startsWith("ERROR: Invalid format"));
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;AGE;30").startsWith("ERROR: Field"));
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X").startsWith("ERROR: Field"));
+        assertEquals("12345678Z", users.findByEmail("ana@correo.com").getDni());
+    }
+
+    @Test
+    void updateRequiresIdentification() {
+        processor.process(ANA);
+        assertEquals("ERROR: User not found", processor.process("USER UPDATE;nadie@correo.com;Clave1!;PHONE;699999999"));
+        assertEquals("ERROR: Incorrect password", processor.process("USER UPDATE;ana@correo.com;Mala1!;PHONE;699999999"));
+        assertEquals("612345678", users.findByDni("12345678Z").getPhone());
+    }
+
+    @Test
+    void updateValidatesEmail() {
+        processor.process(ANA);
+        processor.process(PEDRO);
+        assertEquals("ERROR: Email already registered", processor.process("USER UPDATE;ana@correo.com;Clave1!;EMAIL;pedro@correo.com"));
+        assertEquals("ERROR: Invalid email", processor.process("USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana@correo.es"));
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana@correo.com"));
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com"));
+        assertEquals("12345678Z", users.findByEmail("ana.nueva@correo.com").getDni());
+        assertEquals(null, users.findByEmail("ana@correo.com"));
+    }
+
+    @Test
+    void updateValidatesPasswordAndCard() {
+        processor.process(ANA);
+        assertEquals("ERROR: Invalid password", processor.process("USER UPDATE;ana@correo.com;Clave1!;PASSWORD;nueva2#"));
+        assertEquals("Clave1!", users.findByDni("12345678Z").getPassword());
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Clave1!;PASSWORD;Nueva2#"));
+        assertEquals("ERROR: Invalid card number", processor.process("USER UPDATE;ana@correo.com;Nueva2#;CARD;1234"));
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Nueva2#;CARD;9999888877776666"));
+        assertEquals("9999888877776666", users.findByDni("12345678Z").getCardNumber());
+    }
 }

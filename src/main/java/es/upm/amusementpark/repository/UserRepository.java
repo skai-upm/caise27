@@ -39,6 +39,12 @@ public class UserRepository {
         save();
     }
 
+    /** Persists the current state of a user modified in place. */
+    public void update(User user) {
+        usersByDni.put(user.getDni(), user);
+        save();
+    }
+
     private void save() {
         if (store != null) {
             store.save(usersByDni.values());

@@ -52,4 +52,16 @@ class UserRepositoryTest {
         repo.remove(ana);
         assertEquals(0, new UserRepository(store).size());
     }
+
+    @Test
+    void updateIsPersisted(@TempDir Path dir) {
+        UserFileStore store = new UserFileStore(dir.resolve("users.txt"));
+        UserRepository repo = new UserRepository(store);
+        User ana = new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
+                "1234567890123456");
+        repo.add(ana);
+        ana.setPhone("699999999");
+        repo.update(ana);
+        assertEquals("699999999", new UserRepository(store).findByDni("12345678Z").getPhone());
+    }
 }

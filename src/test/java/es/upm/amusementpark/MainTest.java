@@ -72,4 +72,12 @@ class MainTest {
         assertEquals(0, run(CREATE_ANA + "\n"));
         assertEquals("USER CREATED\n", output());
     }
+
+    @Test
+    void updateSurvivesRestart() throws IOException {
+        run(CREATE_ANA + "\nUSER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\n");
+        assertEquals("USER CREATED\nUSER UPDATED\n", output());
+        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
+                Files.readString(data.resolve("users.txt")).trim());
+    }
 }
