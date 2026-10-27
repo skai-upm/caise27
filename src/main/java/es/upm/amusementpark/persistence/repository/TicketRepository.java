@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.persistence.TicketFileStore;
 
@@ -44,6 +45,23 @@ public class TicketRepository {
             }
         }
         return true;
+    }
+
+    /** A top-level individual ticket or an individual ticket inside a group ticket, or null. */
+    public IndividualTicket findIndividualTicket(String id) {
+        Ticket ticket = ticketsById.get(id);
+        if (ticket instanceof IndividualTicket individual) {
+            return individual;
+        }
+        GroupTicket group = findGroupTicketContaining(id);
+        if (group != null) {
+            for (IndividualTicket component : group.getComposition()) {
+                if (component.getId().equals(id)) {
+                    return component;
+                }
+            }
+        }
+        return null;
     }
 
     /** The group ticket whose composition contains the given ticket identifier, or null. */

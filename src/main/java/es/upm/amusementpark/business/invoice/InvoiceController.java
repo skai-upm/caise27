@@ -4,9 +4,13 @@ import es.upm.amusementpark.business.exception.NotFoundException;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.PassRepository;
 import es.upm.amusementpark.persistence.repository.TicketRepository;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 
@@ -20,6 +24,7 @@ public final class InvoiceController {
     private UserRepository users;
     private GroupRepository groups;
     private TicketRepository tickets;
+    private PassRepository passes;
     private InvoiceBuilder builder;
 
     private InvoiceController() {
@@ -34,7 +39,8 @@ public final class InvoiceController {
 
     /** Injects the repositories and the builder configured at application initialization. */
     public void configure(UserRepository users, GroupRepository groups, TicketRepository tickets,
-            InvoiceBuilder builder) {
+            PassRepository passes, InvoiceBuilder builder) {
+        this.passes = passes;
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
@@ -57,7 +63,19 @@ public final class InvoiceController {
                 builder.item(it.getId() + " (" + it.getDate() + ")", it.getPrice());
             }
         }
+        addPasses(user, SpeedPass.class, "SpeedPasses");
+        addPasses(user, SpecialPass.class, "Special passes");
         return builder.build();
+    }
+
+    /** Adds a section with the user's passes of the given type (on any of their individual tickets). */
+    private void addPasses(User user, Class<? extends Pass> type, String title) {
+        builder.section(title);
+        for (Pass pass : passes.findAll()) {
+            if (type.isInstance(pass) && pass.getTicket().involves(user)) {
+                builder.item(pass.getId() + " (ticket " + pass.getTicket().getId() + ")", pass.getPrice());
+            }
+        }
     }
 
     /** Invoice of the group tickets bought by a group, with their composition as detail. */

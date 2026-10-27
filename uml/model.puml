@@ -50,6 +50,18 @@ package "es.upm.amusementpark.business.model" {
 
   class GroupTicket {
   }
+
+  abstract class Pass {
+    - id : String {readOnly}
+    - price : BigDecimal {readOnly}
+    - consumed : boolean
+  }
+
+  class SpeedPass {
+  }
+
+  class SpecialPass {
+  }
 }
 
 package "es.upm.amusementpark.business.controller" {
@@ -65,6 +77,7 @@ package "es.upm.amusementpark.persistence.repository" {
   class GroupRepository
   class TicketRepository
   class AttractionRepository
+  class PassRepository
 }
 
 package "es.upm.amusementpark.persistence" {
@@ -86,7 +99,11 @@ class "es.upm.amusementpark.presentation.Main" as Main
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+
 ' --- domain relationships (navigable directions only) ---
+Pass "0..*" --> "1" IndividualTicket : ticket
 IndividualTicket "0..*" --> "1" User : user
 GroupTicket "1" *--> "1..*" IndividualTicket : composition
 GroupTicket "0..*" --> "0..1" Group : group
@@ -104,6 +121,7 @@ UserRepository "1" o--> "0..*" User
 GroupRepository "1" o--> "0..*" Group
 TicketRepository "1" o--> "0..*" Ticket
 AttractionRepository "1" o--> "0..*" Attraction
+PassRepository "1" o--> "0..*" Pass
 UserRepository --> "0..1" UserFileStore : store
 GroupRepository --> "0..1" GroupFileStore : store
 TicketRepository --> "0..1" TicketFileStore : store

@@ -3,6 +3,7 @@ package es.upm.amusementpark.presentation;
 import es.upm.amusementpark.business.controller.AttractionController;
 import es.upm.amusementpark.business.controller.GroupController;
 import es.upm.amusementpark.business.controller.ParkController;
+import es.upm.amusementpark.business.controller.PassController;
 import es.upm.amusementpark.business.controller.TicketController;
 import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.exception.ParkException;
@@ -26,6 +27,7 @@ public class CommandProcessor {
     private final TicketCommands tickets;
     private final AttractionCommands attractions;
     private final InvoiceCommands invoices;
+    private final PassCommands passes;
     private final HelpGenerator help;
     private final HelpGenerator extendedHelp;
     private boolean exitRequested;
@@ -46,6 +48,7 @@ public class CommandProcessor {
         this.tickets = new TicketCommands(TicketController.getInstance());
         this.attractions = new AttractionCommands(AttractionController.getInstance());
         this.invoices = new InvoiceCommands(InvoiceController.getInstance());
+        this.passes = new PassCommands(PassController.getInstance());
     }
 
     /**
@@ -92,6 +95,10 @@ public class CommandProcessor {
             case "ATTRACTION LIST" -> attractions.list(in);
             case "ATTRACTION STATUS" -> attractions.status(in);
             case "INVOICE CREATE" -> invoices.create(in);
+            case "SPEEDPASS CREATE" -> passes.createSpeed(in);
+            case "SPEEDPASS DELETE" -> passes.deleteSpeed(in);
+            case "SPECIALPASS CREATE" -> passes.createSpecial(in);
+            case "SPECIALPASS DELETE" -> passes.deleteSpecial(in);
             case "HELP" -> help.generate();
             case "HELP EXTENDED" -> extendedHelp.generate();
             case "EXIT" -> {

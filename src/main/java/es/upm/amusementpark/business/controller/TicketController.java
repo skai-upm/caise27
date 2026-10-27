@@ -29,6 +29,7 @@ public final class TicketController {
     private UserRepository users;
     private GroupRepository groups;
     private ParkController park;
+    private PassController passes;
 
     private TicketController() {
     }
@@ -41,7 +42,9 @@ public final class TicketController {
     }
 
     /** Injects the dependencies configured at application initialization. */
-    public void configure(TicketRepository tickets, UserRepository users, GroupRepository groups, ParkController park) {
+    public void configure(TicketRepository tickets, UserRepository users, GroupRepository groups, ParkController park,
+            PassController passes) {
+        this.passes = passes;
         this.tickets = tickets;
         this.users = users;
         this.groups = groups;
@@ -71,6 +74,7 @@ public final class TicketController {
         if (!ticket.isDeletable(park.getCurrentDate())) {
             throw new OperationNotAllowedException("Only tickets dated after the current date can be deleted");
         }
+        passes.removePassesOf(List.of((IndividualTicket) ticket));
         tickets.remove(ticket);
     }
 
@@ -105,6 +109,7 @@ public final class TicketController {
         if (!ticket.isDeletable(park.getCurrentDate())) {
             throw new OperationNotAllowedException("Only group tickets dated after the current date can be deleted");
         }
+        passes.removePassesOf(((GroupTicket) ticket).getComposition());
         tickets.remove(ticket);
     }
 

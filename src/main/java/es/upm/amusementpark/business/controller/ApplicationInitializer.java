@@ -14,6 +14,7 @@ import es.upm.amusementpark.persistence.TicketFileStore;
 import es.upm.amusementpark.persistence.UserFileStore;
 import es.upm.amusementpark.persistence.repository.AttractionRepository;
 import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.PassRepository;
 import es.upm.amusementpark.persistence.repository.TicketRepository;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 
@@ -67,13 +68,15 @@ public final class ApplicationInitializer {
 
     private static void inject(UserRepository users, GroupRepository groups, TicketRepository tickets,
             AttractionRepository attractions, PasswordHasher hasher) {
+        PassRepository passes = new PassRepository();
         ParkController park = ParkController.getInstance();
         park.configure(users, groups, tickets, attractions);
         park.resetClock();
         UserController.getInstance().configure(users, park, hasher);
         GroupController.getInstance().configure(groups, users, park);
-        TicketController.getInstance().configure(tickets, users, groups, park);
+        PassController.getInstance().configure(passes, tickets, park);
+        TicketController.getInstance().configure(tickets, users, groups, park, PassController.getInstance());
         AttractionController.getInstance().configure(attractions, tickets, park);
-        InvoiceController.getInstance().configure(users, groups, tickets, new StandardInvoiceBuilder());
+        InvoiceController.getInstance().configure(users, groups, tickets, passes, new StandardInvoiceBuilder());
     }
 }
