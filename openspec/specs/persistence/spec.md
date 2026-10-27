@@ -97,3 +97,14 @@ The users file SHALL contain the BCrypt-protected value of each password and SHA
 #### Scenario: Verification after restart
 - **WHEN** the application restarts and `USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999` is processed
 - **THEN** the stored BCrypt value is loaded and verifies the password, and the update succeeds
+
+### Requirement: Attraction type persisted
+The type of each attraction SHALL be stored and restored; stored attractions without a type SHALL be interpreted as GENERAL.
+
+#### Scenario: Type survives restart
+- **WHEN** SPECIAL attraction `A04` is created, the application ends and starts again
+- **THEN** `A04` is a SPECIAL attraction
+
+#### Scenario: Delivery 2 data
+- **WHEN** the attractions file contains the line `A01;Dragon Rojo;20`
+- **THEN** `A01` is loaded as a GENERAL attraction with capacity 20
