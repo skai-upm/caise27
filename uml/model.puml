@@ -1,0 +1,116 @@
+@startuml model
+title Amusement Park - Delivery 2 class model
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package "es.upm.amusementpark.model" {
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - cardNumber : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class UserValidator <<utility>> {
+    - {static} DNI_LETTERS : String
+  }
+
+  class Group {
+    - id : String {readOnly}
+    - name : String
+  }
+
+  class Attraction {
+    - id : String {readOnly}
+    - name : String
+    - capacity : int {readOnly}
+  }
+
+  abstract class Ticket {
+    - id : String {readOnly}
+    - date : LocalDate {readOnly}
+    - basePrice : BigDecimal {readOnly}
+    - discountRate : BigDecimal {readOnly}
+  }
+
+  class IndividualTicket {
+  }
+
+  class GroupTicket {
+  }
+}
+
+package "es.upm.amusementpark.park" {
+  class ParkController <<singleton>> {
+    - {static} instance : ParkController
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+  }
+}
+
+package "es.upm.amusementpark.repository" {
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class AttractionRepository
+}
+
+package "es.upm.amusementpark.persistence" {
+  class DataPaths
+  class UserFileStore
+  class GroupFileStore
+  class TicketFileStore
+  class AttractionFileStore
+  class TemporaryDataDirectory
+}
+
+package "es.upm.amusementpark.command" {
+  class CommandProcessor
+}
+
+class "es.upm.amusementpark.Main" as Main
+
+' --- ticket hierarchy ---
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' --- domain relationships (navigable directions only) ---
+IndividualTicket "0..*" --> "1" User : user
+GroupTicket "1" *--> "1..*" IndividualTicket : composition
+GroupTicket "0..*" --> "0..1" Group : group
+Group "0..*" --> "0..*" User : members
+Attraction "0..*" --> "0..*" User : occupants
+UserValidator ..> User : validates
+UserField ..> User : modifiable attributes
+
+' --- central management and storage ---
+ParkController "1" --> "1" UserRepository : users
+ParkController "1" --> "1" GroupRepository : groups
+ParkController "1" --> "1" TicketRepository : tickets
+ParkController "1" --> "1" AttractionRepository : attractions
+UserRepository "1" o--> "0..*" User
+GroupRepository "1" o--> "0..*" Group
+TicketRepository "1" o--> "0..*" Ticket
+AttractionRepository "1" o--> "0..*" Attraction
+UserRepository --> "0..1" UserFileStore : store
+GroupRepository --> "0..1" GroupFileStore : store
+TicketRepository --> "0..1" TicketFileStore : store
+AttractionRepository --> "0..1" AttractionFileStore : store
+
+Main ..> CommandProcessor
+Main ..> DataPaths
+Main ..> TemporaryDataDirectory
+CommandProcessor --> "1" ParkController : park
+@enduml
