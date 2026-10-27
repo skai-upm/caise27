@@ -103,4 +103,9 @@ public class GroupTicket extends Ticket implements GroupAccess {
         }
         return users;
     }
+
+    @Override
+    public List<IndividualTicket> individualTickets() {
+        return composition;
+    }
 }

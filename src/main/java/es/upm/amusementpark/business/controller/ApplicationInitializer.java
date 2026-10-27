@@ -76,7 +76,7 @@ public final class ApplicationInitializer {
         GroupController.getInstance().configure(groups, users, park);
         PassController.getInstance().configure(passes, tickets, park);
         TicketController.getInstance().configure(tickets, users, groups, park, PassController.getInstance());
-        AttractionController.getInstance().configure(attractions, tickets, park);
+        AttractionController.getInstance().configure(attractions, tickets, passes, park);
         InvoiceController.getInstance().configure(users, groups, tickets, passes, new StandardInvoiceBuilder());
     }
 }

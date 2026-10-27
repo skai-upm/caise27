@@ -1,11 +1,12 @@
 package es.upm.amusementpark.presentation;
 
-import java.util.List;
-
 import es.upm.amusementpark.business.controller.AttractionController;
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.EntryResult;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.User;
 
 /**
@@ -38,11 +39,20 @@ class AttractionCommands {
     }
 
     String enter(CommandInput in) throws InvalidCommandException, ParkException {
-        in.expect(2, "ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier");
-        List<User> entered = attractions.enter(in.get(1), in.get(2));
+        String syntax = "ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier[;SPEED]";
+        boolean speed = in.size() == 4;
+        in.expect(speed ? 3 : 2, syntax);
+        if (speed && !in.get(3).equals("SPEED")) {
+            throw new InvalidCommandException("Invalid format. Use " + syntax);
+        }
+        EntryResult entry = attractions.enter(in.get(1), in.get(2), speed);
         StringBuilder out = new StringBuilder("ENTERED " + in.get(1) + ":");
-        for (User user : entered) {
+        for (User user : entry.users()) {
             out.append(' ').append(user.getEmail());
+        }
+        for (Pass pass : entry.consumedPasses()) {
+            out.append(" (consumed ").append(pass instanceof SpecialPass ? "Special Pass " : "SpeedPass ")
+                    .append(pass.getId()).append(')');
         }
         return out.toString();
     }

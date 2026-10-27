@@ -79,6 +79,11 @@ package "es.upm.amusementpark.business.model" {
 
   class SpecialPass {
   }
+
+  interface PassLookup <<functional>>
+
+  class EntryResult <<record>> {
+  }
 }
 
 package "es.upm.amusementpark.business.controller" {
@@ -125,6 +130,10 @@ Attraction <|-- IndividualAttraction : <<bind>> T = IndividualAccess
 Attraction <|-- GroupAttraction : <<bind>> T = GroupAccess
 Attraction <|-- SpecialAttraction : <<bind>> T = IndividualAccess
 Attraction ..> AttractionType : type
+Attraction ..> PassLookup : uses on entry
+Attraction ..> EntryResult : creates
+EntryResult --> "1..*" User : users
+EntryResult --> "0..*" Pass : consumedPasses
 
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass

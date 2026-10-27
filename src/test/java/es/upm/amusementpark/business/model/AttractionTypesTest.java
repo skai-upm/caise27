@@ -34,7 +34,7 @@ class AttractionTypesTest {
         IndividualAttraction a2 = new IndividualAttraction("A02", "I", 5);
         IndividualAccess access = a2.accessFor(individual);
         assertSame(individual, access);
-        assertEquals(List.of(ana), a2.admit(access, day));
+        assertEquals(List.of(ana), a2.admit(access, day).users());
         assertThrows(OperationNotAllowedException.class, () -> a2.accessFor(group));
         assertThrows(OperationNotAllowedException.class, () -> new GroupAttraction("A03", "G", 5).accessFor(individual));
         assertThrows(OperationNotAllowedException.class, () -> new SpecialAttraction("A04", "S", 5).accessFor(group));

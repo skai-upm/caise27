@@ -76,13 +76,16 @@ public abstract class Attraction<T extends AttractionAccess> {
     }
 
     /**
-     * Lets every holder of the access in, all together or none: the access must be valid today,
-     * nobody may already be inside and there must be room for all.
+     * Lets every holder of the access in, all together or none, consuming the passes the entry
+     * requires. Every condition is checked before any state changes: validity today, required
+     * passes, nobody already inside and room for all.
      */
-    public List<User> admit(T access, LocalDate today) throws OperationNotAllowedException {
+    public EntryResult admit(T access, LocalDate today, boolean speed, PassLookup passes)
+            throws OperationNotAllowedException {
         if (!access.isValidOn(today)) {
             throw new OperationNotAllowedException("Ticket is not valid for the current date");
         }
+        List<Pass> toConsume = passesToConsume(access, speed, passes);
         List<User> holders = access.holders();
         for (User user : holders) {
             if (isInside(user)) {
@@ -92,8 +95,46 @@ public abstract class Attraction<T extends AttractionAccess> {
         if (!hasRoomFor(holders.size())) {
             throw new OperationNotAllowedException("Not enough capacity in " + id);
         }
+        for (Pass pass : toConsume) {
+            pass.consume();
+        }
         occupants.addAll(holders);
-        return holders;
+        return new EntryResult(holders, toConsume);
+    }
+
+    /** Plain entry without passes. */
+    public EntryResult admit(T access, LocalDate today) throws OperationNotAllowedException {
+        return admit(access, today, false, ticket -> List.of());
+    }
+
+    /**
+     * Passes this attraction consumes for the entry. By default none, or with {@code speed} one
+     * unconsumed SpeedPass for every individual ticket of the access.
+     */
+    protected List<Pass> passesToConsume(T access, boolean speed, PassLookup passes)
+            throws OperationNotAllowedException {
+        List<Pass> result = new ArrayList<>();
+        if (!speed) {
+            return result;
+        }
+        for (IndividualTicket ticket : access.individualTickets()) {
+            Pass speedPass = firstUnconsumed(passes.passesOf(ticket), SpeedPass.class);
+            if (speedPass == null) {
+                throw new OperationNotAllowedException("Ticket " + ticket.getId() + " has no available SpeedPass");
+            }
+            result.add(speedPass);
+        }
+        return result;
+    }
+
+    /** First unconsumed pass of the given type, or null. */
+    protected static Pass firstUnconsumed(List<Pass> passes, Class<? extends Pass> type) {
+        for (Pass pass : passes) {
+            if (type.isInstance(pass) && !pass.isConsumed()) {
+                return pass;
+            }
+        }
+        return null;
     }
 
     /** Adds a user inside; the caller checks capacity beforehand. */

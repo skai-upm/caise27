@@ -73,7 +73,7 @@ class BusinessControllersTest {
         assertEquals("User has active tickets", e.getMessage());
         assertThrows(OperationNotAllowedException.class, () -> tickets.deleteIndividual("T001"));
         attractions.create("A01", "Mini", 1, AttractionType.GENERAL);
-        attractions.enter("A01", "T001");
-        assertThrows(OperationNotAllowedException.class, () -> attractions.enter("A01", "T001"));
+        attractions.enter("A01", "T001", false);
+        assertThrows(OperationNotAllowedException.class, () -> attractions.enter("A01", "T001", false));
     }
 }
