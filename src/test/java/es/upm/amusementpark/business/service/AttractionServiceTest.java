@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -160,5 +161,85 @@ class AttractionServiceTest {
         attractions.enter("A04", "T001");
         assertTrue(park.getAttractions().findById("A04").orElseThrow().isInside(ana));
         assertEquals(AttractionType.SPECIAL, park.getAttractions().findById("A04").orElseThrow().getType());
+    }
+
+    private PassService passes() {
+        return PassService.getInstance();
+    }
+
+    private boolean consumed(String passId) {
+        return park.getPasses().findById(passId).orElseThrow().isConsumed();
+    }
+
+    @Test
+    void individualSpeedEntryConsumesExactlyOnePass() throws Exception {
+        park.setCurrentDate(DAY.minusDays(1));
+        passes().buySpeedPasses("SP01", "T001", 1);
+        passes().buySpeedPasses("SP02", "T001", 1);
+        park.setCurrentDate(DAY);
+        EntryResult result = attractions.enter("A01", "T001", true);
+        assertEquals(List.of(ana), result.entered());
+        assertEquals(1, result.consumedPasses().size());
+        assertTrue(consumed("SP01:1") ^ consumed("SP02:1"));
+    }
+
+    @Test
+    void speedEntryWithoutPassIsRejected() {
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A01", "T001", true));
+        assertFalse(a01().isInside(ana));
+    }
+
+    @Test
+    void groupSpeedEntryIsIndivisible() throws Exception {
+        buyGroupTicket();
+        park.setCurrentDate(DAY.minusDays(1));
+        passes().buySpeedPasses("SP05", "TG01:12345678Z", 1);
+        park.setCurrentDate(DAY);
+        attractions.createAttraction("A03", "Rafting Familiar", 24, AttractionType.GROUP);
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A03", "TG01", true));
+        assertTrue(park.getAttractions().findById("A03").orElseThrow().getOccupants().isEmpty());
+        assertFalse(consumed("SP05:1"));
+
+        park.setCurrentDate(DAY.minusDays(1));
+        passes().buySpeedPasses("SP06", "TG01:87654321X", 1);
+        park.setCurrentDate(DAY);
+        attractions.createAttraction("A06", "Pequena", 1, AttractionType.GROUP);
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A06", "TG01", true));
+        assertFalse(consumed("SP05:1") || consumed("SP06:1"));
+
+        EntryResult result = attractions.enter("A03", "TG01", true);
+        assertEquals(2, result.entered().size());
+        assertTrue(consumed("SP05:1") && consumed("SP06:1"));
+    }
+
+    @Test
+    void specialEntryConsumesTheSpecialPassOnlyOnSuccess() throws Exception {
+        park.setCurrentDate(DAY.minusDays(1));
+        passes().buySpecialPass("PE01", "T001");
+        passes().buySpeedPasses("SP01", "T001", 1);
+        passes().buySpecialPass("PE02", "T002");
+        park.setCurrentDate(DAY);
+        attractions.createAttraction("A04", "Pasaje del Terror", 1, AttractionType.SPECIAL);
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A04", "T001", true));
+        assertFalse(consumed("PE01") || consumed("SP01:1"));
+
+        attractions.enter("A04", "T002", false);
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A04", "T001", false));
+        assertFalse(consumed("PE01"));
+        attractions.exit("A04", "pedro@correo.com");
+
+        EntryResult result = attractions.enter("A04", "T001", false);
+        assertEquals("PE01", result.consumedPasses().get(0).getIdentifier());
+        assertTrue(consumed("PE01"));
+        attractions.exit("A04", "ana@correo.com");
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A04", "T001", false));
+    }
+
+    @Test
+    void failedEntryForWrongDateKeepsPasses() throws Exception {
+        park.setCurrentDate(DAY.minusDays(1));
+        passes().buySpeedPasses("SP01", "T001", 1);
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A01", "T001", true));
+        assertFalse(consumed("SP01:1"));
     }
 }

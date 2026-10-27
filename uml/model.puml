@@ -119,6 +119,7 @@ package es.upm.amusementpark.business.service {
   class InvoiceService <<singleton>> {
     - {static} INSTANCE : InvoiceService
   }
+  class EntryResult <<record>>
   class PassService <<singleton>> {
     - {static} INSTANCE : PassService
   }
@@ -198,6 +199,9 @@ AttractionType ..> Attraction : creates
 Attraction ..> PassLookup
 SpecialAttraction ..> SpecialPass
 AttractionService --> "1" PassRepository : passes
+AttractionService ..> EntryResult : returns
+EntryResult --> "0..*" User : entered
+EntryResult --> "0..*" Pass : consumedPasses
 
 ' ----- Domain relationships (directed) -----
 Group "0..*" --> "0..*" User : members

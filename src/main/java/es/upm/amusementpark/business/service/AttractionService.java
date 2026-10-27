@@ -7,9 +7,13 @@ import es.upm.amusementpark.business.exception.AttractionOperationException;
 import es.upm.amusementpark.business.model.AccessTicket;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.IndividualAccess;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,6 +71,16 @@ public class AttractionService {
      * and there must be room for all of them.
      */
     public List<User> enter(String attractionId, String ticketId) throws AttractionOperationException {
+        return enter(attractionId, ticketId, false).entered();
+    }
+
+    /**
+     * Lets the users admitted by the ticket into the attraction, optionally
+     * using one SpeedPass per individual ticket. Every condition is checked
+     * before anything changes; passes are consumed only if entry succeeds.
+     */
+    public EntryResult enter(String attractionId, String ticketId, boolean speed)
+            throws AttractionOperationException {
         Attraction<?> attraction = findAttraction(attractionId);
         Ticket ticket = tickets.findById(ticketId).orElseThrow(
                 () -> new AttractionOperationException("No ticket with identifier " + ticketId + " exists."));
@@ -74,13 +88,46 @@ public class AttractionService {
             throw new AttractionOperationException("Ticket " + ticketId + " is valid on " + ticket.getDate()
                     + ", not on the current date " + park.getCurrentDate() + ".");
         }
-        return admit(attraction, ticket);
+        return admit(attraction, ticket, speed);
     }
 
-    private <T extends AccessTicket> List<User> admit(Attraction<T> attraction, Ticket ticket)
+    private <T extends AccessTicket> EntryResult admit(Attraction<T> attraction, Ticket ticket, boolean speed)
             throws AttractionOperationException {
         T access = attraction.accept(ticket, passes::findByTicket);
-        return attraction.admit(access);
+        List<SpeedPass> speedPasses = speed ? selectSpeedPasses(attraction, access) : List.of();
+        List<User> entered = attraction.admit(access);
+        List<Pass> consumed = new ArrayList<>();
+        for (SpeedPass pass : speedPasses) {
+            pass.consume();
+            consumed.add(pass);
+        }
+        consumed.addAll(attraction.consumeOnEntry(access, passes::findByTicket));
+        return new EntryResult(entered, consumed);
+    }
+
+    /** One unconsumed SpeedPass for each individual ticket of the access, without consuming them. */
+    private List<SpeedPass> selectSpeedPasses(Attraction<?> attraction, AccessTicket access)
+            throws AttractionOperationException {
+        if (!attraction.acceptsSpeedPasses()) {
+            throw new AttractionOperationException("Attraction " + attraction.getIdentifier() + " of type "
+                    + attraction.getType() + " does not accept SpeedPasses.");
+        }
+        List<SpeedPass> selected = new ArrayList<>();
+        for (IndividualAccess individual : access.getIndividualTickets()) {
+            SpeedPass available = null;
+            for (Pass pass : passes.findByTicket(individual)) {
+                if (pass instanceof SpeedPass speedPass && !speedPass.isConsumed()) {
+                    available = speedPass;
+                    break;
+                }
+            }
+            if (available == null) {
+                throw new AttractionOperationException("Ticket " + individual.getIdentifier()
+                        + " has no unconsumed SpeedPass.");
+            }
+            selected.add(available);
+        }
+        return selected;
     }
 
     /** Removes the user with the given email from the attraction. */

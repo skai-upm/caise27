@@ -15,4 +15,7 @@ public interface AccessTicket {
 
     /** The users this ticket admits to an attraction. */
     List<User> getHolders();
+
+    /** The individual tickets this ticket stands for: itself, or the composition of a group ticket. */
+    List<? extends IndividualAccess> getIndividualTickets();
 }

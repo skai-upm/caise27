@@ -6,12 +6,14 @@ import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.service.AttractionService;
+import es.upm.amusementpark.business.service.EntryResult;
 import es.upm.amusementpark.business.service.GroupService;
 import es.upm.amusementpark.business.service.InvoiceService;
 import es.upm.amusementpark.business.service.ParkController;
@@ -301,9 +303,19 @@ public class CommandProcessor {
     }
 
     private void enterAttraction(String[] parts) throws ParkException, InvalidCommandException {
-        requireElements(parts, 3, "ATTRACTION ENTER;<attraction>;<ticket>");
-        List<User> entered = attractionService.enter(parts[1], parts[2]);
-        out.println("ENTERED ATTRACTION " + parts[1] + ": " + emails(entered));
+        if (parts.length != 3 && parts.length != 4) {
+            throw new InvalidCommandException("invalid syntax. Expected ATTRACTION ENTER;<attraction>;<ticket>"
+                    + " or ATTRACTION ENTER;<attraction>;<ticket>;SPEED");
+        }
+        if (parts.length == 4 && !parts[3].equals("SPEED")) {
+            throw new InvalidCommandException("invalid entry option " + parts[3] + ". Expected SPEED.");
+        }
+        EntryResult result = attractionService.enter(parts[1], parts[2], parts.length == 4);
+        out.println("ENTERED ATTRACTION " + parts[1] + ": " + emails(result.entered()));
+        for (Pass pass : result.consumedPasses()) {
+            String kind = pass instanceof SpecialPass ? "SPECIAL PASS" : "SPEEDPASS";
+            out.println(kind + " CONSUMED: " + pass.getIdentifier());
+        }
     }
 
     private void attractionStatus(String[] parts) throws ParkException, InvalidCommandException {

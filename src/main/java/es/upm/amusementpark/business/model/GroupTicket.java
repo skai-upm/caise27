@@ -59,6 +59,11 @@ public class GroupTicket extends Ticket implements GroupAccess {
         return holders;
     }
 
+    @Override
+    public List<IndividualTicket> getIndividualTickets() {
+        return composition;
+    }
+
     /** Discount percentage for a purchase including the given number of users. */
     public static int discountFor(int members) {
         if (members < 3) {

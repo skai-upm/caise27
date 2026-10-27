@@ -31,6 +31,9 @@ public abstract class Ticket implements AccessTicket {
     @Override
     public abstract List<User> getHolders();
 
+    @Override
+    public abstract List<? extends IndividualTicket> getIndividualTickets();
+
     /** Active tickets are dated on or after the given current date. */
     public boolean isActiveOn(LocalDate today) {
         return !date.isBefore(today);

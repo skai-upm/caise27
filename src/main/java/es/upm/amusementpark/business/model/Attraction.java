@@ -74,6 +74,19 @@ public abstract class Attraction<T extends AccessTicket> {
         return access;
     }
 
+    /** Whether entry with SpeedPasses is allowed; true unless the attraction manages its own queue. */
+    public boolean acceptsSpeedPasses() {
+        return true;
+    }
+
+    /**
+     * Passes consumed automatically when the ticket's users have entered;
+     * none by default.
+     */
+    public List<Pass> consumeOnEntry(T ticket, PassLookup passes) {
+        return List.of();
+    }
+
     /** Conditions specific to the attraction type; none by default. */
     protected void checkAdmission(T ticket, PassLookup passes) throws AttractionOperationException {
     }

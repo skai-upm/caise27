@@ -35,6 +35,11 @@ public class IndividualTicket extends Ticket implements IndividualAccess {
         return List.of(user);
     }
 
+    @Override
+    public List<IndividualTicket> getIndividualTickets() {
+        return List.of(this);
+    }
+
     /** Whether this ticket is part of the composition of a group ticket. */
     public boolean isPartOfGroupTicket() {
         return groupTicket != null;

@@ -89,6 +89,7 @@ class CommandProcessorTest {
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
             "ATTRACTION ENTER;<attraction>;<ticket>",
+            "ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
             "ATTRACTION STATUS;<attractionIdentifier>",
@@ -543,6 +544,30 @@ class CommandProcessorTest {
         assertEquals(AttractionType.SPECIAL,
                 ParkController.getInstance().getAttractions().findById("A04").orElseThrow().getType());
         assertTrue(ParkController.getInstance().getAttractions().findById("A05").isEmpty());
+    }
+
+    @Test
+    void attractionEnterReportsConsumedPasses() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("SPEEDPASS CREATE;SP01;T001;1");
+        processor.process("SPECIALPASS CREATE;PE01;T001");
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        processor.process("ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL");
+        processor.process("SYSTEM DATE;2027-04-15");
+        buffer.reset();
+        processor.process("ATTRACTION ENTER;A01;T001;SPEED");
+        processor.process("ATTRACTION ENTER;A04;T001;SPEED");
+        processor.process("ATTRACTION ENTER;A04;T001");
+        processor.process("ATTRACTION ENTER;A01;T001;FAST");
+        String[] lines = output().split(System.lineSeparator());
+        assertEquals("ENTERED ATTRACTION A01: ana@correo.com", lines[0]);
+        assertEquals("SPEEDPASS CONSUMED: SP01:1", lines[1]);
+        assertTrue(lines[2].startsWith("ERROR"));
+        assertEquals("ENTERED ATTRACTION A04: ana@correo.com", lines[3]);
+        assertEquals("SPECIAL PASS CONSUMED: PE01", lines[4]);
+        assertTrue(lines[5].startsWith("ERROR"));
     }
 
     @Test

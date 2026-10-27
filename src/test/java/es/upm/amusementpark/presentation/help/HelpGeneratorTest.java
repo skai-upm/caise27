@@ -28,6 +28,7 @@ class HelpGeneratorTest {
             "  ATTRACTION CREATE;<identifier>;<name>;<capacity>",
             "  ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
             "  ATTRACTION ENTER;<attraction>;<ticket>",
+            "  ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
             "  ATTRACTION EXIT;<attraction>;<email>",
             "  ATTRACTION LIST;<attraction>",
             "  ATTRACTION STATUS;<attractionIdentifier>",
