@@ -50,4 +50,18 @@ class TechnicalRestrictionsTest {
         assertFalse(main.contains("Files.write") || main.contains("Files.readAllLines") || main.contains("Files.delete"));
         assertTrue(store.contains("Files.write") && store.contains("Files.readAllLines"));
     }
+
+    @Test
+    void relationshipDirectionsAreRespected() {
+        for (java.lang.reflect.Field f : es.upm.amusementpark.model.User.class.getDeclaredFields()) {
+            String type = f.getGenericType().getTypeName();
+            assertFalse(type.contains("Ticket") || type.contains("Group") || type.contains("Attraction"), f.getName());
+        }
+        for (java.lang.reflect.Field f : es.upm.amusementpark.model.Group.class.getDeclaredFields()) {
+            String type = f.getGenericType().getTypeName();
+            assertFalse(type.contains("Ticket") || type.contains("Attraction"), f.getName());
+        }
+        assertTrue(es.upm.amusementpark.park.ParkController.getInstance()
+                == es.upm.amusementpark.park.ParkController.getInstance());
+    }
 }

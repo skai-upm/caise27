@@ -134,6 +134,6 @@ class MainTest {
         Path input = dir.resolve("input.txt");
         Files.writeString(input, "HELP\n");
         assertEquals(0, run("", input.toString()));
-        assertTrue(output().contains("USER DELETE;<email>;<password>"));
+        assertTrue(output().contains("USER DELETE;<Email>;<Password>"));
     }
 }

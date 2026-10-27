@@ -18,9 +18,10 @@ public class CommandProcessor {
 
     static final String HELP_TEXT = String.join("\n",
             "Available commands:",
-            "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-            "USER DELETE;<email>;<password>",
-            "USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+            "USER DELETE;<Email>;<Password>",
+            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
+            "  <Field>: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD",
             "SYSTEM DATE;<yyyy-MM-dd>",
             "SYSTEM PRICE;<Price>",
             "GROUP CREATE;<Identifier>;<Name>",
