@@ -3,6 +3,7 @@ package es.upm.amusementpark.model;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Common abstraction of every ticket type: unique identifier, date of use and price,
@@ -64,6 +65,14 @@ public abstract class Ticket {
         return date.isAfter(today);
     }
 
+    /** Tickets are valid only on their date of use. */
+    public boolean isValidOn(LocalDate day) {
+        return date.equals(day);
+    }
+
     /** Whether this ticket was purchased for the given user. */
     public abstract boolean involves(User user);
+
+    /** Users admitted to an attraction with this ticket. */
+    public abstract List<User> holders();
 }

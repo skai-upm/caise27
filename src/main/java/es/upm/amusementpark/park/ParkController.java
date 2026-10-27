@@ -3,6 +3,7 @@ package es.upm.amusementpark.park;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import es.upm.amusementpark.model.Attraction;
 import es.upm.amusementpark.model.Group;
 import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.Ticket;
@@ -105,6 +106,13 @@ public final class ParkController {
             }
         }
         groups.remove(group);
+    }
+
+    /** Removes a user from every attraction it is inside. */
+    public void removeFromAllAttractions(User user) {
+        for (Attraction attraction : attractions.findAll()) {
+            attraction.exit(user);
+        }
     }
 
     /** Removes a user from every group it belongs to. */

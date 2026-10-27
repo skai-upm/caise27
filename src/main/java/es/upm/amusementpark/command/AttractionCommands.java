@@ -1,6 +1,10 @@
 package es.upm.amusementpark.command;
 
+import java.util.List;
+
 import es.upm.amusementpark.model.Attraction;
+import es.upm.amusementpark.model.GroupTicket;
+import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.park.ParkController;
 
@@ -44,6 +48,41 @@ class AttractionCommands {
         StringBuilder out = new StringBuilder("Users in " + attraction.getId() + ":");
         for (User user : attraction.getOccupants()) {
             out.append('\n').append(user.getEmail());
+        }
+        return out.toString();
+    }
+
+    String enter(String[] parts) {
+        if (parts.length != 3 || CommandProcessor.hasEmpty(parts)) {
+            return "ERROR: Invalid format. Use ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier";
+        }
+        Attraction attraction = park.getAttractions().findById(parts[1]);
+        if (attraction == null) {
+            return "ERROR: Attraction not found";
+        }
+        Ticket ticket = park.getTickets().findById(parts[2]);
+        if (ticket == null) {
+            return "ERROR: Ticket not found";
+        }
+        if (ticket instanceof GroupTicket) {
+            return "ERROR: Access with group tickets is not supported yet";
+        }
+        if (!ticket.isValidOn(park.getCurrentDate())) {
+            return "ERROR: Ticket is not valid for the current date";
+        }
+        List<User> holders = ticket.holders();
+        for (User user : holders) {
+            if (attraction.isInside(user)) {
+                return "ERROR: " + user.getEmail() + " is already inside " + attraction.getId();
+            }
+        }
+        if (!attraction.hasRoomFor(holders.size())) {
+            return "ERROR: Not enough capacity in " + attraction.getId();
+        }
+        StringBuilder out = new StringBuilder("ENTERED " + attraction.getId() + ":");
+        for (User user : holders) {
+            attraction.enter(user);
+            out.append(' ').append(user.getEmail());
         }
         return out.toString();
     }

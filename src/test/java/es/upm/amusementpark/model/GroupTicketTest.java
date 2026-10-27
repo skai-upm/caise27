@@ -73,4 +73,12 @@ class GroupTicketTest {
         assertNull(t.getGroup());
         assertEquals(1, t.getComposition().size());
     }
+
+    @Test
+    void holdersAreTheComponentUsers() {
+        List<User> members = users(3);
+        GroupTicket t = new GroupTicket("TG01", LocalDate.of(2027, 4, 15), new BigDecimal("40.00"), new Group("G", "g"),
+                members);
+        assertEquals(members, t.holders());
+    }
 }

@@ -2,6 +2,7 @@ package es.upm.amusementpark.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Ticket purchased for a single user. The ticket knows its user; the user does not know its tickets.
@@ -26,5 +27,10 @@ public class IndividualTicket extends Ticket {
     @Override
     public boolean involves(User other) {
         return user.equals(other);
+    }
+
+    @Override
+    public List<User> holders() {
+        return List.of(user);
     }
 }

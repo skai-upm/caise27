@@ -48,4 +48,13 @@ class TicketTest {
                     f.getName());
         }
     }
+
+    @Test
+    void individualTicketAdmitsItsUserOnItsDate() {
+        Ticket t = new IndividualTicket("T001", day, new BigDecimal("40.00"), ana);
+        assertEquals(java.util.List.of(ana), t.holders());
+        assertTrue(t.isValidOn(day));
+        assertFalse(t.isValidOn(day.plusDays(1)));
+        assertFalse(t.isValidOn(day.minusDays(1)));
+    }
 }

@@ -32,6 +32,7 @@ public class CommandProcessor {
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "ATTRACTION ENTER;<attraction>;<ticket>",
             "ATTRACTION LIST;<attraction>",
             "HELP",
             "EXIT");
@@ -97,6 +98,8 @@ public class CommandProcessor {
                     return groupTickets.delete(parts);
                 case "ATTRACTION CREATE":
                     return attractions.create(parts);
+                case "ATTRACTION ENTER":
+                    return attractions.enter(parts);
                 case "ATTRACTION LIST":
                     return attractions.list(parts);
                 case "HELP":
@@ -165,6 +168,7 @@ public class CommandProcessor {
             return "ERROR: User belongs to a group with active group tickets";
         }
         park.removeFromAllGroups(user);
+        park.removeFromAllAttractions(user);
         users().remove(user);
         return "USER DELETED";
     }

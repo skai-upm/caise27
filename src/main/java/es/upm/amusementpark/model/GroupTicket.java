@@ -94,4 +94,13 @@ public class GroupTicket extends Ticket {
         }
         return false;
     }
+
+    @Override
+    public List<User> holders() {
+        List<User> users = new ArrayList<>();
+        for (IndividualTicket ticket : composition) {
+            users.add(ticket.getUser());
+        }
+        return users;
+    }
 }
