@@ -189,3 +189,10 @@ After the layered reorganisation every Delivery 1 and Delivery 2 command SHALL p
 #### Scenario: Delivery 2 session unchanged
 - **WHEN** the Delivery 2 integration session is executed after the reorganisation, in normal and `--fly` modes
 - **THEN** the output and persisted files are identical to those produced before the reorganisation
+
+### Requirement: HELP lists invoice commands
+The HELP output SHALL also include `INVOICE CREATE;USER;<email>` and `INVOICE CREATE;GROUP;<groupIdentifier>`.
+
+#### Scenario: Help shows invoice commands
+- **WHEN** the user enters `HELP`
+- **THEN** the output contains `INVOICE CREATE;USER;<email>` and `INVOICE CREATE;GROUP;<groupIdentifier>`
