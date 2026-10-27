@@ -34,6 +34,10 @@ public class UserService {
 
     public void deleteUser(String email, String password) throws UserOperationException {
         User user = authenticate(email, password);
+        if (ParkController.getInstance().hasActiveTicket(user)) {
+            throw new UserOperationException("User " + email
+                    + " has a ticket for the current date or later and cannot be deleted.");
+        }
         repository.delete(email);
         ParkController.getInstance().getGroups().removeUserFromAll(user);
     }

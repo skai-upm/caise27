@@ -45,6 +45,8 @@ class CommandProcessorTest {
         assertTrue(out.contains("GROUP ADD;<Identifier>;<Email>"));
         assertTrue(out.contains("GROUP REMOVE;<Identifier>;<Email>"));
         assertTrue(out.contains("GROUP DELETE;<Identifier>"));
+        assertTrue(out.contains("TICKET CREATE;<identifier>;<email>;<date>"));
+        assertTrue(out.contains("TICKET DELETE;<identifier>"));
         assertTrue(out.contains("HELP"));
         assertTrue(out.contains("EXIT"));
     }
@@ -241,6 +243,37 @@ class CommandProcessorTest {
     void groupCommandsWithWrongElementCountAreRejected() {
         for (String command : new String[] {"GROUP CREATE;G01", "GROUP ADD;G01", "GROUP REMOVE;G01",
                 "GROUP DELETE", "GROUP DELETE;G01;x"}) {
+            buffer.reset();
+            processor.process(command);
+            assertTrue(output().startsWith("ERROR"), command);
+        }
+    }
+
+    @Test
+    void ticketCommandsCreateShowPriceAndDelete() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-01");
+        buffer.reset();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("SYSTEM PRICE;45.50");
+        processor.process("TICKET CREATE;T002;ana@correo.com;2027-04-15");
+        processor.process("TICKET DELETE;T001");
+        String[] lines = output().split(System.lineSeparator());
+        assertEquals("TICKET CREATED. PRICE: 40.00 EUR", lines[0]);
+        assertEquals("TICKET CREATED. PRICE: 45.50 EUR", lines[2]);
+        assertEquals("TICKET DELETED", lines[3]);
+    }
+
+    @Test
+    void invalidTicketCommandsAreRejected() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        for (String command : new String[] {"TICKET CREATE;T002;ana@correo.com;2027-04-14",
+                "TICKET CREATE;T002;nadie@correo.com;2027-04-15", "TICKET CREATE;T002;ana@correo.com;15/04/2027",
+                "TICKET CREATE;T002;ana@correo.com", "TICKET CREATE;T001;ana@correo.com;2027-04-16",
+                "TICKET DELETE;T001", "TICKET DELETE;T999", "TICKET DELETE",
+                "USER DELETE;ana@correo.com;Clave1!"}) {
             buffer.reset();
             processor.process(command);
             assertTrue(output().startsWith("ERROR"), command);

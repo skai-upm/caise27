@@ -5,8 +5,8 @@ import java.time.LocalDate;
 
 /**
  * Central management of the park state during one execution: the users,
- * groups, the current system date and the current base ticket price. Only one
- * instance exists.
+ * groups, tickets, the current system date and the current base ticket price.
+ * Only one instance exists.
  */
 public final class ParkController {
 
@@ -16,6 +16,7 @@ public final class ParkController {
 
     private UserRepository users = new UserRepository();
     private GroupRepository groups = new GroupRepository();
+    private TicketRepository tickets = new TicketRepository();
     private LocalDate currentDate = LocalDate.now();
     private BigDecimal currentPrice = INITIAL_PRICE;
 
@@ -39,6 +40,7 @@ public final class ParkController {
     public void initialize(UserRepository users, GroupRepository groups, LocalDate today) {
         this.users = users;
         this.groups = groups;
+        this.tickets = new TicketRepository();
         this.currentDate = today;
         this.currentPrice = INITIAL_PRICE;
     }
@@ -49,6 +51,23 @@ public final class ParkController {
 
     public GroupRepository getGroups() {
         return groups;
+    }
+
+    public TicketRepository getTickets() {
+        return tickets;
+    }
+
+    /**
+     * Whether the user has an active ticket (dated on or after the current
+     * system date), found by traversing the park's tickets.
+     */
+    public boolean hasActiveTicket(User user) {
+        for (IndividualTicket ticket : tickets.findIndividualTicketsOf(user)) {
+            if (ticket.isActiveOn(currentDate)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

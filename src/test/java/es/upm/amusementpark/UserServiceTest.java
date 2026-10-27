@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +17,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         repository = new UserRepository();
+        ParkController.getInstance().initialize(repository, LocalDate.of(2026, 10, 27));
         service = new UserService(repository);
     }
 

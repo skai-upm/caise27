@@ -27,6 +27,8 @@ public class CommandProcessor {
             "  GROUP ADD;<Identifier>;<Email>",
             "  GROUP REMOVE;<Identifier>;<Email>",
             "  GROUP DELETE;<Identifier>",
+            "  TICKET CREATE;<identifier>;<email>;<date>",
+            "  TICKET DELETE;<identifier>",
             "  HELP",
             "  EXIT");
 
@@ -43,6 +45,7 @@ public class CommandProcessor {
     private final PrintStream out;
     private final UserService userService;
     private final GroupService groupService = new GroupService();
+    private final TicketService ticketService = new TicketService();
 
     /** Creates a processor working on the users managed by the {@link ParkController}. */
     public CommandProcessor(PrintStream out) {
@@ -112,6 +115,12 @@ public class CommandProcessor {
                 groupCommand(parts, 2, "GROUP DELETE;<Identifier>", "GROUP DELETED",
                         () -> groupService.deleteGroup(parts[1]));
                 return true;
+            case "TICKET CREATE":
+                createTicket(parts);
+                return true;
+            case "TICKET DELETE":
+                deleteTicket(parts);
+                return true;
             default:
                 out.println("ERROR: unrecognised command: " + command);
                 return true;
@@ -168,13 +177,12 @@ public class CommandProcessor {
             out.println("ERROR: invalid syntax. Expected SYSTEM DATE;<yyyy-MM-dd>");
             return;
         }
-        try {
-            LocalDate date = LocalDate.parse(parts[1], DATE_FORMAT);
-            ParkController.getInstance().setCurrentDate(date);
-            out.println("SYSTEM DATE UPDATED: " + date);
-        } catch (DateTimeParseException e) {
-            out.println("ERROR: invalid date " + parts[1] + ". Expected format yyyy-MM-dd.");
+        LocalDate date = parseDate(parts[1]);
+        if (date == null) {
+            return;
         }
+        ParkController.getInstance().setCurrentDate(date);
+        out.println("SYSTEM DATE UPDATED: " + date);
     }
 
     private void setSystemPrice(String[] parts) {
@@ -227,6 +235,50 @@ public class CommandProcessor {
             out.println(success);
         } catch (GroupOperationException e) {
             out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void createTicket(String[] parts) {
+        if (parts.length != 4) {
+            out.println("ERROR: invalid syntax. Expected TICKET CREATE;<identifier>;<email>;<date>");
+            return;
+        }
+        LocalDate date = parseDate(parts[3]);
+        if (date == null) {
+            return;
+        }
+        try {
+            Ticket ticket = ticketService.createTicket(parts[1], parts[2], date);
+            out.println("TICKET CREATED. PRICE: " + ticket.getPrice() + " EUR");
+        } catch (TicketOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void deleteTicket(String[] parts) {
+        if (parts.length != 2) {
+            out.println("ERROR: invalid syntax. Expected TICKET DELETE;<identifier>");
+            return;
+        }
+        try {
+            ticketService.deleteTicket(parts[1]);
+            out.println("TICKET DELETED");
+        } catch (TicketOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Parses a {@code yyyy-MM-dd} date, printing an error if it is invalid.
+     *
+     * @return the date, or {@code null} if the text is not a valid date
+     */
+    private LocalDate parseDate(String text) {
+        try {
+            return LocalDate.parse(text, DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            out.println("ERROR: invalid date " + text + ". Expected format yyyy-MM-dd.");
+            return null;
         }
     }
 }
