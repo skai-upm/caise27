@@ -26,3 +26,10 @@ Commands SHALL be executed by a single processing component regardless of whethe
 #### Scenario: Response printed in file mode
 - **WHEN** the application runs with a file containing a valid `USER CREATE` line
 - **THEN** `USER CREATED` is written to standard output, exactly as in interactive mode
+
+### Requirement: Unexpected failures contained
+Any unexpected failure while executing a single command SHALL be reported as an error message for that command and SHALL NOT terminate the application; subsequent commands SHALL still be processed.
+
+#### Scenario: Failure inside a command
+- **WHEN** executing a command raises an unforeseen runtime failure
+- **THEN** an error message is written for that command and the next command is processed normally
