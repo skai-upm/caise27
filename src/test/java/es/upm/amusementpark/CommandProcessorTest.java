@@ -154,6 +154,23 @@ class CommandProcessorTest {
     }
 
     @Test
+    void unexpectedErrorIsReportedAndProcessingContinues() {
+        UserService failing = new UserService(new UserRepository()) {
+            @Override
+            public User createUser(String firstName, String surnames, String dni, String email,
+                    String password, String phone, String card) {
+                throw new IllegalStateException("boom");
+            }
+        };
+        CommandProcessor withFailure =
+                new CommandProcessor(new PrintStream(buffer, true, StandardCharsets.UTF_8), failing);
+        assertTrue(withFailure.process(ANA));
+        assertTrue(output().startsWith("ERROR"));
+        assertTrue(withFailure.process("HELP"));
+        assertTrue(output().contains("USER DELETE;<email>;<password>"));
+    }
+
+    @Test
     void blankLineIsIgnored() {
         assertTrue(processor.process("   "));
         assertTrue(output().isEmpty());

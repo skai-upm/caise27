@@ -48,6 +48,15 @@ public class CommandProcessor {
         if (command.isEmpty()) {
             return true;
         }
+        try {
+            return dispatch(command);
+        } catch (RuntimeException e) {
+            out.println("ERROR: unexpected error processing command: " + e.getMessage());
+            return true;
+        }
+    }
+
+    private boolean dispatch(String command) {
         String[] parts = command.split(";", -1);
         switch (parts[0]) {
             case "HELP":
