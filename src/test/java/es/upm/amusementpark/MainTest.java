@@ -16,25 +16,34 @@ import org.junit.jupiter.api.io.TempDir;
 
 class MainTest {
 
+    private static final String CREATE_ANA =
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
+
+    private final ByteArrayOutputStream out = new ByteArrayOutputStream();
     private final ByteArrayOutputStream err = new ByteArrayOutputStream();
 
     private int run(String input, String... args) {
         return Main.run(args, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(err, true, StandardCharsets.UTF_8));
+                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8));
+    }
+
+    private String output() {
+        return out.toString(StandardCharsets.UTF_8).replace("\r\n", "\n");
     }
 
     @Test
-    void interactiveModeReadsStandardInputUntilEnd() {
-        assertEquals(0, run("line one\nline two\n"));
+    void interactiveModeProcessesStandardInput() {
+        assertEquals(0, run(CREATE_ANA + "\n" + CREATE_ANA + "\n"));
+        assertEquals("USER CREATED\nERROR: DNI already registered\n", output());
         assertEquals("", err.toString(StandardCharsets.UTF_8));
     }
 
     @Test
-    void fileModeReadsGivenFile(@TempDir Path dir) throws IOException {
+    void fileModeProcessesGivenFileLikeInteractiveMode(@TempDir Path dir) throws IOException {
         Path input = dir.resolve("input.txt");
-        Files.writeString(input, "first\nsecond\n");
+        Files.writeString(input, CREATE_ANA + "\n" + CREATE_ANA + "\n");
         assertEquals(0, run("", input.toString()));
-        assertEquals("", err.toString(StandardCharsets.UTF_8));
+        assertEquals("USER CREATED\nERROR: DNI already registered\n", output());
     }
 
     @Test
