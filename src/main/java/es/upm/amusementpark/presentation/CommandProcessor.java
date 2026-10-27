@@ -14,6 +14,9 @@ import es.upm.amusementpark.business.service.InvoiceService;
 import es.upm.amusementpark.business.service.ParkController;
 import es.upm.amusementpark.business.service.TicketService;
 import es.upm.amusementpark.business.service.UserService;
+import es.upm.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
+import es.upm.amusementpark.presentation.help.SyntaxHelpFormatter;
 
 import java.io.PrintStream;
 import java.math.BigDecimal;
@@ -32,31 +35,6 @@ import java.util.List;
  */
 public class CommandProcessor {
 
-    static final String HELP_TEXT = String.join(System.lineSeparator(),
-            "Available commands:",
-            "  USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
-            "  USER DELETE;<Email>;<Password>",
-            "  USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
-            "  SYSTEM DATE;<yyyy-MM-dd>",
-            "  SYSTEM PRICE;<Price>",
-            "  GROUP CREATE;<Identifier>;<Name>",
-            "  GROUP ADD;<Identifier>;<Email>",
-            "  GROUP REMOVE;<Identifier>;<Email>",
-            "  GROUP DELETE;<Identifier>",
-            "  TICKET CREATE;<identifier>;<email>;<date>",
-            "  TICKET DELETE;<identifier>",
-            "  GROUPTICKET CREATE;<identifier>;<group>;<date>",
-            "  GROUPTICKET DELETE;<identifier>",
-            "  ATTRACTION CREATE;<identifier>;<name>;<capacity>",
-            "  ATTRACTION ENTER;<attraction>;<ticket>",
-            "  ATTRACTION EXIT;<attraction>;<email>",
-            "  ATTRACTION LIST;<attraction>",
-            "  ATTRACTION STATUS;<attractionIdentifier>",
-            "  INVOICE CREATE;USER;<email>",
-            "  INVOICE CREATE;GROUP;<groupIdentifier>",
-            "  HELP",
-            "  EXIT");
-
     private static final String USER_CREATE_SYNTAX =
             "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>";
 
@@ -74,9 +52,22 @@ public class CommandProcessor {
     private final AttractionService attractionService;
     private final InvoiceService invoiceService;
 
-    /** Creates a processor that delegates to the application's controllers. */
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
+
+    /**
+     * Creates a processor that delegates to the application's controllers,
+     * with the default syntax and extended help formats.
+     */
     public CommandProcessor(PrintStream out) {
+        this(out, new HelpGenerator(new SyntaxHelpFormatter()), new HelpGenerator(new ExtendedHelpFormatter()));
+    }
+
+    /** Creates a processor whose HELP and HELP EXTENDED output is built by the given generators. */
+    public CommandProcessor(PrintStream out, HelpGenerator help, HelpGenerator extendedHelp) {
         this.out = out;
+        this.help = help;
+        this.extendedHelp = extendedHelp;
         this.userService = UserService.getInstance();
         this.groupService = GroupService.getInstance();
         this.ticketService = TicketService.getInstance();
@@ -112,7 +103,10 @@ public class CommandProcessor {
         String[] parts = command.split(";", -1);
         switch (parts[0]) {
             case "HELP":
-                out.println(HELP_TEXT);
+                out.println(help.generate());
+                return true;
+            case "HELP EXTENDED":
+                out.println(extendedHelp.generate());
                 return true;
             case "EXIT":
                 out.println("Exiting application.");

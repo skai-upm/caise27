@@ -4,6 +4,9 @@ import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.service.ParkController;
 import es.upm.amusementpark.persistence.UserRepository;
+import es.upm.amusementpark.presentation.help.CommandCatalog;
+import es.upm.amusementpark.presentation.help.CommandInfo;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -90,6 +93,7 @@ class CommandProcessorTest {
             "INVOICE CREATE;USER;<email>",
             "INVOICE CREATE;GROUP;<groupIdentifier>",
             "HELP",
+            "HELP EXTENDED",
             "EXIT"};
         for (String syntax : required) {
             assertTrue(out.contains(syntax), syntax);
@@ -457,6 +461,37 @@ class CommandProcessorTest {
             buffer.reset();
             processor.process(command);
             assertTrue(output().startsWith("ERROR"), command);
+        }
+    }
+
+    @Test
+    void helpExtendedShowsPurposeOfEachCommand() {
+        assertTrue(processor.process("HELP EXTENDED"));
+        assertTrue(output().startsWith("Available commands (extended):"));
+        for (CommandInfo command : CommandCatalog.commands()) {
+            assertTrue(output().contains(command.description()), command.syntax());
+        }
+    }
+
+    @Test
+    void injectedHelpGeneratorsAreUsed() {
+        HelpGenerator fixed = new HelpGenerator(commands -> List.of("custom help"));
+        CommandProcessor custom = new CommandProcessor(new PrintStream(buffer, true, StandardCharsets.UTF_8),
+                fixed, fixed);
+        custom.process("HELP");
+        custom.process("HELP EXTENDED");
+        assertEquals("custom help" + System.lineSeparator() + "custom help", output().trim());
+    }
+
+    @Test
+    void everyCatalogueCommandIsRecognised() {
+        for (CommandInfo command : CommandCatalog.commands()) {
+            buffer.reset();
+            String name = command.syntax().split(";")[0];
+            if (!name.equals("EXIT")) {
+                processor.process(command.syntax().contains(";") ? name + ";x" : name);
+                assertFalse(output().contains("unrecognised command"), name);
+            }
         }
     }
 

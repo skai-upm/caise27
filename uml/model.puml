@@ -127,6 +127,18 @@ package es.upm.amusementpark.persistence {
   }
 }
 
+package es.upm.amusementpark.presentation.help {
+  class CommandInfo <<record>> {
+    - syntax : String
+    - description : String
+  }
+  class CommandCatalog <<utility>>
+  interface HelpFormatter
+  class SyntaxHelpFormatter
+  class ExtendedHelpFormatter
+  class HelpGenerator
+}
+
 package es.upm.amusementpark.presentation {
   class App
   class CommandRunner
@@ -209,6 +221,13 @@ ParkController ..> DataDirectories
 UserFileStorage ..> PersistenceException
 TextFiles ..> PersistenceException
 DataDirectories ..> PersistenceException
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+HelpGenerator --> "1" HelpFormatter : formatter (injected)
+HelpGenerator --> "0..*" CommandInfo : commands
+CommandCatalog ..> CommandInfo
+CommandProcessor --> "1" HelpGenerator : help
+CommandProcessor --> "1" HelpGenerator : extendedHelp
 CommandProcessor ..> InvalidCommandException
 CommandProcessor ..> ParkException
 CommandProcessor ..> PersistenceException
