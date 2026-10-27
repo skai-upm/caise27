@@ -1,6 +1,14 @@
 # caise27
 
-Amusement park management application (Java 21, Maven, standard library only).
+Amusement park management application (Java 21, Maven; the only runtime library is jBCrypt for
+password protection).
+
+## Architecture
+
+- `es.upm.amusementpark.presentation` — `Main`, command parsing and output (`CommandProcessor`), help generation.
+- `es.upm.amusementpark.business` — domain model, singleton controllers, invoice Builder, password hashing,
+  exceptions; `ApplicationInitializer` creates the repositories and injects them into the controllers.
+- `es.upm.amusementpark.persistence` — repositories and text-file stores.
 
 ## Build
 
@@ -32,8 +40,8 @@ java -jar target/nombre-aplicacion.jar --fly
 java -jar target/nombre-aplicacion.jar --fly input_fase2.txt
 ```
 
-Park data is stored in `users.txt`, `groups.txt`, `tickets.txt` and `attractions.txt` in the working
-directory and loaded at start-up. Attractions always start empty; the system date starts as today and
+Park data is stored in `users.txt` (passwords as BCrypt values), `groups.txt`, `tickets.txt`, `passes.txt`
+and `attractions.txt` in the working directory and loaded at start-up. Attractions always start empty; the system date starts as today and
 the base price as 40.00 euros in every execution.
 
 ## Commands
@@ -53,11 +61,20 @@ TICKET DELETE;<identifier>
 GROUPTICKET CREATE;<identifier>;<group>;<date>
 GROUPTICKET DELETE;<identifier>
 ATTRACTION CREATE;<identifier>;<name>;<capacity>
+ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>      (type: GENERAL, INDIVIDUAL, GROUP, SPECIAL)
 ATTRACTION ENTER;<attraction>;<ticket>
+ATTRACTION ENTER;<attraction>;<ticket>;SPEED
 ATTRACTION EXIT;<attraction>;<email>
 ATTRACTION LIST;<attraction>
 ATTRACTION STATUS;<attractionIdentifier>
+SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>   (quantity: 1 or 10)
+SPEEDPASS DELETE;<speedPassIdentifier>
+SPECIALPASS CREATE;<identifier>;<individualTicket>
+SPECIALPASS DELETE;<specialPassIdentifier>
+INVOICE CREATE;USER;<email>
+INVOICE CREATE;GROUP;<groupIdentifier>
 HELP
+HELP EXTENDED
 EXIT
 ```
 

@@ -86,4 +86,19 @@ class TechnicalRestrictionsTest {
             }
         }
     }
+
+    @Test
+    void bcryptIsTheOnlyRuntimeDependency() throws IOException {
+        String pom = Files.readString(Path.of("pom.xml"));
+        String dependencies = pom.substring(pom.indexOf("</dependencyManagement>"), pom.indexOf("<build>"));
+        String[] blocks = dependencies.split("<dependency>");
+        int runtime = 0;
+        for (int i = 1; i < blocks.length; i++) {
+            if (!blocks[i].contains("<scope>test</scope>")) {
+                runtime++;
+                assertTrue(blocks[i].contains("<artifactId>jbcrypt</artifactId>"), blocks[i]);
+            }
+        }
+        assertTrue(runtime == 1);
+    }
 }
