@@ -121,3 +121,10 @@ The HELP output SHALL also include `GROUP CREATE;<Identifier>;<Name>`, `GROUP AD
 #### Scenario: Help shows group commands
 - **WHEN** the user enters `HELP`
 - **THEN** the output contains the four GROUP command syntaxes
+
+### Requirement: HELP lists ticket commands
+The HELP output SHALL also include `TICKET CREATE;<identifier>;<email>;<date>` and `TICKET DELETE;<identifier>`.
+
+#### Scenario: Help shows ticket commands
+- **WHEN** the user enters `HELP`
+- **THEN** the output contains `TICKET CREATE;<identifier>;<email>;<date>` and `TICKET DELETE;<identifier>`
