@@ -172,4 +172,16 @@ class CommandProcessorTest {
         assertEquals(null, processor.process("EXIT"));
         assertTrue(processor.isExitRequested());
     }
+
+    @Test
+    void unexpectedFailuresAreContained() {
+        CommandProcessor failing = new CommandProcessor(new UserRepository() {
+            @Override
+            public es.upm.amusementpark.model.User findByEmail(String email) {
+                throw new IllegalStateException("boom");
+            }
+        });
+        assertEquals("ERROR: Command could not be processed", failing.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(failing.process("HELP").startsWith("Available commands"));
+    }
 }

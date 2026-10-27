@@ -57,6 +57,8 @@ public class CommandProcessor {
             }
         } catch (PersistenceException e) {
             return "ERROR: Could not save users";
+        } catch (RuntimeException e) {
+            return "ERROR: Command could not be processed";
         }
     }
 
