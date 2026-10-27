@@ -1,0 +1,149 @@
+@startuml
+title Amusement park - Phase 2 class model
+skinparam classAttributeIconSize 0
+hide empty methods
+
+package es.upm.amusementpark {
+
+  ' ===== Domain =====
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    - identifier : String {readOnly}
+    - name : String
+  }
+
+  abstract class Ticket {
+    - identifier : String {readOnly}
+    - date : LocalDate {readOnly}
+  }
+
+  class IndividualTicket {
+    - price : BigDecimal {readOnly}
+  }
+
+  class GroupTicket {
+  }
+
+  class Attraction {
+    - identifier : String {readOnly}
+    - name : String
+    - capacity : int {readOnly}
+  }
+
+  ' ===== Central management =====
+  class ParkController <<singleton>> {
+    - {static} INSTANCE : ParkController
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+  }
+
+  ' ===== Repositories and file storage =====
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class AttractionRepository
+  class UserFileStorage {
+    - file : Path
+  }
+  class GroupFileStorage {
+    - file : Path
+  }
+  class TicketFileStorage {
+    - file : Path
+  }
+  class AttractionFileStorage {
+    - file : Path
+  }
+  class TextFiles <<utility>>
+
+  ' ===== Services =====
+  class UserService
+  class UserValidator <<utility>>
+  class GroupService
+  class TicketService
+  class AttractionService
+
+  ' ===== Command layer =====
+  class App
+  class CommandRunner
+  class CommandProcessor
+
+  ' ===== Exceptions =====
+  class UserOperationException
+  class GroupOperationException
+  class TicketOperationException
+  class AttractionOperationException
+}
+
+' ----- Ticket hierarchy -----
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' ----- Domain relationships (directed) -----
+Group "0..*" --> "0..*" User : members
+IndividualTicket "0..*" --> "1" User : user
+GroupTicket "1" *-- "1..*" IndividualTicket : composition
+IndividualTicket "0..*" --> "0..1" GroupTicket : groupTicket
+GroupTicket "0..*" --> "0..1" Group : group
+Attraction "0..*" --> "0..*" User : occupants
+
+' ----- Central management -----
+ParkController "1" --> "1" UserRepository : users
+ParkController "1" --> "1" GroupRepository : groups
+ParkController "1" --> "1" TicketRepository : tickets
+ParkController "1" --> "1" AttractionRepository : attractions
+
+UserRepository "1" o--> "0..*" User : users
+GroupRepository "1" o--> "0..*" Group : groups
+TicketRepository "1" o--> "0..*" Ticket : tickets
+AttractionRepository "1" o--> "0..*" Attraction : attractions
+
+UserRepository --> "0..1" UserFileStorage : storage
+GroupRepository --> "0..1" GroupFileStorage : storage
+TicketRepository --> "0..1" TicketFileStorage : storage
+AttractionRepository --> "0..1" AttractionFileStorage : storage
+GroupFileStorage ..> TextFiles
+TicketFileStorage ..> TextFiles
+AttractionFileStorage ..> TextFiles
+
+' ----- Services -----
+UserService --> "1" UserRepository : repository
+UserService ..> UserValidator
+UserService ..> UserField
+UserService ..> ParkController
+GroupService ..> ParkController
+TicketService ..> ParkController
+AttractionService ..> ParkController
+
+' ----- Command layer -----
+App ..> CommandRunner
+App ..> ParkController
+CommandRunner --> "1" CommandProcessor : processor
+CommandProcessor --> "1" UserService
+CommandProcessor --> "1" GroupService
+CommandProcessor --> "1" TicketService
+CommandProcessor --> "1" AttractionService
+
+UserService ..> UserOperationException
+GroupService ..> GroupOperationException
+TicketService ..> TicketOperationException
+AttractionService ..> AttractionOperationException
+@enduml
