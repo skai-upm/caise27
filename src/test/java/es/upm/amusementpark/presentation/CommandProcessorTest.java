@@ -144,7 +144,8 @@ class CommandProcessorTest {
     void updateValidatesPasswordAndCard() {
         processor.process(ANA);
         assertEquals("ERROR: Invalid password", processor.process("USER UPDATE;ana@correo.com;Clave1!;PASSWORD;nueva2#"));
-        assertEquals("Clave1!", users.findByDni("12345678Z").getPassword());
+        assertTrue(users.findByDni("12345678Z").getPassword().startsWith("$2a$"));
+        assertEquals("ERROR: Incorrect password", processor.process("USER UPDATE;ana@correo.com;nueva2#;PHONE;1"));
         assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Clave1!;PASSWORD;Nueva2#"));
         assertEquals("ERROR: Invalid card number", processor.process("USER UPDATE;ana@correo.com;Nueva2#;CARD;1234"));
         assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Nueva2#;CARD;9999888877776666"));

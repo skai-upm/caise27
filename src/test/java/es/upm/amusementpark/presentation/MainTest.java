@@ -58,8 +58,8 @@ class MainTest {
     @Test
     void usersArePreservedBetweenRuns() throws IOException {
         assertEquals(0, run(CREATE_ANA + "\n"));
-        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
-                Files.readString(data.resolve("users.txt")).trim());
+        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;<bcrypt>;612345678;1234567890123456",
+                maskPassword(Files.readString(data.resolve("users.txt")).trim()));
         out.reset();
         assertEquals(0, run(CREATE_ANA + "\n"));
         assertEquals("ERROR: DNI already registered\n", output());
@@ -77,8 +77,8 @@ class MainTest {
     void updateSurvivesRestart() throws IOException {
         run(CREATE_ANA + "\nUSER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\n");
         assertEquals("USER CREATED\nUSER UPDATED\n", output());
-        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
-                Files.readString(data.resolve("users.txt")).trim());
+        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;<bcrypt>;699999999;1234567890123456",
+                maskPassword(Files.readString(data.resolve("users.txt")).trim()));
     }
 
     private static final String SEQUENCE = CREATE_ANA + "\n\n   \n"
@@ -135,5 +135,13 @@ class MainTest {
         Files.writeString(input, "HELP\n");
         assertEquals(0, run("", input.toString()));
         assertTrue(output().contains("USER DELETE;<Email>;<Password>"));
+    }
+
+    /** Replaces a BCrypt password field by {@code <bcrypt>} so stored lines can be compared. */
+    static String maskPassword(String line) {
+        String[] f = line.split(";", -1);
+        assertTrue(f[4].startsWith("$2a$"), f[4]);
+        f[4] = "<bcrypt>";
+        return String.join(";", f);
     }
 }

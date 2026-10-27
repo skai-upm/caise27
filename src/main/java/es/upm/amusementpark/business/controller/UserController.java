@@ -8,6 +8,7 @@ import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.model.UserValidator;
+import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 
 /**
@@ -19,6 +20,7 @@ public final class UserController {
 
     private UserRepository users;
     private ParkController park;
+    private PasswordHasher hasher;
 
     private UserController() {
     }
@@ -31,9 +33,10 @@ public final class UserController {
     }
 
     /** Injects the dependencies configured at application initialization. */
-    public void configure(UserRepository users, ParkController park) {
+    public void configure(UserRepository users, ParkController park, PasswordHasher hasher) {
         this.users = users;
         this.park = park;
+        this.hasher = hasher;
     }
 
     public User create(String firstName, String surnames, String dni, String email, String password, String phone,
@@ -56,7 +59,7 @@ public final class UserController {
         if (users.existsEmail(email)) {
             throw new DuplicateException("Email already registered");
         }
-        User user = new User(firstName, surnames, dni, email, password, phone, card);
+        User user = new User(firstName, surnames, dni, email, hasher.hash(password), phone, card);
         users.add(user);
         return user;
     }
@@ -67,7 +70,7 @@ public final class UserController {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        if (!user.getPassword().equals(password)) {
+        if (!hasher.verify(password, user.getPassword())) {
             throw new OperationNotAllowedException("Incorrect password");
         }
         return user;
@@ -106,7 +109,7 @@ public final class UserController {
                 if (!UserValidator.isValidPassword(value)) {
                     throw new InvalidDataException("Invalid password");
                 }
-                user.setPassword(value);
+                user.setPassword(hasher.hash(value));
             }
             case CARD -> {
                 if (!UserValidator.isValidCard(value)) {

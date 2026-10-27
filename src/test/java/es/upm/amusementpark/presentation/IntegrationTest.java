@@ -56,9 +56,9 @@ class IntegrationTest {
                 + "Available commands:"), fromFile);
         assertEquals(fromFile, interactive);
         List<String> expected = List.of(
-                "Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456");
-        assertEquals(expected, Files.readAllLines(fileRun.resolve("users.txt")));
-        assertEquals(expected, Files.readAllLines(stdinRun.resolve("users.txt")));
+                "Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;<bcrypt>;699999999;1234567890123456");
+        assertEquals(expected, Files.readAllLines(fileRun.resolve("users.txt")).stream().map(MainTest::maskPassword).toList());
+        assertEquals(expected, Files.readAllLines(stdinRun.resolve("users.txt")).stream().map(MainTest::maskPassword).toList());
     }
 
     @Test

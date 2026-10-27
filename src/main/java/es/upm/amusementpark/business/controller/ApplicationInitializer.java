@@ -4,6 +4,8 @@ import java.nio.file.Path;
 
 import es.upm.amusementpark.business.invoice.InvoiceController;
 import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.AttractionFileStore;
 import es.upm.amusementpark.persistence.DataPaths;
 import es.upm.amusementpark.persistence.GroupFileStore;
@@ -31,6 +33,9 @@ public final class ApplicationInitializer {
         startWithFiles(new DataPaths(baseDir));
     }
 
+    private static final int FILE_LOG_ROUNDS = 10;
+    private static final int MEMORY_LOG_ROUNDS = 4;
+
     /** --fly execution: data files in a new temporary directory under {@code <base>/tmp}. */
     public static void startTemporary(Path baseDir) {
         temporary = TemporaryDataDirectory.create(baseDir);
@@ -39,7 +44,8 @@ public final class ApplicationInitializer {
 
     /** Execution without persistence, using the given user repository and in-memory repositories. */
     public static void startInMemory(UserRepository users) {
-        inject(users, new GroupRepository(), new TicketRepository(), new AttractionRepository());
+        inject(users, new GroupRepository(), new TicketRepository(), new AttractionRepository(),
+                new BCryptPasswordHasher(MEMORY_LOG_ROUNDS));
     }
 
     /** Ends the execution, deleting the temporary data directory if one was created. */
@@ -56,15 +62,15 @@ public final class ApplicationInitializer {
         GroupRepository groups = new GroupRepository(new GroupFileStore(paths.groups()), users);
         TicketRepository tickets = new TicketRepository(new TicketFileStore(paths.tickets()), users, groups);
         AttractionRepository attractions = new AttractionRepository(new AttractionFileStore(paths.attractions()));
-        inject(users, groups, tickets, attractions);
+        inject(users, groups, tickets, attractions, new BCryptPasswordHasher(FILE_LOG_ROUNDS));
     }
 
     private static void inject(UserRepository users, GroupRepository groups, TicketRepository tickets,
-            AttractionRepository attractions) {
+            AttractionRepository attractions, PasswordHasher hasher) {
         ParkController park = ParkController.getInstance();
         park.configure(users, groups, tickets, attractions);
         park.resetClock();
-        UserController.getInstance().configure(users, park);
+        UserController.getInstance().configure(users, park, hasher);
         GroupController.getInstance().configure(groups, users, park);
         TicketController.getInstance().configure(tickets, users, groups, park);
         AttractionController.getInstance().configure(attractions, tickets, park);

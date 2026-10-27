@@ -31,7 +31,8 @@ class TechnicalRestrictionsTest {
                 String l = line.trim();
                 if (l.startsWith("import ")) {
                     assertTrue(l.startsWith("import java.") || l.startsWith("import static java.")
-                            || l.startsWith("import es.upm.amusementpark."), source + ": " + l);
+                            || l.startsWith("import es.upm.amusementpark.") || l.startsWith("import org.mindrot.jbcrypt."),
+                            source + ": " + l);
                 }
                 for (String forbidden : new String[] {"java.util.regex", ".matches(", "replaceAll(", "replaceFirst(",
                         "ObjectOutputStream", "ObjectInputStream", "Serializable"}) {
