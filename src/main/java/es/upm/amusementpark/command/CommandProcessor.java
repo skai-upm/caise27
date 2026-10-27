@@ -31,6 +31,8 @@ public class CommandProcessor {
             "TICKET DELETE;<identifier>",
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
+            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "ATTRACTION LIST;<attraction>",
             "HELP",
             "EXIT");
 
@@ -38,6 +40,7 @@ public class CommandProcessor {
     private final GroupCommands groups;
     private final TicketCommands tickets;
     private final GroupTicketCommands groupTickets;
+    private final AttractionCommands attractions;
     private boolean exitRequested;
 
     public CommandProcessor(ParkController park) {
@@ -45,6 +48,7 @@ public class CommandProcessor {
         this.groups = new GroupCommands(park);
         this.tickets = new TicketCommands(park);
         this.groupTickets = new GroupTicketCommands(park);
+        this.attractions = new AttractionCommands(park);
     }
 
     private UserRepository users() {
@@ -91,6 +95,10 @@ public class CommandProcessor {
                     return groupTickets.create(parts);
                 case "GROUPTICKET DELETE":
                     return groupTickets.delete(parts);
+                case "ATTRACTION CREATE":
+                    return attractions.create(parts);
+                case "ATTRACTION LIST":
+                    return attractions.list(parts);
                 case "HELP":
                     return HELP_TEXT;
                 case "EXIT":

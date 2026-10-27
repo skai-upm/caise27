@@ -7,6 +7,7 @@ import es.upm.amusementpark.model.Group;
 import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.repository.AttractionRepository;
 import es.upm.amusementpark.repository.GroupRepository;
 import es.upm.amusementpark.repository.TicketRepository;
 import es.upm.amusementpark.repository.UserRepository;
@@ -25,6 +26,7 @@ public final class ParkController {
     private UserRepository users;
     private GroupRepository groups;
     private TicketRepository tickets;
+    private AttractionRepository attractions;
     private LocalDate currentDate;
     private BigDecimal currentPrice;
 
@@ -44,6 +46,7 @@ public final class ParkController {
         this.users = users;
         this.groups = new GroupRepository();
         this.tickets = new TicketRepository();
+        this.attractions = new AttractionRepository();
         this.currentDate = LocalDate.now();
         this.currentPrice = INITIAL_PRICE;
     }
@@ -54,6 +57,10 @@ public final class ParkController {
 
     public GroupRepository getGroups() {
         return groups;
+    }
+
+    public AttractionRepository getAttractions() {
+        return attractions;
     }
 
     public TicketRepository getTickets() {
