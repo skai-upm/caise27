@@ -4,9 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Central management of the park state during one execution: the users, the
- * current system date and the current base ticket price. Only one instance
- * exists.
+ * Central management of the park state during one execution: the users,
+ * groups, the current system date and the current base ticket price. Only one
+ * instance exists.
  */
 public final class ParkController {
 
@@ -15,6 +15,7 @@ public final class ParkController {
     private static final ParkController INSTANCE = new ParkController();
 
     private UserRepository users = new UserRepository();
+    private GroupRepository groups = new GroupRepository();
     private LocalDate currentDate = LocalDate.now();
     private BigDecimal currentPrice = INITIAL_PRICE;
 
@@ -29,13 +30,34 @@ public final class ParkController {
      * Prepares the park state for a new execution.
      */
     public void initialize(UserRepository users, LocalDate today) {
+        initialize(users, new GroupRepository(), today);
+    }
+
+    /**
+     * Prepares the park state for a new execution.
+     */
+    public void initialize(UserRepository users, GroupRepository groups, LocalDate today) {
         this.users = users;
+        this.groups = groups;
         this.currentDate = today;
         this.currentPrice = INITIAL_PRICE;
     }
 
     public UserRepository getUsers() {
         return users;
+    }
+
+    public GroupRepository getGroups() {
+        return groups;
+    }
+
+    /**
+     * Whether the group has an associated group ticket dated on or after the
+     * current system date. Group tickets do not exist yet, so no group has
+     * one.
+     */
+    public boolean hasActiveGroupTicket(Group group) {
+        return false;
     }
 
     public LocalDate getCurrentDate() {

@@ -41,6 +41,10 @@ class CommandProcessorTest {
         assertTrue(out.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
         assertTrue(out.contains("SYSTEM DATE;<yyyy-MM-dd>"));
         assertTrue(out.contains("SYSTEM PRICE;<Price>"));
+        assertTrue(out.contains("GROUP CREATE;<Identifier>;<Name>"));
+        assertTrue(out.contains("GROUP ADD;<Identifier>;<Email>"));
+        assertTrue(out.contains("GROUP REMOVE;<Identifier>;<Email>"));
+        assertTrue(out.contains("GROUP DELETE;<Identifier>"));
         assertTrue(out.contains("HELP"));
         assertTrue(out.contains("EXIT"));
     }
@@ -211,6 +215,36 @@ class CommandProcessorTest {
             assertTrue(output().startsWith("ERROR"), command);
         }
         assertEquals(new BigDecimal("40.00"), ParkController.getInstance().getCurrentPrice());
+    }
+
+    @Test
+    void groupCommandsFollowSourceExamples() {
+        processor.process(ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        buffer.reset();
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP REMOVE;G01;pedro@correo.com");
+        processor.process("GROUP DELETE;G01");
+        String[] lines = output().split(System.lineSeparator());
+        assertEquals("GROUP CREATED", lines[0]);
+        assertEquals("USER ADDED TO GROUP", lines[1]);
+        assertEquals("USER ADDED TO GROUP", lines[2]);
+        assertTrue(lines[3].startsWith("ERROR"));
+        assertEquals("USER REMOVED FROM GROUP", lines[4]);
+        assertEquals("GROUP DELETED", lines[5]);
+    }
+
+    @Test
+    void groupCommandsWithWrongElementCountAreRejected() {
+        for (String command : new String[] {"GROUP CREATE;G01", "GROUP ADD;G01", "GROUP REMOVE;G01",
+                "GROUP DELETE", "GROUP DELETE;G01;x"}) {
+            buffer.reset();
+            processor.process(command);
+            assertTrue(output().startsWith("ERROR"), command);
+        }
     }
 
     @Test

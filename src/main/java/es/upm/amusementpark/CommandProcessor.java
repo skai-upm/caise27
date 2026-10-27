@@ -23,6 +23,10 @@ public class CommandProcessor {
             "  USER UPDATE;<email>;<password>;<field>;<value>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<Price>",
+            "  GROUP CREATE;<Identifier>;<Name>",
+            "  GROUP ADD;<Identifier>;<Email>",
+            "  GROUP REMOVE;<Identifier>;<Email>",
+            "  GROUP DELETE;<Identifier>",
             "  HELP",
             "  EXIT");
 
@@ -38,9 +42,11 @@ public class CommandProcessor {
 
     private final PrintStream out;
     private final UserService userService;
+    private final GroupService groupService = new GroupService();
 
+    /** Creates a processor working on the users managed by the {@link ParkController}. */
     public CommandProcessor(PrintStream out) {
-        this(out, new UserService(new UserRepository()));
+        this(out, new UserService(ParkController.getInstance().getUsers()));
     }
 
     public CommandProcessor(PrintStream out, UserService userService) {
@@ -89,6 +95,22 @@ public class CommandProcessor {
                 return true;
             case "SYSTEM PRICE":
                 setSystemPrice(parts);
+                return true;
+            case "GROUP CREATE":
+                groupCommand(parts, 3, "GROUP CREATE;<Identifier>;<Name>", "GROUP CREATED",
+                        () -> groupService.createGroup(parts[1], parts[2]));
+                return true;
+            case "GROUP ADD":
+                groupCommand(parts, 3, "GROUP ADD;<Identifier>;<Email>", "USER ADDED TO GROUP",
+                        () -> groupService.addUser(parts[1], parts[2]));
+                return true;
+            case "GROUP REMOVE":
+                groupCommand(parts, 3, "GROUP REMOVE;<Identifier>;<Email>", "USER REMOVED FROM GROUP",
+                        () -> groupService.removeUser(parts[1], parts[2]));
+                return true;
+            case "GROUP DELETE":
+                groupCommand(parts, 2, "GROUP DELETE;<Identifier>", "GROUP DELETED",
+                        () -> groupService.deleteGroup(parts[1]));
                 return true;
             default:
                 out.println("ERROR: unrecognised command: " + command);
@@ -188,5 +210,23 @@ public class CommandProcessor {
             }
         }
         return new BigDecimal(text);
+    }
+
+    /** A group operation that may be rejected. */
+    private interface GroupAction {
+        void run() throws GroupOperationException;
+    }
+
+    private void groupCommand(String[] parts, int elements, String syntax, String success, GroupAction action) {
+        if (parts.length != elements) {
+            out.println("ERROR: invalid syntax. Expected " + syntax);
+            return;
+        }
+        try {
+            action.run();
+            out.println(success);
+        } catch (GroupOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
     }
 }

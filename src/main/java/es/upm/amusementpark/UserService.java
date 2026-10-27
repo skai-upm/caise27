@@ -33,8 +33,9 @@ public class UserService {
     }
 
     public void deleteUser(String email, String password) throws UserOperationException {
-        authenticate(email, password);
+        User user = authenticate(email, password);
         repository.delete(email);
+        ParkController.getInstance().getGroups().removeUserFromAll(user);
     }
 
     /**
