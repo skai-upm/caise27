@@ -90,6 +90,10 @@ class CommandProcessorTest {
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
             "ATTRACTION STATUS;<attractionIdentifier>",
+            "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>",
+            "SPEEDPASS DELETE;<speedPassIdentifier>",
+            "SPECIALPASS CREATE;<identifier>;<individualTicket>",
+            "SPECIALPASS DELETE;<specialPassIdentifier>",
             "INVOICE CREATE;USER;<email>",
             "INVOICE CREATE;GROUP;<groupIdentifier>",
             "HELP",
@@ -493,6 +497,31 @@ class CommandProcessorTest {
                 assertFalse(output().contains("unrecognised command"), name);
             }
         }
+    }
+
+    @Test
+    void passCommandsBuyAndRefund() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        buffer.reset();
+        processor.process("SPEEDPASS CREATE;SP01;T001;1");
+        processor.process("SPEEDPASS CREATE;SP02;T001;10");
+        processor.process("SPECIALPASS CREATE;PE01;T001");
+        processor.process("SPEEDPASS DELETE;SP02:3");
+        processor.process("SPECIALPASS DELETE;PE01");
+        processor.process("SPEEDPASS CREATE;SP03;T001;5");
+        processor.process("SPECIALPASS DELETE;SP01:1");
+        processor.process("SPEEDPASS CREATE;SP04;T001");
+        String[] lines = output().split(System.lineSeparator());
+        assertEquals("SPEEDPASS CREATED: SP01:1. TOTAL PRICE: 8.00 EUR", lines[0]);
+        assertEquals("SPEEDPASS CREATED: SP02:1..SP02:10. TOTAL PRICE: 80.00 EUR", lines[1]);
+        assertEquals("SPECIAL PASS CREATED. PRICE: 40.00 EUR", lines[2]);
+        assertEquals("SPEEDPASS REFUNDED", lines[3]);
+        assertEquals("SPECIAL PASS REFUNDED", lines[4]);
+        assertTrue(lines[5].startsWith("ERROR"));
+        assertTrue(lines[6].startsWith("ERROR"));
+        assertTrue(lines[7].startsWith("ERROR"));
     }
 
     @Test

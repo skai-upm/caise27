@@ -2,11 +2,13 @@ package es.upm.amusementpark.business.service;
 
 import es.upm.amusementpark.persistence.TicketRepository;
 import es.upm.amusementpark.persistence.GroupRepository;
+import es.upm.amusementpark.persistence.PassRepository;
 import es.upm.amusementpark.persistence.UserRepository;
 import es.upm.amusementpark.business.exception.TicketOperationException;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
@@ -25,6 +27,7 @@ public class TicketService {
     private UserRepository users;
     private GroupRepository groups;
     private TicketRepository tickets;
+    private PassRepository passes;
     private ParkController park;
 
     private TicketService() {
@@ -35,10 +38,12 @@ public class TicketService {
     }
 
     /** Injects the collaborators of this controller; called during application initialization. */
-    public void configure(UserRepository users, GroupRepository groups, TicketRepository tickets, ParkController park) {
+    public void configure(UserRepository users, GroupRepository groups, TicketRepository tickets,
+            PassRepository passes, ParkController park) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        this.passes = passes;
         this.park = park;
     }
 
@@ -69,6 +74,7 @@ public class TicketService {
                     + " belongs to a group ticket and can only be deleted with it.");
         }
         checkDeletable(ticket);
+        deletePassesOf(individual);
         tickets.delete(identifier);
     }
 
@@ -118,9 +124,19 @@ public class TicketService {
         }
         checkDeletable(groupTicket);
         for (IndividualTicket composed : groupTicket.getComposition()) {
+            deletePassesOf(composed);
+        }
+        for (IndividualTicket composed : groupTicket.getComposition()) {
             tickets.delete(composed.getIdentifier());
         }
         tickets.delete(identifier);
+    }
+
+    /** Removes the SpeedPasses and Special Pass bought for the ticket. */
+    private void deletePassesOf(IndividualTicket ticket) {
+        for (Pass pass : passes.findByTicket(ticket)) {
+            passes.delete(pass.getIdentifier());
+        }
     }
 
     private void checkNotPast(LocalDate date) throws TicketOperationException {

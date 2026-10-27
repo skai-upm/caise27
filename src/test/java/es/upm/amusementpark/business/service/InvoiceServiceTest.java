@@ -78,4 +78,18 @@ class InvoiceServiceTest {
         assertThrows(InvoiceOperationException.class, () -> invoices.createUserInvoice("nadie@correo.com"));
         assertThrows(InvoiceOperationException.class, () -> invoices.createGroupInvoice("G99"));
     }
+
+    @Test
+    void userInvoiceIncludesPassesOfComposedTickets() throws Exception {
+        tickets.createGroupTicket("TG01", "G01", DAY);
+        PassService.getInstance().buySpeedPasses("SP01", "TG01:12345678Z", 1);
+        PassService.getInstance().buySpecialPass("PE01", "TG01:12345678Z");
+        Invoice invoice = invoices.createUserInvoice("ana@correo.com");
+        String text = String.join("\n", invoice.render());
+        assertTrue(text.contains("SpeedPasses:\n  SP01:1 (ticket TG01:12345678Z): 8.00 EUR"));
+        assertTrue(text.contains("Special Passes:\n  PE01 (ticket TG01:12345678Z): 40.00 EUR"));
+        assertFalse(text.contains("Individual tickets"));
+        assertEquals(new BigDecimal("48.00"), invoice.getTotal());
+        assertEquals(new BigDecimal("80.00"), invoices.createGroupInvoice("G01").getTotal());
+    }
 }

@@ -5,6 +5,8 @@ import es.upm.amusementpark.business.exception.PersistenceException;
 import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
@@ -12,6 +14,7 @@ import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
 import es.upm.amusementpark.business.service.InvoiceService;
 import es.upm.amusementpark.business.service.ParkController;
+import es.upm.amusementpark.business.service.PassService;
 import es.upm.amusementpark.business.service.TicketService;
 import es.upm.amusementpark.business.service.UserService;
 import es.upm.amusementpark.presentation.help.ExtendedHelpFormatter;
@@ -51,6 +54,7 @@ public class CommandProcessor {
     private final TicketService ticketService;
     private final AttractionService attractionService;
     private final InvoiceService invoiceService;
+    private final PassService passService;
 
     private final HelpGenerator help;
     private final HelpGenerator extendedHelp;
@@ -73,6 +77,7 @@ public class CommandProcessor {
         this.ticketService = TicketService.getInstance();
         this.attractionService = AttractionService.getInstance();
         this.invoiceService = InvoiceService.getInstance();
+        this.passService = PassService.getInstance();
     }
 
     /**
@@ -187,6 +192,24 @@ public class CommandProcessor {
             case "ATTRACTION STATUS":
                 attractionStatus(parts);
                 return true;
+            case "SPEEDPASS CREATE":
+                buySpeedPasses(parts);
+                return true;
+            case "SPEEDPASS DELETE":
+                requireElements(parts, 2, "SPEEDPASS DELETE;<speedPassIdentifier>");
+                passService.refund(parts[1], SpeedPass.class);
+                out.println("SPEEDPASS REFUNDED");
+                return true;
+            case "SPECIALPASS CREATE":
+                requireElements(parts, 3, "SPECIALPASS CREATE;<identifier>;<individualTicket>");
+                SpecialPass special = passService.buySpecialPass(parts[1], parts[2]);
+                out.println("SPECIAL PASS CREATED. PRICE: " + special.getPrice() + " EUR");
+                return true;
+            case "SPECIALPASS DELETE":
+                requireElements(parts, 2, "SPECIALPASS DELETE;<specialPassIdentifier>");
+                passService.refund(parts[1], SpecialPass.class);
+                out.println("SPECIAL PASS REFUNDED");
+                return true;
             case "INVOICE CREATE":
                 createInvoice(parts);
                 return true;
@@ -287,6 +310,29 @@ public class CommandProcessor {
         for (User user : attraction.getOccupants()) {
             out.println(user.getEmail());
         }
+    }
+
+    private void buySpeedPasses(String[] parts) throws ParkException, InvalidCommandException {
+        requireElements(parts, 4, "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>");
+        int quantity;
+        switch (parts[3]) {
+            case "1":
+                quantity = 1;
+                break;
+            case "10":
+                quantity = 10;
+                break;
+            default:
+                throw new InvalidCommandException("invalid quantity " + parts[3] + ". It must be 1 or 10.");
+        }
+        List<SpeedPass> bought = passService.buySpeedPasses(parts[1], parts[2], quantity);
+        BigDecimal total = BigDecimal.ZERO.setScale(2);
+        for (SpeedPass pass : bought) {
+            total = total.add(pass.getPrice());
+        }
+        String range = bought.size() == 1 ? bought.get(0).getIdentifier()
+                : bought.get(0).getIdentifier() + ".." + bought.get(bought.size() - 1).getIdentifier();
+        out.println("SPEEDPASS CREATED: " + range + ". TOTAL PRICE: " + total + " EUR");
     }
 
     private void createInvoice(String[] parts) throws ParkException, InvalidCommandException {

@@ -40,6 +40,15 @@ package es.upm.amusementpark.business.model {
   class GroupTicket {
   }
 
+  abstract class Pass {
+    - identifier : String {readOnly}
+    - price : BigDecimal {readOnly}
+    - consumed : boolean
+  }
+
+  class SpeedPass
+  class SpecialPass
+
   class Attraction {
     - identifier : String {readOnly}
     - name : String
@@ -93,6 +102,9 @@ package es.upm.amusementpark.business.service {
   class InvoiceService <<singleton>> {
     - {static} INSTANCE : InvoiceService
   }
+  class PassService <<singleton>> {
+    - {static} INSTANCE : PassService
+  }
 }
 
 package es.upm.amusementpark.business.exception {
@@ -102,6 +114,7 @@ package es.upm.amusementpark.business.exception {
   class TicketOperationException
   class AttractionOperationException
   class InvoiceOperationException
+  class PassOperationException
   class PersistenceException
 }
 
@@ -110,6 +123,7 @@ package es.upm.amusementpark.persistence {
   class GroupRepository
   class TicketRepository
   class AttractionRepository
+  class PassRepository
   class UserFileStorage {
     - file : Path
   }
@@ -160,11 +174,18 @@ IndividualTicket "0..*" --> "0..1" GroupTicket : groupTicket
 GroupTicket "0..*" --> "0..1" Group : group
 Attraction "0..*" --> "0..*" User : occupants
 
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Pass "0..*" --> "1" IndividualTicket : ticket
+
 ' ----- Central management -----
 ParkController "1" --> "1" UserRepository : users
 ParkController "1" --> "1" GroupRepository : groups
 ParkController "1" --> "1" TicketRepository : tickets
 ParkController "1" --> "1" AttractionRepository : attractions
+ParkController "1" --> "1" PassRepository : passes
+PassRepository "1" o--> "0..*" Pass : passes
+ParkRepositories --> "1" PassRepository
 
 UserRepository "1" o--> "0..*" User : users
 GroupRepository "1" o--> "0..*" Group : groups
@@ -205,6 +226,15 @@ InvoiceService --> "1" UserRepository : users
 InvoiceService --> "1" GroupRepository : groups
 InvoiceService --> "1" TicketRepository : tickets
 InvoiceService --> "1" ParkController : park
+InvoiceService --> "1" PassRepository : passes
+TicketService --> "1" PassRepository : passes
+PassService --> "1" PassRepository : passes
+PassService --> "1" TicketRepository : tickets
+PassService --> "1" ParkController : park
+PassService ..> PassOperationException
+ParkException <|-- PassOperationException
+UserInvoiceBuilder ..> Pass
+CommandProcessor --> "1" PassService
 UserService ..> UserValidator
 UserService ..> UserField
 

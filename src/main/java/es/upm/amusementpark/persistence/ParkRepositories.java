@@ -10,7 +10,7 @@ import java.nio.file.Path;
  * @param ignoredLines number of malformed stored lines skipped while loading
  */
 public record ParkRepositories(UserRepository users, GroupRepository groups, TicketRepository tickets,
-        AttractionRepository attractions, int ignoredLines) {
+        AttractionRepository attractions, PassRepository passes, int ignoredLines) {
 
     static final String USERS_FILE = "users.txt";
     static final String GROUPS_FILE = "groups.txt";
@@ -20,7 +20,7 @@ public record ParkRepositories(UserRepository users, GroupRepository groups, Tic
     /** Repositories kept in memory only. */
     public static ParkRepositories inMemory() {
         return new ParkRepositories(new UserRepository(), new GroupRepository(), new TicketRepository(),
-                new AttractionRepository(), 0);
+                new AttractionRepository(), new PassRepository(), 0);
     }
 
     /**
@@ -38,6 +38,6 @@ public record ParkRepositories(UserRepository users, GroupRepository groups, Tic
         AttractionRepository attractions = new AttractionRepository(attractionStorage);
         int ignored = userStorage.getSkippedLines() + groupStorage.getSkippedLines()
                 + ticketStorage.getSkippedLines() + attractionStorage.getSkippedLines();
-        return new ParkRepositories(users, groups, tickets, attractions, ignored);
+        return new ParkRepositories(users, groups, tickets, attractions, new PassRepository(), ignored);
     }
 }

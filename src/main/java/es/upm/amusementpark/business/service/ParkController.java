@@ -10,6 +10,7 @@ import es.upm.amusementpark.persistence.AttractionRepository;
 import es.upm.amusementpark.persistence.DataDirectories;
 import es.upm.amusementpark.persistence.GroupRepository;
 import es.upm.amusementpark.persistence.ParkRepositories;
+import es.upm.amusementpark.persistence.PassRepository;
 import es.upm.amusementpark.persistence.TicketRepository;
 import es.upm.amusementpark.persistence.UserRepository;
 
@@ -34,6 +35,7 @@ public final class ParkController {
     private GroupRepository groups;
     private TicketRepository tickets;
     private AttractionRepository attractions;
+    private PassRepository passes;
     private LocalDate currentDate;
     private BigDecimal currentPrice;
 
@@ -56,7 +58,7 @@ public final class ParkController {
      * Prepares a new execution with in-memory tickets and attractions.
      */
     public void initialize(UserRepository users, GroupRepository groups, LocalDate today) {
-        initialize(users, groups, new TicketRepository(), new AttractionRepository(), today);
+        initialize(users, groups, new TicketRepository(), new AttractionRepository(), new PassRepository(), today);
     }
 
     /**
@@ -64,7 +66,7 @@ public final class ParkController {
      */
     public void initialize(ParkRepositories repositories, LocalDate today) {
         initialize(repositories.users(), repositories.groups(), repositories.tickets(),
-                repositories.attractions(), today);
+                repositories.attractions(), repositories.passes(), today);
     }
 
     /**
@@ -74,18 +76,20 @@ public final class ParkController {
      * controller.
      */
     public void initialize(UserRepository users, GroupRepository groups, TicketRepository tickets,
-            AttractionRepository attractions, LocalDate today) {
+            AttractionRepository attractions, PassRepository passes, LocalDate today) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
+        this.passes = passes;
         this.currentDate = today;
         this.currentPrice = INITIAL_PRICE;
         UserService.getInstance().configure(users, groups, this, new BCryptPasswordHasher());
         GroupService.getInstance().configure(users, groups, this);
-        TicketService.getInstance().configure(users, groups, tickets, this);
+        TicketService.getInstance().configure(users, groups, tickets, passes, this);
         AttractionService.getInstance().configure(attractions, tickets, this);
-        InvoiceService.getInstance().configure(users, groups, tickets, this);
+        InvoiceService.getInstance().configure(users, groups, tickets, passes, this);
+        PassService.getInstance().configure(passes, tickets, this);
     }
 
     /**
@@ -142,6 +146,10 @@ public final class ParkController {
 
     public AttractionRepository getAttractions() {
         return attractions;
+    }
+
+    public PassRepository getPasses() {
+        return passes;
     }
 
     /**
