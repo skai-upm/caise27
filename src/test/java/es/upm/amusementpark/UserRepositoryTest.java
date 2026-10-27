@@ -5,9 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class UserRepositoryTest {
+
+    @TempDir
+    Path dir;
 
     private static User user(String email) {
         return new User("Ana", "Garcia Lopez", "12345678Z", email,
@@ -35,5 +41,23 @@ class UserRepositoryTest {
         assertTrue(repository.delete("ana@correo.com"));
         assertTrue(repository.findByEmail("ana@correo.com").isEmpty());
         assertFalse(repository.delete("ana@correo.com"));
+    }
+
+    @Test
+    void savedUserIsLoadedByNewRepositoryOnSameFile() {
+        Path file = dir.resolve("users.txt");
+        new UserRepository(new UserFileStorage(file)).save(user("ana@correo.com"));
+        UserRepository reloaded = new UserRepository(new UserFileStorage(file));
+        assertEquals("12345678Z", reloaded.findByEmail("ana@correo.com").orElseThrow().getDni());
+        assertTrue(reloaded.existsByDni("12345678Z"));
+    }
+
+    @Test
+    void deletionIsPersisted() {
+        Path file = dir.resolve("users.txt");
+        UserRepository repository = new UserRepository(new UserFileStorage(file));
+        repository.save(user("ana@correo.com"));
+        repository.delete("ana@correo.com");
+        assertTrue(new UserRepository(new UserFileStorage(file)).findAll().isEmpty());
     }
 }

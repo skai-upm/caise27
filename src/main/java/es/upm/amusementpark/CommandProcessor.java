@@ -1,6 +1,7 @@
 package es.upm.amusementpark;
 
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 
 /**
  * Processes single command lines. Every input source uses this class, so a
@@ -67,7 +68,7 @@ public class CommandProcessor {
         try {
             userService.createUser(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
             out.println("USER CREATED");
-        } catch (UserOperationException e) {
+        } catch (UserOperationException | UncheckedIOException e) {
             out.println("ERROR: " + e.getMessage());
         }
     }

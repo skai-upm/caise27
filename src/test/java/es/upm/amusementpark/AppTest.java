@@ -20,10 +20,10 @@ class AppTest {
     @TempDir
     Path tempDir;
 
-    private static String runApp(String[] args, String stdin) {
+    private String runApp(String[] args, String stdin) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(buffer, true, StandardCharsets.UTF_8));
+                new PrintStream(buffer, true, StandardCharsets.UTF_8), tempDir.resolve("data"));
         return buffer.toString(StandardCharsets.UTF_8);
     }
 
@@ -58,5 +58,16 @@ class AppTest {
     void missingFileIsReportedInControlledManner() {
         String out = runApp(new String[] {tempDir.resolve("missing.txt").toString()}, "");
         assertTrue(out.startsWith("ERROR"));
+    }
+
+    @Test
+    void usersPersistBetweenRuns() throws IOException {
+        String create = "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456\n";
+        assertTrue(runApp(new String[0], create + "EXIT\n").contains("USER CREATED"));
+        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                Files.readString(tempDir.resolve("data/users.txt"), StandardCharsets.UTF_8).trim());
+        String second = runApp(new String[0], create + "EXIT\n");
+        assertFalse(second.contains("USER CREATED"));
+        assertTrue(second.contains("ERROR"));
     }
 }
