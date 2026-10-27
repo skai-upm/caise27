@@ -29,7 +29,7 @@ class ParkControllerTest {
         park.setCurrentDate(LocalDate.of(2030, 1, 1));
         park.setCurrentPrice(new BigDecimal("99.99"));
         UserRepository users = new UserRepository();
-        park.start(users);
+        ApplicationInitializer.startInMemory(users);
         assertEquals(LocalDate.now(), park.getCurrentDate());
         assertEquals(new BigDecimal("40.00"), park.getCurrentPrice());
         assertSame(users, park.getUsers());

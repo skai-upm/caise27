@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import es.upm.amusementpark.business.controller.ParkController;
+import es.upm.amusementpark.business.controller.ApplicationInitializer;
 import es.upm.amusementpark.persistence.PersistenceException;
 
 /**
@@ -31,19 +31,18 @@ public class Main {
     public static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path baseDir) {
         boolean fly = args.length > 0 && args[0].equals(FLY);
         String commandFile = fly ? (args.length > 1 ? args[1] : null) : (args.length > 0 ? args[0] : null);
-        ParkController park = ParkController.getInstance();
         try {
             if (fly) {
-                park.startTemporary(baseDir);
+                ApplicationInitializer.startTemporary(baseDir);
             } else {
-                park.startPermanent(baseDir);
+                ApplicationInitializer.startPermanent(baseDir);
             }
-            return execute(commandFile, new CommandProcessor(park), in, out, err);
+            return execute(commandFile, new CommandProcessor(), in, out, err);
         } catch (PersistenceException e) {
             err.println("Error: " + e.getMessage());
             return 1;
         } finally {
-            park.close();
+            ApplicationInitializer.close();
         }
     }
 

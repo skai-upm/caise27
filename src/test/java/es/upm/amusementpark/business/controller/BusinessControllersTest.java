@@ -27,12 +27,12 @@ class BusinessControllersTest {
     @BeforeEach
     void setUp() throws Exception {
         park = ParkController.getInstance();
-        park.start(new UserRepository());
+        ApplicationInitializer.startInMemory(new UserRepository());
         park.setCurrentDate(today);
-        users = new UserController(park);
-        groups = new GroupController(park);
-        tickets = new TicketController(park);
-        attractions = new AttractionController(park);
+        users = UserController.getInstance();
+        groups = GroupController.getInstance();
+        tickets = TicketController.getInstance();
+        attractions = AttractionController.getInstance();
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
     }
 

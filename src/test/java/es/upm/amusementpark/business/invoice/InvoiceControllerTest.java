@@ -15,6 +15,7 @@ import es.upm.amusementpark.business.controller.TicketController;
 import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.exception.NotFoundException;
 import es.upm.amusementpark.persistence.repository.UserRepository;
+import es.upm.amusementpark.business.controller.ApplicationInitializer;
 
 class InvoiceControllerTest {
 
@@ -23,19 +24,19 @@ class InvoiceControllerTest {
     @BeforeEach
     void setUp() throws Exception {
         ParkController park = ParkController.getInstance();
-        park.start(new UserRepository());
+        ApplicationInitializer.startInMemory(new UserRepository());
         park.setCurrentDate(LocalDate.of(2027, 4, 10));
-        UserController users = new UserController(park);
+        UserController users = UserController.getInstance();
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "1", "1234567890123456");
         users.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "2", "9876543210987654");
-        GroupController groups = new GroupController(park);
+        GroupController groups = GroupController.getInstance();
         groups.create("G01", "Familia Garcia");
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
-        TicketController tickets = new TicketController(park);
+        TicketController tickets = TicketController.getInstance();
         tickets.createGroupTicket("TG01", "G01", LocalDate.of(2027, 4, 15));
         tickets.createIndividual("T001", "ana@correo.com", LocalDate.of(2027, 4, 15));
-        invoices = new InvoiceController(park, new StandardInvoiceBuilder());
+        invoices = InvoiceController.getInstance();
     }
 
     @Test

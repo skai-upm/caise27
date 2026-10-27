@@ -7,7 +7,6 @@ import es.upm.amusementpark.business.controller.TicketController;
 import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.invoice.InvoiceController;
-import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
 import es.upm.amusementpark.persistence.PersistenceException;
 
 /**
@@ -51,13 +50,14 @@ public class CommandProcessor {
     private final InvoiceCommands invoices;
     private boolean exitRequested;
 
-    public CommandProcessor(ParkController park) {
-        this.users = new UserCommands(new UserController(park));
-        this.system = new SystemCommands(park);
-        this.groups = new GroupCommands(new GroupController(park));
-        this.tickets = new TicketCommands(new TicketController(park));
-        this.attractions = new AttractionCommands(new AttractionController(park));
-        this.invoices = new InvoiceCommands(new InvoiceController(park, new StandardInvoiceBuilder()));
+    /** Wires the command handlers to the configured singleton controllers. */
+    public CommandProcessor() {
+        this.users = new UserCommands(UserController.getInstance());
+        this.system = new SystemCommands(ParkController.getInstance());
+        this.groups = new GroupCommands(GroupController.getInstance());
+        this.tickets = new TicketCommands(TicketController.getInstance());
+        this.attractions = new AttractionCommands(AttractionController.getInstance());
+        this.invoices = new InvoiceCommands(InvoiceController.getInstance());
     }
 
     /**

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.persistence.repository.UserRepository;
+import es.upm.amusementpark.business.controller.ApplicationInitializer;
 
 class CommandProcessorTest {
 
@@ -21,8 +22,8 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() {
         users = new UserRepository();
-        ParkController.getInstance().start(users);
-        processor = new CommandProcessor(ParkController.getInstance());
+        ApplicationInitializer.startInMemory(users);
+        processor = new CommandProcessor();
     }
 
     private static String create(String dni, String email, String password, String card) {
@@ -185,13 +186,13 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailuresAreContained() {
-        ParkController.getInstance().start(new UserRepository() {
+        ApplicationInitializer.startInMemory(new UserRepository() {
             @Override
             public es.upm.amusementpark.business.model.User findByEmail(String email) {
                 throw new IllegalStateException("boom");
             }
         });
-        CommandProcessor failing = new CommandProcessor(ParkController.getInstance());
+        CommandProcessor failing = new CommandProcessor();
         assertEquals("ERROR: Command could not be processed", failing.process("USER DELETE;ana@correo.com;Clave1!"));
         assertTrue(failing.process("HELP").startsWith("Available commands"));
     }

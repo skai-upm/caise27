@@ -10,20 +10,39 @@ import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.persistence.repository.TicketRepository;
+import es.upm.amusementpark.persistence.repository.AttractionRepository;
 
 /**
  * Business rules for attractions: creation, entry with any ticket type and exit.
  */
-public class AttractionController {
+public final class AttractionController {
 
-    private final ParkController park;
+    private static AttractionController instance;
 
-    public AttractionController(ParkController park) {
+    private AttractionRepository attractions;
+    private TicketRepository tickets;
+    private ParkController park;
+
+    private AttractionController() {
+    }
+
+    public static AttractionController getInstance() {
+        if (instance == null) {
+            instance = new AttractionController();
+        }
+        return instance;
+    }
+
+    /** Injects the dependencies configured at application initialization. */
+    public void configure(AttractionRepository attractions, TicketRepository tickets, ParkController park) {
+        this.attractions = attractions;
+        this.tickets = tickets;
         this.park = park;
     }
 
     public Attraction find(String id) throws NotFoundException {
-        Attraction attraction = park.getAttractions().findById(id);
+        Attraction attraction = attractions.findById(id);
         if (attraction == null) {
             throw new NotFoundException("Attraction not found");
         }
@@ -34,16 +53,16 @@ public class AttractionController {
         if (capacity < 1) {
             throw new InvalidDataException("Capacity must be a positive whole number");
         }
-        if (park.getAttractions().exists(id)) {
+        if (attractions.exists(id)) {
             throw new DuplicateException("Attraction already exists");
         }
-        park.getAttractions().add(new Attraction(id, name, capacity));
+        attractions.add(new Attraction(id, name, capacity));
     }
 
     /** Lets every holder of the ticket enter, all together or none. Returns who entered. */
     public List<User> enter(String attractionId, String ticketId) throws ParkException {
         Attraction attraction = find(attractionId);
-        Ticket ticket = park.getTickets().findById(ticketId);
+        Ticket ticket = tickets.findById(ticketId);
         if (ticket == null) {
             throw new NotFoundException("Ticket not found");
         }

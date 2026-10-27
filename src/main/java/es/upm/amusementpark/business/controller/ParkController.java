@@ -1,7 +1,6 @@
 package es.upm.amusementpark.business.controller;
 
 import java.math.BigDecimal;
-import java.nio.file.Path;
 import java.time.LocalDate;
 
 import es.upm.amusementpark.business.exception.InvalidDataException;
@@ -11,12 +10,6 @@ import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
-import es.upm.amusementpark.persistence.AttractionFileStore;
-import es.upm.amusementpark.persistence.DataPaths;
-import es.upm.amusementpark.persistence.GroupFileStore;
-import es.upm.amusementpark.persistence.TemporaryDataDirectory;
-import es.upm.amusementpark.persistence.TicketFileStore;
-import es.upm.amusementpark.persistence.UserFileStore;
 import es.upm.amusementpark.persistence.repository.AttractionRepository;
 import es.upm.amusementpark.persistence.repository.GroupRepository;
 import es.upm.amusementpark.persistence.repository.TicketRepository;
@@ -39,10 +32,10 @@ public final class ParkController {
     private AttractionRepository attractions;
     private LocalDate currentDate;
     private BigDecimal currentPrice;
-    private TemporaryDataDirectory temporary;
 
     private ParkController() {
-        start(new UserRepository());
+        configure(new UserRepository(), new GroupRepository(), new TicketRepository(), new AttractionRepository());
+        resetClock();
     }
 
     public static ParkController getInstance() {
@@ -52,48 +45,17 @@ public final class ParkController {
         return instance;
     }
 
-    /** Starts an execution with in-memory groups, tickets and attractions (no persistence). */
-    public void start(UserRepository users) {
-        start(users, new GroupRepository(), new TicketRepository(), new AttractionRepository());
-    }
-
-    /** Starts an execution with permanent data files in the given base directory. */
-    public void startPermanent(Path baseDir) {
-        start(new DataPaths(baseDir));
-    }
-
-    /** Starts an execution whose data lives in a new temporary directory under {@code <base>/tmp}. */
-    public void startTemporary(Path baseDir) {
-        temporary = TemporaryDataDirectory.create(baseDir);
-        start(new DataPaths(temporary.path()));
-    }
-
-    /** Ends the execution, deleting the temporary data directory if one was used. */
-    public void close() {
-        if (temporary != null) {
-            TemporaryDataDirectory dir = temporary;
-            temporary = null;
-            dir.delete();
-        }
-    }
-
-    /** Starts an execution whose repositories persist in the files of the given data directory. */
-    public void start(DataPaths paths) {
-        UserRepository loadedUsers = new UserRepository(new UserFileStore(paths.users()));
-        GroupRepository loadedGroups = new GroupRepository(new GroupFileStore(paths.groups()), loadedUsers);
-        TicketRepository loadedTickets = new TicketRepository(new TicketFileStore(paths.tickets()), loadedUsers,
-                loadedGroups);
-        AttractionRepository loadedAttractions = new AttractionRepository(new AttractionFileStore(paths.attractions()));
-        start(loadedUsers, loadedGroups, loadedTickets, loadedAttractions);
-    }
-
-    /** Initialises the state of a new execution: repositories, today's date and the initial price. */
-    private void start(UserRepository users, GroupRepository groups, TicketRepository tickets,
+    /** Injects the repositories configured for the current execution. */
+    public void configure(UserRepository users, GroupRepository groups, TicketRepository tickets,
             AttractionRepository attractions) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
+    }
+
+    /** Start-of-execution state: today's date and the initial base price. */
+    public void resetClock() {
         this.currentDate = LocalDate.now();
         this.currentPrice = INITIAL_PRICE;
     }

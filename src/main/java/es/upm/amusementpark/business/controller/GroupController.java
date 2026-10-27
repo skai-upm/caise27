@@ -6,20 +6,39 @@ import es.upm.amusementpark.business.exception.OperationNotAllowedException;
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.persistence.repository.UserRepository;
+import es.upm.amusementpark.persistence.repository.GroupRepository;
 
 /**
  * Business rules for user groups.
  */
-public class GroupController {
+public final class GroupController {
 
-    private final ParkController park;
+    private static GroupController instance;
 
-    public GroupController(ParkController park) {
+    private GroupRepository groups;
+    private UserRepository users;
+    private ParkController park;
+
+    private GroupController() {
+    }
+
+    public static GroupController getInstance() {
+        if (instance == null) {
+            instance = new GroupController();
+        }
+        return instance;
+    }
+
+    /** Injects the dependencies configured at application initialization. */
+    public void configure(GroupRepository groups, UserRepository users, ParkController park) {
+        this.groups = groups;
+        this.users = users;
         this.park = park;
     }
 
     public Group find(String id) throws NotFoundException {
-        Group group = park.getGroups().findById(id);
+        Group group = groups.findById(id);
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
@@ -27,31 +46,31 @@ public class GroupController {
     }
 
     public void create(String id, String name) throws ParkException {
-        if (park.getGroups().exists(id)) {
+        if (groups.exists(id)) {
             throw new DuplicateException("Group already exists");
         }
-        park.getGroups().add(new Group(id, name));
+        groups.add(new Group(id, name));
     }
 
     public void addMember(String id, String email) throws ParkException {
         Group group = modifiable(id);
-        User user = park.getUsers().findByEmail(email);
+        User user = users.findByEmail(email);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
         if (!group.addMember(user)) {
             throw new DuplicateException("User already in group");
         }
-        park.getGroups().save();
+        groups.save();
     }
 
     public void removeMember(String id, String email) throws ParkException {
         Group group = modifiable(id);
-        User user = park.getUsers().findByEmail(email);
+        User user = users.findByEmail(email);
         if (user == null || !group.removeMember(user)) {
             throw new NotFoundException("User is not a member of the group");
         }
-        park.getGroups().save();
+        groups.save();
     }
 
     public void delete(String id) throws ParkException {

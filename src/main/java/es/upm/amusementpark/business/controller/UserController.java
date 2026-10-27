@@ -13,16 +13,27 @@ import es.upm.amusementpark.persistence.repository.UserRepository;
 /**
  * Business rules for registering, modifying and deleting users.
  */
-public class UserController {
+public final class UserController {
 
-    private final ParkController park;
+    private static UserController instance;
 
-    public UserController(ParkController park) {
-        this.park = park;
+    private UserRepository users;
+    private ParkController park;
+
+    private UserController() {
     }
 
-    private UserRepository users() {
-        return park.getUsers();
+    public static UserController getInstance() {
+        if (instance == null) {
+            instance = new UserController();
+        }
+        return instance;
+    }
+
+    /** Injects the dependencies configured at application initialization. */
+    public void configure(UserRepository users, ParkController park) {
+        this.users = users;
+        this.park = park;
     }
 
     public User create(String firstName, String surnames, String dni, String email, String password, String phone,
@@ -39,20 +50,20 @@ public class UserController {
         if (!UserValidator.isValidCard(card)) {
             throw new InvalidDataException("Invalid card number");
         }
-        if (users().existsDni(dni)) {
+        if (users.existsDni(dni)) {
             throw new DuplicateException("DNI already registered");
         }
-        if (users().existsEmail(email)) {
+        if (users.existsEmail(email)) {
             throw new DuplicateException("Email already registered");
         }
         User user = new User(firstName, surnames, dni, email, password, phone, card);
-        users().add(user);
+        users.add(user);
         return user;
     }
 
     /** Locates the user by email and checks the password. */
     public User authenticate(String email, String password) throws ParkException {
-        User user = users().findByEmail(email);
+        User user = users.findByEmail(email);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -72,7 +83,7 @@ public class UserController {
         }
         park.removeFromAllGroups(user);
         park.removeFromAllAttractions(user);
-        users().remove(user);
+        users.remove(user);
     }
 
     public void update(String email, String password, UserField field, String value) throws ParkException {
@@ -85,7 +96,7 @@ public class UserController {
                 if (!UserValidator.isValidEmail(value)) {
                     throw new InvalidDataException("Invalid email");
                 }
-                User owner = users().findByEmail(value);
+                User owner = users.findByEmail(value);
                 if (owner != null && owner != user) {
                     throw new DuplicateException("Email already registered");
                 }
@@ -104,6 +115,6 @@ public class UserController {
                 user.setCardNumber(value);
             }
         }
-        users().update(user);
+        users.update(user);
     }
 }

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.persistence.repository.UserRepository;
+import es.upm.amusementpark.business.controller.ApplicationInitializer;
 
 class GroupTicketCommandsTest {
 
@@ -20,8 +21,8 @@ class GroupTicketCommandsTest {
     @BeforeEach
     void setUp() {
         park = ParkController.getInstance();
-        park.start(new UserRepository());
-        processor = new CommandProcessor(park);
+        ApplicationInitializer.startInMemory(new UserRepository());
+        processor = new CommandProcessor();
         processor.process("USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456");
         processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
         processor.process("USER CREATE;Luis;Ruiz;11111111H;luis@correo.com;Clave3$;634567890;1111222233334444");
