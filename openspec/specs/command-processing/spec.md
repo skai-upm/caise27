@@ -232,3 +232,10 @@ HELP and HELP EXTENDED SHALL also include `ATTRACTION CREATE;<identifier>;<name>
 #### Scenario: Help shows both creation forms
 - **WHEN** the user enters `HELP`
 - **THEN** the output contains `ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>` and `ATTRACTION CREATE;<identifier>;<name>;<capacity>`
+
+### Requirement: HELP lists SpeedPass entry
+HELP and HELP EXTENDED SHALL also include `ATTRACTION ENTER;<attraction>;<ticket>;SPEED`.
+
+#### Scenario: Help shows SpeedPass entry
+- **WHEN** the user enters `HELP`
+- **THEN** the output contains `ATTRACTION ENTER;<attraction>;<ticket>;SPEED`
