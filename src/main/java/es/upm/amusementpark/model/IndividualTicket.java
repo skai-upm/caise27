@@ -11,7 +11,11 @@ public class IndividualTicket extends Ticket {
     private final User user;
 
     public IndividualTicket(String id, LocalDate date, BigDecimal basePrice, User user) {
-        super(id, date, basePrice);
+        this(id, date, basePrice, BigDecimal.ZERO, user);
+    }
+
+    public IndividualTicket(String id, LocalDate date, BigDecimal basePrice, BigDecimal discountRate, User user) {
+        super(id, date, basePrice, discountRate);
         this.user = user;
     }
 

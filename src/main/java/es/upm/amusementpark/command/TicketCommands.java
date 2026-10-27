@@ -46,6 +46,9 @@ class TicketCommands {
         if (parts.length != 2 || CommandProcessor.hasEmpty(parts)) {
             return "ERROR: Invalid format. Use TICKET DELETE;<identifier>";
         }
+        if (park.getTickets().findGroupTicketContaining(parts[1]) != null) {
+            return "ERROR: Ticket belongs to a group ticket; use GROUPTICKET DELETE";
+        }
         Ticket ticket = park.getTickets().findById(parts[1]);
         if (!(ticket instanceof IndividualTicket)) {
             return "ERROR: Ticket not found";

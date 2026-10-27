@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import es.upm.amusementpark.model.Group;
+import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.repository.GroupRepository;
@@ -67,6 +68,36 @@ public final class ParkController {
             }
         }
         return false;
+    }
+
+    /** A group is locked while it has an associated group ticket dated today or later. */
+    public boolean isGroupLocked(Group group) {
+        for (Ticket ticket : tickets.findAll()) {
+            if (ticket instanceof GroupTicket gt && gt.getGroup() == group && gt.isActive(currentDate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether the user belongs to any locked group. */
+    public boolean isInLockedGroup(User user) {
+        for (Group group : groups.findAll()) {
+            if (group.contains(user) && isGroupLocked(group)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Deletes a group, clearing the reference held by its (historical) group tickets. */
+    public void deleteGroup(Group group) {
+        for (Ticket ticket : tickets.findAll()) {
+            if (ticket instanceof GroupTicket gt && gt.getGroup() == group) {
+                gt.clearGroup();
+            }
+        }
+        groups.remove(group);
     }
 
     /** Removes a user from every group it belongs to. */

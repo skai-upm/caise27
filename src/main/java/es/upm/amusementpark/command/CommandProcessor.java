@@ -29,18 +29,22 @@ public class CommandProcessor {
             "GROUP DELETE;<Identifier>",
             "TICKET CREATE;<identifier>;<email>;<date>",
             "TICKET DELETE;<identifier>",
+            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
+            "GROUPTICKET DELETE;<identifier>",
             "HELP",
             "EXIT");
 
     private final ParkController park;
     private final GroupCommands groups;
     private final TicketCommands tickets;
+    private final GroupTicketCommands groupTickets;
     private boolean exitRequested;
 
     public CommandProcessor(ParkController park) {
         this.park = park;
         this.groups = new GroupCommands(park);
         this.tickets = new TicketCommands(park);
+        this.groupTickets = new GroupTicketCommands(park);
     }
 
     private UserRepository users() {
@@ -83,6 +87,10 @@ public class CommandProcessor {
                     return tickets.create(parts);
                 case "TICKET DELETE":
                     return tickets.delete(parts);
+                case "GROUPTICKET CREATE":
+                    return groupTickets.create(parts);
+                case "GROUPTICKET DELETE":
+                    return groupTickets.delete(parts);
                 case "HELP":
                     return HELP_TEXT;
                 case "EXIT":
@@ -144,6 +152,9 @@ public class CommandProcessor {
         }
         if (park.hasActiveTicket(user)) {
             return "ERROR: User has active tickets";
+        }
+        if (park.isInLockedGroup(user)) {
+            return "ERROR: User belongs to a group with active group tickets";
         }
         park.removeFromAllGroups(user);
         users().remove(user);

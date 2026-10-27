@@ -34,6 +34,9 @@ class GroupCommands {
         if (group == null) {
             return "ERROR: Group not found";
         }
+        if (park.isGroupLocked(group)) {
+            return "ERROR: Group has active group tickets and cannot be modified";
+        }
         User user = park.getUsers().findByEmail(parts[2]);
         if (user == null) {
             return "ERROR: User not found";
@@ -52,6 +55,9 @@ class GroupCommands {
         if (group == null) {
             return "ERROR: Group not found";
         }
+        if (park.isGroupLocked(group)) {
+            return "ERROR: Group has active group tickets and cannot be modified";
+        }
         User user = park.getUsers().findByEmail(parts[2]);
         if (user == null || !group.removeMember(user)) {
             return "ERROR: User is not a member of the group";
@@ -67,7 +73,10 @@ class GroupCommands {
         if (group == null) {
             return "ERROR: Group not found";
         }
-        park.getGroups().remove(group);
+        if (park.isGroupLocked(group)) {
+            return "ERROR: Group has active group tickets and cannot be deleted";
+        }
+        park.deleteGroup(group);
         return "GROUP DELETED";
     }
 }
