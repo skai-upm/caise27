@@ -52,7 +52,7 @@ class Delivery1IntegrationTest {
         String[] lines = fromFile.split(System.lineSeparator());
         assertEquals(List.of("USER CREATED", "USER CREATED", "USER UPDATED", "USER UPDATED", "USER DELETED"),
                 List.of(lines).subList(0, 5));
-        assertTrue(fromFile.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
+        assertTrue(fromFile.contains("USER UPDATE;<Email>;<Password>;<Field>;<NewValue>"));
         assertEquals(interactive, fromFile);
 
         List<String> stored = Files.readAllLines(tempDir.resolve("file/users.txt"), StandardCharsets.UTF_8);

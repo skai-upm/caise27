@@ -20,9 +20,9 @@ public class CommandProcessor {
 
     static final String HELP_TEXT = String.join(System.lineSeparator(),
             "Available commands:",
-            "  USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-            "  USER DELETE;<email>;<password>",
-            "  USER UPDATE;<email>;<password>;<field>;<value>",
+            "  USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+            "  USER DELETE;<Email>;<Password>",
+            "  USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<Price>",
             "  GROUP CREATE;<Identifier>;<Name>",
@@ -42,14 +42,14 @@ public class CommandProcessor {
             "  EXIT");
 
     private static final String USER_CREATE_SYNTAX =
-            "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>";
+            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>";
 
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
-    private static final String USER_DELETE_SYNTAX = "USER DELETE;<email>;<password>";
+    private static final String USER_DELETE_SYNTAX = "USER DELETE;<Email>;<Password>";
 
-    private static final String USER_UPDATE_SYNTAX = "USER UPDATE;<email>;<password>;<field>;<value>";
+    private static final String USER_UPDATE_SYNTAX = "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>";
 
     private final PrintStream out;
     private final UserService userService;

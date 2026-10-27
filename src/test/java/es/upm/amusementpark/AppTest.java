@@ -44,7 +44,7 @@ class AppTest {
         String commands = "HELP\nEXIT\n";
         String fromStdin = runApp(new String[0], commands);
         String fromFile = runApp(new String[] {writeFile(commands).toString()}, "");
-        assertTrue(fromStdin.contains("USER DELETE;<email>;<password>"));
+        assertTrue(fromStdin.contains("USER DELETE;<Email>;<Password>"));
         assertEquals(fromStdin, fromFile);
     }
 
