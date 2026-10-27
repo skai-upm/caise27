@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import es.upm.amusementpark.command.CommandProcessor;
+import es.upm.amusementpark.persistence.PersistenceException;
+import es.upm.amusementpark.persistence.UserFileStore;
 import es.upm.amusementpark.repository.UserRepository;
 
 /**
@@ -18,15 +20,23 @@ import es.upm.amusementpark.repository.UserRepository;
  */
 public class Main {
 
+    private static final Path USERS_FILE = Path.of("users.txt");
+
     public static void main(String[] args) {
-        int code = run(args, System.in, System.out, System.err);
+        int code = run(args, System.in, System.out, System.err, USERS_FILE);
         if (code != 0) {
             System.exit(code);
         }
     }
 
-    static int run(String[] args, InputStream in, PrintStream out, PrintStream err) {
-        CommandProcessor processor = new CommandProcessor(new UserRepository());
+    static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path usersFile) {
+        CommandProcessor processor;
+        try {
+            processor = new CommandProcessor(new UserRepository(new UserFileStore(usersFile)));
+        } catch (PersistenceException e) {
+            err.println("Error: " + e.getMessage());
+            return 1;
+        }
         if (args.length == 0) {
             return process(new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8)), processor, out, err);
         }

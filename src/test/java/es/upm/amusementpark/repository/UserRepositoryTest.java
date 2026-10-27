@@ -6,9 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.persistence.UserFileStore;
 
 class UserRepositoryTest {
 
@@ -26,5 +30,15 @@ class UserRepositoryTest {
         assertFalse(repo.existsDni("87654321X"));
         assertNull(repo.findByEmail("pedro@correo.com"));
         assertEquals(1, repo.findAll().size());
+    }
+
+    @Test
+    void persistsChangesAndReloadsThem(@TempDir Path dir) {
+        UserFileStore store = new UserFileStore(dir.resolve("users.txt"));
+        new UserRepository(store).add(new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!",
+                "612345678", "1234567890123456"));
+        UserRepository reloaded = new UserRepository(store);
+        assertEquals(1, reloaded.size());
+        assertTrue(reloaded.existsEmail("ana@correo.com"));
     }
 }

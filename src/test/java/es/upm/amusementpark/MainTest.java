@@ -19,12 +19,15 @@ class MainTest {
     private static final String CREATE_ANA =
             "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
 
+    @TempDir
+    Path data;
+
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
     private final ByteArrayOutputStream err = new ByteArrayOutputStream();
 
     private int run(String input, String... args) {
         return Main.run(args, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8));
+                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8), data.resolve("users.txt"));
     }
 
     private String output() {
@@ -50,5 +53,15 @@ class MainTest {
     void missingFileIsReportedWithNonZeroStatus(@TempDir Path dir) {
         assertEquals(1, run("", dir.resolve("missing.txt").toString()));
         assertTrue(err.toString(StandardCharsets.UTF_8).contains("missing.txt"));
+    }
+
+    @Test
+    void usersArePreservedBetweenRuns() throws IOException {
+        assertEquals(0, run(CREATE_ANA + "\n"));
+        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                Files.readString(data.resolve("users.txt")).trim());
+        out.reset();
+        assertEquals(0, run(CREATE_ANA + "\n"));
+        assertEquals("ERROR: DNI already registered\n", output());
     }
 }

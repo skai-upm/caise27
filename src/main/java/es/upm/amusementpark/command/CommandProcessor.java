@@ -2,6 +2,7 @@ package es.upm.amusementpark.command;
 
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.model.UserValidator;
+import es.upm.amusementpark.persistence.PersistenceException;
 import es.upm.amusementpark.repository.UserRepository;
 
 /**
@@ -24,11 +25,15 @@ public class CommandProcessor {
         for (int i = 0; i < parts.length; i++) {
             parts[i] = parts[i].trim();
         }
-        switch (parts[0]) {
-            case "USER CREATE":
-                return createUser(parts);
-            default:
-                return "ERROR: Unknown command";
+        try {
+            switch (parts[0]) {
+                case "USER CREATE":
+                    return createUser(parts);
+                default:
+                    return "ERROR: Unknown command";
+            }
+        } catch (PersistenceException e) {
+            return "ERROR: Could not save users";
         }
     }
 
