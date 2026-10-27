@@ -8,6 +8,11 @@ import es.upm.amusementpark.model.Group;
 import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.persistence.AttractionFileStore;
+import es.upm.amusementpark.persistence.DataPaths;
+import es.upm.amusementpark.persistence.GroupFileStore;
+import es.upm.amusementpark.persistence.TicketFileStore;
+import es.upm.amusementpark.persistence.UserFileStore;
 import es.upm.amusementpark.repository.AttractionRepository;
 import es.upm.amusementpark.repository.GroupRepository;
 import es.upm.amusementpark.repository.TicketRepository;
@@ -42,12 +47,28 @@ public final class ParkController {
         return instance;
     }
 
-    /** Initialises the state of a new execution: today's date and the initial price. */
+    /** Starts an execution with in-memory groups, tickets and attractions (no persistence). */
     public void start(UserRepository users) {
+        start(users, new GroupRepository(), new TicketRepository(), new AttractionRepository());
+    }
+
+    /** Starts an execution whose repositories persist in the files of the given data directory. */
+    public void start(DataPaths paths) {
+        UserRepository loadedUsers = new UserRepository(new UserFileStore(paths.users()));
+        GroupRepository loadedGroups = new GroupRepository(new GroupFileStore(paths.groups()), loadedUsers);
+        TicketRepository loadedTickets = new TicketRepository(new TicketFileStore(paths.tickets()), loadedUsers,
+                loadedGroups);
+        AttractionRepository loadedAttractions = new AttractionRepository(new AttractionFileStore(paths.attractions()));
+        start(loadedUsers, loadedGroups, loadedTickets, loadedAttractions);
+    }
+
+    /** Initialises the state of a new execution: repositories, today's date and the initial price. */
+    private void start(UserRepository users, GroupRepository groups, TicketRepository tickets,
+            AttractionRepository attractions) {
         this.users = users;
-        this.groups = new GroupRepository();
-        this.tickets = new TicketRepository();
-        this.attractions = new AttractionRepository();
+        this.groups = groups;
+        this.tickets = tickets;
+        this.attractions = attractions;
         this.currentDate = LocalDate.now();
         this.currentPrice = INITIAL_PRICE;
     }
@@ -105,6 +126,7 @@ public final class ParkController {
                 gt.clearGroup();
             }
         }
+        tickets.save();
         groups.remove(group);
     }
 
@@ -120,6 +142,7 @@ public final class ParkController {
         for (Group group : groups.findAll()) {
             group.removeMember(user);
         }
+        groups.save();
     }
 
     public LocalDate getCurrentDate() {

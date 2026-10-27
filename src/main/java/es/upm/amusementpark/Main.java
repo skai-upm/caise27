@@ -11,42 +11,60 @@ import java.nio.file.Path;
 
 import es.upm.amusementpark.command.CommandProcessor;
 import es.upm.amusementpark.park.ParkController;
+import es.upm.amusementpark.persistence.DataPaths;
 import es.upm.amusementpark.persistence.PersistenceException;
-import es.upm.amusementpark.persistence.UserFileStore;
-import es.upm.amusementpark.repository.UserRepository;
+import es.upm.amusementpark.persistence.TemporaryDataDirectory;
 
 /**
- * Application entry point. Without arguments it reads commands interactively from
- * standard input; with one argument it reads them from the given text file.
+ * Application entry point. Launch forms: no arguments (interactive), {@code <file>},
+ * {@code --fly} and {@code --fly <file>}; --fly keeps all data in a temporary directory
+ * that is deleted when the execution ends.
  */
 public class Main {
 
-    private static final Path USERS_FILE = Path.of("users.txt");
+    private static final String FLY = "--fly";
 
     public static void main(String[] args) {
-        int code = run(args, System.in, System.out, System.err, USERS_FILE);
+        int code = run(args, System.in, System.out, System.err, Path.of("."));
         if (code != 0) {
             System.exit(code);
         }
     }
 
-    static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path usersFile) {
-        CommandProcessor processor;
+    static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path baseDir) {
+        boolean fly = args.length > 0 && args[0].equals(FLY);
+        String commandFile = fly ? (args.length > 1 ? args[1] : null) : (args.length > 0 ? args[0] : null);
+        TemporaryDataDirectory temporary = null;
         try {
+            DataPaths paths;
+            if (fly) {
+                temporary = TemporaryDataDirectory.create(baseDir);
+                paths = new DataPaths(temporary.path());
+            } else {
+                paths = new DataPaths(baseDir);
+            }
             ParkController park = ParkController.getInstance();
-            park.start(new UserRepository(new UserFileStore(usersFile)));
-            processor = new CommandProcessor(park);
+            park.start(paths);
+            return execute(commandFile, new CommandProcessor(park), in, out, err);
         } catch (PersistenceException e) {
             err.println("Error: " + e.getMessage());
             return 1;
+        } finally {
+            if (temporary != null) {
+                temporary.delete();
+            }
         }
-        if (args.length == 0) {
+    }
+
+    private static int execute(String commandFile, CommandProcessor processor, InputStream in, PrintStream out,
+            PrintStream err) {
+        if (commandFile == null) {
             return process(new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8)), processor, out, err);
         }
-        try (BufferedReader reader = Files.newBufferedReader(Path.of(args[0]), StandardCharsets.UTF_8)) {
+        try (BufferedReader reader = Files.newBufferedReader(Path.of(commandFile), StandardCharsets.UTF_8)) {
             return process(reader, processor, out, err);
         } catch (IOException e) {
-            err.println("Error: cannot read file " + args[0]);
+            err.println("Error: cannot read file " + commandFile);
             return 1;
         }
     }

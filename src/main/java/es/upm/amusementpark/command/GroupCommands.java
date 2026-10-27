@@ -44,6 +44,7 @@ class GroupCommands {
         if (!group.addMember(user)) {
             return "ERROR: User already in group";
         }
+        park.getGroups().save();
         return "GROUP USER ADDED";
     }
 
@@ -62,6 +63,7 @@ class GroupCommands {
         if (user == null || !group.removeMember(user)) {
             return "ERROR: User is not a member of the group";
         }
+        park.getGroups().save();
         return "GROUP USER REMOVED";
     }
 

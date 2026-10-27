@@ -7,6 +7,7 @@ import java.util.Map;
 
 import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.Ticket;
+import es.upm.amusementpark.persistence.TicketFileStore;
 
 /**
  * Stores every ticket of the park in one shared identifier space.
@@ -14,6 +15,26 @@ import es.upm.amusementpark.model.Ticket;
 public class TicketRepository {
 
     private final Map<String, Ticket> ticketsById = new LinkedHashMap<>();
+    private final TicketFileStore store;
+
+    /** In-memory repository without persistence. */
+    public TicketRepository() {
+        this.store = null;
+    }
+
+    public TicketRepository(TicketFileStore store, UserRepository users, GroupRepository groups) {
+        this.store = store;
+        for (Ticket ticket : store.load(users, groups)) {
+            ticketsById.put(ticket.getId(), ticket);
+        }
+    }
+
+    /** Persists the current tickets. */
+    public void save() {
+        if (store != null) {
+            store.save(ticketsById.values());
+        }
+    }
 
     /** Common identifier check for all ticket types, including group ticket components. */
     public boolean isIdAvailable(String id) {
@@ -37,6 +58,7 @@ public class TicketRepository {
 
     public void add(Ticket ticket) {
         ticketsById.put(ticket.getId(), ticket);
+        save();
     }
 
     public Ticket findById(String id) {
@@ -45,6 +67,7 @@ public class TicketRepository {
 
     public void remove(Ticket ticket) {
         ticketsById.remove(ticket.getId());
+        save();
     }
 
     public List<Ticket> findAll() {

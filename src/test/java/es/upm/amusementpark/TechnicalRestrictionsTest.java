@@ -33,7 +33,8 @@ class TechnicalRestrictionsTest {
                     assertTrue(l.startsWith("import java.") || l.startsWith("import static java.")
                             || l.startsWith("import es.upm.amusementpark."), source + ": " + l);
                 }
-                for (String forbidden : new String[] {"java.util.regex", ".matches(", "replaceAll(", "replaceFirst("}) {
+                for (String forbidden : new String[] {"java.util.regex", ".matches(", "replaceAll(", "replaceFirst(",
+                        "ObjectOutputStream", "ObjectInputStream", "Serializable"}) {
                     assertFalse(l.contains(forbidden), source + ": " + l);
                 }
             }
@@ -46,7 +47,7 @@ class TechnicalRestrictionsTest {
         String main = Files.readString(MAIN.resolve("Main.java"));
         String store = Files.readString(MAIN.resolve("persistence/UserFileStore.java"));
         assertFalse(user.contains("import java.io") || user.contains("import java.nio"));
-        assertFalse(main.contains("Files.write") || main.contains("Files.readAllLines"));
+        assertFalse(main.contains("Files.write") || main.contains("Files.readAllLines") || main.contains("Files.delete"));
         assertTrue(store.contains("Files.write") && store.contains("Files.readAllLines"));
     }
 }

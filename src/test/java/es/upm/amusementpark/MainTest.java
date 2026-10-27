@@ -27,7 +27,7 @@ class MainTest {
 
     private int run(String input, String... args) {
         return Main.run(args, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8), data.resolve("users.txt"));
+                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8), data);
     }
 
     private String output() {

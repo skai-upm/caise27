@@ -33,11 +33,11 @@ class IntegrationTest {
     @TempDir
     Path dir;
 
-    private String run(Path usersFile, String stdin, String... args) {
+    private String run(Path dataDir, String stdin, String... args) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         int code = Main.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(new ByteArrayOutputStream()),
-                usersFile);
+                dataDir);
         assertEquals(0, code);
         return out.toString(StandardCharsets.UTF_8).replace("\r\n", "\n");
     }
@@ -46,19 +46,19 @@ class IntegrationTest {
     void referenceExampleFromFileAndInteractiveGiveSameResult() throws IOException {
         Path input = dir.resolve("input.txt");
         Files.writeString(input, EXAMPLE);
-        Path fileUsers = dir.resolve("file-users.txt");
-        Path stdinUsers = dir.resolve("stdin-users.txt");
+        Path fileRun = Files.createDirectory(dir.resolve("file-run"));
+        Path stdinRun = Files.createDirectory(dir.resolve("stdin-run"));
 
-        String fromFile = run(fileUsers, "", input.toString());
-        String interactive = run(stdinUsers, EXAMPLE);
+        String fromFile = run(fileRun, "", input.toString());
+        String interactive = run(stdinRun, EXAMPLE);
 
         assertTrue(fromFile.startsWith("USER CREATED\nUSER CREATED\nUSER UPDATED\nUSER UPDATED\nUSER DELETED\n"
                 + "Available commands:"), fromFile);
         assertEquals(fromFile, interactive);
         List<String> expected = List.of(
                 "Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456");
-        assertEquals(expected, Files.readAllLines(fileUsers));
-        assertEquals(expected, Files.readAllLines(stdinUsers));
+        assertEquals(expected, Files.readAllLines(fileRun.resolve("users.txt")));
+        assertEquals(expected, Files.readAllLines(stdinRun.resolve("users.txt")));
     }
 
     @Test
@@ -69,7 +69,7 @@ class IntegrationTest {
                 "USER CREATE;Ana;Garcia Lopez",
                 "USER DELETE;nadie@correo.com;Clave1!",
                 "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"));
-        String[] lines = run(dir.resolve("users.txt"), "", input.toString()).split("\n");
+        String[] lines = run(dir, "", input.toString()).split("\n");
         assertEquals(4, lines.length);
         for (int i = 0; i < 3; i++) {
             assertTrue(lines[i].startsWith("ERROR"), lines[i]);
