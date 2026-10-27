@@ -51,6 +51,7 @@ class CommandProcessorTest {
         assertTrue(out.contains("GROUPTICKET CREATE;<identifier>;<group>;<date>"));
         assertTrue(out.contains("GROUPTICKET DELETE;<identifier>"));
         assertTrue(out.contains("ATTRACTION CREATE;<identifier>;<name>;<capacity>"));
+        assertTrue(out.contains("ATTRACTION ENTER;<attraction>;<ticket>"));
         assertTrue(out.contains("ATTRACTION LIST;<attraction>"));
         assertTrue(out.contains("HELP"));
         assertTrue(out.contains("EXIT"));
@@ -344,6 +345,25 @@ class CommandProcessorTest {
             assertTrue(output().startsWith("ERROR"), command);
         }
         assertTrue(ParkController.getInstance().getAttractions().findById("A03").isEmpty());
+    }
+
+    @Test
+    void attractionEnterWithIndividualTicket() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        buffer.reset();
+        processor.process("ATTRACTION ENTER;A01;T001");
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process("ATTRACTION ENTER;A01;T001");
+        processor.process("ATTRACTION LIST;A01");
+        processor.process("ATTRACTION ENTER;A01");
+        String[] lines = output().split(System.lineSeparator());
+        assertTrue(lines[0].startsWith("ERROR"));
+        assertEquals("ENTERED ATTRACTION A01: ana@correo.com", lines[2]);
+        assertEquals("ana@correo.com", lines[3]);
+        assertTrue(lines[4].startsWith("ERROR"));
     }
 
     @Test

@@ -3,6 +3,7 @@ package es.upm.amusementpark;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -45,6 +46,16 @@ public class GroupTicket extends Ticket {
             total = total.add(ticket.getPrice());
         }
         return total;
+    }
+
+    /** The users of the composed tickets. */
+    @Override
+    public List<User> getHolders() {
+        List<User> holders = new ArrayList<>();
+        for (IndividualTicket ticket : composition) {
+            holders.add(ticket.getUser());
+        }
+        return holders;
     }
 
     /** Discount percentage for a purchase including the given number of users. */

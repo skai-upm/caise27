@@ -7,7 +7,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Processes single command lines. Every input source uses this class, so a
@@ -32,6 +34,7 @@ public class CommandProcessor {
             "  GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "  GROUPTICKET DELETE;<identifier>",
             "  ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "  ATTRACTION ENTER;<attraction>;<ticket>",
             "  ATTRACTION LIST;<attraction>",
             "  HELP",
             "  EXIT");
@@ -134,6 +137,9 @@ public class CommandProcessor {
                 return true;
             case "ATTRACTION CREATE":
                 createAttraction(parts);
+                return true;
+            case "ATTRACTION ENTER":
+                enterAttraction(parts);
                 return true;
             case "ATTRACTION LIST":
                 listAttraction(parts);
@@ -328,6 +334,23 @@ public class CommandProcessor {
         try {
             attractionService.createAttraction(parts[1], parts[2], capacity);
             out.println("ATTRACTION CREATED");
+        } catch (AttractionOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void enterAttraction(String[] parts) {
+        if (parts.length != 3) {
+            out.println("ERROR: invalid syntax. Expected ATTRACTION ENTER;<attraction>;<ticket>");
+            return;
+        }
+        try {
+            List<User> entered = attractionService.enter(parts[1], parts[2]);
+            List<String> emails = new ArrayList<>();
+            for (User user : entered) {
+                emails.add(user.getEmail());
+            }
+            out.println("ENTERED ATTRACTION " + parts[1] + ": " + String.join(", ", emails));
         } catch (AttractionOperationException e) {
             out.println("ERROR: " + e.getMessage());
         }

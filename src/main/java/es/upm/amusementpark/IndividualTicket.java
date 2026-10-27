@@ -2,6 +2,7 @@ package es.upm.amusementpark;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * A ticket bought for a single user. The ticket knows its user; the user does
@@ -26,6 +27,11 @@ public class IndividualTicket extends Ticket {
     @Override
     public BigDecimal getPrice() {
         return price;
+    }
+
+    @Override
+    public List<User> getHolders() {
+        return List.of(user);
     }
 
     /** Whether this ticket is part of the composition of a group ticket. */

@@ -2,6 +2,7 @@ package es.upm.amusementpark;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Common abstraction of every ticket type: a unique identifier, the date on
@@ -26,6 +27,9 @@ public abstract class Ticket {
     }
 
     public abstract BigDecimal getPrice();
+
+    /** The users this ticket admits to an attraction. */
+    public abstract List<User> getHolders();
 
     /** Active tickets are dated on or after the given current date. */
     public boolean isActiveOn(LocalDate today) {
