@@ -47,7 +47,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>es.upm.amusementpark.Main</mainClass>
+              <mainClass>es.upm.amusementpark.presentation.Main</mainClass>
             </manifest>
           </archive>
         </configuration>

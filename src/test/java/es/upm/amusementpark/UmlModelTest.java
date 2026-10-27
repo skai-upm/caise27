@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 class UmlModelTest {
 
     private static final Path PUML = Path.of("uml", "model.puml");
-    private static final Path MODEL = Path.of("src", "main", "java", "es", "upm", "amusementpark", "model");
+    private static final Path MODEL = Path.of("src", "main", "java", "es", "upm", "amusementpark", "business", "model");
 
     private static String simpleName(String declaration) {
         String[] words = declaration.trim().split(" ");
@@ -71,7 +71,7 @@ class UmlModelTest {
     }
 
     private static Class<?> resolve(String simple) {
-        for (String pkg : new String[] {"model", "park", "repository", "persistence", "command"}) {
+        for (String pkg : new String[] {"business.model", "business.controller", "persistence.repository", "persistence", "presentation"}) {
             try {
                 return Class.forName("es.upm.amusementpark." + pkg + "." + simple);
             } catch (ClassNotFoundException e) {

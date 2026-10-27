@@ -3,7 +3,7 @@ title Amusement Park - Delivery 2 class model
 hide empty methods
 skinparam classAttributeIconSize 0
 
-package "es.upm.amusementpark.model" {
+package "es.upm.amusementpark.business.model" {
   class User {
     - firstName : String
     - surnames : String
@@ -52,7 +52,7 @@ package "es.upm.amusementpark.model" {
   }
 }
 
-package "es.upm.amusementpark.park" {
+package "es.upm.amusementpark.business.controller" {
   class ParkController <<singleton>> {
     - {static} instance : ParkController
     - currentDate : LocalDate
@@ -60,7 +60,7 @@ package "es.upm.amusementpark.park" {
   }
 }
 
-package "es.upm.amusementpark.repository" {
+package "es.upm.amusementpark.persistence.repository" {
   class UserRepository
   class GroupRepository
   class TicketRepository
@@ -76,11 +76,11 @@ package "es.upm.amusementpark.persistence" {
   class TemporaryDataDirectory
 }
 
-package "es.upm.amusementpark.command" {
+package "es.upm.amusementpark.presentation" {
   class CommandProcessor
 }
 
-class "es.upm.amusementpark.Main" as Main
+class "es.upm.amusementpark.presentation.Main" as Main
 
 ' --- ticket hierarchy ---
 Ticket <|-- IndividualTicket

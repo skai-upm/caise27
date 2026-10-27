@@ -43,8 +43,8 @@ class TechnicalRestrictionsTest {
 
     @Test
     void userMainAndPersistenceAreSeparated() throws IOException {
-        String user = Files.readString(MAIN.resolve("model/User.java"));
-        String main = Files.readString(MAIN.resolve("Main.java"));
+        String user = Files.readString(MAIN.resolve("business/model/User.java"));
+        String main = Files.readString(MAIN.resolve("presentation/Main.java"));
         String store = Files.readString(MAIN.resolve("persistence/UserFileStore.java"));
         assertFalse(user.contains("import java.io") || user.contains("import java.nio"));
         assertFalse(main.contains("Files.write") || main.contains("Files.readAllLines") || main.contains("Files.delete"));
@@ -53,15 +53,36 @@ class TechnicalRestrictionsTest {
 
     @Test
     void relationshipDirectionsAreRespected() {
-        for (java.lang.reflect.Field f : es.upm.amusementpark.model.User.class.getDeclaredFields()) {
+        for (java.lang.reflect.Field f : es.upm.amusementpark.business.model.User.class.getDeclaredFields()) {
             String type = f.getGenericType().getTypeName();
             assertFalse(type.contains("Ticket") || type.contains("Group") || type.contains("Attraction"), f.getName());
         }
-        for (java.lang.reflect.Field f : es.upm.amusementpark.model.Group.class.getDeclaredFields()) {
+        for (java.lang.reflect.Field f : es.upm.amusementpark.business.model.Group.class.getDeclaredFields()) {
             String type = f.getGenericType().getTypeName();
             assertFalse(type.contains("Ticket") || type.contains("Attraction"), f.getName());
         }
-        assertTrue(es.upm.amusementpark.park.ParkController.getInstance()
-                == es.upm.amusementpark.park.ParkController.getInstance());
+        assertTrue(es.upm.amusementpark.business.controller.ParkController.getInstance()
+                == es.upm.amusementpark.business.controller.ParkController.getInstance());
+    }
+
+    @Test
+    void layersAreSeparated() throws IOException {
+        for (Path source : sources()) {
+            String rel = MAIN.relativize(source).toString().replace('\\', '/');
+            assertTrue(rel.startsWith("presentation/") || rel.startsWith("business/") || rel.startsWith("persistence/"),
+                    "outside the layers: " + rel);
+            String code = Files.readString(source);
+            if (rel.startsWith("presentation/")) {
+                for (String line : code.split("\n")) {
+                    if (line.startsWith("import es.upm.amusementpark.persistence")) {
+                        assertTrue(line.equals("import es.upm.amusementpark.persistence.PersistenceException;"),
+                                rel + ": " + line);
+                    }
+                }
+            }
+            if (rel.startsWith("business/model/")) {
+                assertFalse(code.contains("import es.upm.amusementpark.persistence"), rel);
+            }
+        }
     }
 }

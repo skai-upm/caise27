@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import es.upm.amusementpark.model.Group;
-import es.upm.amusementpark.model.User;
-import es.upm.amusementpark.repository.UserRepository;
+import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.persistence.repository.UserRepository;
 
 /**
  * Stores groups as {@code id;name;dni,dni,...}; members are resolved against the loaded users.

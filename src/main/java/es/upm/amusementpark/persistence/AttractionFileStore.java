@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import es.upm.amusementpark.model.Attraction;
+import es.upm.amusementpark.business.model.Attraction;
 
 /**
  * Stores attractions as {@code id;name;capacity}. Occupants are never stored.

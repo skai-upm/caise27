@@ -12,7 +12,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.business.model.User;
 
 class UserFileStoreTest {
 

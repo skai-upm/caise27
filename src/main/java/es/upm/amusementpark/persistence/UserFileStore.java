@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.business.model.User;
 
 /**
  * Reads and writes users in a text file: one user per line, attributes separated by ';'

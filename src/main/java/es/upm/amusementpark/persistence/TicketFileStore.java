@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import es.upm.amusementpark.model.Group;
-import es.upm.amusementpark.model.GroupTicket;
-import es.upm.amusementpark.model.IndividualTicket;
-import es.upm.amusementpark.model.Ticket;
-import es.upm.amusementpark.model.User;
-import es.upm.amusementpark.repository.GroupRepository;
-import es.upm.amusementpark.repository.UserRepository;
+import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.UserRepository;
 
 /**
  * Stores tickets. Each ticket keeps the minimum user data (DNI, first name, surnames, email)
