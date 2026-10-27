@@ -11,6 +11,11 @@ public class SpecialPass extends Pass {
         super(identifier, ticket, priceFor(ticket));
     }
 
+    /** Restores a stored Special Pass with the price it was bought for. */
+    public SpecialPass(String identifier, IndividualTicket ticket, BigDecimal storedPrice) {
+        super(identifier, ticket, storedPrice);
+    }
+
     public static BigDecimal priceFor(IndividualTicket ticket) {
         return ticket.getPrice();
     }

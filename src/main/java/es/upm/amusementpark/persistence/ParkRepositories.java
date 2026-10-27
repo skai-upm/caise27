@@ -16,6 +16,7 @@ public record ParkRepositories(UserRepository users, GroupRepository groups, Tic
     static final String GROUPS_FILE = "groups.txt";
     static final String TICKETS_FILE = "tickets.txt";
     static final String ATTRACTIONS_FILE = "attractions.txt";
+    static final String PASSES_FILE = "passes.txt";
 
     /** Repositories kept in memory only. */
     public static ParkRepositories inMemory() {
@@ -36,8 +37,11 @@ public record ParkRepositories(UserRepository users, GroupRepository groups, Tic
         TicketRepository tickets = new TicketRepository(ticketStorage, users, groups);
         AttractionFileStorage attractionStorage = new AttractionFileStorage(dataDir.resolve(ATTRACTIONS_FILE));
         AttractionRepository attractions = new AttractionRepository(attractionStorage);
+        PassFileStorage passStorage = new PassFileStorage(dataDir.resolve(PASSES_FILE));
+        PassRepository passes = new PassRepository(passStorage, tickets);
         int ignored = userStorage.getSkippedLines() + groupStorage.getSkippedLines()
-                + ticketStorage.getSkippedLines() + attractionStorage.getSkippedLines();
-        return new ParkRepositories(users, groups, tickets, attractions, new PassRepository(), ignored);
+                + ticketStorage.getSkippedLines() + attractionStorage.getSkippedLines()
+                + passStorage.getSkippedLines();
+        return new ParkRepositories(users, groups, tickets, attractions, passes, ignored);
     }
 }

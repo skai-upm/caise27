@@ -130,6 +130,7 @@ public final class ParkController {
         groups.persist();
         tickets.persist();
         attractions.persist();
+        passes.persist();
     }
 
     public UserRepository getUsers() {

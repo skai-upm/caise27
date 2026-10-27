@@ -5,7 +5,9 @@ import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.service.ParkController;
+import es.upm.amusementpark.persistence.PassRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -148,5 +150,52 @@ class PersistenceIntegrationTest {
         Files.writeString(input, "HELP\n");
         String out = run("", input.toString(), "--fly");
         assertTrue(out.contains("Available commands"));
+    }
+
+    private static final String PASSES = String.join("\n",
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+            "SYSTEM DATE;2027-04-01",
+            "TICKET CREATE;T001;ana@correo.com;2027-04-15",
+            "TICKET CREATE;T002;ana@correo.com;2027-04-20",
+            "SPEEDPASS CREATE;SP02;T001;10",
+            "SPECIALPASS CREATE;PE01;T001",
+            "SPEEDPASS CREATE;SP09;T002;1",
+            "SPEEDPASS DELETE;SP02:3",
+            "TICKET DELETE;T002",
+            "ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL",
+            "SYSTEM DATE;2027-04-15",
+            "ATTRACTION ENTER;A04;T001",
+            "EXIT",
+            "");
+
+    @Test
+    void passesAndConsumedStatesSurviveRestart() {
+        String out = run(PASSES);
+        assertFalse(out.contains("ERROR"), out);
+        String second = run("SYSTEM PRICE;100.00\nSYSTEM DATE;2027-04-15\nATTRACTION ENTER;A04;T001\n"
+                + "SPECIALPASS CREATE;PE02;T001\n");
+        String[] lines = second.split(System.lineSeparator());
+        assertTrue(lines[2].startsWith("ERROR"), second);
+        assertTrue(lines[3].startsWith("ERROR"), second);
+
+        PassRepository passes = park().getPasses();
+        assertEquals(10, passes.findAll().size());
+        assertTrue(passes.exists("SP02:1") && passes.exists("SP02:10"));
+        assertFalse(passes.exists("SP02:3"));
+        assertFalse(passes.exists("SP09:1"));
+        assertEquals(new BigDecimal("8.00"), passes.findById("SP02:1").orElseThrow().getPrice());
+        assertFalse(passes.findById("SP02:1").orElseThrow().isConsumed());
+        assertTrue(passes.findById("PE01").orElseThrow().isConsumed());
+        assertEquals(AttractionType.SPECIAL, park().getAttractions().findById("A04").orElseThrow().getType());
+    }
+
+    @Test
+    void flyModeStoresPassesOnlyTemporarily() throws IOException {
+        Path input = tempDir.resolve("passes.txt");
+        Files.writeString(input, PASSES);
+        String out = run("", "--fly", input.toString());
+        assertTrue(out.contains("SPECIAL PASS CONSUMED: PE01"), out);
+        assertFalse(Files.exists(tempDir.resolve("tmp")));
+        assertFalse(Files.exists(tempDir.resolve("data")));
     }
 }

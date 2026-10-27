@@ -1,5 +1,5 @@
 @startuml
-title Amusement park - class model (layered packages)
+title Amusement park - Delivery 3 class model
 skinparam classAttributeIconSize 0
 hide empty methods
 
@@ -154,6 +154,9 @@ package es.upm.amusementpark.persistence {
   class AttractionFileStorage {
     - file : Path
   }
+  class PassFileStorage {
+    - file : Path
+  }
   class TextFiles <<utility>>
   class DataDirectories <<utility>>
   class ParkRepositories <<record>> {
@@ -214,6 +217,8 @@ Attraction "0..*" --> "0..*" User : occupants
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 Pass "0..*" --> "1" IndividualTicket : ticket
+SpeedPass "0..*" --> "1" IndividualTicket : speedPasses of ticket
+SpecialPass "0..1" --> "1" IndividualTicket : specialPass of ticket
 
 ' ----- Central management -----
 ParkController "1" --> "1" UserRepository : users
@@ -233,6 +238,8 @@ UserRepository --> "0..1" UserFileStorage : storage
 GroupRepository --> "0..1" GroupFileStorage : storage
 TicketRepository --> "0..1" TicketFileStorage : storage
 AttractionRepository --> "0..1" AttractionFileStorage : storage
+PassRepository --> "0..1" PassFileStorage : storage
+PassFileStorage ..> TextFiles
 GroupFileStorage ..> TextFiles
 TicketFileStorage ..> TextFiles
 AttractionFileStorage ..> TextFiles

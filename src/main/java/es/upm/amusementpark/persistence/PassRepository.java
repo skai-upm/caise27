@@ -10,11 +10,26 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Stores all passes. Pass identifiers are unique among passes.
+ * Stores all passes. Pass identifiers are unique among passes. When a
+ * {@link PassFileStorage} is given, passes are loaded from it on creation and
+ * saved to it after every change.
  */
 public class PassRepository {
 
     private final Map<String, Pass> passes = new LinkedHashMap<>();
+    private final PassFileStorage storage;
+
+    /** Creates a repository that keeps passes in memory only. */
+    public PassRepository() {
+        this.storage = null;
+    }
+
+    public PassRepository(PassFileStorage storage, TicketRepository tickets) {
+        this.storage = storage;
+        for (Pass pass : storage.load(tickets)) {
+            passes.put(pass.getIdentifier(), pass);
+        }
+    }
 
     public boolean exists(String identifier) {
         return passes.containsKey(identifier);
@@ -22,6 +37,7 @@ public class PassRepository {
 
     public void save(Pass pass) {
         passes.put(pass.getIdentifier(), pass);
+        persist();
     }
 
     public Optional<Pass> findById(String identifier) {
@@ -29,7 +45,16 @@ public class PassRepository {
     }
 
     public boolean delete(String identifier) {
-        return passes.remove(identifier) != null;
+        boolean removed = passes.remove(identifier) != null;
+        persist();
+        return removed;
+    }
+
+    /** Writes the current passes to the storage, if any. */
+    public void persist() {
+        if (storage != null) {
+            storage.save(passes.values());
+        }
     }
 
     public List<Pass> findAll() {

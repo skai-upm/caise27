@@ -86,4 +86,34 @@ class UmlModelTest {
         assertTrue(lines.contains("Attraction \"0..*\" --> \"0..*\" User : occupants"));
         assertFalse(lines.stream().anyMatch(l -> l.startsWith("User ") && l.contains("-->")));
     }
+
+    @Test
+    void delivery3DesignElementsAreShown() {
+        for (String line : List.of(
+                "interface AccessTicket",
+                "interface IndividualAccess",
+                "interface GroupAccess",
+                "IndividualAccess <|.. IndividualTicket",
+                "GroupAccess <|.. GroupTicket",
+                "abstract class Attraction<T extends AccessTicket> {",
+                "Attraction <|-- GeneralAttraction",
+                "Attraction <|-- IndividualAttraction",
+                "Attraction <|-- GroupAttraction",
+                "Attraction <|-- SpecialAttraction",
+                "SpeedPass \"0..*\" --> \"1\" IndividualTicket : speedPasses of ticket",
+                "SpecialPass \"0..1\" --> \"1\" IndividualTicket : specialPass of ticket",
+                "abstract class InvoiceBuilder {",
+                "InvoiceBuilder <|-- UserInvoiceBuilder",
+                "InvoiceBuilder <|-- GroupInvoiceBuilder",
+                "UserService --> \"1\" UserRepository : users",
+                "PassService --> \"1\" PassRepository : passes",
+                "UserService --> \"1\" PasswordHasher : passwordHasher (injected)",
+                "HelpGenerator --> \"1\" HelpFormatter : formatter (injected)")) {
+            assertTrue(lines.contains(line), line);
+        }
+        for (String controller : List.of("ParkController", "UserService", "GroupService", "TicketService",
+                "AttractionService", "InvoiceService", "PassService")) {
+            assertTrue(lines.stream().anyMatch(l -> l.startsWith("class " + controller + " <<singleton>>")), controller);
+        }
+    }
 }

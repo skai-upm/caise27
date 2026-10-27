@@ -2,7 +2,10 @@ package es.upm.amusementpark.persistence;
 
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.SpecialAttraction;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.GeneralAttraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
@@ -164,5 +167,35 @@ class ParkStorageTest {
         assertEquals(AttractionType.GENERAL, loaded.get(0).getType());
         assertEquals(20, loaded.get(0).getCapacity());
         assertEquals(1, storage.getSkippedLines());
+    }
+
+    @Test
+    void passesRoundTripWithPriceAndConsumedState() throws Exception {
+        TicketRepository tickets = new TicketRepository();
+        IndividualTicket t001 = new IndividualTicket("T001", DAY, ana, PRICE);
+        tickets.save(t001);
+        SpeedPass speed = new SpeedPass("SP01:1", t001);
+        SpecialPass special = new SpecialPass("PE01", t001);
+        special.consume();
+        PassFileStorage storage = new PassFileStorage(dir.resolve("passes.txt"));
+        storage.save(List.of(speed, special));
+        assertEquals(List.of("SPEED;SP01:1;T001;8.00;false", "SPECIAL;PE01;T001;40.00;true"),
+                Files.readAllLines(dir.resolve("passes.txt")));
+
+        List<Pass> loaded = storage.load(tickets);
+        assertEquals(2, loaded.size());
+        assertTrue(loaded.get(0) instanceof SpeedPass);
+        assertSame(t001, loaded.get(0).getTicket());
+        assertEquals(new BigDecimal("8.00"), loaded.get(0).getPrice());
+        assertTrue(loaded.get(1) instanceof SpecialPass);
+        assertTrue(loaded.get(1).isConsumed());
+    }
+
+    @Test
+    void passesOfUnknownTicketsAreSkipped() throws Exception {
+        Files.write(dir.resolve("passes.txt"), List.of("SPEED;SP01:1;T404;8.00;false", "OTHER;X;T001;1;false"));
+        PassFileStorage storage = new PassFileStorage(dir.resolve("passes.txt"));
+        assertTrue(storage.load(new TicketRepository()).isEmpty());
+        assertEquals(2, storage.getSkippedLines());
     }
 }
