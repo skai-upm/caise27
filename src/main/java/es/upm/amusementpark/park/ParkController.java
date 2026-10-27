@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import es.upm.amusementpark.model.Group;
+import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.repository.GroupRepository;
+import es.upm.amusementpark.repository.TicketRepository;
 import es.upm.amusementpark.repository.UserRepository;
 
 /**
@@ -21,6 +23,7 @@ public final class ParkController {
 
     private UserRepository users;
     private GroupRepository groups;
+    private TicketRepository tickets;
     private LocalDate currentDate;
     private BigDecimal currentPrice;
 
@@ -39,6 +42,7 @@ public final class ParkController {
     public void start(UserRepository users) {
         this.users = users;
         this.groups = new GroupRepository();
+        this.tickets = new TicketRepository();
         this.currentDate = LocalDate.now();
         this.currentPrice = INITIAL_PRICE;
     }
@@ -49,6 +53,20 @@ public final class ParkController {
 
     public GroupRepository getGroups() {
         return groups;
+    }
+
+    public TicketRepository getTickets() {
+        return tickets;
+    }
+
+    /** Whether any ticket dated today or later involves the user (derived, never stored). */
+    public boolean hasActiveTicket(User user) {
+        for (Ticket ticket : tickets.findAll()) {
+            if (ticket.involves(user) && ticket.isActive(currentDate)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Removes a user from every group it belongs to. */

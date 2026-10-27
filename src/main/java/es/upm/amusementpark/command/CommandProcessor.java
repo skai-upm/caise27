@@ -2,7 +2,6 @@ package es.upm.amusementpark.command;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.model.UserField;
@@ -28,16 +27,20 @@ public class CommandProcessor {
             "GROUP ADD;<Identifier>;<Email>",
             "GROUP REMOVE;<Identifier>;<Email>",
             "GROUP DELETE;<Identifier>",
+            "TICKET CREATE;<identifier>;<email>;<date>",
+            "TICKET DELETE;<identifier>",
             "HELP",
             "EXIT");
 
     private final ParkController park;
     private final GroupCommands groups;
+    private final TicketCommands tickets;
     private boolean exitRequested;
 
     public CommandProcessor(ParkController park) {
         this.park = park;
         this.groups = new GroupCommands(park);
+        this.tickets = new TicketCommands(park);
     }
 
     private UserRepository users() {
@@ -76,6 +79,10 @@ public class CommandProcessor {
                     return groups.remove(parts);
                 case "GROUP DELETE":
                     return groups.delete(parts);
+                case "TICKET CREATE":
+                    return tickets.create(parts);
+                case "TICKET DELETE":
+                    return tickets.delete(parts);
                 case "HELP":
                     return HELP_TEXT;
                 case "EXIT":
@@ -135,6 +142,9 @@ public class CommandProcessor {
         if (!user.getPassword().equals(parts[2])) {
             return "ERROR: Incorrect password";
         }
+        if (park.hasActiveTicket(user)) {
+            return "ERROR: User has active tickets";
+        }
         park.removeFromAllGroups(user);
         users().remove(user);
         return "USER DELETED";
@@ -188,14 +198,11 @@ public class CommandProcessor {
     }
 
     private String systemDate(String[] parts) {
-        if (parts.length != 2 || parts[1].length() != 10) {
+        LocalDate date = parts.length == 2 ? Dates.parse(parts[1]) : null;
+        if (date == null) {
             return "ERROR: Invalid date. Use SYSTEM DATE;<yyyy-MM-dd>";
         }
-        try {
-            park.setCurrentDate(LocalDate.parse(parts[1]));
-        } catch (DateTimeParseException e) {
-            return "ERROR: Invalid date. Use SYSTEM DATE;<yyyy-MM-dd>";
-        }
+        park.setCurrentDate(date);
         return "SYSTEM DATE UPDATED";
     }
 
