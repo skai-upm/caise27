@@ -8,6 +8,10 @@ import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.invoice.InvoiceController;
 import es.upm.amusementpark.persistence.PersistenceException;
+import es.upm.amusementpark.presentation.help.CommandCatalog;
+import es.upm.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
+import es.upm.amusementpark.presentation.help.SyntaxHelpFormatter;
 
 /**
  * Presentation entry point for commands: splits each line on ';', dispatches it to the
@@ -16,42 +20,26 @@ import es.upm.amusementpark.persistence.PersistenceException;
  */
 public class CommandProcessor {
 
-    static final String HELP_TEXT = String.join("\n",
-            "Available commands:",
-            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
-            "USER DELETE;<Email>;<Password>",
-            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
-            "  <Field>: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD",
-            "SYSTEM DATE;<yyyy-MM-dd>",
-            "SYSTEM PRICE;<Price>",
-            "GROUP CREATE;<Identifier>;<Name>",
-            "GROUP ADD;<Identifier>;<Email>",
-            "GROUP REMOVE;<Identifier>;<Email>",
-            "GROUP DELETE;<Identifier>",
-            "TICKET CREATE;<identifier>;<email>;<date>",
-            "TICKET DELETE;<identifier>",
-            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
-            "GROUPTICKET DELETE;<identifier>",
-            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
-            "ATTRACTION ENTER;<attraction>;<ticket>",
-            "ATTRACTION EXIT;<attraction>;<email>",
-            "ATTRACTION LIST;<attraction>",
-            "ATTRACTION STATUS;<attractionIdentifier>",
-            "INVOICE CREATE;USER;<email>",
-            "INVOICE CREATE;GROUP;<groupIdentifier>",
-            "HELP",
-            "EXIT");
-
     private final UserCommands users;
     private final SystemCommands system;
     private final GroupCommands groups;
     private final TicketCommands tickets;
     private final AttractionCommands attractions;
     private final InvoiceCommands invoices;
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
     private boolean exitRequested;
 
-    /** Wires the command handlers to the configured singleton controllers. */
+    /** Uses the default help generators (syntax and extended). */
     public CommandProcessor() {
+        this(new HelpGenerator(new CommandCatalog(), new SyntaxHelpFormatter()),
+                new HelpGenerator(new CommandCatalog(), new ExtendedHelpFormatter()));
+    }
+
+    /** Wires the command handlers to the configured singleton controllers and the injected help generators. */
+    public CommandProcessor(HelpGenerator help, HelpGenerator extendedHelp) {
+        this.help = help;
+        this.extendedHelp = extendedHelp;
         this.users = new UserCommands(UserController.getInstance());
         this.system = new SystemCommands(ParkController.getInstance());
         this.groups = new GroupCommands(GroupController.getInstance());
@@ -104,7 +92,8 @@ public class CommandProcessor {
             case "ATTRACTION LIST" -> attractions.list(in);
             case "ATTRACTION STATUS" -> attractions.status(in);
             case "INVOICE CREATE" -> invoices.create(in);
-            case "HELP" -> HELP_TEXT;
+            case "HELP" -> help.generate();
+            case "HELP EXTENDED" -> extendedHelp.generate();
             case "EXIT" -> {
                 exitRequested = true;
                 yield null;

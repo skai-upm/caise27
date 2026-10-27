@@ -292,4 +292,13 @@ class CommandProcessorTest {
         assertEquals("USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
         assertEquals(0, group("G01").getMembers().size());
     }
+
+    @Test
+    void extendedHelpExplainsEachCommand() {
+        String extended = processor.process("HELP EXTENDED");
+        assertTrue(extended.startsWith("Available commands (extended):"));
+        assertTrue(extended.contains("GROUPTICKET CREATE;<identifier>;<group>;<date>\n    Buys a joint ticket"));
+        assertTrue(processor.process("HELP").contains("\nHELP EXTENDED\n"));
+        assertTrue(!processor.process("HELP").contains("Buys a joint ticket"));
+    }
 }

@@ -11,6 +11,10 @@ import java.nio.file.Path;
 
 import es.upm.amusementpark.business.controller.ApplicationInitializer;
 import es.upm.amusementpark.persistence.PersistenceException;
+import es.upm.amusementpark.presentation.help.CommandCatalog;
+import es.upm.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
+import es.upm.amusementpark.presentation.help.SyntaxHelpFormatter;
 
 /**
  * Application entry point. Launch forms: no arguments (interactive), {@code <file>},
@@ -37,7 +41,10 @@ public class Main {
             } else {
                 ApplicationInitializer.startPermanent(baseDir);
             }
-            return execute(commandFile, new CommandProcessor(), in, out, err);
+            CommandCatalog catalog = new CommandCatalog();
+            CommandProcessor processor = new CommandProcessor(new HelpGenerator(catalog, new SyntaxHelpFormatter()),
+                    new HelpGenerator(catalog, new ExtendedHelpFormatter()));
+            return execute(commandFile, processor, in, out, err);
         } catch (PersistenceException e) {
             err.println("Error: " + e.getMessage());
             return 1;
