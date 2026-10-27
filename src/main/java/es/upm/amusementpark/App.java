@@ -25,14 +25,14 @@ public class App {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
                 runner.run(reader);
             } catch (IOException e) {
-                out.println("Error: could not read standard input: " + e.getMessage());
+                out.println("ERROR: could not read standard input: " + e.getMessage());
             }
             return;
         }
         try (BufferedReader reader = Files.newBufferedReader(Path.of(args[0]), StandardCharsets.UTF_8)) {
             runner.run(reader);
         } catch (IOException e) {
-            out.println("Error: could not read command file: " + args[0]);
+            out.println("ERROR: could not read command file: " + args[0]);
         }
     }
 }

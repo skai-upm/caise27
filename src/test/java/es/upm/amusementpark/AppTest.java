@@ -57,6 +57,6 @@ class AppTest {
     @Test
     void missingFileIsReportedInControlledManner() {
         String out = runApp(new String[] {tempDir.resolve("missing.txt").toString()}, "");
-        assertTrue(out.startsWith("Error"));
+        assertTrue(out.startsWith("ERROR"));
     }
 }

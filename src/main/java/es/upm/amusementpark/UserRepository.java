@@ -21,6 +21,15 @@ public class UserRepository {
         return Optional.ofNullable(users.get(email));
     }
 
+    public boolean existsByDni(String dni) {
+        for (User user : users.values()) {
+            if (user.getDni().equals(dni)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean delete(String email) {
         return users.remove(email) != null;
     }

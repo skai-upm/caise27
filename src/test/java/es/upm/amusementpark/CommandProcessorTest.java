@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 
 class CommandProcessorTest {
 
+    private static final String ANA =
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
+
     private ByteArrayOutputStream buffer;
     private CommandProcessor processor;
 
@@ -44,7 +47,43 @@ class CommandProcessorTest {
     @Test
     void unknownCommandIsRejectedWithoutStopping() {
         assertTrue(processor.process("FOO"));
-        assertTrue(output().contains("Error"));
+        assertTrue(output().startsWith("ERROR"));
+    }
+
+    @Test
+    void userCreateCreatesUser() {
+        assertTrue(processor.process(ANA));
+        assertTrue(output().contains("USER CREATED"));
+    }
+
+    @Test
+    void duplicateUserCreateIsRejected() {
+        processor.process(ANA);
+        buffer.reset();
+        assertTrue(processor.process(ANA));
+        assertTrue(output().startsWith("ERROR"));
+    }
+
+    @Test
+    void userCreateWithWrongElementCountIsRejected() {
+        assertTrue(processor.process("USER CREATE;Ana;Garcia Lopez;12345678Z"));
+        assertTrue(output().startsWith("ERROR"));
+        assertFalse(output().contains("USER CREATED"));
+    }
+
+    @Test
+    void invalidUserDataIsRejected() {
+        assertTrue(processor.process(
+                "USER CREATE;Ana;Garcia Lopez;12345678A;ana@correo.com;Clave1!;612345678;1234567890123456"));
+        assertTrue(output().contains("DNI"));
+        assertFalse(output().contains("USER CREATED"));
+    }
+
+    @Test
+    void malformedCommandDoesNotStopLaterCommands() {
+        assertTrue(processor.process("USER CREATE;Ana"));
+        assertTrue(processor.process("HELP"));
+        assertTrue(output().contains("USER DELETE;<email>;<password>"));
     }
 
     @Test
