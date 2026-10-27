@@ -6,9 +6,11 @@ import java.util.Collection;
 import java.util.List;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 
 /**
- * Stores attractions as {@code id;name;capacity}. Occupants are never stored.
+ * Stores attractions as {@code id;name;capacity;type} (lines without type are GENERAL).
+ * Occupants are never stored.
  */
 public class AttractionFileStore {
 
@@ -18,13 +20,15 @@ public class AttractionFileStore {
         this.file = file;
     }
 
-    public List<Attraction> load() {
-        List<Attraction> attractions = new ArrayList<>();
+    public List<Attraction<?>> load() {
+        List<Attraction<?>> attractions = new ArrayList<>();
         for (String line : TextFiles.read(file)) {
             String[] f = TextFiles.fields(line);
-            if (f.length == 3) {
+            AttractionType type = f.length == 3 ? AttractionType.GENERAL
+                    : f.length == 4 ? AttractionType.fromText(f[3]) : null;
+            if (type != null) {
                 try {
-                    attractions.add(new Attraction(f[0], f[1], Integer.parseInt(f[2])));
+                    attractions.add(type.create(f[0], f[1], Integer.parseInt(f[2])));
                 } catch (NumberFormatException e) {
                     // malformed line: skipped
                 }
@@ -33,10 +37,10 @@ public class AttractionFileStore {
         return attractions;
     }
 
-    public void save(Collection<Attraction> attractions) {
+    public void save(Collection<Attraction<?>> attractions) {
         List<String> lines = new ArrayList<>();
-        for (Attraction a : attractions) {
-            lines.add(TextFiles.join(a.getId(), a.getName(), String.valueOf(a.getCapacity())));
+        for (Attraction<?> a : attractions) {
+            lines.add(TextFiles.join(a.getId(), a.getName(), String.valueOf(a.getCapacity()), a.getType().name()));
         }
         TextFiles.write(file, lines);
     }

@@ -5,12 +5,15 @@ import java.util.List;
 import es.upm.amusementpark.business.controller.AttractionController;
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.User;
 
 /**
  * ATTRACTION commands.
  */
 class AttractionCommands {
+
+    private static final String SYNTAX = "ATTRACTION CREATE;Identifier;Name;Capacity[;Type]";
 
     private final AttractionController attractions;
 
@@ -19,9 +22,18 @@ class AttractionCommands {
     }
 
     String create(CommandInput in) throws InvalidCommandException, ParkException {
-        in.expect(3, "ATTRACTION CREATE;Identifier;Name;Capacity");
+        AttractionType type = AttractionType.GENERAL;
+        if (in.size() == 5) {
+            in.expect(4, SYNTAX);
+            type = AttractionType.fromText(in.get(4));
+            if (type == null) {
+                throw new InvalidCommandException("Invalid attraction type. Use GENERAL, INDIVIDUAL, GROUP or SPECIAL");
+            }
+        } else {
+            in.expect(3, SYNTAX);
+        }
         int capacity = in.number(3, "Capacity must be a positive whole number");
-        attractions.create(in.get(1), in.get(2), capacity);
+        attractions.create(in.get(1), in.get(2), capacity, type);
         return "ATTRACTION CREATED";
     }
 
@@ -43,7 +55,7 @@ class AttractionCommands {
 
     String list(CommandInput in) throws InvalidCommandException, ParkException {
         in.expect(1, "ATTRACTION LIST;AttractionIdentifier");
-        Attraction attraction = attractions.find(in.get(1));
+        Attraction<?> attraction = attractions.find(in.get(1));
         if (attraction.occupancy() == 0) {
             return "No users in " + attraction.getId();
         }
@@ -56,7 +68,7 @@ class AttractionCommands {
 
     String status(CommandInput in) throws InvalidCommandException, ParkException {
         in.expect(1, "ATTRACTION STATUS;AttractionIdentifier");
-        Attraction attraction = attractions.find(in.get(1));
+        Attraction<?> attraction = attractions.find(in.get(1));
         StringBuilder users = new StringBuilder();
         for (User user : attraction.getOccupants()) {
             users.append(users.length() == 0 ? "" : ", ").append(user.getEmail());
@@ -64,6 +76,7 @@ class AttractionCommands {
         return String.join("\n",
                 "Attraction: " + attraction.getId(),
                 "Name: " + attraction.getName(),
+                "Type: " + attraction.getType(),
                 "Capacity: " + attraction.getCapacity(),
                 "Users inside: " + attraction.occupancy(),
                 "Available places: " + attraction.freePlaces(),

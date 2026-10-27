@@ -10,7 +10,7 @@ import java.util.List;
  * Joint ticket bought by a group, composed of one individual ticket per member at purchase
  * time. It references the purchasing group while that group exists; the group does not know it.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private static final BigDecimal NO_DISCOUNT = BigDecimal.ZERO;
     private static final BigDecimal SMALL_GROUP = new BigDecimal("0.10");

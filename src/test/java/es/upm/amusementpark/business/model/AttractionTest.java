@@ -16,7 +16,7 @@ class AttractionTest {
 
     @Test
     void tracksOccupantsAndCapacity() {
-        Attraction a = new Attraction("A01", "Dragon Rojo", 2);
+        Attraction<?> a = new GeneralAttraction("A01", "Dragon Rojo", 2);
         assertEquals(0, a.occupancy());
         assertEquals(2, a.freePlaces());
         a.enter(ana);

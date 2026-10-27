@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import es.upm.amusementpark.business.exception.DuplicateException;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.exception.InvalidDataException;
 import es.upm.amusementpark.business.exception.NotFoundException;
 import es.upm.amusementpark.business.exception.OperationNotAllowedException;
@@ -42,7 +43,7 @@ class BusinessControllersTest {
                 "p@correo.com", "Clave1!", "1", "1234567890123456"));
         assertEquals("Invalid DNI", e.getMessage());
         assertThrows(InvalidDataException.class, () -> park.setCurrentPrice(BigDecimal.ZERO));
-        assertThrows(InvalidDataException.class, () -> attractions.create("A01", "X", 0));
+        assertThrows(InvalidDataException.class, () -> attractions.create("A01", "X", 0, AttractionType.GENERAL));
     }
 
     @Test
@@ -71,7 +72,7 @@ class BusinessControllersTest {
                 () -> users.delete("ana@correo.com", "Clave1!"));
         assertEquals("User has active tickets", e.getMessage());
         assertThrows(OperationNotAllowedException.class, () -> tickets.deleteIndividual("T001"));
-        attractions.create("A01", "Mini", 1);
+        attractions.create("A01", "Mini", 1, AttractionType.GENERAL);
         attractions.enter("A01", "T001");
         assertThrows(OperationNotAllowedException.class, () -> attractions.enter("A01", "T001"));
     }

@@ -42,10 +42,10 @@ class ParkFileStoresTest {
     @Test
     void attractionsRoundTripWithoutOccupants() {
         AttractionFileStore store = new AttractionFileStore(dir.resolve("attractions.txt"));
-        Attraction a = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> a = new es.upm.amusementpark.business.model.GeneralAttraction("A01", "Dragon Rojo", 20);
         a.enter(ana);
         store.save(List.of(a));
-        Attraction loaded = store.load().get(0);
+        Attraction<?> loaded = store.load().get(0);
         assertEquals("A01", loaded.getId());
         assertEquals("Dragon Rojo", loaded.getName());
         assertEquals(20, loaded.getCapacity());

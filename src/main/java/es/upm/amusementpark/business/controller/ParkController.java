@@ -119,7 +119,7 @@ public final class ParkController {
 
     /** Removes a user from every attraction it is inside. */
     public void removeFromAllAttractions(User user) {
-        for (Attraction attraction : attractions.findAll()) {
+        for (Attraction<?> attraction : attractions.findAll()) {
             attraction.exit(user);
         }
     }

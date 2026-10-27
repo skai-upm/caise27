@@ -30,7 +30,7 @@ class AttractionCommandsTest {
     void createsAttractions() {
         assertEquals("ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20"));
         assertEquals("ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A02;Torre del Cielo;12"));
-        Attraction a = park.getAttractions().findById("A01");
+        Attraction<?> a = park.getAttractions().findById("A01");
         assertEquals("Dragon Rojo", a.getName());
         assertEquals(20, a.getCapacity());
         assertEquals(0, a.occupancy());
@@ -53,7 +53,7 @@ class AttractionCommandsTest {
     void listsOccupantsWithoutChangingState() {
         processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
         assertEquals("No users in A01", processor.process("ATTRACTION LIST;A01"));
-        Attraction a = park.getAttractions().findById("A01");
+        Attraction<?> a = park.getAttractions().findById("A01");
         a.enter(park.getUsers().findByEmail("ana@correo.com"));
         a.enter(park.getUsers().findByEmail("pedro@correo.com"));
         assertEquals("Users in A01:\nana@correo.com\npedro@correo.com", processor.process("ATTRACTION LIST;A01"));

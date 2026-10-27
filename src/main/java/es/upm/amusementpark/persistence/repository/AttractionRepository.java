@@ -13,7 +13,7 @@ import es.upm.amusementpark.persistence.AttractionFileStore;
  */
 public class AttractionRepository {
 
-    private final Map<String, Attraction> attractionsById = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractionsById = new LinkedHashMap<>();
     private final AttractionFileStore store;
 
     /** In-memory repository without persistence. */
@@ -24,19 +24,19 @@ public class AttractionRepository {
     /** Loads the stored attractions; they always start empty. */
     public AttractionRepository(AttractionFileStore store) {
         this.store = store;
-        for (Attraction attraction : store.load()) {
+        for (Attraction<?> attraction : store.load()) {
             attractionsById.put(attraction.getId(), attraction);
         }
     }
 
-    public void add(Attraction attraction) {
+    public void add(Attraction<?> attraction) {
         attractionsById.put(attraction.getId(), attraction);
         if (store != null) {
             store.save(attractionsById.values());
         }
     }
 
-    public Attraction findById(String id) {
+    public Attraction<?> findById(String id) {
         return attractionsById.get(id);
     }
 
@@ -44,7 +44,7 @@ public class AttractionRepository {
         return attractionsById.containsKey(id);
     }
 
-    public List<Attraction> findAll() {
+    public List<Attraction<?>> findAll() {
         return new ArrayList<>(attractionsById.values());
     }
 }

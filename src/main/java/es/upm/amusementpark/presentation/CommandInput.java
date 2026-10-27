@@ -29,6 +29,11 @@ final class CommandInput {
         return this;
     }
 
+    /** Number of elements including the command name. */
+    int size() {
+        return parts.length;
+    }
+
     /** Argument {@code index}, counting from 1. */
     String get(int index) {
         return parts[index];

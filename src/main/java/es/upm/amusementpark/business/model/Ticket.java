@@ -9,7 +9,7 @@ import java.util.List;
  * Common abstraction of every ticket type: unique identifier, date of use and price,
  * plus the rules that depend on the current system date.
  */
-public abstract class Ticket {
+public abstract class Ticket implements AttractionAccess {
 
     private final String id;
     private final LocalDate date;

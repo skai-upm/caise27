@@ -32,11 +32,28 @@ package "es.upm.amusementpark.business.model" {
     - name : String
   }
 
-  class Attraction {
+  interface AttractionAccess
+  interface IndividualAccess
+  interface GroupAccess
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+
+  abstract class Attraction<T extends AttractionAccess> {
     - id : String {readOnly}
     - name : String
     - capacity : int {readOnly}
+    - accessType : Class<T> {readOnly}
   }
+
+  class GeneralAttraction
+  class IndividualAttraction
+  class GroupAttraction
+  class SpecialAttraction
 
   abstract class Ticket {
     - id : String {readOnly}
@@ -98,6 +115,16 @@ class "es.upm.amusementpark.presentation.Main" as Main
 ' --- ticket hierarchy ---
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+AttractionAccess <|-- IndividualAccess
+AttractionAccess <|-- GroupAccess
+AttractionAccess <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <<bind>> T = AttractionAccess
+Attraction <|-- IndividualAttraction : <<bind>> T = IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T = GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T = IndividualAccess
+Attraction ..> AttractionType : type
 
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass

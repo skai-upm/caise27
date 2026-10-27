@@ -36,7 +36,7 @@ class GroupAttractionAccessTest {
         processor.process("ATTRACTION CREATE;A02;Torre del Cielo;1");
     }
 
-    private Attraction attraction(String id) {
+    private Attraction<?> attraction(String id) {
         return park.getAttractions().findById(id);
     }
 
@@ -89,6 +89,7 @@ class GroupAttractionAccessTest {
         assertEquals(String.join("\n",
                 "Attraction: A01",
                 "Name: Dragon Rojo",
+                "Type: GENERAL",
                 "Capacity: 20",
                 "Users inside: 3",
                 "Available places: 17",

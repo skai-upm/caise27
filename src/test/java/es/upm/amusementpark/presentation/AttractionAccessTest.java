@@ -32,7 +32,7 @@ class AttractionAccessTest {
         processor.process("TICKET CREATE;T002;pedro@correo.com;2027-04-15");
     }
 
-    private Attraction attraction(String id) {
+    private Attraction<?> attraction(String id) {
         return park.getAttractions().findById(id);
     }
 

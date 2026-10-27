@@ -25,7 +25,7 @@ class UmlModelTest {
         String[] words = declaration.trim().split(" ");
         for (int i = 0; i < words.length - 1; i++) {
             if (words[i].equals("class") || words[i].equals("enum") || words[i].equals("interface")) {
-                return words[i + 1];
+                return words[i + 1].split("<")[0];
             }
         }
         return null;
