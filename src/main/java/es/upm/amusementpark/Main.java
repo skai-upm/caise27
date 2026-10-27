@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import es.upm.amusementpark.command.CommandProcessor;
+import es.upm.amusementpark.park.ParkController;
 import es.upm.amusementpark.persistence.PersistenceException;
 import es.upm.amusementpark.persistence.UserFileStore;
 import es.upm.amusementpark.repository.UserRepository;
@@ -32,7 +33,9 @@ public class Main {
     static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path usersFile) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new UserRepository(new UserFileStore(usersFile)));
+            ParkController park = ParkController.getInstance();
+            park.start(new UserRepository(new UserFileStore(usersFile)));
+            processor = new CommandProcessor(park);
         } catch (PersistenceException e) {
             err.println("Error: " + e.getMessage());
             return 1;

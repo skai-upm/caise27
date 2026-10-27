@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import es.upm.amusementpark.park.ParkController;
 import es.upm.amusementpark.repository.UserRepository;
 
 class CommandProcessorTest {
@@ -20,7 +21,8 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() {
         users = new UserRepository();
-        processor = new CommandProcessor(users);
+        ParkController.getInstance().start(users);
+        processor = new CommandProcessor(ParkController.getInstance());
     }
 
     private static String create(String dni, String email, String password, String card) {
@@ -175,13 +177,57 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailuresAreContained() {
-        CommandProcessor failing = new CommandProcessor(new UserRepository() {
+        ParkController.getInstance().start(new UserRepository() {
             @Override
             public es.upm.amusementpark.model.User findByEmail(String email) {
                 throw new IllegalStateException("boom");
             }
         });
+        CommandProcessor failing = new CommandProcessor(ParkController.getInstance());
         assertEquals("ERROR: Command could not be processed", failing.process("USER DELETE;ana@correo.com;Clave1!"));
         assertTrue(failing.process("HELP").startsWith("Available commands"));
+    }
+
+    @Test
+    void systemDateChangesCurrentDate() {
+        assertEquals("SYSTEM DATE UPDATED", processor.process("SYSTEM DATE;2027-04-15"));
+        assertEquals(java.time.LocalDate.of(2027, 4, 15), ParkController.getInstance().getCurrentDate());
+        assertEquals("SYSTEM DATE UPDATED", processor.process("SYSTEM DATE;2028-01-01"));
+        assertEquals(java.time.LocalDate.of(2028, 1, 1), ParkController.getInstance().getCurrentDate());
+    }
+
+    @Test
+    void invalidSystemDateIsRejected() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        for (String bad : new String[] {"SYSTEM DATE;2027-02-30", "SYSTEM DATE;15/04/2027", "SYSTEM DATE",
+                "SYSTEM DATE;2027-4-15", "SYSTEM DATE;+2027-04-15"}) {
+            assertTrue(processor.process(bad).startsWith("ERROR"), bad);
+        }
+        assertEquals(java.time.LocalDate.of(2027, 4, 15), ParkController.getInstance().getCurrentDate());
+    }
+
+    @Test
+    void systemPriceChangesBasePrice() {
+        assertEquals(new java.math.BigDecimal("40.00"), ParkController.getInstance().getCurrentPrice());
+        assertEquals("SYSTEM PRICE UPDATED", processor.process("SYSTEM PRICE;45.50"));
+        assertEquals(new java.math.BigDecimal("45.50"), ParkController.getInstance().getCurrentPrice());
+        assertEquals("SYSTEM PRICE UPDATED", processor.process("SYSTEM PRICE;50"));
+        assertEquals(new java.math.BigDecimal("50.00"), ParkController.getInstance().getCurrentPrice());
+    }
+
+    @Test
+    void invalidSystemPriceIsRejected() {
+        for (String bad : new String[] {"SYSTEM PRICE;0", "SYSTEM PRICE;0.00", "SYSTEM PRICE;-5", "SYSTEM PRICE;abc",
+                "SYSTEM PRICE;45.505", "SYSTEM PRICE;1e3", "SYSTEM PRICE;45,50", "SYSTEM PRICE;45.", "SYSTEM PRICE"}) {
+            assertTrue(processor.process(bad).startsWith("ERROR"), bad);
+        }
+        assertEquals(new java.math.BigDecimal("40.00"), ParkController.getInstance().getCurrentPrice());
+    }
+
+    @Test
+    void helpListsSystemCommands() {
+        String help = processor.process("HELP");
+        assertTrue(help.contains("SYSTEM DATE;<yyyy-MM-dd>"));
+        assertTrue(help.contains("SYSTEM PRICE;<Price>"));
     }
 }

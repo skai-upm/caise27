@@ -1,8 +1,13 @@
 package es.upm.amusementpark.command;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.model.UserValidator;
+import es.upm.amusementpark.park.ParkController;
 import es.upm.amusementpark.persistence.PersistenceException;
 import es.upm.amusementpark.repository.UserRepository;
 
@@ -17,14 +22,20 @@ public class CommandProcessor {
             "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
             "USER DELETE;<email>;<password>",
             "USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "SYSTEM DATE;<yyyy-MM-dd>",
+            "SYSTEM PRICE;<Price>",
             "HELP",
             "EXIT");
 
-    private final UserRepository users;
+    private final ParkController park;
     private boolean exitRequested;
 
-    public CommandProcessor(UserRepository users) {
-        this.users = users;
+    public CommandProcessor(ParkController park) {
+        this.park = park;
+    }
+
+    private UserRepository users() {
+        return park.getUsers();
     }
 
     /**
@@ -47,6 +58,10 @@ public class CommandProcessor {
                     return deleteUser(parts);
                 case "USER UPDATE":
                     return updateUser(parts);
+                case "SYSTEM DATE":
+                    return systemDate(parts);
+                case "SYSTEM PRICE":
+                    return systemPrice(parts);
                 case "HELP":
                     return HELP_TEXT;
                 case "EXIT":
@@ -85,13 +100,13 @@ public class CommandProcessor {
         if (!UserValidator.isValidCard(parts[7])) {
             return "ERROR: Invalid card number";
         }
-        if (users.existsDni(dni)) {
+        if (users().existsDni(dni)) {
             return "ERROR: DNI already registered";
         }
-        if (users.existsEmail(email)) {
+        if (users().existsEmail(email)) {
             return "ERROR: Email already registered";
         }
-        users.add(new User(parts[1], parts[2], dni, email, parts[5], parts[6], parts[7]));
+        users().add(new User(parts[1], parts[2], dni, email, parts[5], parts[6], parts[7]));
         return "USER CREATED";
     }
 
@@ -99,14 +114,14 @@ public class CommandProcessor {
         if (parts.length != 3 || hasEmpty(parts)) {
             return "ERROR: Invalid format. Use USER DELETE;Email;Password";
         }
-        User user = users.findByEmail(parts[1]);
+        User user = users().findByEmail(parts[1]);
         if (user == null) {
             return "ERROR: User not found";
         }
         if (!user.getPassword().equals(parts[2])) {
             return "ERROR: Incorrect password";
         }
-        users.remove(user);
+        users().remove(user);
         return "USER DELETED";
     }
 
@@ -118,7 +133,7 @@ public class CommandProcessor {
         if (field == null) {
             return "ERROR: Field cannot be modified. Use NAME, SURNAME, EMAIL, PASSWORD, PHONE or CARD";
         }
-        User user = users.findByEmail(parts[1]);
+        User user = users().findByEmail(parts[1]);
         if (user == null) {
             return "ERROR: User not found";
         }
@@ -134,7 +149,7 @@ public class CommandProcessor {
                 if (!UserValidator.isValidEmail(value)) {
                     return "ERROR: Invalid email";
                 }
-                User owner = users.findByEmail(value);
+                User owner = users().findByEmail(value);
                 if (owner != null && owner != user) {
                     return "ERROR: Email already registered";
                 }
@@ -153,8 +168,50 @@ public class CommandProcessor {
                 user.setCardNumber(value);
             }
         }
-        users.update(user);
+        users().update(user);
         return "USER UPDATED";
+    }
+
+    private String systemDate(String[] parts) {
+        if (parts.length != 2 || parts[1].length() != 10) {
+            return "ERROR: Invalid date. Use SYSTEM DATE;<yyyy-MM-dd>";
+        }
+        try {
+            park.setCurrentDate(LocalDate.parse(parts[1]));
+        } catch (DateTimeParseException e) {
+            return "ERROR: Invalid date. Use SYSTEM DATE;<yyyy-MM-dd>";
+        }
+        return "SYSTEM DATE UPDATED";
+    }
+
+    private String systemPrice(String[] parts) {
+        BigDecimal price = parts.length == 2 ? parseAmount(parts[1]) : null;
+        if (price == null || price.signum() <= 0) {
+            return "ERROR: Invalid price. Use a positive amount such as SYSTEM PRICE;45.50";
+        }
+        park.setCurrentPrice(price);
+        return "SYSTEM PRICE UPDATED";
+    }
+
+    /** Parses digits with an optional '.' and at most two decimals; null if not a monetary amount. */
+    static BigDecimal parseAmount(String text) {
+        int dot = text.indexOf('.');
+        String integer = dot < 0 ? text : text.substring(0, dot);
+        String decimals = dot < 0 ? "" : text.substring(dot + 1);
+        if (integer.isEmpty() || !digits(integer) || !digits(decimals) || decimals.length() > 2
+                || (dot >= 0 && decimals.isEmpty())) {
+            return null;
+        }
+        return new BigDecimal(text).setScale(2);
+    }
+
+    private static boolean digits(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) < '0' || s.charAt(i) > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean hasEmpty(String[] parts) {
