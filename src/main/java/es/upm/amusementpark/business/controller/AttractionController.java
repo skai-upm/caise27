@@ -76,7 +76,12 @@ public final class AttractionController {
 
     private <T extends AttractionAccess> EntryResult enterTyped(Attraction<T> attraction, Ticket ticket, boolean speed)
             throws ParkException {
-        return attraction.admit(attraction.accessFor(ticket), park.getCurrentDate(), speed, passes::findByTicket);
+        EntryResult entry = attraction.admit(attraction.accessFor(ticket), park.getCurrentDate(), speed,
+                passes::findByTicket);
+        if (!entry.consumedPasses().isEmpty()) {
+            passes.save();
+        }
+        return entry;
     }
 
     public User exit(String attractionId, String email) throws ParkException {

@@ -10,4 +10,8 @@ public class SpecialPass extends Pass {
     public SpecialPass(String id, IndividualTicket ticket) {
         super(id, ticket, BigDecimal.ONE);
     }
+
+    public SpecialPass(String id, IndividualTicket ticket, BigDecimal price, boolean consumed) {
+        super(id, ticket, price, consumed);
+    }
 }

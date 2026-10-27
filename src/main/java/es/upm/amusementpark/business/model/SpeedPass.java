@@ -12,4 +12,8 @@ public class SpeedPass extends Pass {
     public SpeedPass(String id, IndividualTicket ticket) {
         super(id, ticket, RATE);
     }
+
+    public SpeedPass(String id, IndividualTicket ticket, BigDecimal price, boolean consumed) {
+        super(id, ticket, price, consumed);
+    }
 }

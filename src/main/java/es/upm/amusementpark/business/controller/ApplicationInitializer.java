@@ -9,6 +9,7 @@ import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.AttractionFileStore;
 import es.upm.amusementpark.persistence.DataPaths;
 import es.upm.amusementpark.persistence.GroupFileStore;
+import es.upm.amusementpark.persistence.PassFileStore;
 import es.upm.amusementpark.persistence.TemporaryDataDirectory;
 import es.upm.amusementpark.persistence.TicketFileStore;
 import es.upm.amusementpark.persistence.UserFileStore;
@@ -45,7 +46,7 @@ public final class ApplicationInitializer {
 
     /** Execution without persistence, using the given user repository and in-memory repositories. */
     public static void startInMemory(UserRepository users) {
-        inject(users, new GroupRepository(), new TicketRepository(), new AttractionRepository(),
+        inject(users, new GroupRepository(), new TicketRepository(), new PassRepository(), new AttractionRepository(),
                 new BCryptPasswordHasher(MEMORY_LOG_ROUNDS));
     }
 
@@ -62,13 +63,13 @@ public final class ApplicationInitializer {
         UserRepository users = new UserRepository(new UserFileStore(paths.users()));
         GroupRepository groups = new GroupRepository(new GroupFileStore(paths.groups()), users);
         TicketRepository tickets = new TicketRepository(new TicketFileStore(paths.tickets()), users, groups);
+        PassRepository passes = new PassRepository(new PassFileStore(paths.passes()), tickets);
         AttractionRepository attractions = new AttractionRepository(new AttractionFileStore(paths.attractions()));
-        inject(users, groups, tickets, attractions, new BCryptPasswordHasher(FILE_LOG_ROUNDS));
+        inject(users, groups, tickets, passes, attractions, new BCryptPasswordHasher(FILE_LOG_ROUNDS));
     }
 
     private static void inject(UserRepository users, GroupRepository groups, TicketRepository tickets,
-            AttractionRepository attractions, PasswordHasher hasher) {
-        PassRepository passes = new PassRepository();
+            PassRepository passes, AttractionRepository attractions, PasswordHasher hasher) {
         ParkController park = ParkController.getInstance();
         park.configure(users, groups, tickets, attractions);
         park.resetClock();

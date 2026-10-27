@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 class UmlModelTest {
 
     private static final Path PUML = Path.of("uml", "model.puml");
-    private static final Path MODEL = Path.of("src", "main", "java", "es", "upm", "amusementpark", "business", "model");
+    private static final Path BUSINESS = Path.of("src", "main", "java", "es", "upm", "amusementpark", "business");
 
     private static String simpleName(String declaration) {
         String[] words = declaration.trim().split(" ");
@@ -61,17 +61,20 @@ class UmlModelTest {
                 }
             }
         }
-        try (Stream<Path> files = Files.list(MODEL)) {
-            for (Path p : files.toList()) {
-                String cls = p.getFileName().toString().replace(".java", "");
-                assertTrue(declared.contains(cls), "missing in diagram: " + cls);
+        for (String pkg : new String[] {"model", "controller", "invoice", "security"}) {
+            try (Stream<Path> files = Files.list(BUSINESS.resolve(pkg))) {
+                for (Path p : files.toList()) {
+                    String cls = p.getFileName().toString().replace(".java", "");
+                    assertTrue(declared.contains(cls), "missing in diagram: " + cls);
+                }
             }
         }
         assertTrue(declared.contains("ParkController"));
     }
 
     private static Class<?> resolve(String simple) {
-        for (String pkg : new String[] {"business.model", "business.controller", "persistence.repository", "persistence", "presentation"}) {
+        for (String pkg : new String[] {"business.model", "business.controller", "business.invoice", "business.security",
+                "persistence.repository", "persistence", "presentation"}) {
             try {
                 return Class.forName("es.upm.amusementpark." + pkg + "." + simple);
             } catch (ClassNotFoundException e) {
@@ -79,5 +82,16 @@ class UmlModelTest {
             }
         }
         return null;
+    }
+
+    @Test
+    void delivery3ElementsAreRepresented() throws IOException {
+        String uml = Files.readString(PUML);
+        for (String expected : new String[] {"interface IndividualAccess", "interface GroupAccess",
+                "abstract class Attraction<T extends AttractionAccess>", "SpeedPass \"0..*\" --> \"1\" IndividualTicket",
+                "SpecialPass \"0..1\" --> \"1\" IndividualTicket", "interface InvoiceBuilder",
+                "class UserController <<singleton>>", "ApplicationInitializer ..> UserController : injects"}) {
+            assertTrue(uml.contains(expected), expected);
+        }
     }
 }

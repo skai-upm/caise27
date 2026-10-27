@@ -21,6 +21,14 @@ public abstract class Pass {
         this.price = ticket.getPrice().multiply(priceRate).setScale(2, RoundingMode.HALF_UP);
     }
 
+    /** Restores a stored pass with its stored price and consumption state. */
+    protected Pass(String id, IndividualTicket ticket, BigDecimal price, boolean consumed) {
+        this.id = id;
+        this.ticket = ticket;
+        this.price = price;
+        this.consumed = consumed;
+    }
+
     public String getId() {
         return id;
     }
