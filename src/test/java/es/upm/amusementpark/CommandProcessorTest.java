@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,8 @@ class CommandProcessorTest {
         assertTrue(out.contains("TICKET DELETE;<identifier>"));
         assertTrue(out.contains("GROUPTICKET CREATE;<identifier>;<group>;<date>"));
         assertTrue(out.contains("GROUPTICKET DELETE;<identifier>"));
+        assertTrue(out.contains("ATTRACTION CREATE;<identifier>;<name>;<capacity>"));
+        assertTrue(out.contains("ATTRACTION LIST;<attraction>"));
         assertTrue(out.contains("HELP"));
         assertTrue(out.contains("EXIT"));
     }
@@ -304,6 +307,43 @@ class CommandProcessorTest {
         assertEquals("GROUP TICKET DELETED", lines[3]);
         assertTrue(lines[4].startsWith("ERROR"));
         assertTrue(lines[5].startsWith("ERROR"));
+    }
+
+    @Test
+    void attractionsAreCreatedAndListed() {
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        processor.process("ATTRACTION CREATE;A02;Torre del Cielo;12");
+        processor.process("ATTRACTION LIST;A01");
+        String[] lines = output().split(System.lineSeparator());
+        assertEquals("ATTRACTION CREATED", lines[0]);
+        assertEquals("ATTRACTION CREATED", lines[1]);
+        assertEquals("No users inside attraction A01.", lines[2]);
+        assertEquals(12, ParkController.getInstance().getAttractions().findById("A02").orElseThrow().getCapacity());
+    }
+
+    @Test
+    void attractionListShowsOccupantEmailsWithoutChangingThem() {
+        processor.process(ANA);
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        Attraction a01 = ParkController.getInstance().getAttractions().findById("A01").orElseThrow();
+        a01.enter(List.of(ParkController.getInstance().getUsers().findByEmail("ana@correo.com").orElseThrow()));
+        buffer.reset();
+        processor.process("ATTRACTION LIST;A01");
+        assertEquals("ana@correo.com", output().trim());
+        assertEquals(1, a01.getOccupants().size());
+    }
+
+    @Test
+    void invalidAttractionCommandsAreRejected() {
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        for (String command : new String[] {"ATTRACTION CREATE;A01;Otra;5", "ATTRACTION CREATE;A03;Noria;0",
+                "ATTRACTION CREATE;A03;Noria;-2", "ATTRACTION CREATE;A03;Noria;abc", "ATTRACTION CREATE;A03;Noria",
+                "ATTRACTION LIST;A99", "ATTRACTION LIST"}) {
+            buffer.reset();
+            processor.process(command);
+            assertTrue(output().startsWith("ERROR"), command);
+        }
+        assertTrue(ParkController.getInstance().getAttractions().findById("A03").isEmpty());
     }
 
     @Test

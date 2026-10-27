@@ -31,6 +31,8 @@ public class CommandProcessor {
             "  TICKET DELETE;<identifier>",
             "  GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "  GROUPTICKET DELETE;<identifier>",
+            "  ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "  ATTRACTION LIST;<attraction>",
             "  HELP",
             "  EXIT");
 
@@ -48,6 +50,7 @@ public class CommandProcessor {
     private final UserService userService;
     private final GroupService groupService = new GroupService();
     private final TicketService ticketService = new TicketService();
+    private final AttractionService attractionService = new AttractionService();
 
     /** Creates a processor working on the users managed by the {@link ParkController}. */
     public CommandProcessor(PrintStream out) {
@@ -128,6 +131,12 @@ public class CommandProcessor {
                 return true;
             case "GROUPTICKET DELETE":
                 deleteGroupTicket(parts);
+                return true;
+            case "ATTRACTION CREATE":
+                createAttraction(parts);
+                return true;
+            case "ATTRACTION LIST":
+                listAttraction(parts);
                 return true;
             default:
                 out.println("ERROR: unrecognised command: " + command);
@@ -304,6 +313,56 @@ public class CommandProcessor {
         } catch (TicketOperationException e) {
             out.println("ERROR: " + e.getMessage());
         }
+    }
+
+    private void createAttraction(String[] parts) {
+        if (parts.length != 4) {
+            out.println("ERROR: invalid syntax. Expected ATTRACTION CREATE;<identifier>;<name>;<capacity>");
+            return;
+        }
+        int capacity = parseCapacity(parts[3]);
+        if (capacity < 1) {
+            out.println("ERROR: invalid capacity " + parts[3] + ". It must be a positive whole number.");
+            return;
+        }
+        try {
+            attractionService.createAttraction(parts[1], parts[2], capacity);
+            out.println("ATTRACTION CREATED");
+        } catch (AttractionOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void listAttraction(String[] parts) {
+        if (parts.length != 2) {
+            out.println("ERROR: invalid syntax. Expected ATTRACTION LIST;<attraction>");
+            return;
+        }
+        try {
+            Attraction attraction = attractionService.findAttraction(parts[1]);
+            if (attraction.getOccupants().isEmpty()) {
+                out.println("No users inside attraction " + attraction.getIdentifier() + ".");
+                return;
+            }
+            for (User user : attraction.getOccupants()) {
+                out.println(user.getEmail());
+            }
+        } catch (AttractionOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    /** @return the capacity, or -1 if the text is not a whole number that fits in an int */
+    private static int parseCapacity(String text) {
+        if (text.isEmpty() || text.length() > 9) {
+            return -1;
+        }
+        for (char c : text.toCharArray()) {
+            if (c < '0' || c > '9') {
+                return -1;
+            }
+        }
+        return Integer.parseInt(text);
     }
 
     /**

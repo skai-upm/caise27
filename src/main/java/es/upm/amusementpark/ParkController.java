@@ -7,8 +7,8 @@ import java.util.List;
 
 /**
  * Central management of the park state during one execution: the users,
- * groups, tickets, the current system date and the current base ticket price.
- * Only one instance exists.
+ * groups, tickets, attractions, the current system date and the current base
+ * ticket price. Only one instance exists.
  */
 public final class ParkController {
 
@@ -19,6 +19,7 @@ public final class ParkController {
     private UserRepository users = new UserRepository();
     private GroupRepository groups = new GroupRepository();
     private TicketRepository tickets = new TicketRepository();
+    private AttractionRepository attractions = new AttractionRepository();
     private LocalDate currentDate = LocalDate.now();
     private BigDecimal currentPrice = INITIAL_PRICE;
 
@@ -43,6 +44,7 @@ public final class ParkController {
         this.users = users;
         this.groups = groups;
         this.tickets = new TicketRepository();
+        this.attractions = new AttractionRepository();
         this.currentDate = today;
         this.currentPrice = INITIAL_PRICE;
     }
@@ -57,6 +59,10 @@ public final class ParkController {
 
     public TicketRepository getTickets() {
         return tickets;
+    }
+
+    public AttractionRepository getAttractions() {
+        return attractions;
     }
 
     /**
