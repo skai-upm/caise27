@@ -30,4 +30,13 @@ public class UserService {
         repository.save(user);
         return user;
     }
+
+    public void deleteUser(String email, String password) throws UserOperationException {
+        User user = repository.findByEmail(email)
+                .orElseThrow(() -> new UserOperationException("No user with email " + email + " exists."));
+        if (!user.getPassword().equals(password)) {
+            throw new UserOperationException("Incorrect password.");
+        }
+        repository.delete(email);
+    }
 }

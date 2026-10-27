@@ -87,6 +87,39 @@ class CommandProcessorTest {
     }
 
     @Test
+    void userDeleteWithCorrectPasswordDeletesUser() {
+        processor.process(ANA);
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(output().contains("USER DELETED"));
+        buffer.reset();
+        processor.process(ANA);
+        assertTrue(output().contains("USER CREATED"));
+    }
+
+    @Test
+    void userDeleteWithWrongPasswordIsRejected() {
+        processor.process(ANA);
+        buffer.reset();
+        processor.process("USER DELETE;ana@correo.com;Otra1!");
+        assertTrue(output().startsWith("ERROR"));
+        buffer.reset();
+        processor.process(ANA);
+        assertTrue(output().startsWith("ERROR"));
+    }
+
+    @Test
+    void userDeleteOfUnknownUserIsRejected() {
+        processor.process("USER DELETE;nadie@correo.com;Clave1!");
+        assertTrue(output().startsWith("ERROR"));
+    }
+
+    @Test
+    void userDeleteWithWrongElementCountIsRejected() {
+        processor.process("USER DELETE;ana@correo.com");
+        assertTrue(output().startsWith("ERROR"));
+    }
+
+    @Test
     void blankLineIsIgnored() {
         assertTrue(processor.process("   "));
         assertTrue(output().isEmpty());

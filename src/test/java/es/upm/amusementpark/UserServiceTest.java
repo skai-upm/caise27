@@ -64,4 +64,27 @@ class UserServiceTest {
         assertTrue(e.getMessage().contains("email"));
         assertEquals(1, repository.findAll().size());
     }
+
+    @Test
+    void userIsDeletedWithCorrectPassword() throws UserOperationException {
+        createAna();
+        service.deleteUser("ana@correo.com", "Clave1!");
+        assertTrue(repository.findByEmail("ana@correo.com").isEmpty());
+    }
+
+    @Test
+    void deletingUnknownUserIsRejected() {
+        UserOperationException e = assertThrows(UserOperationException.class,
+                () -> service.deleteUser("nadie@correo.com", "Clave1!"));
+        assertTrue(e.getMessage().contains("No user"));
+    }
+
+    @Test
+    void incorrectPasswordDoesNotDelete() throws UserOperationException {
+        createAna();
+        UserOperationException e = assertThrows(UserOperationException.class,
+                () -> service.deleteUser("ana@correo.com", "Otra1!"));
+        assertTrue(e.getMessage().contains("password"));
+        assertTrue(repository.findByEmail("ana@correo.com").isPresent());
+    }
 }

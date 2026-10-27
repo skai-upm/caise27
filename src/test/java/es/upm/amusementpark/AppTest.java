@@ -70,4 +70,13 @@ class AppTest {
         assertFalse(second.contains("USER CREATED"));
         assertTrue(second.contains("ERROR"));
     }
+
+    @Test
+    void deletedUserIsRemovedFromPersistedData() throws IOException {
+        String create = "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456\n";
+        runApp(new String[0], create + "EXIT\n");
+        assertTrue(runApp(new String[0], "USER DELETE;ana@correo.com;Clave1!\nEXIT\n").contains("USER DELETED"));
+        assertTrue(Files.readString(tempDir.resolve("data/users.txt"), StandardCharsets.UTF_8).isBlank());
+        assertTrue(runApp(new String[0], create + "EXIT\n").contains("USER CREATED"));
+    }
 }

@@ -21,6 +21,8 @@ public class CommandProcessor {
     private static final String USER_CREATE_SYNTAX =
             "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>";
 
+    private static final String USER_DELETE_SYNTAX = "USER DELETE;<email>;<password>";
+
     private final PrintStream out;
     private final UserService userService;
 
@@ -54,6 +56,9 @@ public class CommandProcessor {
             case "USER CREATE":
                 createUser(parts);
                 return true;
+            case "USER DELETE":
+                deleteUser(parts);
+                return true;
             default:
                 out.println("ERROR: unrecognised command: " + command);
                 return true;
@@ -68,6 +73,19 @@ public class CommandProcessor {
         try {
             userService.createUser(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
             out.println("USER CREATED");
+        } catch (UserOperationException | UncheckedIOException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void deleteUser(String[] parts) {
+        if (parts.length != 3) {
+            out.println("ERROR: invalid syntax. Expected " + USER_DELETE_SYNTAX);
+            return;
+        }
+        try {
+            userService.deleteUser(parts[1], parts[2]);
+            out.println("USER DELETED");
         } catch (UserOperationException | UncheckedIOException e) {
             out.println("ERROR: " + e.getMessage());
         }
