@@ -2,6 +2,7 @@ package es.upm.amusementpark.presentation;
 
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.exception.PersistenceException;
+import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.Ticket;
@@ -9,6 +10,7 @@ import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
+import es.upm.amusementpark.business.service.InvoiceService;
 import es.upm.amusementpark.business.service.ParkController;
 import es.upm.amusementpark.business.service.TicketService;
 import es.upm.amusementpark.business.service.UserService;
@@ -50,6 +52,8 @@ public class CommandProcessor {
             "  ATTRACTION EXIT;<attraction>;<email>",
             "  ATTRACTION LIST;<attraction>",
             "  ATTRACTION STATUS;<attractionIdentifier>",
+            "  INVOICE CREATE;USER;<email>",
+            "  INVOICE CREATE;GROUP;<groupIdentifier>",
             "  HELP",
             "  EXIT");
 
@@ -68,6 +72,7 @@ public class CommandProcessor {
     private final GroupService groupService = new GroupService();
     private final TicketService ticketService = new TicketService();
     private final AttractionService attractionService = new AttractionService();
+    private final InvoiceService invoiceService = new InvoiceService();
 
     /** Creates a processor working on the users managed by the {@link ParkController}. */
     public CommandProcessor(PrintStream out) {
@@ -188,6 +193,9 @@ public class CommandProcessor {
             case "ATTRACTION STATUS":
                 attractionStatus(parts);
                 return true;
+            case "INVOICE CREATE":
+                createInvoice(parts);
+                return true;
             default:
                 throw new InvalidCommandException("unrecognised command: " + command);
         }
@@ -284,6 +292,24 @@ public class CommandProcessor {
         }
         for (User user : attraction.getOccupants()) {
             out.println(user.getEmail());
+        }
+    }
+
+    private void createInvoice(String[] parts) throws ParkException, InvalidCommandException {
+        requireElements(parts, 3, "INVOICE CREATE;USER;<email> or INVOICE CREATE;GROUP;<groupIdentifier>");
+        Invoice invoice;
+        switch (parts[1]) {
+            case "USER":
+                invoice = invoiceService.createUserInvoice(parts[2]);
+                break;
+            case "GROUP":
+                invoice = invoiceService.createGroupInvoice(parts[2]);
+                break;
+            default:
+                throw new InvalidCommandException("invalid invoice type " + parts[1] + ". Expected USER or GROUP.");
+        }
+        for (String line : invoice.render()) {
+            out.println(line);
         }
     }
 

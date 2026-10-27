@@ -47,6 +47,28 @@ package es.upm.amusementpark.business.model {
   }
 }
 
+package es.upm.amusementpark.business.invoice {
+  class Invoice {
+    - title : String
+    - header : List<String>
+    - total : BigDecimal
+  }
+  class InvoiceSection <<record>> {
+    - title : String
+  }
+  class InvoiceLine <<record>> {
+    - description : String
+    - amount : BigDecimal
+    - details : List<String>
+    - countsInTotal : boolean
+  }
+  abstract class InvoiceBuilder {
+    - title : String
+  }
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
+}
+
 package es.upm.amusementpark.business.service {
   class ParkController <<singleton>> {
     - {static} INSTANCE : ParkController
@@ -58,6 +80,7 @@ package es.upm.amusementpark.business.service {
   class GroupService
   class TicketService
   class AttractionService
+  class InvoiceService
 }
 
 package es.upm.amusementpark.business.exception {
@@ -66,6 +89,7 @@ package es.upm.amusementpark.business.exception {
   class GroupOperationException
   class TicketOperationException
   class AttractionOperationException
+  class InvoiceOperationException
   class PersistenceException
 }
 
@@ -157,6 +181,23 @@ DataDirectories ..> PersistenceException
 CommandProcessor ..> InvalidCommandException
 CommandProcessor ..> ParkException
 CommandProcessor ..> PersistenceException
+
+' ----- Invoices (Builder) -----
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder ..> Invoice : builds
+Invoice "1" *-- "0..*" InvoiceSection : sections
+InvoiceSection "1" *-- "1..*" InvoiceLine : lines
+UserInvoiceBuilder ..> User
+UserInvoiceBuilder ..> IndividualTicket
+GroupInvoiceBuilder ..> Group
+GroupInvoiceBuilder ..> GroupTicket
+InvoiceService ..> UserInvoiceBuilder
+InvoiceService ..> GroupInvoiceBuilder
+InvoiceService ..> ParkController
+InvoiceService ..> InvoiceOperationException
+ParkException <|-- InvoiceOperationException
+CommandProcessor --> "1" InvoiceService
 
 UserService ..> UserOperationException
 GroupService ..> GroupOperationException

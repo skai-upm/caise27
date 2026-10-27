@@ -88,6 +88,8 @@ class CommandProcessorTest {
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
             "ATTRACTION STATUS;<attractionIdentifier>",
+            "INVOICE CREATE;USER;<email>",
+            "INVOICE CREATE;GROUP;<groupIdentifier>",
             "HELP",
             "EXIT"};
         for (String syntax : required) {
@@ -437,6 +439,28 @@ class CommandProcessorTest {
         assertTrue(lines[1].startsWith("ERROR"));
         assertTrue(lines[2].startsWith("ERROR"));
         assertTrue(lines[3].startsWith("ERROR"));
+    }
+
+    @Test
+    void invoiceCommandsPrintInvoices() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-01");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        buffer.reset();
+        processor.process("INVOICE CREATE;USER;ana@correo.com");
+        assertTrue(output().startsWith("INVOICE - USER"));
+        assertTrue(output().contains("TOTAL: 40.00 EUR"));
+        buffer.reset();
+        processor.process("INVOICE CREATE;GROUP;G01");
+        assertTrue(output().startsWith("INVOICE - GROUP"));
+        assertTrue(output().contains("TOTAL: 0.00 EUR"));
+        for (String command : new String[] {"INVOICE CREATE;COMPANY;X", "INVOICE CREATE;USER",
+                "INVOICE CREATE;USER;nadie@correo.com", "INVOICE CREATE;GROUP;G99"}) {
+            buffer.reset();
+            processor.process(command);
+            assertTrue(output().startsWith("ERROR"), command);
+        }
     }
 
     @Test
