@@ -114,3 +114,10 @@ The HELP output SHALL also include `SYSTEM DATE;<yyyy-MM-dd>` and `SYSTEM PRICE;
 #### Scenario: Help shows system commands
 - **WHEN** the user enters `HELP`
 - **THEN** the output contains `SYSTEM DATE;<yyyy-MM-dd>` and `SYSTEM PRICE;<Price>` in addition to the Delivery 1 commands
+
+### Requirement: HELP lists group commands
+The HELP output SHALL also include `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>` and `GROUP DELETE;<Identifier>`.
+
+#### Scenario: Help shows group commands
+- **WHEN** the user enters `HELP`
+- **THEN** the output contains the four GROUP command syntaxes
