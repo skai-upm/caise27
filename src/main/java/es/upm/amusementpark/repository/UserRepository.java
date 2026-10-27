@@ -34,6 +34,11 @@ public class UserRepository {
         save();
     }
 
+    public void remove(User user) {
+        usersByDni.remove(user.getDni());
+        save();
+    }
+
     private void save() {
         if (store != null) {
             store.save(usersByDni.values());

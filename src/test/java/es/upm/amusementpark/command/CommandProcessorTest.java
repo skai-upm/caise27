@@ -74,4 +74,22 @@ class CommandProcessorTest {
         assertEquals("ERROR: Unknown command", processor.process("user create;x"));
         assertEquals("USER CREATED", processor.process(ANA));
     }
+
+    @Test
+    void deletesUserWithCorrectPassword() {
+        processor.process(ANA);
+        assertEquals("USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals(0, users.size());
+        assertEquals(null, users.findByDni("12345678Z"));
+    }
+
+    @Test
+    void deleteRejectsUnknownUserWrongPasswordAndBadFormat() {
+        processor.process(ANA);
+        assertEquals("ERROR: User not found", processor.process("USER DELETE;nadie@correo.com;Clave1!"));
+        assertEquals("ERROR: Incorrect password", processor.process("USER DELETE;ana@correo.com;Otra1!"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com;").startsWith("ERROR"));
+        assertEquals(1, users.size());
+    }
 }

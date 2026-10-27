@@ -29,6 +29,8 @@ public class CommandProcessor {
             switch (parts[0]) {
                 case "USER CREATE":
                     return createUser(parts);
+                case "USER DELETE":
+                    return deleteUser(parts);
                 default:
                     return "ERROR: Unknown command";
             }
@@ -63,6 +65,21 @@ public class CommandProcessor {
         }
         users.add(new User(parts[1], parts[2], dni, email, parts[5], parts[6], parts[7]));
         return "USER CREATED";
+    }
+
+    private String deleteUser(String[] parts) {
+        if (parts.length != 3 || hasEmpty(parts)) {
+            return "ERROR: Invalid format. Use USER DELETE;Email;Password";
+        }
+        User user = users.findByEmail(parts[1]);
+        if (user == null) {
+            return "ERROR: User not found";
+        }
+        if (!user.getPassword().equals(parts[2])) {
+            return "ERROR: Incorrect password";
+        }
+        users.remove(user);
+        return "USER DELETED";
     }
 
     private static boolean hasEmpty(String[] parts) {

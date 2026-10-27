@@ -64,4 +64,12 @@ class MainTest {
         assertEquals(0, run(CREATE_ANA + "\n"));
         assertEquals("ERROR: DNI already registered\n", output());
     }
+
+    @Test
+    void deletedUserIsAbsentAfterRestart() {
+        run(CREATE_ANA + "\nUSER DELETE;ana@correo.com;Clave1!\n");
+        out.reset();
+        assertEquals(0, run(CREATE_ANA + "\n"));
+        assertEquals("USER CREATED\n", output());
+    }
 }
