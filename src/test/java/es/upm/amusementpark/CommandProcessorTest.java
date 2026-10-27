@@ -52,7 +52,9 @@ class CommandProcessorTest {
         assertTrue(out.contains("GROUPTICKET DELETE;<identifier>"));
         assertTrue(out.contains("ATTRACTION CREATE;<identifier>;<name>;<capacity>"));
         assertTrue(out.contains("ATTRACTION ENTER;<attraction>;<ticket>"));
+        assertTrue(out.contains("ATTRACTION EXIT;<attraction>;<email>"));
         assertTrue(out.contains("ATTRACTION LIST;<attraction>"));
+        assertTrue(out.contains("ATTRACTION STATUS;<attractionIdentifier>"));
         assertTrue(out.contains("HELP"));
         assertTrue(out.contains("EXIT"));
     }
@@ -364,6 +366,41 @@ class CommandProcessorTest {
         assertEquals("ENTERED ATTRACTION A01: ana@correo.com", lines[2]);
         assertEquals("ana@correo.com", lines[3]);
         assertTrue(lines[4].startsWith("ERROR"));
+    }
+
+    @Test
+    void attractionStatusReflectsMixedEntriesAndExits() {
+        processor.process(ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("USER CREATE;Luis;Perez;00000000T;luis@correo.com;Clave3$;600000000;1111222233334444");
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("SYSTEM DATE;2027-04-01");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2027-04-15");
+        processor.process("TICKET CREATE;T003;luis@correo.com;2027-04-15");
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process("ATTRACTION ENTER;A01;TG01");
+        processor.process("ATTRACTION ENTER;A01;T003");
+        buffer.reset();
+        processor.process("ATTRACTION STATUS;A01");
+        assertEquals(String.join(System.lineSeparator(),
+                "ATTRACTION A01 - Dragon Rojo",
+                "Capacity: 20",
+                "Users inside: 3",
+                "Available places: 17",
+                "Inside: ana@correo.com, pedro@correo.com, luis@correo.com"), output().trim());
+        buffer.reset();
+        processor.process("ATTRACTION EXIT;A01;ana@correo.com");
+        processor.process("ATTRACTION EXIT;A01;ana@correo.com");
+        processor.process("ATTRACTION STATUS;A99");
+        processor.process("ATTRACTION EXIT;A01");
+        String[] lines = output().split(System.lineSeparator());
+        assertEquals("EXITED ATTRACTION A01: ana@correo.com", lines[0]);
+        assertTrue(lines[1].startsWith("ERROR"));
+        assertTrue(lines[2].startsWith("ERROR"));
+        assertTrue(lines[3].startsWith("ERROR"));
     }
 
     @Test

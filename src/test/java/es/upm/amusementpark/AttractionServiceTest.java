@@ -86,14 +86,53 @@ class AttractionServiceTest {
         assertEquals(1, a01().getOccupants().size());
     }
 
-    @Test
-    void groupTicketAccessIsNotAvailableYet() throws Exception {
+    private void buyGroupTicket() throws Exception {
         park.setCurrentDate(DAY.minusDays(14));
-        new GroupService().createGroup("G01", "Familia");
-        new GroupService().addUser("G01", "ana@correo.com");
+        GroupService groups = new GroupService();
+        groups.createGroup("G01", "Familia");
+        groups.addUser("G01", "ana@correo.com");
+        groups.addUser("G01", "pedro@correo.com");
         tickets.createGroupTicket("TG01", "G01", DAY);
         park.setCurrentDate(DAY);
+    }
+
+    @Test
+    void groupEntersTogether() throws Exception {
+        buyGroupTicket();
+        attractions.enter("A01", "TG01");
+        assertTrue(a01().isInside(ana) && a01().isInside(pedro));
+        assertEquals(18, a01().getAvailablePlaces());
+    }
+
+    @Test
+    void insufficientCapacityLetsNobodyIn() throws Exception {
+        buyGroupTicket();
+        attractions.createAttraction("A02", "Torre", 1);
+        assertThrows(AttractionOperationException.class, () -> attractions.enter("A02", "TG01"));
+        assertTrue(park.getAttractions().findById("A02").orElseThrow().getOccupants().isEmpty());
+    }
+
+    @Test
+    void groupTicketForAnotherDateIsRejected() throws Exception {
+        buyGroupTicket();
+        park.setCurrentDate(DAY.minusDays(1));
         assertThrows(AttractionOperationException.class, () -> attractions.enter("A01", "TG01"));
         assertTrue(a01().getOccupants().isEmpty());
+    }
+
+    @Test
+    void groupMembersLeaveIndividually() throws Exception {
+        buyGroupTicket();
+        attractions.enter("A01", "TG01");
+        attractions.exit("A01", "ana@correo.com");
+        assertFalse(a01().isInside(ana));
+        assertTrue(a01().isInside(pedro));
+        assertEquals(19, a01().getAvailablePlaces());
+    }
+
+    @Test
+    void exitOfUserNotInsideOrUnknownAttractionIsRejected() {
+        assertThrows(AttractionOperationException.class, () -> attractions.exit("A01", "luis@correo.com"));
+        assertThrows(AttractionOperationException.class, () -> attractions.exit("A99", "ana@correo.com"));
     }
 }

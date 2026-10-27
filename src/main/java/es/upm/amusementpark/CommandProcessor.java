@@ -35,7 +35,9 @@ public class CommandProcessor {
             "  GROUPTICKET DELETE;<identifier>",
             "  ATTRACTION CREATE;<identifier>;<name>;<capacity>",
             "  ATTRACTION ENTER;<attraction>;<ticket>",
+            "  ATTRACTION EXIT;<attraction>;<email>",
             "  ATTRACTION LIST;<attraction>",
+            "  ATTRACTION STATUS;<attractionIdentifier>",
             "  HELP",
             "  EXIT");
 
@@ -141,8 +143,14 @@ public class CommandProcessor {
             case "ATTRACTION ENTER":
                 enterAttraction(parts);
                 return true;
+            case "ATTRACTION EXIT":
+                exitAttraction(parts);
+                return true;
             case "ATTRACTION LIST":
                 listAttraction(parts);
+                return true;
+            case "ATTRACTION STATUS":
+                attractionStatus(parts);
                 return true;
             default:
                 out.println("ERROR: unrecognised command: " + command);
@@ -351,6 +359,40 @@ public class CommandProcessor {
                 emails.add(user.getEmail());
             }
             out.println("ENTERED ATTRACTION " + parts[1] + ": " + String.join(", ", emails));
+        } catch (AttractionOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void exitAttraction(String[] parts) {
+        if (parts.length != 3) {
+            out.println("ERROR: invalid syntax. Expected ATTRACTION EXIT;<attraction>;<email>");
+            return;
+        }
+        try {
+            User user = attractionService.exit(parts[1], parts[2]);
+            out.println("EXITED ATTRACTION " + parts[1] + ": " + user.getEmail());
+        } catch (AttractionOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void attractionStatus(String[] parts) {
+        if (parts.length != 2) {
+            out.println("ERROR: invalid syntax. Expected ATTRACTION STATUS;<attractionIdentifier>");
+            return;
+        }
+        try {
+            Attraction attraction = attractionService.findAttraction(parts[1]);
+            List<String> emails = new ArrayList<>();
+            for (User user : attraction.getOccupants()) {
+                emails.add(user.getEmail());
+            }
+            out.println("ATTRACTION " + attraction.getIdentifier() + " - " + attraction.getName());
+            out.println("Capacity: " + attraction.getCapacity());
+            out.println("Users inside: " + attraction.getOccupants().size());
+            out.println("Available places: " + attraction.getAvailablePlaces());
+            out.println("Inside: " + (emails.isEmpty() ? "none" : String.join(", ", emails)));
         } catch (AttractionOperationException e) {
             out.println("ERROR: " + e.getMessage());
         }

@@ -34,9 +34,6 @@ public class AttractionService {
         Attraction attraction = findAttraction(attractionId);
         Ticket ticket = park.getTickets().findById(ticketId).orElseThrow(
                 () -> new AttractionOperationException("No ticket with identifier " + ticketId + " exists."));
-        if (ticket instanceof GroupTicket) {
-            throw new AttractionOperationException("Access with group tickets is not available yet.");
-        }
         if (!ticket.getDate().equals(park.getCurrentDate())) {
             throw new AttractionOperationException("Ticket " + ticketId + " is valid on " + ticket.getDate()
                     + ", not on the current date " + park.getCurrentDate() + ".");
@@ -54,6 +51,18 @@ public class AttractionService {
         }
         attraction.enter(holders);
         return holders;
+    }
+
+    /** Removes the user with the given email from the attraction. */
+    public User exit(String attractionId, String email) throws AttractionOperationException {
+        Attraction attraction = findAttraction(attractionId);
+        for (User user : attraction.getOccupants()) {
+            if (user.getEmail().equals(email)) {
+                attraction.exit(user);
+                return user;
+            }
+        }
+        throw new AttractionOperationException("User " + email + " is not inside attraction " + attractionId + ".");
     }
 
     public Attraction findAttraction(String identifier) throws AttractionOperationException {
