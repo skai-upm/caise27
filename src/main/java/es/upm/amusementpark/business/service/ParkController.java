@@ -81,7 +81,7 @@ public final class ParkController {
         this.attractions = attractions;
         this.currentDate = today;
         this.currentPrice = INITIAL_PRICE;
-        UserService.getInstance().configure(users, groups, this);
+        UserService.getInstance().configure(users, groups, this, new BCryptPasswordHasher());
         GroupService.getInstance().configure(users, groups, this);
         TicketService.getInstance().configure(users, groups, tickets, this);
         AttractionService.getInstance().configure(attractions, tickets, this);

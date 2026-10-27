@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -55,10 +57,11 @@ class Delivery1IntegrationTest {
         assertTrue(fromFile.contains("USER UPDATE;<Email>;<Password>;<Field>;<NewValue>"));
         assertEquals(interactive, fromFile);
 
-        List<String> stored = Files.readAllLines(tempDir.resolve("file/users.txt"), StandardCharsets.UTF_8);
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456"),
-                stored);
-        assertEquals(stored, Files.readAllLines(tempDir.resolve("interactive/users.txt"), StandardCharsets.UTF_8));
+        List<String> stored = AppTest.withoutPasswords(tempDir.resolve("file/users.txt"));
+        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;;699999999;1234567890123456"), stored);
+        assertEquals(stored, AppTest.withoutPasswords(tempDir.resolve("interactive/users.txt")));
+        String hash = Files.readString(tempDir.resolve("file/users.txt"), StandardCharsets.UTF_8).split(";")[4];
+        assertTrue(BCrypt.checkpw("Clave1!", hash));
     }
 
     @Test

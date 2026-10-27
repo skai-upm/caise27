@@ -20,6 +20,7 @@ public class UserService {
     private UserRepository users;
     private GroupRepository groups;
     private ParkController park;
+    private PasswordHasher passwordHasher;
 
     private UserService() {
     }
@@ -29,10 +30,12 @@ public class UserService {
     }
 
     /** Injects the collaborators of this controller; called during application initialization. */
-    public void configure(UserRepository users, GroupRepository groups, ParkController park) {
+    public void configure(UserRepository users, GroupRepository groups, ParkController park,
+            PasswordHasher passwordHasher) {
         this.users = users;
         this.groups = groups;
         this.park = park;
+        this.passwordHasher = passwordHasher;
     }
 
     public User createUser(String firstName, String surnames, String dni, String email,
@@ -47,7 +50,7 @@ public class UserService {
         if (users.findByEmail(email).isPresent()) {
             throw new UserOperationException("A user with email " + email + " already exists.");
         }
-        User user = new User(firstName, surnames, dni, email, password, phone, card);
+        User user = new User(firstName, surnames, dni, email, passwordHasher.hash(password), phone, card);
         users.save(user);
         return user;
     }
@@ -95,7 +98,7 @@ public class UserService {
                     throw new UserOperationException(
                             "Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol.");
                 }
-                user.setPassword(value);
+                user.setPassword(passwordHasher.hash(value));
                 break;
             case PHONE:
                 user.setPhone(value);
@@ -115,7 +118,7 @@ public class UserService {
     private User authenticate(String email, String password) throws UserOperationException {
         User user = users.findByEmail(email)
                 .orElseThrow(() -> new UserOperationException("No user with email " + email + " exists."));
-        if (!user.getPassword().equals(password)) {
+        if (!passwordHasher.matches(password, user.getPassword())) {
             throw new UserOperationException("Incorrect password.");
         }
         return user;

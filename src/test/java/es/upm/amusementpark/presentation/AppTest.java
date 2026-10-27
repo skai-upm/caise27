@@ -15,6 +15,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
+
+import org.mindrot.jbcrypt.BCrypt;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -80,8 +83,11 @@ class AppTest {
     void usersPersistBetweenRuns() throws IOException {
         String create = "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456\n";
         assertTrue(runApp(new String[0], create + "EXIT\n").contains("USER CREATED"));
-        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
-                Files.readString(tempDir.resolve("data/users.txt"), StandardCharsets.UTF_8).trim());
+        String[] stored = Files.readString(tempDir.resolve("data/users.txt"), StandardCharsets.UTF_8).trim().split(";");
+        assertEquals(List.of("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "612345678", "1234567890123456"),
+                List.of(stored[0], stored[1], stored[2], stored[3], stored[5], stored[6]));
+        assertTrue(BCrypt.checkpw("Clave1!", stored[4]));
+        assertFalse(Files.readString(tempDir.resolve("data/users.txt")).contains("Clave1!"));
         String second = runApp(new String[0], create + "EXIT\n");
         assertFalse(second.contains("USER CREATED"));
         assertTrue(second.contains("ERROR"));
@@ -131,7 +137,7 @@ class AppTest {
         String fromFile = runApp(new String[] {writeFile(FILE_EXAMPLE).toString()}, "", tempDir.resolve("a"));
         String fromStdin = runApp(new String[0], FILE_EXAMPLE, tempDir.resolve("b"));
         assertEquals(fromStdin, fromFile);
-        assertEquals(Files.readString(tempDir.resolve("a/users.txt")), Files.readString(tempDir.resolve("b/users.txt")));
+        assertEquals(withoutPasswords(tempDir.resolve("a/users.txt")), withoutPasswords(tempDir.resolve("b/users.txt")));
     }
 
     @Test
@@ -141,5 +147,16 @@ class AppTest {
         runApp(new String[0], "EXIT\n");
         assertEquals(new BigDecimal("40.00"), ParkController.getInstance().getCurrentPrice());
         assertEquals(LocalDate.now(), ParkController.getInstance().getCurrentDate());
+    }
+
+    /** The users file with the password field removed (BCrypt values use random salts). */
+    static List<String> withoutPasswords(Path usersFile) throws IOException {
+        return Files.readAllLines(usersFile, StandardCharsets.UTF_8).stream()
+                .map(line -> {
+                    String[] f = line.split(";", -1);
+                    f[4] = "";
+                    return String.join(";", f);
+                })
+                .toList();
     }
 }

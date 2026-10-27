@@ -79,6 +79,8 @@ package es.upm.amusementpark.business.service {
     - {static} INSTANCE : UserService
   }
   class UserValidator <<utility>>
+  interface PasswordHasher
+  class BCryptPasswordHasher
   class GroupService <<singleton>> {
     - {static} INSTANCE : GroupService
   }
@@ -187,6 +189,8 @@ ParkController ..> ParkRepositories : initialize
 UserService --> "1" UserRepository : users
 UserService --> "1" GroupRepository : groups
 UserService --> "1" ParkController : park
+UserService --> "1" PasswordHasher : passwordHasher (injected)
+PasswordHasher <|.. BCryptPasswordHasher
 GroupService --> "1" UserRepository : users
 GroupService --> "1" GroupRepository : groups
 GroupService --> "1" ParkController : park

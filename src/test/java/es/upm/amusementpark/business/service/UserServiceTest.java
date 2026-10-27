@@ -6,10 +6,13 @@ import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.persistence.UserRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+
+import org.mindrot.jbcrypt.BCrypt;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -113,7 +116,7 @@ class UserServiceTest {
         assertEquals("Garcia", ana.getSurnames());
         assertEquals("699999999", ana.getPhone());
         assertEquals("9999888877776666", ana.getCard());
-        assertEquals("Nueva2#", ana.getPassword());
+        assertTrue(BCrypt.checkpw("Nueva2#", ana.getPassword()));
         service.updateUser("ana@correo.com", "Nueva2#", UserField.EMAIL, "ana.nueva@correo.com");
         assertTrue(repository.findByEmail("ana@correo.com").isEmpty());
         assertEquals("12345678Z", repository.findByEmail("ana.nueva@correo.com").orElseThrow().getDni());
@@ -143,7 +146,7 @@ class UserServiceTest {
         assertThrows(UserOperationException.class,
                 () -> service.updateUser("ana@correo.com", "Clave1!", UserField.CARD, "123456789012345"));
         User ana = ana();
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(BCrypt.checkpw("Clave1!", ana.getPassword()));
         assertEquals("1234567890123456", ana.getCard());
     }
 
@@ -163,5 +166,34 @@ class UserServiceTest {
         createAna();
         service.updateUser("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo.com");
         assertEquals(1, repository.findAll().size());
+    }
+
+    @Test
+    void storedPasswordIsAVerifiableBCryptValue() throws UserOperationException {
+        createAna();
+        String stored = repository.findByEmail("ana@correo.com").orElseThrow().getPassword();
+        assertTrue(stored.startsWith("$2a$"));
+        assertFalse(stored.contains("Clave1!"));
+        assertTrue(BCrypt.checkpw("Clave1!", stored));
+    }
+
+    @Test
+    void passwordChangeGeneratesANewValue() throws UserOperationException {
+        createAna();
+        String before = repository.findByEmail("ana@correo.com").orElseThrow().getPassword();
+        service.updateUser("ana@correo.com", "Clave1!", UserField.PASSWORD, "Nueva2#");
+        String after = repository.findByEmail("ana@correo.com").orElseThrow().getPassword();
+        assertFalse(before.equals(after));
+        assertTrue(BCrypt.checkpw("Nueva2#", after));
+        assertFalse(BCrypt.checkpw("Clave1!", after));
+        assertThrows(UserOperationException.class,
+                () -> service.updateUser("ana@correo.com", "Clave1!", UserField.PHONE, "699999999"));
+    }
+
+    @Test
+    void plainTextStoredPasswordNeverMatches() {
+        repository.save(new User("Old", "User", "00000000T", "old@correo.com", "Clave1!", "600000000",
+                "1111222233334444"));
+        assertThrows(UserOperationException.class, () -> service.deleteUser("old@correo.com", "Clave1!"));
     }
 }
