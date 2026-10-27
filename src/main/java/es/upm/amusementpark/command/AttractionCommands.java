@@ -3,7 +3,6 @@ package es.upm.amusementpark.command;
 import java.util.List;
 
 import es.upm.amusementpark.model.Attraction;
-import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.park.ParkController;
@@ -64,9 +63,6 @@ class AttractionCommands {
         if (ticket == null) {
             return "ERROR: Ticket not found";
         }
-        if (ticket instanceof GroupTicket) {
-            return "ERROR: Access with group tickets is not supported yet";
-        }
         if (!ticket.isValidOn(park.getCurrentDate())) {
             return "ERROR: Ticket is not valid for the current date";
         }
@@ -85,6 +81,44 @@ class AttractionCommands {
             out.append(' ').append(user.getEmail());
         }
         return out.toString();
+    }
+
+    String exit(String[] parts) {
+        if (parts.length != 3 || CommandProcessor.hasEmpty(parts)) {
+            return "ERROR: Invalid format. Use ATTRACTION EXIT;AttractionIdentifier;Email";
+        }
+        Attraction attraction = park.getAttractions().findById(parts[1]);
+        if (attraction == null) {
+            return "ERROR: Attraction not found";
+        }
+        for (User user : attraction.getOccupants()) {
+            if (user.getEmail().equals(parts[2])) {
+                attraction.exit(user);
+                return "EXITED " + attraction.getId() + ": " + user.getEmail();
+            }
+        }
+        return "ERROR: User is not inside " + attraction.getId();
+    }
+
+    String status(String[] parts) {
+        if (parts.length != 2 || CommandProcessor.hasEmpty(parts)) {
+            return "ERROR: Invalid format. Use ATTRACTION STATUS;AttractionIdentifier";
+        }
+        Attraction attraction = park.getAttractions().findById(parts[1]);
+        if (attraction == null) {
+            return "ERROR: Attraction not found";
+        }
+        StringBuilder users = new StringBuilder();
+        for (User user : attraction.getOccupants()) {
+            users.append(users.length() == 0 ? "" : ", ").append(user.getEmail());
+        }
+        return String.join("\n",
+                "Attraction: " + attraction.getId(),
+                "Name: " + attraction.getName(),
+                "Capacity: " + attraction.getCapacity(),
+                "Users inside: " + attraction.occupancy(),
+                "Available places: " + attraction.freePlaces(),
+                "Users: " + (users.length() == 0 ? "(none)" : users));
     }
 
     /** Positive whole number written with digits only; -1 when invalid. */

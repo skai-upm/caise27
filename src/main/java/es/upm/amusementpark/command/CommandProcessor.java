@@ -33,7 +33,9 @@ public class CommandProcessor {
             "GROUPTICKET DELETE;<identifier>",
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
             "ATTRACTION ENTER;<attraction>;<ticket>",
+            "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
+            "ATTRACTION STATUS;<attractionIdentifier>",
             "HELP",
             "EXIT");
 
@@ -100,8 +102,12 @@ public class CommandProcessor {
                     return attractions.create(parts);
                 case "ATTRACTION ENTER":
                     return attractions.enter(parts);
+                case "ATTRACTION EXIT":
+                    return attractions.exit(parts);
                 case "ATTRACTION LIST":
                     return attractions.list(parts);
+                case "ATTRACTION STATUS":
+                    return attractions.status(parts);
                 case "HELP":
                     return HELP_TEXT;
                 case "EXIT":
