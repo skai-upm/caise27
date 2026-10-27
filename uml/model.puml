@@ -1,11 +1,9 @@
 @startuml
-title Amusement park - Phase 2 class model
+title Amusement park - class model (layered packages)
 skinparam classAttributeIconSize 0
 hide empty methods
 
-package es.upm.amusementpark {
-
-  ' ===== Domain =====
+package es.upm.amusementpark.business.model {
   class User {
     - firstName : String
     - surnames : String
@@ -47,15 +45,31 @@ package es.upm.amusementpark {
     - name : String
     - capacity : int {readOnly}
   }
+}
 
-  ' ===== Central management =====
+package es.upm.amusementpark.business.service {
   class ParkController <<singleton>> {
     - {static} INSTANCE : ParkController
     - currentDate : LocalDate
     - currentPrice : BigDecimal
   }
+  class UserService
+  class UserValidator <<utility>>
+  class GroupService
+  class TicketService
+  class AttractionService
+}
 
-  ' ===== Repositories and file storage =====
+package es.upm.amusementpark.business.exception {
+  class ParkException
+  class UserOperationException
+  class GroupOperationException
+  class TicketOperationException
+  class AttractionOperationException
+  class PersistenceException
+}
+
+package es.upm.amusementpark.persistence {
   class UserRepository
   class GroupRepository
   class TicketRepository
@@ -73,24 +87,14 @@ package es.upm.amusementpark {
     - file : Path
   }
   class TextFiles <<utility>>
+  class DataDirectories <<utility>>
+}
 
-  ' ===== Services =====
-  class UserService
-  class UserValidator <<utility>>
-  class GroupService
-  class TicketService
-  class AttractionService
-
-  ' ===== Command layer =====
+package es.upm.amusementpark.presentation {
   class App
   class CommandRunner
   class CommandProcessor
-
-  ' ===== Exceptions =====
-  class UserOperationException
-  class GroupOperationException
-  class TicketOperationException
-  class AttractionOperationException
+  class InvalidCommandException
 }
 
 ' ----- Ticket hierarchy -----
@@ -141,6 +145,18 @@ CommandProcessor --> "1" UserService
 CommandProcessor --> "1" GroupService
 CommandProcessor --> "1" TicketService
 CommandProcessor --> "1" AttractionService
+
+ParkException <|-- UserOperationException
+ParkException <|-- GroupOperationException
+ParkException <|-- TicketOperationException
+ParkException <|-- AttractionOperationException
+ParkController ..> DataDirectories
+UserFileStorage ..> PersistenceException
+TextFiles ..> PersistenceException
+DataDirectories ..> PersistenceException
+CommandProcessor ..> InvalidCommandException
+CommandProcessor ..> ParkException
+CommandProcessor ..> PersistenceException
 
 UserService ..> UserOperationException
 GroupService ..> GroupOperationException

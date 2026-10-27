@@ -50,7 +50,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>es.upm.amusementpark.App</mainClass>
+              <mainClass>es.upm.amusementpark.presentation.App</mainClass>
             </manifest>
           </archive>
         </configuration>
