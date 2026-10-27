@@ -23,7 +23,7 @@ class UserServiceTest {
     void setUp() {
         repository = new UserRepository();
         ParkController.getInstance().initialize(repository, LocalDate.of(2026, 10, 27));
-        service = new UserService(repository);
+        service = UserService.getInstance();
     }
 
     private void createAna() throws UserOperationException {

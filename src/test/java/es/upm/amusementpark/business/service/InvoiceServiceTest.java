@@ -21,23 +21,23 @@ class InvoiceServiceTest {
     private static final LocalDate DAY = LocalDate.of(2027, 4, 15);
 
     private final ParkController park = ParkController.getInstance();
-    private final InvoiceService invoices = new InvoiceService();
+    private final InvoiceService invoices = InvoiceService.getInstance();
     private TicketService tickets;
 
     @BeforeEach
     void setUp() throws Exception {
         UserRepository userRepository = new UserRepository();
         park.initialize(userRepository, new GroupRepository(), DAY.minusDays(14));
-        UserService users = new UserService(userRepository);
+        UserService users = UserService.getInstance();
         users.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         users.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
                 "9876543210987654");
-        GroupService groups = new GroupService();
+        GroupService groups = GroupService.getInstance();
         groups.createGroup("G01", "Familia Garcia");
         groups.addUser("G01", "ana@correo.com");
         groups.addUser("G01", "pedro@correo.com");
-        tickets = new TicketService();
+        tickets = TicketService.getInstance();
     }
 
     @Test

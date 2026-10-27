@@ -6,14 +6,11 @@ import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.exception.PersistenceException;
-import es.upm.amusementpark.persistence.AttractionFileStorage;
 import es.upm.amusementpark.persistence.AttractionRepository;
 import es.upm.amusementpark.persistence.DataDirectories;
-import es.upm.amusementpark.persistence.GroupFileStorage;
 import es.upm.amusementpark.persistence.GroupRepository;
-import es.upm.amusementpark.persistence.TicketFileStorage;
+import es.upm.amusementpark.persistence.ParkRepositories;
 import es.upm.amusementpark.persistence.TicketRepository;
-import es.upm.amusementpark.persistence.UserFileStorage;
 import es.upm.amusementpark.persistence.UserRepository;
 
 import java.math.BigDecimal;
@@ -31,21 +28,17 @@ public final class ParkController {
 
     public static final BigDecimal INITIAL_PRICE = new BigDecimal("40.00");
 
-    static final String USERS_FILE = "users.txt";
-    static final String GROUPS_FILE = "groups.txt";
-    static final String TICKETS_FILE = "tickets.txt";
-    static final String ATTRACTIONS_FILE = "attractions.txt";
-
     private static final ParkController INSTANCE = new ParkController();
 
-    private UserRepository users = new UserRepository();
-    private GroupRepository groups = new GroupRepository();
-    private TicketRepository tickets = new TicketRepository();
-    private AttractionRepository attractions = new AttractionRepository();
-    private LocalDate currentDate = LocalDate.now();
-    private BigDecimal currentPrice = INITIAL_PRICE;
+    private UserRepository users;
+    private GroupRepository groups;
+    private TicketRepository tickets;
+    private AttractionRepository attractions;
+    private LocalDate currentDate;
+    private BigDecimal currentPrice;
 
     private ParkController() {
+        initialize(ParkRepositories.inMemory(), LocalDate.now());
     }
 
     public static ParkController getInstance() {
@@ -53,21 +46,32 @@ public final class ParkController {
     }
 
     /**
-     * Prepares the park state for a new execution.
+     * Prepares a new execution with in-memory groups, tickets and attractions.
      */
     public void initialize(UserRepository users, LocalDate today) {
         initialize(users, new GroupRepository(), today);
     }
 
     /**
-     * Prepares the park state for a new execution.
+     * Prepares a new execution with in-memory tickets and attractions.
      */
     public void initialize(UserRepository users, GroupRepository groups, LocalDate today) {
         initialize(users, groups, new TicketRepository(), new AttractionRepository(), today);
     }
 
     /**
-     * Prepares the park state for a new execution.
+     * Prepares a new execution with the given repositories.
+     */
+    public void initialize(ParkRepositories repositories, LocalDate today) {
+        initialize(repositories.users(), repositories.groups(), repositories.tickets(),
+                repositories.attractions(), today);
+    }
+
+    /**
+     * Prepares a new execution: injects the repositories created during
+     * application initialization into this controller and into the
+     * controllers that use them, and wires their collaboration with this
+     * controller.
      */
     public void initialize(UserRepository users, GroupRepository groups, TicketRepository tickets,
             AttractionRepository attractions, LocalDate today) {
@@ -77,6 +81,11 @@ public final class ParkController {
         this.attractions = attractions;
         this.currentDate = today;
         this.currentPrice = INITIAL_PRICE;
+        UserService.getInstance().configure(users, groups, this);
+        GroupService.getInstance().configure(users, groups, this);
+        TicketService.getInstance().configure(users, groups, tickets, this);
+        AttractionService.getInstance().configure(attractions, tickets, this);
+        InvoiceService.getInstance().configure(users, groups, tickets, this);
     }
 
     /**
@@ -87,17 +96,9 @@ public final class ParkController {
      * @throws PersistenceException if the stored data cannot be read
      */
     public int load(Path dataDir, LocalDate today) {
-        UserFileStorage userStorage = new UserFileStorage(dataDir.resolve(USERS_FILE));
-        UserRepository loadedUsers = new UserRepository(userStorage);
-        GroupFileStorage groupStorage = new GroupFileStorage(dataDir.resolve(GROUPS_FILE));
-        GroupRepository loadedGroups = new GroupRepository(groupStorage, loadedUsers);
-        TicketFileStorage ticketStorage = new TicketFileStorage(dataDir.resolve(TICKETS_FILE));
-        TicketRepository loadedTickets = new TicketRepository(ticketStorage, loadedUsers, loadedGroups);
-        AttractionFileStorage attractionStorage = new AttractionFileStorage(dataDir.resolve(ATTRACTIONS_FILE));
-        AttractionRepository loadedAttractions = new AttractionRepository(attractionStorage);
-        initialize(loadedUsers, loadedGroups, loadedTickets, loadedAttractions, today);
-        return userStorage.getSkippedLines() + groupStorage.getSkippedLines() + ticketStorage.getSkippedLines()
-                + attractionStorage.getSkippedLines();
+        ParkRepositories repositories = ParkRepositories.fromDirectory(dataDir);
+        initialize(repositories, today);
+        return repositories.ignoredLines();
     }
 
     /**

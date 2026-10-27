@@ -3,7 +3,6 @@ package es.upm.amusementpark.presentation;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.service.ParkController;
-import es.upm.amusementpark.business.service.UserService;
 import es.upm.amusementpark.persistence.UserRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -213,18 +212,16 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedErrorIsReportedAndProcessingContinues() {
-        UserService failing = new UserService(new UserRepository()) {
+        UserRepository failing = new UserRepository() {
             @Override
-            public User createUser(String firstName, String surnames, String dni, String email,
-                    String password, String phone, String card) {
+            public void save(User user) {
                 throw new IllegalStateException("boom");
             }
         };
-        CommandProcessor withFailure =
-                new CommandProcessor(new PrintStream(buffer, true, StandardCharsets.UTF_8), failing);
-        assertTrue(withFailure.process(ANA));
+        ParkController.getInstance().initialize(failing, LocalDate.of(2026, 10, 27));
+        assertTrue(processor.process(ANA));
         assertTrue(output().startsWith("ERROR"));
-        assertTrue(withFailure.process("HELP"));
+        assertTrue(processor.process("HELP"));
         assertTrue(output().contains("USER DELETE;<Email>;<Password>"));
     }
 

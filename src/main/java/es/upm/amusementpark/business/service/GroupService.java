@@ -1,5 +1,7 @@
 package es.upm.amusementpark.business.service;
 
+import es.upm.amusementpark.persistence.GroupRepository;
+import es.upm.amusementpark.persistence.UserRepository;
 import es.upm.amusementpark.business.exception.GroupOperationException;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
@@ -10,17 +12,35 @@ import es.upm.amusementpark.business.model.User;
  */
 public class GroupService {
 
-    private final ParkController park = ParkController.getInstance();
+    private static final GroupService INSTANCE = new GroupService();
+
+    private UserRepository users;
+    private GroupRepository groups;
+    private ParkController park;
+
+    private GroupService() {
+    }
+
+    public static GroupService getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the collaborators of this controller; called during application initialization. */
+    public void configure(UserRepository users, GroupRepository groups, ParkController park) {
+        this.users = users;
+        this.groups = groups;
+        this.park = park;
+    }
 
     public Group createGroup(String identifier, String name) throws GroupOperationException {
         if (identifier.isEmpty() || name.isEmpty()) {
             throw new GroupOperationException("The group identifier and name cannot be empty.");
         }
-        if (park.getGroups().findById(identifier).isPresent()) {
+        if (groups.findById(identifier).isPresent()) {
             throw new GroupOperationException("A group with identifier " + identifier + " already exists.");
         }
         Group group = new Group(identifier, name);
-        park.getGroups().save(group);
+        groups.save(group);
         return group;
     }
 
@@ -31,7 +51,7 @@ public class GroupService {
         if (!group.addMember(user)) {
             throw new GroupOperationException("User " + email + " already belongs to group " + identifier + ".");
         }
-        park.getGroups().save(group);
+        groups.save(group);
     }
 
     public void removeUser(String identifier, String email) throws GroupOperationException {
@@ -41,7 +61,7 @@ public class GroupService {
         if (!group.removeMember(user)) {
             throw new GroupOperationException("User " + email + " does not belong to group " + identifier + ".");
         }
-        park.getGroups().save(group);
+        groups.save(group);
     }
 
     public void deleteGroup(String identifier) throws GroupOperationException {
@@ -53,7 +73,7 @@ public class GroupService {
         for (GroupTicket historical : park.groupTicketsOf(group)) {
             historical.clearGroup();
         }
-        park.getGroups().delete(identifier);
+        groups.delete(identifier);
     }
 
     private void checkModifiable(Group group) throws GroupOperationException {
@@ -64,12 +84,12 @@ public class GroupService {
     }
 
     private Group findGroup(String identifier) throws GroupOperationException {
-        return park.getGroups().findById(identifier)
+        return groups.findById(identifier)
                 .orElseThrow(() -> new GroupOperationException("No group with identifier " + identifier + " exists."));
     }
 
     private User findUser(String email) throws GroupOperationException {
-        return park.getUsers().findByEmail(email)
+        return users.findByEmail(email)
                 .orElseThrow(() -> new GroupOperationException("No user with email " + email + " exists."));
     }
 }

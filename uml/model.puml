@@ -75,12 +75,22 @@ package es.upm.amusementpark.business.service {
     - currentDate : LocalDate
     - currentPrice : BigDecimal
   }
-  class UserService
+  class UserService <<singleton>> {
+    - {static} INSTANCE : UserService
+  }
   class UserValidator <<utility>>
-  class GroupService
-  class TicketService
-  class AttractionService
-  class InvoiceService
+  class GroupService <<singleton>> {
+    - {static} INSTANCE : GroupService
+  }
+  class TicketService <<singleton>> {
+    - {static} INSTANCE : TicketService
+  }
+  class AttractionService <<singleton>> {
+    - {static} INSTANCE : AttractionService
+  }
+  class InvoiceService <<singleton>> {
+    - {static} INSTANCE : InvoiceService
+  }
 }
 
 package es.upm.amusementpark.business.exception {
@@ -112,6 +122,9 @@ package es.upm.amusementpark.persistence {
   }
   class TextFiles <<utility>>
   class DataDirectories <<utility>>
+  class ParkRepositories <<record>> {
+    - ignoredLines : int
+  }
 }
 
 package es.upm.amusementpark.presentation {
@@ -153,13 +166,31 @@ TicketFileStorage ..> TextFiles
 AttractionFileStorage ..> TextFiles
 
 ' ----- Services -----
-UserService --> "1" UserRepository : repository
+' ----- Dependency injection (configured at initialization) -----
+ParkRepositories --> "1" UserRepository
+ParkRepositories --> "1" GroupRepository
+ParkRepositories --> "1" TicketRepository
+ParkRepositories --> "1" AttractionRepository
+ParkController ..> ParkRepositories : initialize
+UserService --> "1" UserRepository : users
+UserService --> "1" GroupRepository : groups
+UserService --> "1" ParkController : park
+GroupService --> "1" UserRepository : users
+GroupService --> "1" GroupRepository : groups
+GroupService --> "1" ParkController : park
+TicketService --> "1" UserRepository : users
+TicketService --> "1" GroupRepository : groups
+TicketService --> "1" TicketRepository : tickets
+TicketService --> "1" ParkController : park
+AttractionService --> "1" AttractionRepository : attractions
+AttractionService --> "1" TicketRepository : tickets
+AttractionService --> "1" ParkController : park
+InvoiceService --> "1" UserRepository : users
+InvoiceService --> "1" GroupRepository : groups
+InvoiceService --> "1" TicketRepository : tickets
+InvoiceService --> "1" ParkController : park
 UserService ..> UserValidator
 UserService ..> UserField
-UserService ..> ParkController
-GroupService ..> ParkController
-TicketService ..> ParkController
-AttractionService ..> ParkController
 
 ' ----- Command layer -----
 App ..> CommandRunner
@@ -194,7 +225,6 @@ GroupInvoiceBuilder ..> Group
 GroupInvoiceBuilder ..> GroupTicket
 InvoiceService ..> UserInvoiceBuilder
 InvoiceService ..> GroupInvoiceBuilder
-InvoiceService ..> ParkController
 InvoiceService ..> InvoiceOperationException
 ParkException <|-- InvoiceOperationException
 CommandProcessor --> "1" InvoiceService

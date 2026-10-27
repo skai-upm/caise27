@@ -1,5 +1,7 @@
 package es.upm.amusementpark.business.service;
 
+import es.upm.amusementpark.persistence.TicketRepository;
+import es.upm.amusementpark.persistence.AttractionRepository;
 import es.upm.amusementpark.business.exception.AttractionOperationException;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Ticket;
@@ -12,7 +14,25 @@ import java.util.List;
  */
 public class AttractionService {
 
-    private final ParkController park = ParkController.getInstance();
+    private static final AttractionService INSTANCE = new AttractionService();
+
+    private AttractionRepository attractions;
+    private TicketRepository tickets;
+    private ParkController park;
+
+    private AttractionService() {
+    }
+
+    public static AttractionService getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the collaborators of this controller; called during application initialization. */
+    public void configure(AttractionRepository attractions, TicketRepository tickets, ParkController park) {
+        this.attractions = attractions;
+        this.tickets = tickets;
+        this.park = park;
+    }
 
     public Attraction createAttraction(String identifier, String name, int capacity)
             throws AttractionOperationException {
@@ -22,11 +42,11 @@ public class AttractionService {
         if (capacity < 1) {
             throw new AttractionOperationException("The capacity must be a positive whole number.");
         }
-        if (park.getAttractions().findById(identifier).isPresent()) {
+        if (attractions.findById(identifier).isPresent()) {
             throw new AttractionOperationException("An attraction with identifier " + identifier + " already exists.");
         }
         Attraction attraction = new Attraction(identifier, name, capacity);
-        park.getAttractions().save(attraction);
+        attractions.save(attraction);
         return attraction;
     }
 
@@ -37,7 +57,7 @@ public class AttractionService {
      */
     public List<User> enter(String attractionId, String ticketId) throws AttractionOperationException {
         Attraction attraction = findAttraction(attractionId);
-        Ticket ticket = park.getTickets().findById(ticketId).orElseThrow(
+        Ticket ticket = tickets.findById(ticketId).orElseThrow(
                 () -> new AttractionOperationException("No ticket with identifier " + ticketId + " exists."));
         if (!ticket.getDate().equals(park.getCurrentDate())) {
             throw new AttractionOperationException("Ticket " + ticketId + " is valid on " + ticket.getDate()
@@ -71,7 +91,7 @@ public class AttractionService {
     }
 
     public Attraction findAttraction(String identifier) throws AttractionOperationException {
-        return park.getAttractions().findById(identifier).orElseThrow(
+        return attractions.findById(identifier).orElseThrow(
                 () -> new AttractionOperationException("No attraction with identifier " + identifier + " exists."));
     }
 }

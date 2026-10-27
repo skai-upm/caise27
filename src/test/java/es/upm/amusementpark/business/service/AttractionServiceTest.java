@@ -30,9 +30,9 @@ class AttractionServiceTest {
     void setUp() throws Exception {
         UserRepository userRepository = new UserRepository();
         park.initialize(userRepository, new GroupRepository(), DAY.minusDays(14));
-        UserService users = new UserService(userRepository);
-        attractions = new AttractionService();
-        tickets = new TicketService();
+        UserService users = UserService.getInstance();
+        attractions = AttractionService.getInstance();
+        tickets = TicketService.getInstance();
         ana = users.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         pedro = users.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
@@ -94,7 +94,7 @@ class AttractionServiceTest {
 
     private void buyGroupTicket() throws Exception {
         park.setCurrentDate(DAY.minusDays(14));
-        GroupService groups = new GroupService();
+        GroupService groups = GroupService.getInstance();
         groups.createGroup("G01", "Familia");
         groups.addUser("G01", "ana@correo.com");
         groups.addUser("G01", "pedro@correo.com");

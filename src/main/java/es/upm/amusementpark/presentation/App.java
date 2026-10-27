@@ -2,7 +2,6 @@ package es.upm.amusementpark.presentation;
 
 import es.upm.amusementpark.business.exception.PersistenceException;
 import es.upm.amusementpark.business.service.ParkController;
-import es.upm.amusementpark.business.service.UserService;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -69,7 +68,7 @@ public class App {
             out.println("ERROR: " + e.getMessage());
             return;
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(out, new UserService(park.getUsers())));
+        CommandRunner runner = new CommandRunner(new CommandProcessor(out));
         if (args.length == 0) {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
                 runner.run(reader);

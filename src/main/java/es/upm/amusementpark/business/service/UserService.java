@@ -1,5 +1,6 @@
 package es.upm.amusementpark.business.service;
 
+import es.upm.amusementpark.persistence.GroupRepository;
 import es.upm.amusementpark.business.exception.UserOperationException;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
@@ -14,10 +15,24 @@ import java.util.Optional;
  */
 public class UserService {
 
-    private final UserRepository repository;
+    private static final UserService INSTANCE = new UserService();
 
-    public UserService(UserRepository repository) {
-        this.repository = repository;
+    private UserRepository users;
+    private GroupRepository groups;
+    private ParkController park;
+
+    private UserService() {
+    }
+
+    public static UserService getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the collaborators of this controller; called during application initialization. */
+    public void configure(UserRepository users, GroupRepository groups, ParkController park) {
+        this.users = users;
+        this.groups = groups;
+        this.park = park;
     }
 
     public User createUser(String firstName, String surnames, String dni, String email,
@@ -26,29 +41,29 @@ public class UserService {
         if (!errors.isEmpty()) {
             throw new UserOperationException(String.join(" ", errors));
         }
-        if (repository.existsByDni(dni)) {
+        if (users.existsByDni(dni)) {
             throw new UserOperationException("A user with DNI " + dni + " already exists.");
         }
-        if (repository.findByEmail(email).isPresent()) {
+        if (users.findByEmail(email).isPresent()) {
             throw new UserOperationException("A user with email " + email + " already exists.");
         }
         User user = new User(firstName, surnames, dni, email, password, phone, card);
-        repository.save(user);
+        users.save(user);
         return user;
     }
 
     public void deleteUser(String email, String password) throws UserOperationException {
         User user = authenticate(email, password);
-        if (ParkController.getInstance().hasActiveTicket(user)) {
+        if (park.hasActiveTicket(user)) {
             throw new UserOperationException("User " + email
                     + " has a ticket for the current date or later and cannot be deleted.");
         }
-        if (ParkController.getInstance().belongsToLockedGroup(user)) {
+        if (park.belongsToLockedGroup(user)) {
             throw new UserOperationException("User " + email
                     + " belongs to a group with a group ticket for the current date or later and cannot be deleted.");
         }
-        repository.delete(email);
-        ParkController.getInstance().getGroups().removeUserFromAll(user);
+        users.delete(email);
+        groups.removeUserFromAll(user);
     }
 
     /**
@@ -69,7 +84,7 @@ public class UserService {
                 if (!UserValidator.isValidEmail(value)) {
                     throw new UserOperationException("Invalid email: expected format text@text.xxx.");
                 }
-                Optional<User> owner = repository.findByEmail(value);
+                Optional<User> owner = users.findByEmail(value);
                 if (owner.isPresent() && owner.get() != user) {
                     throw new UserOperationException("A user with email " + value + " already exists.");
                 }
@@ -94,11 +109,11 @@ public class UserService {
             default:
                 throw new UserOperationException("Field " + field + " cannot be modified.");
         }
-        repository.update(email, user);
+        users.update(email, user);
     }
 
     private User authenticate(String email, String password) throws UserOperationException {
-        User user = repository.findByEmail(email)
+        User user = users.findByEmail(email)
                 .orElseThrow(() -> new UserOperationException("No user with email " + email + " exists."));
         if (!user.getPassword().equals(password)) {
             throw new UserOperationException("Incorrect password.");

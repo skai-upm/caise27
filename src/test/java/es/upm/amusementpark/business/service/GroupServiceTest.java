@@ -29,8 +29,8 @@ class GroupServiceTest {
     void setUp() throws UserOperationException {
         UserRepository userRepository = new UserRepository();
         park.initialize(userRepository, new GroupRepository(), LocalDate.of(2026, 10, 27));
-        users = new UserService(userRepository);
-        groups = new GroupService();
+        users = UserService.getInstance();
+        groups = GroupService.getInstance();
         ana = users.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         pedro = users.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",

@@ -69,19 +69,19 @@ public class CommandProcessor {
 
     private final PrintStream out;
     private final UserService userService;
-    private final GroupService groupService = new GroupService();
-    private final TicketService ticketService = new TicketService();
-    private final AttractionService attractionService = new AttractionService();
-    private final InvoiceService invoiceService = new InvoiceService();
+    private final GroupService groupService;
+    private final TicketService ticketService;
+    private final AttractionService attractionService;
+    private final InvoiceService invoiceService;
 
-    /** Creates a processor working on the users managed by the {@link ParkController}. */
+    /** Creates a processor that delegates to the application's controllers. */
     public CommandProcessor(PrintStream out) {
-        this(out, new UserService(ParkController.getInstance().getUsers()));
-    }
-
-    public CommandProcessor(PrintStream out, UserService userService) {
         this.out = out;
-        this.userService = userService;
+        this.userService = UserService.getInstance();
+        this.groupService = GroupService.getInstance();
+        this.ticketService = TicketService.getInstance();
+        this.attractionService = AttractionService.getInstance();
+        this.invoiceService = InvoiceService.getInstance();
     }
 
     /**

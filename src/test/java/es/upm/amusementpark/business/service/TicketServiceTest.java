@@ -31,8 +31,8 @@ class TicketServiceTest {
     void setUp() throws UserOperationException {
         UserRepository userRepository = new UserRepository();
         park.initialize(userRepository, TODAY);
-        users = new UserService(userRepository);
-        tickets = new TicketService();
+        users = UserService.getInstance();
+        tickets = TicketService.getInstance();
         ana = users.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
     }
