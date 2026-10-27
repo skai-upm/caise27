@@ -29,6 +29,8 @@ public class CommandProcessor {
             "  GROUP DELETE;<Identifier>",
             "  TICKET CREATE;<identifier>;<email>;<date>",
             "  TICKET DELETE;<identifier>",
+            "  GROUPTICKET CREATE;<identifier>;<group>;<date>",
+            "  GROUPTICKET DELETE;<identifier>",
             "  HELP",
             "  EXIT");
 
@@ -120,6 +122,12 @@ public class CommandProcessor {
                 return true;
             case "TICKET DELETE":
                 deleteTicket(parts);
+                return true;
+            case "GROUPTICKET CREATE":
+                createGroupTicket(parts);
+                return true;
+            case "GROUPTICKET DELETE":
+                deleteGroupTicket(parts);
                 return true;
             default:
                 out.println("ERROR: unrecognised command: " + command);
@@ -263,6 +271,36 @@ public class CommandProcessor {
         try {
             ticketService.deleteTicket(parts[1]);
             out.println("TICKET DELETED");
+        } catch (TicketOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void createGroupTicket(String[] parts) {
+        if (parts.length != 4) {
+            out.println("ERROR: invalid syntax. Expected GROUPTICKET CREATE;<identifier>;<group>;<date>");
+            return;
+        }
+        LocalDate date = parseDate(parts[3]);
+        if (date == null) {
+            return;
+        }
+        try {
+            GroupTicket ticket = ticketService.createGroupTicket(parts[1], parts[2], date);
+            out.println("GROUP TICKET CREATED. TOTAL PRICE: " + ticket.getPrice() + " EUR");
+        } catch (TicketOperationException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void deleteGroupTicket(String[] parts) {
+        if (parts.length != 2) {
+            out.println("ERROR: invalid syntax. Expected GROUPTICKET DELETE;<identifier>");
+            return;
+        }
+        try {
+            ticketService.deleteGroupTicket(parts[1]);
+            out.println("GROUP TICKET DELETED");
         } catch (TicketOperationException e) {
             out.println("ERROR: " + e.getMessage());
         }

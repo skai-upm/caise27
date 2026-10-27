@@ -38,6 +38,10 @@ public class UserService {
             throw new UserOperationException("User " + email
                     + " has a ticket for the current date or later and cannot be deleted.");
         }
+        if (ParkController.getInstance().belongsToLockedGroup(user)) {
+            throw new UserOperationException("User " + email
+                    + " belongs to a group with a group ticket for the current date or later and cannot be deleted.");
+        }
         repository.delete(email);
         ParkController.getInstance().getGroups().removeUserFromAll(user);
     }

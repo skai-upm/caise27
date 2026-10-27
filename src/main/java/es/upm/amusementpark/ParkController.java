@@ -2,6 +2,8 @@ package es.upm.amusementpark;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Central management of the park state during one execution: the users,
@@ -72,10 +74,35 @@ public final class ParkController {
 
     /**
      * Whether the group has an associated group ticket dated on or after the
-     * current system date. Group tickets do not exist yet, so no group has
-     * one.
+     * current system date, found by traversing the park's tickets.
      */
     public boolean hasActiveGroupTicket(Group group) {
+        for (GroupTicket ticket : groupTicketsOf(group)) {
+            if (ticket.isActiveOn(currentDate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Group tickets that reference the group, found by traversing the tickets. */
+    public List<GroupTicket> groupTicketsOf(Group group) {
+        List<GroupTicket> result = new ArrayList<>();
+        for (Ticket ticket : tickets.findAll()) {
+            if (ticket instanceof GroupTicket groupTicket && groupTicket.getGroup() == group) {
+                result.add(groupTicket);
+            }
+        }
+        return result;
+    }
+
+    /** Whether any group the user belongs to has an active group ticket. */
+    public boolean belongsToLockedGroup(User user) {
+        for (Group group : groups.findAll()) {
+            if (group.contains(user) && hasActiveGroupTicket(group)) {
+                return true;
+            }
+        }
         return false;
     }
 

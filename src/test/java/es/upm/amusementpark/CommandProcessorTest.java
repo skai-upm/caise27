@@ -47,6 +47,8 @@ class CommandProcessorTest {
         assertTrue(out.contains("GROUP DELETE;<Identifier>"));
         assertTrue(out.contains("TICKET CREATE;<identifier>;<email>;<date>"));
         assertTrue(out.contains("TICKET DELETE;<identifier>"));
+        assertTrue(out.contains("GROUPTICKET CREATE;<identifier>;<group>;<date>"));
+        assertTrue(out.contains("GROUPTICKET DELETE;<identifier>"));
         assertTrue(out.contains("HELP"));
         assertTrue(out.contains("EXIT"));
     }
@@ -278,6 +280,30 @@ class CommandProcessorTest {
             processor.process(command);
             assertTrue(output().startsWith("ERROR"), command);
         }
+    }
+
+    @Test
+    void groupTicketCommandsShowTotalAndDelete() {
+        processor.process(ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("SYSTEM DATE;2027-04-01");
+        buffer.reset();
+        processor.process("GROUPTICKET CREATE;TG01;G01;2027-04-15");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("TICKET DELETE;TG01:12345678Z");
+        processor.process("GROUPTICKET DELETE;TG01");
+        processor.process("GROUPTICKET DELETE;TG01");
+        processor.process("GROUPTICKET CREATE;TG02;G01");
+        String[] lines = output().split(System.lineSeparator());
+        assertEquals("GROUP TICKET CREATED. TOTAL PRICE: 80.00 EUR", lines[0]);
+        assertTrue(lines[1].startsWith("ERROR"));
+        assertTrue(lines[2].startsWith("ERROR"));
+        assertEquals("GROUP TICKET DELETED", lines[3]);
+        assertTrue(lines[4].startsWith("ERROR"));
+        assertTrue(lines[5].startsWith("ERROR"));
     }
 
     @Test

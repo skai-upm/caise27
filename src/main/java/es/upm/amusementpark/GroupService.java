@@ -45,6 +45,9 @@ public class GroupService {
             throw new GroupOperationException("Group " + identifier
                     + " has a group ticket for the current date or later and cannot be deleted.");
         }
+        for (GroupTicket historical : park.groupTicketsOf(group)) {
+            historical.clearGroup();
+        }
         park.getGroups().delete(identifier);
     }
 
