@@ -7,14 +7,30 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Stores and retrieves groups by identifier.
+ * Stores and retrieves groups by identifier. When a {@link GroupFileStorage}
+ * is given, groups are loaded from it on creation and saved to it after every
+ * change.
  */
 public class GroupRepository {
 
     private final Map<String, Group> groups = new LinkedHashMap<>();
+    private final GroupFileStorage storage;
+
+    /** Creates a repository that keeps groups in memory only. */
+    public GroupRepository() {
+        this.storage = null;
+    }
+
+    public GroupRepository(GroupFileStorage storage, UserRepository users) {
+        this.storage = storage;
+        for (Group group : storage.load(users)) {
+            groups.put(group.getIdentifier(), group);
+        }
+    }
 
     public void save(Group group) {
         groups.put(group.getIdentifier(), group);
+        persist();
     }
 
     public Optional<Group> findById(String identifier) {
@@ -22,7 +38,9 @@ public class GroupRepository {
     }
 
     public boolean delete(String identifier) {
-        return groups.remove(identifier) != null;
+        boolean removed = groups.remove(identifier) != null;
+        persist();
+        return removed;
     }
 
     public List<Group> findAll() {
@@ -33,6 +51,14 @@ public class GroupRepository {
     public void removeUserFromAll(User user) {
         for (Group group : groups.values()) {
             group.removeMember(user);
+        }
+        persist();
+    }
+
+    /** Writes the current groups to the storage, if any. */
+    public void persist() {
+        if (storage != null) {
+            storage.save(groups.values());
         }
     }
 }

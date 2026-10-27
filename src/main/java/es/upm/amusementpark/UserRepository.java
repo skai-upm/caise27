@@ -38,12 +38,16 @@ public class UserRepository {
     }
 
     public boolean existsByDni(String dni) {
+        return findByDni(dni).isPresent();
+    }
+
+    public Optional<User> findByDni(String dni) {
         for (User user : users.values()) {
             if (user.getDni().equals(dni)) {
-                return true;
+                return Optional.of(user);
             }
         }
-        return false;
+        return Optional.empty();
     }
 
     /**
@@ -68,7 +72,8 @@ public class UserRepository {
         return new ArrayList<>(users.values());
     }
 
-    private void persist() {
+    /** Writes the current users to the storage, if any. */
+    public void persist() {
         if (storage != null) {
             storage.save(users.values());
         }

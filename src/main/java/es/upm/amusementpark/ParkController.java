@@ -41,12 +41,28 @@ public final class ParkController {
      * Prepares the park state for a new execution.
      */
     public void initialize(UserRepository users, GroupRepository groups, LocalDate today) {
+        initialize(users, groups, new TicketRepository(), new AttractionRepository(), today);
+    }
+
+    /**
+     * Prepares the park state for a new execution.
+     */
+    public void initialize(UserRepository users, GroupRepository groups, TicketRepository tickets,
+            AttractionRepository attractions, LocalDate today) {
         this.users = users;
         this.groups = groups;
-        this.tickets = new TicketRepository();
-        this.attractions = new AttractionRepository();
+        this.tickets = tickets;
+        this.attractions = attractions;
         this.currentDate = today;
         this.currentPrice = INITIAL_PRICE;
+    }
+
+    /** Writes the whole park state to the repositories' storages. */
+    public void persistAll() {
+        users.persist();
+        groups.persist();
+        tickets.persist();
+        attractions.persist();
     }
 
     public UserRepository getUsers() {

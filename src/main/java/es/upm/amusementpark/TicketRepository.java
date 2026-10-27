@@ -7,11 +7,26 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Stores all tickets. Every ticket type shares this identifier space.
+ * Stores all tickets. Every ticket type shares this identifier space. When a
+ * {@link TicketFileStorage} is given, tickets are loaded from it on creation
+ * and saved to it after every change.
  */
 public class TicketRepository {
 
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
+    private final TicketFileStorage storage;
+
+    /** Creates a repository that keeps tickets in memory only. */
+    public TicketRepository() {
+        this.storage = null;
+    }
+
+    public TicketRepository(TicketFileStorage storage, UserRepository users, GroupRepository groups) {
+        this.storage = storage;
+        for (Ticket ticket : storage.load(users, groups)) {
+            tickets.put(ticket.getIdentifier(), ticket);
+        }
+    }
 
     public boolean exists(String identifier) {
         return tickets.containsKey(identifier);
@@ -19,6 +34,7 @@ public class TicketRepository {
 
     public void save(Ticket ticket) {
         tickets.put(ticket.getIdentifier(), ticket);
+        persist();
     }
 
     public Optional<Ticket> findById(String identifier) {
@@ -26,7 +42,16 @@ public class TicketRepository {
     }
 
     public boolean delete(String identifier) {
-        return tickets.remove(identifier) != null;
+        boolean removed = tickets.remove(identifier) != null;
+        persist();
+        return removed;
+    }
+
+    /** Writes the current tickets to the storage, if any. */
+    public void persist() {
+        if (storage != null) {
+            storage.save(tickets.values());
+        }
     }
 
     public List<Ticket> findAll() {

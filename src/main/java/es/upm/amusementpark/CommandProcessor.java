@@ -78,7 +78,12 @@ public class CommandProcessor {
             return true;
         }
         try {
-            return dispatch(command);
+            boolean keepRunning = dispatch(command);
+            ParkController.getInstance().persistAll();
+            return keepRunning;
+        } catch (UncheckedIOException e) {
+            out.println("ERROR: " + e.getMessage());
+            return true;
         } catch (RuntimeException e) {
             out.println("ERROR: unexpected error processing command: " + e.getMessage());
             return true;

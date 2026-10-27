@@ -1,0 +1,48 @@
+package es.upm.amusementpark;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * Reads and writes attractions, one per line: {@code id;name;capacity}. The
+ * users inside attractions are not stored.
+ */
+public class AttractionFileStorage {
+
+    private final Path file;
+    private int skippedLines;
+
+    public AttractionFileStorage(Path file) {
+        this.file = file;
+    }
+
+    public List<Attraction> load() {
+        List<Attraction> attractions = new ArrayList<>();
+        skippedLines = 0;
+        for (String[] f : TextFiles.readRecords(file)) {
+            try {
+                if (f.length != 3) {
+                    throw new NumberFormatException();
+                }
+                attractions.add(new Attraction(f[0], f[1], Integer.parseInt(f[2])));
+            } catch (NumberFormatException e) {
+                skippedLines++;
+            }
+        }
+        return attractions;
+    }
+
+    public void save(Collection<Attraction> attractions) {
+        List<String> lines = new ArrayList<>();
+        for (Attraction a : attractions) {
+            lines.add(a.getIdentifier() + ";" + a.getName() + ";" + a.getCapacity());
+        }
+        TextFiles.writeLines(file, lines);
+    }
+
+    public int getSkippedLines() {
+        return skippedLines;
+    }
+}
