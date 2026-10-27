@@ -182,3 +182,10 @@ All Delivery 1 and Delivery 2 commands SHALL work together in one session, from 
 #### Scenario: Rejected operations in the session
 - **WHEN** the session also tries to delete a ticket for the current date, modify a group locked by an active group ticket, delete a user with an active ticket, and enter an attraction without enough capacity for a group
 - **THEN** each is rejected with an error and the session continues
+
+### Requirement: Behaviour preserved after reorganisation
+After the layered reorganisation every Delivery 1 and Delivery 2 command SHALL produce the same outputs, persisted data and execution forms as before.
+
+#### Scenario: Delivery 2 session unchanged
+- **WHEN** the Delivery 2 integration session is executed after the reorganisation, in normal and `--fly` modes
+- **THEN** the output and persisted files are identical to those produced before the reorganisation
