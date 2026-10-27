@@ -63,3 +63,14 @@ With `--fly` as first argument the application SHALL create a directory `tmp/<yy
 #### Scenario: Fly runs are isolated
 - **WHEN** the same command file is run twice with `--fly`
 - **THEN** both runs produce identical output, because neither sees data from the other or from normal runs
+
+### Requirement: Attraction type persisted
+The attraction type SHALL be stored with each attraction, and stored attractions without a type SHALL be loaded as GENERAL.
+
+#### Scenario: Typed attraction survives restart
+- **WHEN** SPECIAL attraction `A04` is created and the application restarts
+- **THEN** `A04` is still a SPECIAL attraction
+
+#### Scenario: Delivery 2 data
+- **WHEN** the attractions file contains the line `A01;Dragon Rojo;20`
+- **THEN** `A01` is loaded as a GENERAL attraction
