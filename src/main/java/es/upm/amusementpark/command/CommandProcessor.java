@@ -24,14 +24,20 @@ public class CommandProcessor {
             "USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
             "SYSTEM DATE;<yyyy-MM-dd>",
             "SYSTEM PRICE;<Price>",
+            "GROUP CREATE;<Identifier>;<Name>",
+            "GROUP ADD;<Identifier>;<Email>",
+            "GROUP REMOVE;<Identifier>;<Email>",
+            "GROUP DELETE;<Identifier>",
             "HELP",
             "EXIT");
 
     private final ParkController park;
+    private final GroupCommands groups;
     private boolean exitRequested;
 
     public CommandProcessor(ParkController park) {
         this.park = park;
+        this.groups = new GroupCommands(park);
     }
 
     private UserRepository users() {
@@ -62,6 +68,14 @@ public class CommandProcessor {
                     return systemDate(parts);
                 case "SYSTEM PRICE":
                     return systemPrice(parts);
+                case "GROUP CREATE":
+                    return groups.create(parts);
+                case "GROUP ADD":
+                    return groups.add(parts);
+                case "GROUP REMOVE":
+                    return groups.remove(parts);
+                case "GROUP DELETE":
+                    return groups.delete(parts);
                 case "HELP":
                     return HELP_TEXT;
                 case "EXIT":
@@ -121,6 +135,7 @@ public class CommandProcessor {
         if (!user.getPassword().equals(parts[2])) {
             return "ERROR: Incorrect password";
         }
+        park.removeFromAllGroups(user);
         users().remove(user);
         return "USER DELETED";
     }
@@ -214,7 +229,7 @@ public class CommandProcessor {
         return true;
     }
 
-    private static boolean hasEmpty(String[] parts) {
+    static boolean hasEmpty(String[] parts) {
         for (String part : parts) {
             if (part.isEmpty()) {
                 return true;

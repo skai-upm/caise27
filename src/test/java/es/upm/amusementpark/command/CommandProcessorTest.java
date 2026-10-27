@@ -230,4 +230,57 @@ class CommandProcessorTest {
         assertTrue(help.contains("SYSTEM DATE;<yyyy-MM-dd>"));
         assertTrue(help.contains("SYSTEM PRICE;<Price>"));
     }
+
+    private es.upm.amusementpark.model.Group group(String id) {
+        return ParkController.getInstance().getGroups().findById(id);
+    }
+
+    @Test
+    void createsGroupsWithUniqueIdentifiers() {
+        assertEquals("GROUP CREATED", processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertEquals("Familia Garcia", group("G01").getName());
+        assertEquals(0, group("G01").getMembers().size());
+        assertEquals("ERROR: Group already exists", processor.process("GROUP CREATE;G01;Otro"));
+        assertEquals("Familia Garcia", group("G01").getName());
+        assertTrue(processor.process("GROUP CREATE;G02").startsWith("ERROR: Invalid format"));
+        assertEquals(null, group("G02"));
+    }
+
+    @Test
+    void addsAndRemovesMembers() {
+        processor.process(ANA);
+        processor.process(PEDRO);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        assertEquals("GROUP USER ADDED", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertEquals("GROUP USER ADDED", processor.process("GROUP ADD;G01;pedro@correo.com"));
+        assertEquals(2, group("G01").getMembers().size());
+        assertEquals("ERROR: User already in group", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertEquals(2, group("G01").getMembers().size());
+        assertEquals("ERROR: User not found", processor.process("GROUP ADD;G01;nadie@correo.com"));
+        assertEquals("ERROR: Group not found", processor.process("GROUP ADD;G99;ana@correo.com"));
+        assertEquals("GROUP USER REMOVED", processor.process("GROUP REMOVE;G01;ana@correo.com"));
+        assertEquals(1, group("G01").getMembers().size());
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP REMOVE;G99;pedro@correo.com").startsWith("ERROR"));
+    }
+
+    @Test
+    void deletesGroups() {
+        processor.process(ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertEquals("GROUP DELETED", processor.process("GROUP DELETE;G01"));
+        assertEquals(null, group("G01"));
+        assertEquals(1, users.size());
+        assertEquals("ERROR: Group not found", processor.process("GROUP DELETE;G99"));
+    }
+
+    @Test
+    void deletedUserLeavesItsGroups() {
+        processor.process(ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertEquals("USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals(0, group("G01").getMembers().size());
+    }
 }
