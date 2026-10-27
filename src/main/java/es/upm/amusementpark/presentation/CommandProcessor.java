@@ -6,6 +6,8 @@ import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.controller.TicketController;
 import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.exception.ParkException;
+import es.upm.amusementpark.business.invoice.InvoiceController;
+import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
 import es.upm.amusementpark.persistence.PersistenceException;
 
 /**
@@ -36,6 +38,8 @@ public class CommandProcessor {
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
             "ATTRACTION STATUS;<attractionIdentifier>",
+            "INVOICE CREATE;USER;<email>",
+            "INVOICE CREATE;GROUP;<groupIdentifier>",
             "HELP",
             "EXIT");
 
@@ -44,6 +48,7 @@ public class CommandProcessor {
     private final GroupCommands groups;
     private final TicketCommands tickets;
     private final AttractionCommands attractions;
+    private final InvoiceCommands invoices;
     private boolean exitRequested;
 
     public CommandProcessor(ParkController park) {
@@ -52,6 +57,7 @@ public class CommandProcessor {
         this.groups = new GroupCommands(new GroupController(park));
         this.tickets = new TicketCommands(new TicketController(park));
         this.attractions = new AttractionCommands(new AttractionController(park));
+        this.invoices = new InvoiceCommands(new InvoiceController(park, new StandardInvoiceBuilder()));
     }
 
     /**
@@ -97,6 +103,7 @@ public class CommandProcessor {
             case "ATTRACTION EXIT" -> attractions.exit(in);
             case "ATTRACTION LIST" -> attractions.list(in);
             case "ATTRACTION STATUS" -> attractions.status(in);
+            case "INVOICE CREATE" -> invoices.create(in);
             case "HELP" -> HELP_TEXT;
             case "EXIT" -> {
                 exitRequested = true;
