@@ -44,10 +44,19 @@ public class App {
             }
             return;
         }
-        try (BufferedReader reader = Files.newBufferedReader(Path.of(args[0]), StandardCharsets.UTF_8)) {
+        Path commandFile = Path.of(args[0]);
+        if (!Files.exists(commandFile)) {
+            out.println("ERROR: command file not found: " + args[0]);
+            return;
+        }
+        if (!Files.isRegularFile(commandFile) || !Files.isReadable(commandFile)) {
+            out.println("ERROR: command file cannot be read: " + args[0]);
+            return;
+        }
+        try (BufferedReader reader = Files.newBufferedReader(commandFile, StandardCharsets.UTF_8)) {
             runner.run(reader);
         } catch (IOException e) {
-            out.println("ERROR: could not read command file: " + args[0]);
+            out.println("ERROR: command file cannot be read: " + args[0]);
         }
     }
 }

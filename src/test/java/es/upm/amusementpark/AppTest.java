@@ -21,9 +21,13 @@ class AppTest {
     Path tempDir;
 
     private String runApp(String[] args, String stdin) {
+        return runApp(args, stdin, tempDir.resolve("data"));
+    }
+
+    private static String runApp(String[] args, String stdin, Path dataDir) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(buffer, true, StandardCharsets.UTF_8), tempDir.resolve("data"));
+                new PrintStream(buffer, true, StandardCharsets.UTF_8), dataDir);
         return buffer.toString(StandardCharsets.UTF_8);
     }
 
@@ -56,8 +60,16 @@ class AppTest {
 
     @Test
     void missingFileIsReportedInControlledManner() {
-        String out = runApp(new String[] {tempDir.resolve("missing.txt").toString()}, "");
-        assertTrue(out.startsWith("ERROR"));
+        String out = runApp(new String[] {tempDir.resolve("missing.txt").toString()}, "HELP\n");
+        assertTrue(out.startsWith("ERROR: command file not found"));
+        assertFalse(out.contains("Available commands"));
+    }
+
+    @Test
+    void unreadableFileIsReportedInControlledManner() throws IOException {
+        Path directory = Files.createDirectory(tempDir.resolve("folder.txt"));
+        String out = runApp(new String[] {directory.toString()}, "");
+        assertTrue(out.startsWith("ERROR: command file cannot be read"));
     }
 
     @Test
@@ -88,5 +100,33 @@ class AppTest {
                 .contains("USER UPDATED"));
         assertTrue(Files.readString(tempDir.resolve("data/users.txt"), StandardCharsets.UTF_8)
                 .contains(";699999999;"));
+    }
+
+    private static final String FILE_EXAMPLE = String.join("\n",
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+            "",
+            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654",
+            "   ",
+            "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
+            "EXIT",
+            "");
+
+    @Test
+    void fileCommandsRunInOrderIgnoringBlankLines() throws IOException {
+        String out = runApp(new String[] {writeFile(FILE_EXAMPLE).toString()}, "");
+        String[] lines = out.split(System.lineSeparator());
+        assertEquals("USER CREATED", lines[0]);
+        assertEquals("USER CREATED", lines[1]);
+        assertEquals("USER UPDATED", lines[2]);
+        assertEquals("Exiting application.", lines[3]);
+        assertEquals(4, lines.length);
+    }
+
+    @Test
+    void fileAndInteractiveModesProduceSameOutput() throws IOException {
+        String fromFile = runApp(new String[] {writeFile(FILE_EXAMPLE).toString()}, "", tempDir.resolve("a"));
+        String fromStdin = runApp(new String[0], FILE_EXAMPLE, tempDir.resolve("b"));
+        assertEquals(fromStdin, fromFile);
+        assertEquals(Files.readString(tempDir.resolve("a/users.txt")), Files.readString(tempDir.resolve("b/users.txt")));
     }
 }
