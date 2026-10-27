@@ -218,3 +218,10 @@ The component that generates help text SHALL receive, through dependency injecti
 #### Scenario: Alternative format injected
 - **WHEN** a help generator is created with a different formatting behaviour
 - **THEN** it produces the help in that format from the same command information, with no change to command processing
+
+### Requirement: HELP lists pass commands
+HELP and HELP EXTENDED SHALL also include `SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>`, `SPEEDPASS DELETE;<speedPassIdentifier>`, `SPECIALPASS CREATE;<identifier>;<individualTicket>` and `SPECIALPASS DELETE;<specialPassIdentifier>`.
+
+#### Scenario: Help shows pass commands
+- **WHEN** the user enters `HELP`
+- **THEN** the output contains the four pass command syntaxes
