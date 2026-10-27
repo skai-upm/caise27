@@ -135,3 +135,10 @@ The HELP output SHALL also include `GROUPTICKET CREATE;<identifier>;<group>;<dat
 #### Scenario: Help shows group ticket commands
 - **WHEN** the user enters `HELP`
 - **THEN** the output contains `GROUPTICKET CREATE;<identifier>;<group>;<date>` and `GROUPTICKET DELETE;<identifier>`
+
+### Requirement: HELP lists attraction creation and listing
+The HELP output SHALL also include `ATTRACTION CREATE;<identifier>;<name>;<capacity>` and `ATTRACTION LIST;<attraction>`.
+
+#### Scenario: Help shows attraction commands
+- **WHEN** the user enters `HELP`
+- **THEN** the output contains `ATTRACTION CREATE;<identifier>;<name>;<capacity>` and `ATTRACTION LIST;<attraction>`
