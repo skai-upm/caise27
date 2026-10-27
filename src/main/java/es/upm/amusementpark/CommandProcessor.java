@@ -2,6 +2,11 @@ package es.upm.amusementpark;
 
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.Arrays;
 
 /**
@@ -16,11 +21,16 @@ public class CommandProcessor {
             "  USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
             "  USER DELETE;<email>;<password>",
             "  USER UPDATE;<email>;<password>;<field>;<value>",
+            "  SYSTEM DATE;<yyyy-MM-dd>",
+            "  SYSTEM PRICE;<Price>",
             "  HELP",
             "  EXIT");
 
     private static final String USER_CREATE_SYNTAX =
             "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>";
+
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private static final String USER_DELETE_SYNTAX = "USER DELETE;<email>;<password>";
 
@@ -74,6 +84,12 @@ public class CommandProcessor {
             case "USER UPDATE":
                 updateUser(parts);
                 return true;
+            case "SYSTEM DATE":
+                setSystemDate(parts);
+                return true;
+            case "SYSTEM PRICE":
+                setSystemPrice(parts);
+                return true;
             default:
                 out.println("ERROR: unrecognised command: " + command);
                 return true;
@@ -123,5 +139,54 @@ public class CommandProcessor {
         } catch (UserOperationException | UncheckedIOException e) {
             out.println("ERROR: " + e.getMessage());
         }
+    }
+
+    private void setSystemDate(String[] parts) {
+        if (parts.length != 2) {
+            out.println("ERROR: invalid syntax. Expected SYSTEM DATE;<yyyy-MM-dd>");
+            return;
+        }
+        try {
+            LocalDate date = LocalDate.parse(parts[1], DATE_FORMAT);
+            ParkController.getInstance().setCurrentDate(date);
+            out.println("SYSTEM DATE UPDATED: " + date);
+        } catch (DateTimeParseException e) {
+            out.println("ERROR: invalid date " + parts[1] + ". Expected format yyyy-MM-dd.");
+        }
+    }
+
+    private void setSystemPrice(String[] parts) {
+        if (parts.length != 2) {
+            out.println("ERROR: invalid syntax. Expected SYSTEM PRICE;<Price>");
+            return;
+        }
+        BigDecimal price = parsePrice(parts[1]);
+        if (price == null || price.signum() <= 0) {
+            out.println("ERROR: invalid price " + parts[1] + ". It must be a positive amount with at most two decimals.");
+            return;
+        }
+        ParkController.getInstance().setCurrentPrice(price);
+        out.println("SYSTEM PRICE UPDATED: " + ParkController.getInstance().getCurrentPrice());
+    }
+
+    /**
+     * Parses a plain monetary amount (digits with an optional point and at
+     * most two decimals).
+     *
+     * @return the amount, or {@code null} if the text is not such an amount
+     */
+    static BigDecimal parsePrice(String text) {
+        int point = text.indexOf('.');
+        String whole = point < 0 ? text : text.substring(0, point);
+        String decimals = point < 0 ? "" : text.substring(point + 1);
+        if (whole.isEmpty() || decimals.length() > 2 || (point >= 0 && decimals.isEmpty())) {
+            return null;
+        }
+        for (char c : (whole + decimals).toCharArray()) {
+            if (c < '0' || c > '9') {
+                return null;
+            }
+        }
+        return new BigDecimal(text);
     }
 }

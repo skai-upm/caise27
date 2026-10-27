@@ -8,9 +8,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -128,5 +130,14 @@ class AppTest {
         String fromStdin = runApp(new String[0], FILE_EXAMPLE, tempDir.resolve("b"));
         assertEquals(fromStdin, fromFile);
         assertEquals(Files.readString(tempDir.resolve("a/users.txt")), Files.readString(tempDir.resolve("b/users.txt")));
+    }
+
+    @Test
+    void priceAndDateAreResetForEachExecution() {
+        runApp(new String[0], "SYSTEM PRICE;45.50\nSYSTEM DATE;2027-04-15\n");
+        assertEquals(new BigDecimal("45.50"), ParkController.getInstance().getCurrentPrice());
+        runApp(new String[0], "EXIT\n");
+        assertEquals(new BigDecimal("40.00"), ParkController.getInstance().getCurrentPrice());
+        assertEquals(LocalDate.now(), ParkController.getInstance().getCurrentDate());
     }
 }

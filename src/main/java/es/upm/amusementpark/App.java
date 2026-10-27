@@ -9,6 +9,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 /**
  * Application entry point. Reads commands from standard input, or from the
@@ -35,6 +36,7 @@ public class App {
             out.println("ERROR: " + e.getMessage());
             return;
         }
+        ParkController.getInstance().initialize(users, LocalDate.now());
         CommandRunner runner = new CommandRunner(new CommandProcessor(out, new UserService(users)));
         if (args.length == 0) {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
