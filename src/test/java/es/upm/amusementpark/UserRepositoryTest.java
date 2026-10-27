@@ -60,4 +60,18 @@ class UserRepositoryTest {
         repository.delete("ana@correo.com");
         assertTrue(new UserRepository(new UserFileStorage(file)).findAll().isEmpty());
     }
+
+    @Test
+    void updateReKeysUserByNewEmailAndPersists() {
+        Path file = dir.resolve("users.txt");
+        UserRepository repository = new UserRepository(new UserFileStorage(file));
+        User ana = user("ana@correo.com");
+        repository.save(ana);
+        ana.setEmail("ana.nueva@correo.com");
+        repository.update("ana@correo.com", ana);
+        UserRepository reloaded = new UserRepository(new UserFileStorage(file));
+        assertTrue(reloaded.findByEmail("ana@correo.com").isEmpty());
+        assertTrue(reloaded.findByEmail("ana.nueva@correo.com").isPresent());
+        assertEquals(1, reloaded.findAll().size());
+    }
 }

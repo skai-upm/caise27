@@ -120,6 +120,40 @@ class CommandProcessorTest {
     }
 
     @Test
+    void userUpdateChangesField() {
+        processor.process(ANA);
+        buffer.reset();
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999"));
+        assertTrue(output().contains("USER UPDATED"));
+    }
+
+    @Test
+    void userUpdateOfDniIsRejected() {
+        processor.process(ANA);
+        buffer.reset();
+        processor.process("USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X");
+        assertTrue(output().startsWith("ERROR"));
+        buffer.reset();
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        assertTrue(output().contains("USER CREATED"));
+    }
+
+    @Test
+    void userUpdateOfUnknownFieldIsRejected() {
+        processor.process(ANA);
+        buffer.reset();
+        processor.process("USER UPDATE;ana@correo.com;Clave1!;AGE;30");
+        assertTrue(output().startsWith("ERROR"));
+        assertTrue(output().contains("PHONE"));
+    }
+
+    @Test
+    void userUpdateWithWrongElementCountIsRejected() {
+        processor.process("USER UPDATE;ana@correo.com;Clave1!;PHONE");
+        assertTrue(output().startsWith("ERROR"));
+    }
+
+    @Test
     void blankLineIsIgnored() {
         assertTrue(processor.process("   "));
         assertTrue(output().isEmpty());

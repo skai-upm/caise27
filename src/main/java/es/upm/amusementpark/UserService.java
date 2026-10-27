@@ -1,6 +1,7 @@
 package es.upm.amusementpark;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * User management operations. Applies the validation and uniqueness rules
@@ -32,11 +33,62 @@ public class UserService {
     }
 
     public void deleteUser(String email, String password) throws UserOperationException {
+        authenticate(email, password);
+        repository.delete(email);
+    }
+
+    /**
+     * Changes one field of the user identified by email and password. The new
+     * value must satisfy the same rules as user creation.
+     */
+    public void updateUser(String email, String password, UserField field, String value)
+            throws UserOperationException {
+        User user = authenticate(email, password);
+        switch (field) {
+            case NAME:
+                user.setFirstName(value);
+                break;
+            case SURNAME:
+                user.setSurnames(value);
+                break;
+            case EMAIL:
+                if (!UserValidator.isValidEmail(value)) {
+                    throw new UserOperationException("Invalid email: expected format text@text.xxx.");
+                }
+                Optional<User> owner = repository.findByEmail(value);
+                if (owner.isPresent() && owner.get() != user) {
+                    throw new UserOperationException("A user with email " + value + " already exists.");
+                }
+                user.setEmail(value);
+                break;
+            case PASSWORD:
+                if (!UserValidator.isValidPassword(value)) {
+                    throw new UserOperationException(
+                            "Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol.");
+                }
+                user.setPassword(value);
+                break;
+            case PHONE:
+                user.setPhone(value);
+                break;
+            case CARD:
+                if (!UserValidator.isValidCard(value)) {
+                    throw new UserOperationException("Invalid card number: it must have exactly 16 digits.");
+                }
+                user.setCard(value);
+                break;
+            default:
+                throw new UserOperationException("Field " + field + " cannot be modified.");
+        }
+        repository.update(email, user);
+    }
+
+    private User authenticate(String email, String password) throws UserOperationException {
         User user = repository.findByEmail(email)
                 .orElseThrow(() -> new UserOperationException("No user with email " + email + " exists."));
         if (!user.getPassword().equals(password)) {
             throw new UserOperationException("Incorrect password.");
         }
-        repository.delete(email);
+        return user;
     }
 }

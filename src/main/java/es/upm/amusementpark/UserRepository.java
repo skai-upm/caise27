@@ -46,6 +46,16 @@ public class UserRepository {
         return false;
     }
 
+    /**
+     * Stores the changes of a user previously stored under {@code oldEmail},
+     * which may differ from its current email.
+     */
+    public void update(String oldEmail, User user) {
+        users.remove(oldEmail);
+        users.put(user.getEmail(), user);
+        persist();
+    }
+
     public boolean delete(String email) {
         boolean removed = users.remove(email) != null;
         if (removed) {

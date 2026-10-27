@@ -87,4 +87,73 @@ class UserServiceTest {
         assertTrue(e.getMessage().contains("password"));
         assertTrue(repository.findByEmail("ana@correo.com").isPresent());
     }
+
+    private User ana() {
+        return repository.findByEmail("ana@correo.com").orElseThrow();
+    }
+
+    @Test
+    void eachModifiableFieldCanBeUpdated() throws UserOperationException {
+        createAna();
+        service.updateUser("ana@correo.com", "Clave1!", UserField.NAME, "Ana Maria");
+        service.updateUser("ana@correo.com", "Clave1!", UserField.SURNAME, "Garcia");
+        service.updateUser("ana@correo.com", "Clave1!", UserField.PHONE, "699999999");
+        service.updateUser("ana@correo.com", "Clave1!", UserField.CARD, "9999888877776666");
+        service.updateUser("ana@correo.com", "Clave1!", UserField.PASSWORD, "Nueva2#");
+        User ana = ana();
+        assertEquals("Ana Maria", ana.getFirstName());
+        assertEquals("Garcia", ana.getSurnames());
+        assertEquals("699999999", ana.getPhone());
+        assertEquals("9999888877776666", ana.getCard());
+        assertEquals("Nueva2#", ana.getPassword());
+        service.updateUser("ana@correo.com", "Nueva2#", UserField.EMAIL, "ana.nueva@correo.com");
+        assertTrue(repository.findByEmail("ana@correo.com").isEmpty());
+        assertEquals("12345678Z", repository.findByEmail("ana.nueva@correo.com").orElseThrow().getDni());
+    }
+
+    @Test
+    void updateRequiresCorrectPassword() throws UserOperationException {
+        createAna();
+        assertThrows(UserOperationException.class,
+                () -> service.updateUser("ana@correo.com", "Otra1!", UserField.PHONE, "699999999"));
+        assertEquals("612345678", ana().getPhone());
+    }
+
+    @Test
+    void updateOfUnknownUserIsRejected() {
+        assertThrows(UserOperationException.class,
+                () -> service.updateUser("nadie@correo.com", "Clave1!", UserField.PHONE, "699999999"));
+    }
+
+    @Test
+    void invalidNewValuesAreRejected() throws UserOperationException {
+        createAna();
+        assertThrows(UserOperationException.class,
+                () -> service.updateUser("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo.es"));
+        assertThrows(UserOperationException.class,
+                () -> service.updateUser("ana@correo.com", "Clave1!", UserField.PASSWORD, "clave1!"));
+        assertThrows(UserOperationException.class,
+                () -> service.updateUser("ana@correo.com", "Clave1!", UserField.CARD, "123456789012345"));
+        User ana = ana();
+        assertEquals("Clave1!", ana.getPassword());
+        assertEquals("1234567890123456", ana.getCard());
+    }
+
+    @Test
+    void emailOfAnotherUserIsRejected() throws UserOperationException {
+        createAna();
+        service.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
+                "9876543210987654");
+        UserOperationException e = assertThrows(UserOperationException.class,
+                () -> service.updateUser("ana@correo.com", "Clave1!", UserField.EMAIL, "pedro@correo.com"));
+        assertTrue(e.getMessage().contains("email"));
+        assertEquals("12345678Z", ana().getDni());
+    }
+
+    @Test
+    void keepingOwnEmailIsAllowed() throws UserOperationException {
+        createAna();
+        service.updateUser("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo.com");
+        assertEquals(1, repository.findAll().size());
+    }
 }

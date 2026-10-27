@@ -2,6 +2,7 @@ package es.upm.amusementpark;
 
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
 
 /**
  * Processes single command lines. Every input source uses this class, so a
@@ -22,6 +23,8 @@ public class CommandProcessor {
             "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>";
 
     private static final String USER_DELETE_SYNTAX = "USER DELETE;<email>;<password>";
+
+    private static final String USER_UPDATE_SYNTAX = "USER UPDATE;<email>;<password>;<field>;<value>";
 
     private final PrintStream out;
     private final UserService userService;
@@ -59,6 +62,9 @@ public class CommandProcessor {
             case "USER DELETE":
                 deleteUser(parts);
                 return true;
+            case "USER UPDATE":
+                updateUser(parts);
+                return true;
             default:
                 out.println("ERROR: unrecognised command: " + command);
                 return true;
@@ -86,6 +92,25 @@ public class CommandProcessor {
         try {
             userService.deleteUser(parts[1], parts[2]);
             out.println("USER DELETED");
+        } catch (UserOperationException | UncheckedIOException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void updateUser(String[] parts) {
+        if (parts.length != 5) {
+            out.println("ERROR: invalid syntax. Expected " + USER_UPDATE_SYNTAX);
+            return;
+        }
+        UserField field = UserField.fromName(parts[3]);
+        if (field == null) {
+            out.println("ERROR: field " + parts[3] + " cannot be modified. Modifiable fields: "
+                    + Arrays.toString(UserField.values()));
+            return;
+        }
+        try {
+            userService.updateUser(parts[1], parts[2], field, parts[4]);
+            out.println("USER UPDATED");
         } catch (UserOperationException | UncheckedIOException e) {
             out.println("ERROR: " + e.getMessage());
         }
