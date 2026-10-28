@@ -15,7 +15,7 @@ import es.upm.amusementpark.persistence.repository.AttractionRepository;
 
 class AttractionServiceTest {
 
-    private final AttractionService attractions = new AttractionService(new AttractionRepository());
+    private final AttractionService attractions = AttractionService.getInstance().configure(new AttractionRepository());
 
     @Test
     void createdAttractionIsEmpty() throws ParkException {

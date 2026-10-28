@@ -15,7 +15,7 @@ class UserServiceTest {
 
     private final UserRepository repository = new UserRepository();
     private final InMemoryUserStorage storage = new InMemoryUserStorage();
-    private final UserService service = new UserService(repository, storage);
+    private final UserService service = UserService.getInstance().configure(repository, storage);
 
     private void create(String dni, String email, String password, String card) throws ParkException {
         service.createUser("Ana", "Garcia Lopez", dni, email, password, "612345678", card);

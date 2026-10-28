@@ -23,8 +23,8 @@ class TicketServiceTest {
 
     private LocalDate today = LocalDate.of(2027, 4, 15);
     private BigDecimal price = new BigDecimal("40.00");
-    private final UserService users = new UserService(new UserRepository(), new InMemoryUserStorage());
-    private final TicketService tickets = new TicketService(new TicketRepository(), users, () -> today, () -> price);
+    private final UserService users = UserService.getInstance().configure(new UserRepository(), new InMemoryUserStorage());
+    private final TicketService tickets = TicketService.getInstance().configure(new TicketRepository(), users, () -> today, () -> price);
 
     @BeforeEach
     void users() throws ParkException {

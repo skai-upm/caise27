@@ -14,16 +14,9 @@ import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
-import es.upm.amusementpark.persistence.file.AttractionFileStorage;
 import es.upm.amusementpark.persistence.file.DataLocation;
-import es.upm.amusementpark.persistence.file.GroupFileStorage;
-import es.upm.amusementpark.persistence.file.TicketFileStorage;
-import es.upm.amusementpark.persistence.file.UserFileStorage;
+import es.upm.amusementpark.persistence.file.ParkStorage;
 import es.upm.amusementpark.persistence.file.UserStorage;
-import es.upm.amusementpark.persistence.repository.AttractionRepository;
-import es.upm.amusementpark.persistence.repository.GroupRepository;
-import es.upm.amusementpark.persistence.repository.TicketRepository;
-import es.upm.amusementpark.persistence.repository.UserRepository;
 import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
 import es.upm.amusementpark.business.service.InvoiceService;
@@ -48,16 +41,13 @@ public final class ParkController {
     private TicketService tickets;
     private AttractionService attractions;
     private InvoiceService invoices;
-    private GroupRepository groupRepository;
-    private TicketRepository ticketRepository;
-    private AttractionRepository attractionRepository;
-    private ParkFiles files;
+    private ParkDependencies dependencies;
     private DataLocation temporary;
     private LocalDate currentDate;
     private BigDecimal basePrice;
 
     private ParkController() {
-        reset(new UserRepository(), null);
+        ParkInitializer.wire(this, ParkInitializer.inMemory(null));
     }
 
     public static ParkController getInstance() {
@@ -65,35 +55,52 @@ public final class ParkController {
     }
 
     /**
-     * Prepares the park state for a new execution: loads the stored users and sets the date to
-     * today and the base price to its initial value.
+     * Receives the controllers and repositories wired by {@link ParkInitializer} and starts a new
+     * execution state: date is today and the base price is the initial one.
+     */
+    void configure(ParkDependencies dependencies, UserService users, GroupService groups, TicketService tickets,
+            AttractionService attractions, InvoiceService invoices) {
+        this.dependencies = dependencies;
+        this.users = users;
+        this.groups = groups;
+        this.tickets = tickets;
+        this.attractions = attractions;
+        this.invoices = invoices;
+        this.currentDate = LocalDate.now();
+        this.basePrice = INITIAL_BASE_PRICE;
+    }
+
+    /**
+     * Prepares a new execution with in-memory repositories and the given user storage only.
      *
      * @return warnings produced while loading stored data
      */
     public List<String> initialize(UserStorage storage) throws IOException {
-        List<String> warnings = new ArrayList<>();
-        UserRepository repository = new UserRepository();
-        for (User user : storage.load(warnings)) {
-            repository.save(user);
-        }
-        reset(repository, storage);
-        return warnings;
+        return loadInto(ParkInitializer.inMemory(storage));
     }
 
     /**
-     * Prepares the park state for a new execution from the data files of the given location:
-     * users, groups, tickets and (empty) attractions with their relationships.
+     * Prepares a new execution from the data files of the given location: users, groups, tickets
+     * and (empty) attractions with their relationships.
      *
      * @return warnings produced while loading stored data
      */
     public List<String> initialize(DataLocation location) throws IOException {
-        List<String> warnings = initialize(new UserFileStorage(location.users()));
-        ParkFiles loaded = new ParkFiles(new GroupFileStorage(location.groups()),
-                new TicketFileStorage(location.tickets()), new AttractionFileStorage(location.attractions()));
-        loaded.groups().load(users::findByDni, warnings).forEach(groupRepository::save);
-        loaded.attractions().load(warnings).forEach(attractionRepository::save);
-        loaded.tickets().load(users::findByDni, groupRepository::findById, warnings).forEach(ticketRepository::save);
-        this.files = loaded;
+        return loadInto(ParkInitializer.forLocation(location));
+    }
+
+    private List<String> loadInto(ParkDependencies deps) throws IOException {
+        ParkInitializer.wire(this, deps);
+        List<String> warnings = new ArrayList<>();
+        if (deps.userStorage() != null) {
+            deps.userStorage().load(warnings).forEach(deps.users()::save);
+        }
+        ParkStorage storage = deps.storage();
+        if (storage != null) {
+            storage.groups().load(users::findByDni, warnings).forEach(deps.groups()::save);
+            storage.attractions().load(warnings).forEach(deps.attractions()::save);
+            storage.tickets().load(users::findByDni, deps.groups()::findById, warnings).forEach(deps.tickets()::save);
+        }
         return warnings;
     }
 
@@ -101,13 +108,14 @@ public final class ParkController {
      * Writes groups, tickets and attractions to their files, if this execution uses files.
      */
     public void saveState() throws DataAccessException {
-        if (files == null) {
+        ParkStorage storage = dependencies.storage();
+        if (storage == null) {
             return;
         }
         try {
-            files.groups().save(groupRepository.findAll());
-            files.tickets().save(ticketRepository.findAll());
-            files.attractions().save(attractionRepository.findAll());
+            storage.groups().save(dependencies.groups().findAll());
+            storage.tickets().save(dependencies.tickets().findAll());
+            storage.attractions().save(dependencies.attractions().findAll());
         } catch (IOException e) {
             throw new DataAccessException("Could not save park data: " + e.getMessage(), e);
         }
@@ -154,23 +162,6 @@ public final class ParkController {
         } catch (IOException e) {
             throw new DataAccessException("Cannot load data from '" + location.directory() + "'", e);
         }
-    }
-
-    private void reset(UserRepository repository, UserStorage storage) {
-        this.groupRepository = new GroupRepository();
-        this.ticketRepository = new TicketRepository();
-        this.attractionRepository = new AttractionRepository();
-        this.files = null;
-        this.users = new UserService(repository, storage);
-        this.tickets = new TicketService(ticketRepository, users, this::getCurrentDate, this::getBasePrice);
-        this.groups = new GroupService(groupRepository, users, tickets::hasActiveGroupTicket, this::getCurrentDate);
-        this.attractions = new AttractionService(attractionRepository);
-        this.invoices = new InvoiceService(users, groups, tickets);
-        this.currentDate = LocalDate.now();
-        this.basePrice = INITIAL_BASE_PRICE;
-    }
-
-    private record ParkFiles(GroupFileStorage groups, TicketFileStorage tickets, AttractionFileStorage attractions) {
     }
 
     public UserService users() {

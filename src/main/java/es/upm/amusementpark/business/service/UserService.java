@@ -21,12 +21,25 @@ import es.upm.amusementpark.persistence.repository.UserRepository;
  */
 public class UserService {
 
-    private final UserRepository repository;
-    private final UserStorage storage;
+    private UserRepository repository;
+    private UserStorage storage;
 
-    public UserService(UserRepository repository, UserStorage storage) {
+    private static final UserService INSTANCE = new UserService();
+
+    private UserService() {
+    }
+
+    public static UserService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies of this controller; called during application initialization.
+     */
+    public UserService configure(UserRepository repository, UserStorage storage) {
         this.repository = repository;
         this.storage = storage;
+        return this;
     }
 
     public Optional<User> findByDni(String dni) {
@@ -147,6 +160,9 @@ public class UserService {
     }
 
     private void persist(List<User> users) throws ParkException {
+        if (storage == null) {
+            return;
+        }
         try {
             storage.save(users);
         } catch (IOException e) {

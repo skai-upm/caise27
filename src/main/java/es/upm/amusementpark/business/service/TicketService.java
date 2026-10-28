@@ -24,17 +24,30 @@ import es.upm.amusementpark.persistence.repository.TicketRepository;
  */
 public class TicketService {
 
-    private final TicketRepository repository;
-    private final UserService users;
-    private final Supplier<LocalDate> today;
-    private final Supplier<BigDecimal> basePrice;
+    private TicketRepository repository;
+    private UserService users;
+    private Supplier<LocalDate> today;
+    private Supplier<BigDecimal> basePrice;
 
-    public TicketService(TicketRepository repository, UserService users, Supplier<LocalDate> today,
+    private static final TicketService INSTANCE = new TicketService();
+
+    private TicketService() {
+    }
+
+    public static TicketService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies of this controller; called during application initialization.
+     */
+    public TicketService configure(TicketRepository repository, UserService users, Supplier<LocalDate> today,
             Supplier<BigDecimal> basePrice) {
         this.repository = repository;
         this.users = users;
         this.today = today;
         this.basePrice = basePrice;
+        return this;
     }
 
     public Optional<Ticket> findById(String id) {

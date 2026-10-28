@@ -16,14 +16,27 @@ import es.upm.amusementpark.business.model.User;
  */
 public class InvoiceService {
 
-    private final UserService users;
-    private final GroupService groups;
-    private final TicketService tickets;
+    private UserService users;
+    private GroupService groups;
+    private TicketService tickets;
 
-    public InvoiceService(UserService users, GroupService groups, TicketService tickets) {
+    private static final InvoiceService INSTANCE = new InvoiceService();
+
+    private InvoiceService() {
+    }
+
+    public static InvoiceService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies of this controller; called during application initialization.
+     */
+    public InvoiceService configure(UserService users, GroupService groups, TicketService tickets) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        return this;
     }
 
     public Invoice userInvoice(String email) throws NotFoundException {

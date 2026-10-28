@@ -20,17 +20,30 @@ import es.upm.amusementpark.persistence.repository.GroupRepository;
  */
 public class GroupService {
 
-    private final GroupRepository repository;
-    private final UserService users;
-    private final ActiveGroupTicketCheck activeTickets;
-    private final Supplier<LocalDate> today;
+    private GroupRepository repository;
+    private UserService users;
+    private ActiveGroupTicketCheck activeTickets;
+    private Supplier<LocalDate> today;
 
-    public GroupService(GroupRepository repository, UserService users, ActiveGroupTicketCheck activeTickets,
+    private static final GroupService INSTANCE = new GroupService();
+
+    private GroupService() {
+    }
+
+    public static GroupService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies of this controller; called during application initialization.
+     */
+    public GroupService configure(GroupRepository repository, UserService users, ActiveGroupTicketCheck activeTickets,
             Supplier<LocalDate> today) {
         this.repository = repository;
         this.users = users;
         this.activeTickets = activeTickets;
         this.today = today;
+        return this;
     }
 
     public Optional<Group> findById(String id) {

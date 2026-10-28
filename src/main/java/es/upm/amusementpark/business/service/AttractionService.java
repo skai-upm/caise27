@@ -20,10 +20,23 @@ import es.upm.amusementpark.persistence.repository.AttractionRepository;
  */
 public class AttractionService {
 
-    private final AttractionRepository repository;
+    private AttractionRepository repository;
 
-    public AttractionService(AttractionRepository repository) {
+    private static final AttractionService INSTANCE = new AttractionService();
+
+    private AttractionService() {
+    }
+
+    public static AttractionService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies of this controller; called during application initialization.
+     */
+    public AttractionService configure(AttractionRepository repository) {
         this.repository = repository;
+        return this;
     }
 
     public Optional<Attraction> findById(String id) {

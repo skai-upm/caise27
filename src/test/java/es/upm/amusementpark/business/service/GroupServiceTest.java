@@ -20,10 +20,10 @@ import es.upm.amusementpark.persistence.repository.UserRepository;
 
 class GroupServiceTest {
 
-    private final UserService users = new UserService(new UserRepository(), new InMemoryUserStorage());
+    private final UserService users = UserService.getInstance().configure(new UserRepository(), new InMemoryUserStorage());
     private final Set<String> groupsWithActiveTicket = new HashSet<>();
     private LocalDate checkedDate;
-    private final GroupService groups = new GroupService(new GroupRepository(), users, (id, today) -> {
+    private final GroupService groups = GroupService.getInstance().configure(new GroupRepository(), users, (id, today) -> {
         checkedDate = today;
         return groupsWithActiveTicket.contains(id);
     }, () -> LocalDate.of(2027, 4, 15));
