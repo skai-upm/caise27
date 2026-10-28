@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 class AttractionTest {
@@ -36,5 +38,18 @@ class AttractionTest {
         attraction.removeOccupant(ana);
         assertThrows(IllegalStateException.class, () -> attraction.removeOccupant(ana));
         assertThrows(UnsupportedOperationException.class, () -> attraction.getOccupants().add(pedro));
+    }
+
+    @Test
+    void admitIsAllOrNothing() {
+        Attraction attraction = new Attraction("A01", "Dragon Rojo", 2);
+        User luis = new User("11111111H", "luis@correo.com");
+        attraction.admit(List.of(ana));
+        assertThrows(IllegalStateException.class, () -> attraction.admit(List.of(pedro, luis)));
+        assertEquals(List.of(ana), attraction.getOccupants());
+        assertThrows(IllegalStateException.class, () -> attraction.admit(List.of(pedro, ana)));
+        assertEquals(1, attraction.getOccupants().size());
+        attraction.admit(List.of(pedro));
+        assertEquals(2, attraction.getOccupants().size());
     }
 }

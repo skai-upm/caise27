@@ -59,6 +59,24 @@ public class Attraction {
     }
 
     /**
+     * Admits all {@code users} together or none of them.
+     *
+     * @throws IllegalStateException if any user is already inside or capacity is insufficient for all
+     */
+    public void admit(List<User> users) {
+        for (User user : users) {
+            if (isInside(user)) {
+                throw new IllegalStateException("User " + user.getEmail() + " is already inside attraction " + identifier);
+            }
+        }
+        if (occupants.size() + users.size() > capacity) {
+            throw new IllegalStateException("Attraction " + identifier + " does not have capacity for "
+                    + users.size() + " user(s)");
+        }
+        occupants.addAll(users);
+    }
+
+    /**
      * @throws IllegalStateException if the user is not inside the attraction
      */
     public void removeOccupant(User user) {

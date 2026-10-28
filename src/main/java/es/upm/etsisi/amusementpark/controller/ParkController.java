@@ -322,6 +322,27 @@ public final class ParkController {
         return Optional.ofNullable(attractions.get(identifier));
     }
 
+    /**
+     * Lets the users of a ticket valid for the current date enter an attraction.
+     * Works on the common ticket abstraction: the users admitted are those of the
+     * ticket's individual tickets, and either all of them enter or none does.
+     *
+     * @return the number of users that entered
+     */
+    public int enterAttraction(String attractionIdentifier, String ticketIdentifier) {
+        Attraction attraction = findAttraction(attractionIdentifier)
+                .orElseThrow(() -> new IllegalArgumentException("Attraction not found: " + attractionIdentifier));
+        Ticket ticket = findTicket(ticketIdentifier)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketIdentifier));
+        if (!ticket.getDate().equals(currentDate)) {
+            throw new IllegalStateException("Ticket " + ticketIdentifier + " is valid for " + ticket.getDate()
+                    + ", not for the current date " + currentDate);
+        }
+        List<User> entrants = ticket.getIndividualTickets().stream().map(IndividualTicket::getUser).toList();
+        attraction.admit(entrants);
+        return entrants.size();
+    }
+
     private static int parseCapacity(String text) {
         if (text == null || text.isEmpty() || !isDigits(text)) {
             throw new IllegalArgumentException("Invalid capacity, expected a positive integer: " + text);

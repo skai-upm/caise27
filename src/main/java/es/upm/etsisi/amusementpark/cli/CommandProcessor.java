@@ -28,6 +28,7 @@ public class CommandProcessor {
         register("GROUPTICKET DELETE", new GroupTicketDeleteCommand());
         register("ATTRACTION CREATE", new AttractionCreateCommand());
         register("ATTRACTION LIST", new AttractionListCommand());
+        register("ATTRACTION ENTER", new AttractionEnterCommand());
         register("HELP", new HelpCommand());
         register("EXIT", new ExitCommand());
     }
