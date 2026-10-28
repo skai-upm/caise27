@@ -98,4 +98,37 @@ class AppTest {
         assertEquals(0, App.execute(new String[0], reader(ana), out, err, users()));
         assertTrue(outBytes.toString(StandardCharsets.UTF_8).startsWith("ERROR: A user with this DNI"));
     }
+
+    @Test
+    void directoryArgumentIsReportedInAControlledWay(@TempDir Path dir) {
+        int status = App.execute(new String[] {dir.toString()}, reader(""), out, err, users());
+        assertEquals(1, status);
+        assertTrue(errBytes.toString(StandardCharsets.UTF_8).contains("cannot read file"));
+    }
+
+    @Test
+    void fileAndInteractiveModesBehaveIdentically(@TempDir Path dir) throws Exception {
+        String commands = String.join("\n",
+                "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                "",
+                "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
+                "   ",
+                "UNKNOWN;command",
+                "USER DELETE;ana@correo.com;Mala1!");
+        Path stdinUsers = dir.resolve("stdin-users.txt");
+        Path fileUsers = dir.resolve("file-users.txt");
+        Path input = dir.resolve("input.txt");
+        Files.writeString(input, commands);
+
+        assertEquals(0, App.execute(new String[0], reader(commands), out, err, stdinUsers));
+        String interactiveOutput = outBytes.toString(StandardCharsets.UTF_8);
+        outBytes.reset();
+        assertEquals(0, App.execute(new String[] {input.toString()}, reader(""), out, err, fileUsers));
+        String fileOutput = outBytes.toString(StandardCharsets.UTF_8);
+
+        assertEquals(interactiveOutput, fileOutput);
+        assertEquals(5, interactiveOutput.split("\\R").length);
+        assertEquals(Files.readAllLines(stdinUsers), Files.readAllLines(fileUsers));
+    }
 }

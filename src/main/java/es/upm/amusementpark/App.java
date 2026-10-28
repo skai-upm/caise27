@@ -62,6 +62,10 @@ public class App {
             return app.runQuietly(stdin, err);
         }
         Path file = Path.of(args[0]);
+        if (!Files.isRegularFile(file) || !Files.isReadable(file)) {
+            err.println("Error: cannot read file '" + args[0] + "'");
+            return 1;
+        }
         try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             return app.runQuietly(reader, err);
         } catch (IOException e) {
