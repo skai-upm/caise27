@@ -108,6 +108,10 @@ class CommandProcessorTest {
         assertTrue(help.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
         assertTrue(help.contains("SYSTEM DATE;<yyyy-MM-dd>"));
         assertTrue(help.contains("SYSTEM PRICE;<Price>"));
+        for (String group : List.of("GROUP CREATE;<Identifier>;<Name>", "GROUP ADD;<Identifier>;<Email>",
+                "GROUP REMOVE;<Identifier>;<Email>", "GROUP DELETE;<Identifier>")) {
+            assertTrue(help.contains(group), group);
+        }
         assertTrue(help.contains("HELP"));
         assertTrue(help.contains("EXIT"));
     }
@@ -172,5 +176,23 @@ class CommandProcessorTest {
             assertTrue(processor.process("SYSTEM PRICE;" + bad).startsWith("ERROR: Invalid price"), bad);
         }
         assertEquals(new BigDecimal("40.00"), park.getBasePrice());
+    }
+
+    @Test
+    void groupCommands() {
+        processor.process(ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        assertEquals("GROUP CREATED", processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertTrue(processor.process("GROUP CREATE;G01;Otra").startsWith("ERROR:"));
+        assertEquals("USER ADDED TO GROUP", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertEquals("USER ADDED TO GROUP", processor.process("GROUP ADD;G01;pedro@correo.com"));
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").startsWith("ERROR: User already belongs"));
+        assertEquals("USER REMOVED FROM GROUP", processor.process("GROUP REMOVE;G01;pedro@correo.com"));
+        assertTrue(processor.process("GROUP REMOVE;G01;pedro@correo.com").startsWith("ERROR:"));
+        assertEquals("USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(park.groups().findById("G01").orElseThrow().getMemberDnis().isEmpty());
+        assertEquals("GROUP DELETED", processor.process("GROUP DELETE;G01"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR: Group not found"));
+        assertTrue(processor.process("GROUP ADD;G01").startsWith("ERROR: Wrong number of arguments"));
     }
 }

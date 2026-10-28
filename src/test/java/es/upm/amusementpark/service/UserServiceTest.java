@@ -16,18 +16,18 @@ class UserServiceTest {
     private final InMemoryUserStorage storage = new InMemoryUserStorage();
     private final UserService service = new UserService(repository, storage);
 
-    private void create(String dni, String email, String password, String card) throws UserOperationException {
+    private void create(String dni, String email, String password, String card) throws OperationException {
         service.createUser("Ana", "Garcia Lopez", dni, email, password, "612345678", card);
     }
 
     @Test
-    void validUserIsStored() throws UserOperationException {
+    void validUserIsStored() throws OperationException {
         create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
         assertEquals("ana@correo.com", repository.findByDni("12345678Z").orElseThrow().getEmail());
     }
 
     private void assertRejected(String expectedReason, String dni, String email, String password, String card) {
-        UserOperationException e = assertThrows(UserOperationException.class, () -> create(dni, email, password, card));
+        OperationException e = assertThrows(OperationException.class, () -> create(dni, email, password, card));
         assertTrue(e.getMessage().contains(expectedReason), e.getMessage());
     }
 
@@ -41,7 +41,7 @@ class UserServiceTest {
     }
 
     @Test
-    void duplicateDniOrEmailIsRejected() throws UserOperationException {
+    void duplicateDniOrEmailIsRejected() throws OperationException {
         create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
         assertRejected("DNI", "12345678Z", "otra@correo.com", "Clave1!", "1234567890123456");
         assertRejected("email", "87654321X", "ana@correo.com", "Clave1!", "1234567890123456");
@@ -49,7 +49,7 @@ class UserServiceTest {
     }
 
     @Test
-    void createdUsersAreSaved() throws UserOperationException {
+    void createdUsersAreSaved() throws OperationException {
         create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
         assertEquals(repository.findAll(), storage.saved());
     }
@@ -62,7 +62,7 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteWithCorrectPasswordRemovesAndSaves() throws UserOperationException {
+    void deleteWithCorrectPasswordRemovesAndSaves() throws OperationException {
         create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
         create("87654321X", "pedro@correo.com", "Otra2#", "9876543210987654");
         service.deleteUser("ana@correo.com", "Clave1!");
@@ -72,26 +72,26 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteOfUnknownEmailOrWithWrongPasswordIsRejected() throws UserOperationException {
+    void deleteOfUnknownEmailOrWithWrongPasswordIsRejected() throws OperationException {
         create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
-        UserOperationException notFound = assertThrows(UserOperationException.class,
+        OperationException notFound = assertThrows(OperationException.class,
                 () -> service.deleteUser("nadie@correo.com", "Clave1!"));
         assertTrue(notFound.getMessage().contains("not found"));
-        UserOperationException wrong = assertThrows(UserOperationException.class,
+        OperationException wrong = assertThrows(OperationException.class,
                 () -> service.deleteUser("ana@correo.com", "Otra1!"));
         assertTrue(wrong.getMessage().contains("Incorrect password"));
         assertEquals(1, repository.findAll().size());
         assertEquals(1, storage.saved().size());
     }
 
-    private void createAnaAndPedro() throws UserOperationException {
+    private void createAnaAndPedro() throws OperationException {
         create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
         service.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
                 "9876543210987654");
     }
 
     @Test
-    void updateEachModifiableField() throws UserOperationException {
+    void updateEachModifiableField() throws OperationException {
         createAnaAndPedro();
         service.updateUser("ana@correo.com", "Clave1!", UserField.NAME, "Ana Maria");
         service.updateUser("ana@correo.com", "Clave1!", UserField.SURNAME, "Garcia");
@@ -112,13 +112,13 @@ class UserServiceTest {
     }
 
     private void assertUpdateRejected(String reason, String email, String password, UserField field, String value) {
-        UserOperationException e = assertThrows(UserOperationException.class,
+        OperationException e = assertThrows(OperationException.class,
                 () -> service.updateUser(email, password, field, value));
         assertTrue(e.getMessage().contains(reason), e.getMessage());
     }
 
     @Test
-    void invalidUpdatesAreRejectedAndNothingChanges() throws UserOperationException {
+    void invalidUpdatesAreRejectedAndNothingChanges() throws OperationException {
         createAnaAndPedro();
         assertUpdateRejected("Incorrect password", "ana@correo.com", "Mala1!", UserField.PHONE, "6");
         assertUpdateRejected("not found", "nadie@correo.com", "Clave1!", UserField.PHONE, "6");
@@ -134,14 +134,14 @@ class UserServiceTest {
     }
 
     @Test
-    void keepingOwnEmailIsAllowed() throws UserOperationException {
+    void keepingOwnEmailIsAllowed() throws OperationException {
         createAnaAndPedro();
         service.updateUser("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo.com");
         assertEquals("ana@correo.com", repository.findByDni("12345678Z").orElseThrow().getEmail());
     }
 
     @Test
-    void failedSaveLeavesUserUnchanged() throws UserOperationException {
+    void failedSaveLeavesUserUnchanged() throws OperationException {
         createAnaAndPedro();
         storage.setFailing(true);
         assertUpdateRejected("Could not save", "ana@correo.com", "Clave1!", UserField.PHONE, "699999999");

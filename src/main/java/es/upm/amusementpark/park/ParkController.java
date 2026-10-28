@@ -8,7 +8,10 @@ import java.util.List;
 
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.persistence.UserStorage;
+import es.upm.amusementpark.repository.GroupRepository;
 import es.upm.amusementpark.repository.UserRepository;
+import es.upm.amusementpark.service.GroupService;
+import es.upm.amusementpark.service.OperationException;
 import es.upm.amusementpark.service.UserService;
 
 /**
@@ -24,6 +27,7 @@ public final class ParkController {
     private static final ParkController INSTANCE = new ParkController();
 
     private UserService users;
+    private GroupService groups;
     private LocalDate currentDate;
     private BigDecimal basePrice;
 
@@ -53,12 +57,28 @@ public final class ParkController {
 
     private void reset(UserRepository repository, UserStorage storage) {
         this.users = new UserService(repository, storage);
+        // No group tickets exist yet, so no group is locked.
+        this.groups = new GroupService(new GroupRepository(), users, (groupId, today) -> false,
+                this::getCurrentDate);
         this.currentDate = LocalDate.now();
         this.basePrice = INITIAL_BASE_PRICE;
     }
 
     public UserService users() {
         return users;
+    }
+
+    public GroupService groups() {
+        return groups;
+    }
+
+    /**
+     * Deletes the user identified by email and password and removes it from every group.
+     */
+    public void deleteUser(String email, String password) throws OperationException {
+        String dni = users.findByEmail(email).map(User::getDni).orElse(null);
+        users.deleteUser(email, password);
+        groups.removeUserFromAllGroups(dni);
     }
 
     public LocalDate getCurrentDate() {

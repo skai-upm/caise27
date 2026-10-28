@@ -36,24 +36,24 @@ public class UserService {
     }
 
     public User createUser(String firstName, String surnames, String dni, String email, String password,
-            String phone, String cardNumber) throws UserOperationException {
+            String phone, String cardNumber) throws OperationException {
         if (!UserValidator.isValidDni(dni)) {
-            throw new UserOperationException("Invalid DNI");
+            throw new OperationException("Invalid DNI");
         }
         if (!UserValidator.isValidEmail(email)) {
-            throw new UserOperationException("Invalid email");
+            throw new OperationException("Invalid email");
         }
         if (!UserValidator.isValidPassword(password)) {
-            throw new UserOperationException("Invalid password");
+            throw new OperationException("Invalid password");
         }
         if (!UserValidator.isValidCardNumber(cardNumber)) {
-            throw new UserOperationException("Invalid card number");
+            throw new OperationException("Invalid card number");
         }
         if (repository.findByDni(dni).isPresent()) {
-            throw new UserOperationException("A user with this DNI already exists");
+            throw new OperationException("A user with this DNI already exists");
         }
         if (repository.findByEmail(email).isPresent()) {
-            throw new UserOperationException("A user with this email already exists");
+            throw new OperationException("A user with this email already exists");
         }
         User user = new User(firstName, surnames, dni, email, password, phone, cardNumber);
         List<User> users = repository.findAll();
@@ -66,7 +66,7 @@ public class UserService {
     /**
      * Deletes the user identified by email and password.
      */
-    public void deleteUser(String email, String password) throws UserOperationException {
+    public void deleteUser(String email, String password) throws OperationException {
         User user = authenticate(email, password);
         List<User> users = repository.findAll();
         users.remove(user);
@@ -79,7 +79,7 @@ public class UserService {
      * satisfy the same rules as on creation.
      */
     public void updateUser(String email, String password, UserField field, String value)
-            throws UserOperationException {
+            throws OperationException {
         User user = authenticate(email, password);
         User updated = copy(user);
         switch (field) {
@@ -87,23 +87,23 @@ public class UserService {
             case SURNAME -> updated.setSurnames(value);
             case EMAIL -> {
                 if (!UserValidator.isValidEmail(value)) {
-                    throw new UserOperationException("Invalid email");
+                    throw new OperationException("Invalid email");
                 }
                 if (repository.findByEmail(value).filter(other -> other != user).isPresent()) {
-                    throw new UserOperationException("A user with this email already exists");
+                    throw new OperationException("A user with this email already exists");
                 }
                 updated.setEmail(value);
             }
             case PASSWORD -> {
                 if (!UserValidator.isValidPassword(value)) {
-                    throw new UserOperationException("Invalid password");
+                    throw new OperationException("Invalid password");
                 }
                 updated.setPassword(value);
             }
             case PHONE -> updated.setPhone(value);
             case CARD -> {
                 if (!UserValidator.isValidCardNumber(value)) {
-                    throw new UserOperationException("Invalid card number");
+                    throw new OperationException("Invalid card number");
                 }
                 updated.setCardNumber(value);
             }
@@ -119,20 +119,20 @@ public class UserService {
                 u.getCardNumber());
     }
 
-    private User authenticate(String email, String password) throws UserOperationException {
+    private User authenticate(String email, String password) throws OperationException {
         User user = repository.findByEmail(email)
-                .orElseThrow(() -> new UserOperationException("User not found"));
+                .orElseThrow(() -> new OperationException("User not found"));
         if (!user.getPassword().equals(password)) {
-            throw new UserOperationException("Incorrect password");
+            throw new OperationException("Incorrect password");
         }
         return user;
     }
 
-    private void persist(List<User> users) throws UserOperationException {
+    private void persist(List<User> users) throws OperationException {
         try {
             storage.save(users);
         } catch (IOException e) {
-            throw new UserOperationException("Could not save users: " + e.getMessage());
+            throw new OperationException("Could not save users: " + e.getMessage());
         }
     }
 }

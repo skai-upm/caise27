@@ -8,7 +8,7 @@ import java.time.format.ResolverStyle;
 
 import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.park.ParkController;
-import es.upm.amusementpark.service.UserOperationException;
+import es.upm.amusementpark.service.OperationException;
 import es.upm.amusementpark.service.UserService;
 
 /**
@@ -29,6 +29,10 @@ public class CommandProcessor {
             "USER UPDATE;<email>;<password>;<field>;<value>  (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
             "SYSTEM DATE;<yyyy-MM-dd>",
             "SYSTEM PRICE;<Price>",
+            "GROUP CREATE;<Identifier>;<Name>",
+            "GROUP ADD;<Identifier>;<Email>",
+            "GROUP REMOVE;<Identifier>;<Email>",
+            "GROUP DELETE;<Identifier>",
             "HELP",
             "EXIT");
 
@@ -61,11 +65,15 @@ public class CommandProcessor {
                 case "USER UPDATE" -> userUpdate(parts);
                 case "SYSTEM DATE" -> systemDate(parts);
                 case "SYSTEM PRICE" -> systemPrice(parts);
+                case "GROUP CREATE" -> groupCreate(parts);
+                case "GROUP ADD" -> groupAdd(parts);
+                case "GROUP REMOVE" -> groupRemove(parts);
+                case "GROUP DELETE" -> groupDelete(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> error("Unknown command");
             };
-        } catch (UserOperationException e) {
+        } catch (OperationException e) {
             return error(e.getMessage());
         } catch (RuntimeException e) {
             return error("Unexpected error processing command");
@@ -79,21 +87,45 @@ public class CommandProcessor {
         return exitRequested;
     }
 
-    private String systemDate(String[] parts) throws UserOperationException {
+    private String groupCreate(String[] parts) throws OperationException {
+        requireArguments(parts, 2, "GROUP CREATE");
+        park.groups().createGroup(parts[1], parts[2]);
+        return "GROUP CREATED";
+    }
+
+    private String groupAdd(String[] parts) throws OperationException {
+        requireArguments(parts, 2, "GROUP ADD");
+        park.groups().addMember(parts[1], parts[2]);
+        return "USER ADDED TO GROUP";
+    }
+
+    private String groupRemove(String[] parts) throws OperationException {
+        requireArguments(parts, 2, "GROUP REMOVE");
+        park.groups().removeMember(parts[1], parts[2]);
+        return "USER REMOVED FROM GROUP";
+    }
+
+    private String groupDelete(String[] parts) throws OperationException {
+        requireArguments(parts, 1, "GROUP DELETE");
+        park.groups().deleteGroup(parts[1]);
+        return "GROUP DELETED";
+    }
+
+    private String systemDate(String[] parts) throws OperationException {
         requireArguments(parts, 1, "SYSTEM DATE");
         try {
             park.setCurrentDate(LocalDate.parse(parts[1], DATE_FORMAT));
         } catch (DateTimeParseException e) {
-            throw new UserOperationException("Invalid date, expected yyyy-MM-dd: " + parts[1]);
+            throw new OperationException("Invalid date, expected yyyy-MM-dd: " + parts[1]);
         }
         return "SYSTEM DATE UPDATED";
     }
 
-    private String systemPrice(String[] parts) throws UserOperationException {
+    private String systemPrice(String[] parts) throws OperationException {
         requireArguments(parts, 1, "SYSTEM PRICE");
         BigDecimal price = parsePrice(parts[1]);
         if (price == null) {
-            throw new UserOperationException("Invalid price, expected a positive amount: " + parts[1]);
+            throw new OperationException("Invalid price, expected a positive amount: " + parts[1]);
         }
         park.setBasePrice(price);
         return "SYSTEM PRICE UPDATED";
@@ -123,41 +155,41 @@ public class CommandProcessor {
         return true;
     }
 
-    private String help(String[] parts) throws UserOperationException {
+    private String help(String[] parts) throws OperationException {
         requireArguments(parts, 0, "HELP");
         return HELP_TEXT;
     }
 
-    private String exit(String[] parts) throws UserOperationException {
+    private String exit(String[] parts) throws OperationException {
         requireArguments(parts, 0, "EXIT");
         exitRequested = true;
         return "Goodbye";
     }
 
-    private String userCreate(String[] parts) throws UserOperationException {
+    private String userCreate(String[] parts) throws OperationException {
         requireArguments(parts, 7, "USER CREATE");
         userService.createUser(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
         return "USER CREATED";
     }
 
-    private String userDelete(String[] parts) throws UserOperationException {
+    private String userDelete(String[] parts) throws OperationException {
         requireArguments(parts, 2, "USER DELETE");
-        userService.deleteUser(parts[1], parts[2]);
+        park.deleteUser(parts[1], parts[2]);
         return "USER DELETED";
     }
 
-    private String userUpdate(String[] parts) throws UserOperationException {
+    private String userUpdate(String[] parts) throws OperationException {
         requireArguments(parts, 4, "USER UPDATE");
         UserField field = UserField.fromName(parts[3])
-                .orElseThrow(() -> new UserOperationException("Field cannot be modified: " + parts[3]));
+                .orElseThrow(() -> new OperationException("Field cannot be modified: " + parts[3]));
         userService.updateUser(parts[1], parts[2], field, parts[4]);
         return "USER UPDATED";
     }
 
     private static void requireArguments(String[] parts, int expected, String command)
-            throws UserOperationException {
+            throws OperationException {
         if (parts.length - 1 != expected) {
-            throw new UserOperationException("Wrong number of arguments for " + command);
+            throw new OperationException("Wrong number of arguments for " + command);
         }
     }
 
