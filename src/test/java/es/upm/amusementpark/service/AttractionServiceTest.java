@@ -49,4 +49,47 @@ class AttractionServiceTest {
         assertEquals(2, a.getOccupants().size());
         assertThrows(OperationException.class, () -> attractions.listOccupantEmails("A99"));
     }
+
+    private static final java.time.LocalDate TODAY = java.time.LocalDate.of(2027, 4, 15);
+
+    private static User user(int i) {
+        return new User("U" + i, "S", "0000000" + i + "X", "u" + i + "@correo.com", "Clave1!", "6", "1234567890123456");
+    }
+
+    private static es.upm.amusementpark.model.IndividualTicket ticket(User u, java.time.LocalDate day) {
+        return new es.upm.amusementpark.model.IndividualTicket("T-" + u.getDni(), day, u, new java.math.BigDecimal("40.00"));
+    }
+
+    @Test
+    void enterWithIndividualTicketForToday() throws OperationException {
+        attractions.createAttraction("A01", "Dragon Rojo", 20);
+        User ana = user(1);
+        assertEquals(List.of(ana), attractions.enter("A01", ticket(ana, TODAY), TODAY));
+        assertEquals(List.of("u1@correo.com"), attractions.listOccupantEmails("A01"));
+    }
+
+    @Test
+    void entryRules() throws OperationException {
+        attractions.createAttraction("A01", "Uno", 1);
+        User a = user(1);
+        User b = user(2);
+        assertThrows(OperationException.class, () -> attractions.enter("A01", ticket(a, TODAY.plusDays(1)), TODAY));
+        assertThrows(OperationException.class, () -> attractions.enter("A01", ticket(a, TODAY.minusDays(1)), TODAY));
+        attractions.enter("A01", ticket(a, TODAY), TODAY);
+        assertThrows(OperationException.class, () -> attractions.enter("A01", ticket(a, TODAY), TODAY));
+        assertThrows(OperationException.class, () -> attractions.enter("A01", ticket(b, TODAY), TODAY));
+        assertThrows(OperationException.class, () -> attractions.enter("A99", ticket(b, TODAY), TODAY));
+        assertEquals(List.of("u1@correo.com"), attractions.listOccupantEmails("A01"));
+    }
+
+    @Test
+    void multiUserTicketEntersAllOrNothing() throws OperationException {
+        attractions.createAttraction("A01", "Tres", 3);
+        attractions.enter("A01", ticket(user(9), TODAY), TODAY);
+        List<User> members = List.of(user(1), user(2), user(3));
+        var group = new es.upm.amusementpark.model.GroupTicket("TG01", TODAY,
+                new es.upm.amusementpark.model.Group("G01", "g"), members, new java.math.BigDecimal("40.00"));
+        assertThrows(OperationException.class, () -> attractions.enter("A01", group, TODAY));
+        assertEquals(1, attractions.listOccupantEmails("A01").size());
+    }
 }

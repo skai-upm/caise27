@@ -251,4 +251,27 @@ class CommandProcessorTest {
         assertTrue(processor.process("HELP").contains("ATTRACTION CREATE;<identifier>;<name>;<capacity>"));
         assertTrue(processor.process("HELP").contains("ATTRACTION LIST;<attraction>"));
     }
+
+    @Test
+    void attractionEnterCommand() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process(ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        processor.process("ATTRACTION CREATE;A03;Mini;1");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("TICKET CREATE;T002;ana@correo.com;2027-04-16");
+        processor.process("TICKET CREATE;T003;pedro@correo.com;2027-04-15");
+        assertEquals("USER ENTERED ATTRACTION: ana@correo.com", processor.process("ATTRACTION ENTER;A01;T001"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001").startsWith("ERROR: User is already inside"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T002").startsWith("ERROR: Ticket is not valid"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T999").startsWith("ERROR: Ticket not found"));
+        assertTrue(processor.process("ATTRACTION ENTER;A99;T003").startsWith("ERROR: Attraction not found"));
+        assertEquals("USER ENTERED ATTRACTION: pedro@correo.com", processor.process("ATTRACTION ENTER;A03;T003"));
+        processor.process("TICKET CREATE;T004;ana@correo.com;2027-04-15");
+        assertTrue(processor.process("ATTRACTION ENTER;A03;T004").startsWith("ERROR: Not enough capacity"));
+        processor.process("SYSTEM DATE;2027-04-16");
+        assertEquals("ana@correo.com", processor.process("ATTRACTION LIST;A01"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION ENTER;<attraction>;<ticket>"));
+    }
 }

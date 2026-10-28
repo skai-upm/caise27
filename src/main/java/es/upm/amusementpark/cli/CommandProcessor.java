@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.UserField;
@@ -40,6 +41,7 @@ public class CommandProcessor {
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "ATTRACTION ENTER;<attraction>;<ticket>",
             "ATTRACTION LIST;<attraction>",
             "HELP",
             "EXIT");
@@ -82,6 +84,7 @@ public class CommandProcessor {
                 case "GROUPTICKET CREATE" -> groupTicketCreate(parts);
                 case "GROUPTICKET DELETE" -> groupTicketDelete(parts);
                 case "ATTRACTION CREATE" -> attractionCreate(parts);
+                case "ATTRACTION ENTER" -> attractionEnter(parts);
                 case "ATTRACTION LIST" -> attractionList(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
@@ -153,6 +156,13 @@ public class CommandProcessor {
         requireArguments(parts, 3, "ATTRACTION CREATE");
         park.attractions().createAttraction(parts[1], parts[2], parseCapacity(parts[3]));
         return "ATTRACTION CREATED";
+    }
+
+    private String attractionEnter(String[] parts) throws OperationException {
+        requireArguments(parts, 2, "ATTRACTION ENTER");
+        return park.enterAttraction(parts[1], parts[2]).stream()
+                .map(u -> "USER ENTERED ATTRACTION: " + u.getEmail())
+                .collect(Collectors.joining(System.lineSeparator()));
     }
 
     private String attractionList(String[] parts) throws OperationException {

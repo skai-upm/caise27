@@ -36,6 +36,14 @@ public class TicketService {
         return repository.findById(id);
     }
 
+    /**
+     * Finds a ticket by identifier, including individual tickets inside group tickets.
+     */
+    public Optional<Ticket> findAnyById(String id) {
+        Optional<Ticket> ticket = repository.findById(id);
+        return ticket.isPresent() ? ticket : repository.findIndividualById(id).map(Ticket.class::cast);
+    }
+
     public List<Ticket> findAll() {
         return repository.findAll();
     }

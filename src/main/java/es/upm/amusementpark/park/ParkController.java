@@ -8,6 +8,7 @@ import java.util.List;
 
 import es.upm.amusementpark.model.Group;
 import es.upm.amusementpark.model.GroupTicket;
+import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.persistence.UserStorage;
 import es.upm.amusementpark.repository.AttractionRepository;
@@ -114,6 +115,18 @@ public final class ParkController {
             members.add(users.findByDni(dni).orElseThrow());
         }
         return tickets.createGroupTicket(id, group, members, date);
+    }
+
+    /**
+     * Lets the users of a ticket enter an attraction.
+     */
+    public List<User> enterAttraction(String attractionId, String ticketId) throws OperationException {
+        attractions.findById(attractionId).orElseThrow(() -> new OperationException("Attraction not found"));
+        Ticket ticket = tickets.findAnyById(ticketId).orElseThrow(() -> new OperationException("Ticket not found"));
+        if (ticket instanceof GroupTicket) {
+            throw new OperationException("Access with group tickets is not available");
+        }
+        return attractions.enter(attractionId, ticket, currentDate);
     }
 
     /**
