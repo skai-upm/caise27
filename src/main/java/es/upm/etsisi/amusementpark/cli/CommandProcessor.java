@@ -16,6 +16,8 @@ public class CommandProcessor {
     private final Map<String, Command> commands = new LinkedHashMap<>();
 
     public CommandProcessor() {
+        register("SYSTEM DATE", new SystemDateCommand());
+        register("SYSTEM PRICE", new SystemPriceCommand());
         register("HELP", new HelpCommand());
         register("EXIT", new ExitCommand());
     }

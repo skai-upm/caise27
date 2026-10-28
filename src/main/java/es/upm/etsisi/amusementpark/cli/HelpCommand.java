@@ -12,6 +12,8 @@ public class HelpCommand implements Command {
             "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
             "USER DELETE;<email>;<password>",
             "USER UPDATE;<email>;<password>;<field>;<value>",
+            "SYSTEM DATE;<yyyy-MM-dd>",
+            "SYSTEM PRICE;<Price>",
             "HELP",
             "EXIT");
 
