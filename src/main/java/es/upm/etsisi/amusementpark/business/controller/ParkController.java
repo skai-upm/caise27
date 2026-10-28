@@ -4,6 +4,10 @@ import es.upm.etsisi.amusementpark.business.exception.AlreadyExistsException;
 import es.upm.etsisi.amusementpark.business.exception.InvalidValueException;
 import es.upm.etsisi.amusementpark.business.exception.NotFoundException;
 import es.upm.etsisi.amusementpark.business.exception.OperationNotAllowedException;
+import es.upm.etsisi.amusementpark.business.invoice.GroupInvoiceBuilder;
+import es.upm.etsisi.amusementpark.business.invoice.Invoice;
+import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
+import es.upm.etsisi.amusementpark.business.invoice.UserInvoiceBuilder;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
@@ -341,6 +345,25 @@ public final class ParkController {
     /** Derived lock state of a user: any associated ticket that is still active. */
     public boolean hasActiveTickets(User user) {
         return findTicketsOfUser(user).stream().anyMatch(ticket -> ticket.isActive(currentDate));
+    }
+
+    // ---- invoices ----
+
+    /** Invoice of an active user with the tickets bought directly for them. */
+    public Invoice createUserInvoice(String email) {
+        User user = findUser(email).orElseThrow(() -> new NotFoundException("User not found: " + email));
+        List<IndividualTicket> direct = tickets.values().stream()
+                .filter(IndividualTicket.class::isInstance)
+                .map(IndividualTicket.class::cast)
+                .filter(ticket -> ticket.getUser() == user)
+                .toList();
+        return new InvoiceDirector().construct(new UserInvoiceBuilder(user, direct));
+    }
+
+    /** Invoice of an existing group with its group tickets. */
+    public Invoice createGroupInvoice(String identifier) {
+        Group group = findGroup(identifier).orElseThrow(() -> new NotFoundException("Group not found: " + identifier));
+        return new InvoiceDirector().construct(new GroupInvoiceBuilder(group, findGroupTickets(group)));
     }
 
     // ---- attractions ----
