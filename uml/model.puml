@@ -37,6 +37,15 @@ package es.upm.etsisi.amusementpark.business.model {
     - card : String
   }
 
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
   class UserValidator <<utility>> {
   }
 
@@ -256,6 +265,7 @@ PasswordHasher <|.. BCryptPasswordHasher
 ParkController ..> PasswordPolicy : validates
 UserValidator ..> PasswordPolicy : password rule
 UserValidator ..> User : validates data
+UserField ..> User : modifiable fields
 
 TextFileRepository <|-- TextUserRepository
 TextFileRepository <|-- TextGroupRepository

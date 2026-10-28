@@ -17,6 +17,7 @@ import es.upm.etsisi.amusementpark.business.model.SpecialPass;
 import es.upm.etsisi.amusementpark.business.model.SpeedPass;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
+import es.upm.etsisi.amusementpark.business.model.UserField;
 import es.upm.etsisi.amusementpark.business.model.UserValidator;
 import es.upm.etsisi.amusementpark.business.repository.ParkRepositories;
 import es.upm.etsisi.amusementpark.business.security.BCryptPasswordHasher;
@@ -332,6 +333,47 @@ public final class ParkController {
             throw new OperationNotAllowedException("Group " + identifier + " has an active group ticket and cannot be modified");
         }
         return group;
+    }
+
+    /**
+     * Changes one modifiable field of a user after checking the current e-mail and
+     * password. The new value must satisfy the rules applied at creation; the DNI
+     * cannot be modified.
+     */
+    public void updateUser(String email, String password, String fieldText, String newValue) {
+        User user = findUser(email).orElseThrow(() -> new NotFoundException("User not found: " + email));
+        if (!user.hasPassword() || !passwordHasher.matches(password, user.getPasswordHash())) {
+            throw new AuthenticationException("Incorrect password for user " + email);
+        }
+        switch (UserField.parse(fieldText)) {
+            case NAME -> user.setFirstName(newValue);
+            case SURNAME -> user.setSurnames(newValue);
+            case PHONE -> user.setPhone(newValue);
+            case EMAIL -> changeEmail(user, newValue);
+            case PASSWORD -> {
+                PasswordPolicy.validate(newValue);
+                user.setPasswordHash(passwordHasher.hash(newValue));
+            }
+            case CARD -> {
+                if (!UserValidator.isValidCard(newValue)) {
+                    throw new InvalidValueException("Invalid card number: " + newValue);
+                }
+                user.setCard(newValue);
+            }
+        }
+    }
+
+    private void changeEmail(User user, String newEmail) {
+        if (!UserValidator.isValidEmail(newEmail)) {
+            throw new InvalidValueException("Invalid email: " + newEmail);
+        }
+        User owner = users.get(newEmail);
+        if (owner != null && owner != user) {
+            throw new AlreadyExistsException("A user with email " + newEmail + " already exists");
+        }
+        users.remove(user.getEmail());
+        user.setEmail(newEmail);
+        users.put(newEmail, user);
     }
 
     /**
