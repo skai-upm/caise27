@@ -14,6 +14,9 @@ public class HelpCommand implements Command {
             "USER UPDATE;<email>;<password>;<field>;<value>",
             "SYSTEM DATE;<yyyy-MM-dd>",
             "SYSTEM PRICE;<Price>",
+            "GROUP CREATE;<Identifier>;<Name>",
+            "GROUP ADD;<Identifier>;<Email>",
+            "GROUP REMOVE;<Identifier>;<Email>",
             "HELP",
             "EXIT");
 

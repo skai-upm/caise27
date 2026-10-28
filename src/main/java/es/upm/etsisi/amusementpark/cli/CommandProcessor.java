@@ -18,6 +18,9 @@ public class CommandProcessor {
     public CommandProcessor() {
         register("SYSTEM DATE", new SystemDateCommand());
         register("SYSTEM PRICE", new SystemPriceCommand());
+        register("GROUP CREATE", new GroupCreateCommand());
+        register("GROUP ADD", new GroupAddCommand());
+        register("GROUP REMOVE", new GroupRemoveCommand());
         register("HELP", new HelpCommand());
         register("EXIT", new ExitCommand());
     }
