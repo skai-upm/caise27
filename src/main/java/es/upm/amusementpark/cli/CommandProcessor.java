@@ -1,5 +1,6 @@
 package es.upm.amusementpark.cli;
 
+import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.service.UserOperationException;
 import es.upm.amusementpark.service.UserService;
 
@@ -34,6 +35,7 @@ public class CommandProcessor {
             return switch (parts[0]) {
                 case "USER CREATE" -> userCreate(parts);
                 case "USER DELETE" -> userDelete(parts);
+                case "USER UPDATE" -> userUpdate(parts);
                 default -> error("Unknown command");
             };
         } catch (UserOperationException e) {
@@ -51,6 +53,14 @@ public class CommandProcessor {
         requireArguments(parts, 2, "USER DELETE");
         userService.deleteUser(parts[1], parts[2]);
         return "USER DELETED";
+    }
+
+    private String userUpdate(String[] parts) throws UserOperationException {
+        requireArguments(parts, 4, "USER UPDATE");
+        UserField field = UserField.fromName(parts[3])
+                .orElseThrow(() -> new UserOperationException("Field cannot be modified: " + parts[3]));
+        userService.updateUser(parts[1], parts[2], field, parts[4]);
+        return "USER UPDATED";
     }
 
     private static void requireArguments(String[] parts, int expected, String command)

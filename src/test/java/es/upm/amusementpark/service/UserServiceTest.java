@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.persistence.InMemoryUserStorage;
 import es.upm.amusementpark.repository.UserRepository;
 
@@ -81,5 +82,69 @@ class UserServiceTest {
         assertTrue(wrong.getMessage().contains("Incorrect password"));
         assertEquals(1, repository.findAll().size());
         assertEquals(1, storage.saved().size());
+    }
+
+    private void createAnaAndPedro() throws UserOperationException {
+        create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
+        service.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
+                "9876543210987654");
+    }
+
+    @Test
+    void updateEachModifiableField() throws UserOperationException {
+        createAnaAndPedro();
+        service.updateUser("ana@correo.com", "Clave1!", UserField.NAME, "Ana Maria");
+        service.updateUser("ana@correo.com", "Clave1!", UserField.SURNAME, "Garcia");
+        service.updateUser("ana@correo.com", "Clave1!", UserField.PHONE, "699999999");
+        service.updateUser("ana@correo.com", "Clave1!", UserField.CARD, "9999888877776666");
+        service.updateUser("ana@correo.com", "Clave1!", UserField.EMAIL, "ana.nueva@correo.com");
+        service.updateUser("ana.nueva@correo.com", "Clave1!", UserField.PASSWORD, "Nueva2#");
+        var ana = repository.findByDni("12345678Z").orElseThrow();
+        assertEquals("Ana Maria", ana.getFirstName());
+        assertEquals("Garcia", ana.getSurnames());
+        assertEquals("699999999", ana.getPhone());
+        assertEquals("9999888877776666", ana.getCardNumber());
+        assertEquals("ana.nueva@correo.com", ana.getEmail());
+        assertEquals("Nueva2#", ana.getPassword());
+        assertEquals("12345678Z", storage.saved().get(0).getDni());
+        assertEquals("Nueva2#", storage.saved().get(0).getPassword());
+        assertEquals("87654321X", storage.saved().get(1).getDni());
+    }
+
+    private void assertUpdateRejected(String reason, String email, String password, UserField field, String value) {
+        UserOperationException e = assertThrows(UserOperationException.class,
+                () -> service.updateUser(email, password, field, value));
+        assertTrue(e.getMessage().contains(reason), e.getMessage());
+    }
+
+    @Test
+    void invalidUpdatesAreRejectedAndNothingChanges() throws UserOperationException {
+        createAnaAndPedro();
+        assertUpdateRejected("Incorrect password", "ana@correo.com", "Mala1!", UserField.PHONE, "6");
+        assertUpdateRejected("not found", "nadie@correo.com", "Clave1!", UserField.PHONE, "6");
+        assertUpdateRejected("already exists", "ana@correo.com", "Clave1!", UserField.EMAIL, "pedro@correo.com");
+        assertUpdateRejected("Invalid email", "ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo");
+        assertUpdateRejected("Invalid password", "ana@correo.com", "Clave1!", UserField.PASSWORD, "clave1!");
+        assertUpdateRejected("Invalid card", "ana@correo.com", "Clave1!", UserField.CARD, "123456789012345");
+        var ana = repository.findByDni("12345678Z").orElseThrow();
+        assertEquals("ana@correo.com", ana.getEmail());
+        assertEquals("Clave1!", ana.getPassword());
+        assertEquals("1234567890123456", ana.getCardNumber());
+        assertEquals("612345678", ana.getPhone());
+    }
+
+    @Test
+    void keepingOwnEmailIsAllowed() throws UserOperationException {
+        createAnaAndPedro();
+        service.updateUser("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo.com");
+        assertEquals("ana@correo.com", repository.findByDni("12345678Z").orElseThrow().getEmail());
+    }
+
+    @Test
+    void failedSaveLeavesUserUnchanged() throws UserOperationException {
+        createAnaAndPedro();
+        storage.setFailing(true);
+        assertUpdateRejected("Could not save", "ana@correo.com", "Clave1!", UserField.PHONE, "699999999");
+        assertEquals("612345678", repository.findByDni("12345678Z").orElseThrow().getPhone());
     }
 }

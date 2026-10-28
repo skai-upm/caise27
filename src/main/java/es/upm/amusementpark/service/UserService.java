@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.model.UserValidator;
 import es.upm.amusementpark.persistence.UserStorage;
 import es.upm.amusementpark.repository.UserRepository;
@@ -58,6 +59,51 @@ public class UserService {
         users.remove(user);
         persist(users);
         repository.delete(user.getDni());
+    }
+
+    /**
+     * Changes one modifiable field of the user identified by email and password. The new value must
+     * satisfy the same rules as on creation.
+     */
+    public void updateUser(String email, String password, UserField field, String value)
+            throws UserOperationException {
+        User user = authenticate(email, password);
+        User updated = copy(user);
+        switch (field) {
+            case NAME -> updated.setFirstName(value);
+            case SURNAME -> updated.setSurnames(value);
+            case EMAIL -> {
+                if (!UserValidator.isValidEmail(value)) {
+                    throw new UserOperationException("Invalid email");
+                }
+                if (repository.findByEmail(value).filter(other -> other != user).isPresent()) {
+                    throw new UserOperationException("A user with this email already exists");
+                }
+                updated.setEmail(value);
+            }
+            case PASSWORD -> {
+                if (!UserValidator.isValidPassword(value)) {
+                    throw new UserOperationException("Invalid password");
+                }
+                updated.setPassword(value);
+            }
+            case PHONE -> updated.setPhone(value);
+            case CARD -> {
+                if (!UserValidator.isValidCardNumber(value)) {
+                    throw new UserOperationException("Invalid card number");
+                }
+                updated.setCardNumber(value);
+            }
+        }
+        List<User> users = repository.findAll();
+        users.set(users.indexOf(user), updated);
+        persist(users);
+        repository.save(updated);
+    }
+
+    private static User copy(User u) {
+        return new User(u.getFirstName(), u.getSurnames(), u.getDni(), u.getEmail(), u.getPassword(), u.getPhone(),
+                u.getCardNumber());
     }
 
     private User authenticate(String email, String password) throws UserOperationException {

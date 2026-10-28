@@ -71,4 +71,20 @@ class CommandProcessorTest {
         assertTrue(processor.process("USER DELETE;ana@correo.com").startsWith("ERROR: Wrong number of arguments"));
         assertEquals(1, repository.findAll().size());
     }
+
+    @Test
+    void userUpdateChangesFieldsAndRejectsDni() {
+        processor.process(ANA);
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria"));
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com"));
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana.nueva@correo.com;Clave1!;PASSWORD;Nueva2#"));
+        assertEquals("USER UPDATED", processor.process("USER UPDATE;ana.nueva@correo.com;Nueva2#;CARD;9999888877776666"));
+        assertTrue(processor.process("USER UPDATE;ana.nueva@correo.com;Nueva2#;DNI;87654321X")
+                .startsWith("ERROR: Field cannot be modified"));
+        assertTrue(processor.process("USER UPDATE;ana.nueva@correo.com;Nueva2#;CARD")
+                .startsWith("ERROR: Wrong number of arguments"));
+        var ana = repository.findByDni("12345678Z").orElseThrow();
+        assertEquals("Ana Maria", ana.getFirstName());
+        assertEquals("9999888877776666", ana.getCardNumber());
+    }
 }
