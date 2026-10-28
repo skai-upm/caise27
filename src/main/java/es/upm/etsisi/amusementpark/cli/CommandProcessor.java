@@ -14,6 +14,7 @@ import java.util.Map;
 public class CommandProcessor {
 
     private final Map<String, Command> commands = new LinkedHashMap<>();
+    private Runnable afterCommand = () -> { };
 
     public CommandProcessor() {
         register("SYSTEM DATE", new SystemDateCommand());
@@ -40,12 +41,23 @@ public class CommandProcessor {
     }
 
     /**
+     * Sets an action executed after every processed command (e.g. saving the park state).
+     */
+    public void setAfterCommand(Runnable afterCommand) {
+        this.afterCommand = afterCommand;
+    }
+
+    /**
      * Processes the lines of {@code in}. No line after an EXIT command is read.
      */
     public void run(BufferedReader in, PrintStream out) throws IOException {
         String line;
         while ((line = in.readLine()) != null) {
-            if (process(line, out)) {
+            boolean stop = process(line, out);
+            if (!line.isBlank()) {
+                afterCommand.run();
+            }
+            if (stop) {
                 return;
             }
         }

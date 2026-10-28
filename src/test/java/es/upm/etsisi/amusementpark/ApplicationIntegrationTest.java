@@ -16,10 +16,13 @@ import org.junit.jupiter.api.io.TempDir;
 
 class ApplicationIntegrationTest {
 
-    private static String run(String[] args, String stdin) {
+    @TempDir
+    Path workDir;
+
+    private String run(String[] args, String stdin) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(buffer, true, StandardCharsets.UTF_8));
+                new PrintStream(buffer, true, StandardCharsets.UTF_8), workDir);
         return buffer.toString(StandardCharsets.UTF_8);
     }
 

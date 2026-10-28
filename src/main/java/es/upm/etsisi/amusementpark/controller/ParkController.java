@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,14 +42,50 @@ public final class ParkController {
         return INSTANCE;
     }
 
-    /** Restores the start-of-execution state. */
-    void reset() {
+    /** Restores the start-of-execution state: local date, initial price, no elements. */
+    public void reset() {
         currentDate = LocalDate.now();
         currentPrice = INITIAL_PRICE;
         users.clear();
         groups.clear();
         tickets.clear();
         attractions.clear();
+    }
+
+    public Collection<User> getUsers() {
+        return Collections.unmodifiableCollection(users.values());
+    }
+
+    public Collection<Group> getGroups() {
+        return Collections.unmodifiableCollection(groups.values());
+    }
+
+    /** Top-level tickets (individual tickets and group tickets). */
+    public Collection<Ticket> getTickets() {
+        return Collections.unmodifiableCollection(tickets.values());
+    }
+
+    public Collection<Attraction> getAttractions() {
+        return Collections.unmodifiableCollection(attractions.values());
+    }
+
+    // ---- restoration of persisted state (no business-rule checks besides consistency) ----
+
+    /** Adds a stored member to a stored group. */
+    public void restoreGroupMember(Group group, User user) {
+        group.addMember(user);
+    }
+
+    /** Registers a stored ticket, keeping the shared identifier space consistent. */
+    public void restoreTicket(Ticket ticket) {
+        registerTicket(ticket);
+    }
+
+    public void restoreAttraction(Attraction attraction) {
+        if (attractions.containsKey(attraction.getIdentifier())) {
+            throw new IllegalArgumentException("Attraction already exists: " + attraction.getIdentifier());
+        }
+        attractions.put(attraction.getIdentifier(), attraction);
     }
 
     public LocalDate getCurrentDate() {

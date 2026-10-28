@@ -40,6 +40,15 @@ public class GroupTicket extends Ticket {
     }
 
     /**
+     * Rebuilds a previously purchased group ticket with its stored composition.
+     * {@code group} is {@code null} when the purchasing group no longer exists.
+     */
+    public static GroupTicket restore(String identifier, LocalDate date, Group group,
+            List<IndividualTicket> composition) {
+        return new GroupTicket(identifier, date, group, composition);
+    }
+
+    /**
      * Discount percentage for the number of members included in the purchase.
      */
     public static int discountFor(int members) {
