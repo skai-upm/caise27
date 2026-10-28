@@ -1,6 +1,9 @@
 package es.upm.etsisi.amusementpark.business.invoice;
 
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.Pass;
+import es.upm.etsisi.amusementpark.business.model.SpecialPass;
+import es.upm.etsisi.amusementpark.business.model.SpeedPass;
 import es.upm.etsisi.amusementpark.business.model.User;
 
 import java.util.List;
@@ -12,14 +15,17 @@ public class UserInvoiceBuilder extends InvoiceBuilder {
 
     private final User user;
     private final List<IndividualTicket> directTickets;
+    private final List<Pass> passes;
 
     /**
      * @param directTickets individual tickets bought directly for the user (not part of a group ticket)
+     * @param passes        passes associated with any of the user's individual tickets
      */
-    public UserInvoiceBuilder(User user, List<IndividualTicket> directTickets) {
+    public UserInvoiceBuilder(User user, List<IndividualTicket> directTickets, List<Pass> passes) {
         super("USER");
         this.user = user;
         this.directTickets = List.copyOf(directTickets);
+        this.passes = List.copyOf(passes);
     }
 
     @Override
@@ -41,8 +47,18 @@ public class UserInvoiceBuilder extends InvoiceBuilder {
                 .toList());
     }
 
-    /** Personal passes of the user's tickets; the park offers no passes yet. */
+    /** Personal passes, including those of tickets that are part of a group ticket. */
     private void buildPassSections() {
-        // no pass products exist yet
+        addSection("SpeedPasses", passItems(SpeedPass.class));
+        addSection("Special Pass", passItems(SpecialPass.class));
+    }
+
+    private List<InvoiceItem> passItems(Class<? extends Pass> type) {
+        return passes.stream()
+                .filter(type::isInstance)
+                .map(pass -> new InvoiceItem("Pass " + pass.getIdentifier() + " for ticket "
+                        + pass.getTicket().getIdentifier() + (pass.isConsumed() ? " (consumed)" : ""),
+                        pass.getPrice(), List.of()))
+                .toList();
     }
 }

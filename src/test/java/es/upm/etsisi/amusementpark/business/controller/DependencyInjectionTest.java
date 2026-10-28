@@ -8,11 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import es.upm.etsisi.amusementpark.business.exception.OperationNotAllowedException;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.Group;
+import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.Pass;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.repository.AttractionRepository;
 import es.upm.etsisi.amusementpark.business.repository.GroupRepository;
 import es.upm.etsisi.amusementpark.business.repository.ParkRepositories;
+import es.upm.etsisi.amusementpark.business.repository.PassRepository;
 import es.upm.etsisi.amusementpark.business.repository.TicketRepository;
 import es.upm.etsisi.amusementpark.business.repository.UserRepository;
 
@@ -89,6 +92,19 @@ class DependencyInjectionTest {
         }
     }
 
+    private static final class MemoryPasses implements PassRepository {
+        public List<Pass> load(Function<String, Optional<IndividualTicket>> tickets) {
+            return List.of();
+        }
+
+        public void save(Collection<Pass> passes) {
+        }
+
+        public List<String> getProblems() {
+            return List.of();
+        }
+    }
+
     private final ParkController park = ParkController.getInstance();
 
     @AfterEach
@@ -101,7 +117,7 @@ class DependencyInjectionTest {
     void alternativeRepositoriesAreInjected() {
         MemoryUsers users = new MemoryUsers();
         MemoryAttractions attractions = new MemoryAttractions();
-        park.configure(new ParkRepositories(users, new MemoryGroups(), new MemoryTickets(), attractions));
+        park.configure(new ParkRepositories(users, new MemoryGroups(), new MemoryTickets(), attractions, new MemoryPasses()));
         park.reset();
         park.addUser(new User("12345678Z", "ana@correo.com"));
         park.createAttraction("A01", "Dragon Rojo", "20");

@@ -10,6 +10,9 @@ import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.Pass;
+import es.upm.etsisi.amusementpark.business.model.SpecialPass;
+import es.upm.etsisi.amusementpark.business.model.SpeedPass;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.repository.ParkRepositories;
@@ -43,6 +46,7 @@ public final class ParkController {
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Pass> passes = new LinkedHashMap<>();
     private ParkRepositories repositories;
     private PasswordHasher passwordHasher = new BCryptPasswordHasher();
 
@@ -62,6 +66,7 @@ public final class ParkController {
         groups.clear();
         tickets.clear();
         attractions.clear();
+        passes.clear();
     }
 
     /**
@@ -129,10 +134,14 @@ public final class ParkController {
         for (Attraction attraction : repositories.attractions().load()) {
             restore(problems, () -> restoreAttraction(attraction));
         }
+        for (Pass pass : repositories.passes().load(this::findIndividualTicket)) {
+            restore(problems, () -> registerPasses(List.of(pass)));
+        }
         problems.addAll(repositories.users().getProblems());
         problems.addAll(repositories.groups().getProblems());
         problems.addAll(repositories.tickets().getProblems());
         problems.addAll(repositories.attractions().getProblems());
+        problems.addAll(repositories.passes().getProblems());
         return problems;
     }
 
@@ -145,6 +154,7 @@ public final class ParkController {
         repositories.groups().save(getGroups());
         repositories.tickets().save(getTickets());
         repositories.attractions().save(getAttractions());
+        repositories.passes().save(getPasses());
     }
 
     /** The active user with that DNI and e-mail, otherwise one shared historical user record. */
@@ -182,6 +192,10 @@ public final class ParkController {
     /** Top-level tickets (individual tickets and group tickets). */
     public Collection<Ticket> getTickets() {
         return Collections.unmodifiableCollection(tickets.values());
+    }
+
+    public Collection<Pass> getPasses() {
+        return Collections.unmodifiableCollection(passes.values());
     }
 
     public Collection<Attraction> getAttractions() {
@@ -396,6 +410,7 @@ public final class ParkController {
             throw new OperationNotAllowedException("Ticket " + identifier
                     + " is for the current day or an earlier date and cannot be deleted");
         }
+        removePassesOf(ticket);
         tickets.remove(identifier);
     }
 
@@ -430,7 +445,97 @@ public final class ParkController {
             throw new OperationNotAllowedException("Group ticket " + identifier
                     + " is for the current day or an earlier date and cannot be deleted");
         }
+        removePassesOf(ticket);
         tickets.remove(identifier);
+    }
+
+    /** Removes every pass associated with the individual tickets of {@code ticket}. */
+    private void removePassesOf(Ticket ticket) {
+        List<IndividualTicket> parts = ticket.getIndividualTickets();
+        passes.values().removeIf(pass -> parts.contains(pass.getTicket()));
+    }
+
+    // ---- passes ----
+
+    /** An individual ticket, standalone or part of a group ticket's composition. */
+    public Optional<IndividualTicket> findIndividualTicket(String identifier) {
+        return findAnyTicket(identifier).filter(IndividualTicket.class::isInstance).map(IndividualTicket.class::cast);
+    }
+
+    public Optional<Pass> findPass(String identifier) {
+        return Optional.ofNullable(passes.get(identifier));
+    }
+
+    /** Passes associated with {@code ticket}, found by traversal. */
+    public List<Pass> findPassesOf(IndividualTicket ticket) {
+        return passes.values().stream().filter(pass -> pass.getTicket() == ticket).toList();
+    }
+
+    /**
+     * Buys 1 or 10 SpeedPasses identified {@code purchaseIdentifier:n} for an individual ticket.
+     * All identifiers are checked before any pass is created.
+     */
+    public List<SpeedPass> buySpeedPasses(String purchaseIdentifier, String ticketIdentifier, String quantityText) {
+        if (!quantityText.equals("1") && !quantityText.equals("10")) {
+            throw new InvalidValueException("Invalid quantity, expected 1 or 10: " + quantityText);
+        }
+        IndividualTicket ticket = purchasableTicket(ticketIdentifier);
+        List<SpeedPass> created = new ArrayList<>();
+        for (int n = 1; n <= Integer.parseInt(quantityText); n++) {
+            created.add(new SpeedPass(purchaseIdentifier + ":" + n, ticket));
+        }
+        registerPasses(created);
+        return created;
+    }
+
+    /**
+     * Buys the only Special Pass an individual ticket may have.
+     */
+    public SpecialPass buySpecialPass(String identifier, String ticketIdentifier) {
+        IndividualTicket ticket = purchasableTicket(ticketIdentifier);
+        if (findPassesOf(ticket).stream().anyMatch(SpecialPass.class::isInstance)) {
+            throw new OperationNotAllowedException("Ticket " + ticketIdentifier + " already has a Special Pass");
+        }
+        SpecialPass pass = new SpecialPass(identifier, ticket);
+        registerPasses(List.of(pass));
+        return pass;
+    }
+
+    public void refundSpeedPass(String identifier) {
+        refund(identifier, SpeedPass.class, "SpeedPass");
+    }
+
+    public void refundSpecialPass(String identifier) {
+        refund(identifier, SpecialPass.class, "Special Pass");
+    }
+
+    private void refund(String identifier, Class<? extends Pass> type, String name) {
+        Pass pass = findPass(identifier).filter(type::isInstance)
+                .orElseThrow(() -> new NotFoundException(name + " not found: " + identifier));
+        if (!pass.isRefundable(currentDate)) {
+            throw new OperationNotAllowedException(name + " " + identifier
+                    + " is consumed or its ticket is not dated after the current date and cannot be refunded");
+        }
+        passes.remove(identifier);
+    }
+
+    private IndividualTicket purchasableTicket(String ticketIdentifier) {
+        IndividualTicket ticket = findIndividualTicket(ticketIdentifier)
+                .orElseThrow(() -> new NotFoundException("Individual ticket not found: " + ticketIdentifier));
+        if (ticket.getDate().isBefore(currentDate)) {
+            throw new OperationNotAllowedException("Ticket " + ticketIdentifier + " is for a past date");
+        }
+        return ticket;
+    }
+
+    /** Registers passes only if none of their identifiers is in use. */
+    private void registerPasses(List<? extends Pass> newPasses) {
+        for (Pass pass : newPasses) {
+            if (passes.containsKey(pass.getIdentifier())) {
+                throw new AlreadyExistsException("Pass identifier already in use: " + pass.getIdentifier());
+            }
+        }
+        newPasses.forEach(pass -> passes.put(pass.getIdentifier(), pass));
     }
 
     /** The individual tickets (standalone or composed) of a user, found by traversal. */

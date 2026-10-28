@@ -80,6 +80,20 @@ class TextRepositoriesTest {
     }
 
     @Test
+    void passesSurviveRestart() {
+        controller.buySpeedPasses("SP01", "T001", "10");
+        controller.buySpecialPass("PE01", "TG01:12345678Z");
+        controller.findPass("SP01:2").orElseThrow().consume();
+        assertEquals(List.of(), reload());
+        assertEquals(11, controller.getPasses().size());
+        assertEquals(new BigDecimal("9.10"), controller.findPass("SP01:1").orElseThrow().getPrice());
+        assertTrue(controller.findPass("SP01:2").orElseThrow().isConsumed());
+        assertSame(controller.findIndividualTicket("TG01:12345678Z").orElseThrow(),
+                controller.findPass("PE01").orElseThrow().getTicket());
+        assertEquals(new BigDecimal("45.50"), controller.findPass("PE01").orElseThrow().getPrice());
+    }
+
+    @Test
     void attractionsStartEmptyAndSystemValuesReset() {
         controller.setCurrentDate("2027-04-15");
         controller.enterAttraction("A01", "T001");

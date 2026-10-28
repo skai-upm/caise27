@@ -35,6 +35,18 @@ package es.upm.etsisi.amusementpark.business.model {
   class GroupTicket {
   }
 
+  abstract class Pass {
+    - identifier : String
+    - price : BigDecimal
+    - consumed : boolean
+  }
+
+  class SpeedPass {
+  }
+
+  class SpecialPass {
+  }
+
   class Attraction {
     - identifier : String
     - name : String
@@ -44,17 +56,21 @@ package es.upm.etsisi.amusementpark.business.model {
 
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
 
 IndividualTicket "*" --> "1" User : user
 GroupTicket "1" *--> "1..*" IndividualTicket : composition
 GroupTicket "*" --> "0..1" Group : group
 Group "*" o--> "*" User : members
 Attraction "0..1" o--> "0..*" User : occupants
+Pass "*" --> "1" IndividualTicket : ticket
 
 ParkController "1" *--> "*" User : users
 ParkController "1" *--> "*" Group : groups
 ParkController "1" *--> "*" Ticket : tickets
 ParkController "1" *--> "*" Attraction : attractions
+ParkController "1" *--> "*" Pass : passes
 
 note bottom of Ticket
   price = sum of the prices of

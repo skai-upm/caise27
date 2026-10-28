@@ -8,6 +8,7 @@ import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.etsisi.amusementpark.business.invoice.UserInvoiceBuilder;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.Pass;
 import es.upm.etsisi.amusementpark.business.model.User;
 
 import java.util.List;
@@ -44,7 +45,10 @@ public final class InvoiceController {
                 .map(IndividualTicket.class::cast)
                 .filter(ticket -> ticket.getUser() == user)
                 .toList();
-        return director.construct(new UserInvoiceBuilder(user, direct));
+        List<Pass> passes = state.getPasses().stream()
+                .filter(pass -> pass.getTicket().getUser() == user)
+                .toList();
+        return director.construct(new UserInvoiceBuilder(user, direct, passes));
     }
 
     /** Invoice of an existing group with its group tickets. */

@@ -24,7 +24,7 @@ class InvoiceBuilderTest {
     void userInvoiceWithDirectTickets() {
         Invoice invoice = director.construct(new UserInvoiceBuilder(ana, List.of(
                 new IndividualTicket("T001", date, ana, new BigDecimal("40.00")),
-                new IndividualTicket("T002", date, ana, new BigDecimal("45.50")))));
+                new IndividualTicket("T002", date, ana, new BigDecimal("45.50"))), List.of()));
         assertEquals("USER", invoice.getTitle());
         assertEquals(List.of("User: ana@correo.com", "DNI: 12345678Z"), invoice.getRecipient());
         assertEquals(1, invoice.getSections().size());
@@ -34,7 +34,7 @@ class InvoiceBuilderTest {
 
     @Test
     void emptySectionsAreOmitted() {
-        Invoice user = director.construct(new UserInvoiceBuilder(ana, List.of()));
+        Invoice user = director.construct(new UserInvoiceBuilder(ana, List.of(), List.of()));
         assertTrue(user.getSections().isEmpty());
         assertEquals(new BigDecimal("0.00"), user.getTotal());
         Invoice group = director.construct(new GroupInvoiceBuilder(new Group("G01", "Familia"), List.of()));
@@ -59,7 +59,7 @@ class InvoiceBuilderTest {
 
     @Test
     void builderCanBeReused() {
-        UserInvoiceBuilder builder = new UserInvoiceBuilder(ana, List.of());
+        UserInvoiceBuilder builder = new UserInvoiceBuilder(ana, List.of(), List.of());
         director.construct(builder);
         assertEquals(2, director.construct(builder).getRecipient().size());
     }

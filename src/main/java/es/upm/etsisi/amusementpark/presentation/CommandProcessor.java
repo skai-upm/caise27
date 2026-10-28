@@ -40,6 +40,10 @@ public class CommandProcessor {
         register("TICKET DELETE", new TicketDeleteCommand(park));
         register("GROUPTICKET CREATE", new GroupTicketCreateCommand(park));
         register("GROUPTICKET DELETE", new GroupTicketDeleteCommand(park));
+        register("SPEEDPASS CREATE", new SpeedPassCreateCommand(park));
+        register("SPEEDPASS DELETE", new SpeedPassDeleteCommand(park));
+        register("SPECIALPASS CREATE", new SpecialPassCreateCommand(park));
+        register("SPECIALPASS DELETE", new SpecialPassDeleteCommand(park));
         register("ATTRACTION CREATE", new AttractionCreateCommand(park));
         register("ATTRACTION LIST", new AttractionListCommand(park));
         register("ATTRACTION ENTER", new AttractionEnterCommand(park));

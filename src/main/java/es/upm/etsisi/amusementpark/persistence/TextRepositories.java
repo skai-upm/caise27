@@ -18,6 +18,7 @@ public final class TextRepositories {
                 new TextUserRepository(directory.resolve("users.txt")),
                 new TextGroupRepository(directory.resolve("groups.txt")),
                 new TextTicketRepository(directory.resolve("tickets.txt")),
-                new TextAttractionRepository(directory.resolve("attractions.txt")));
+                new TextAttractionRepository(directory.resolve("attractions.txt")),
+                new TextPassRepository(directory.resolve("passes.txt")));
     }
 }
