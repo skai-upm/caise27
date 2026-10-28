@@ -47,15 +47,54 @@ package es.upm.etsisi.amusementpark.business.model {
   class SpecialPass {
   }
 
-  class Attraction {
+  interface Admission {
+  }
+
+  interface IndividualAdmission {
+  }
+
+  interface GroupAdmission {
+  }
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+
+  abstract class Attraction<T extends Admission> {
     - identifier : String
     - name : String
     - capacity : int
+    - admissionType : Class<T>
+  }
+
+  class GeneralAttraction {
+  }
+
+  class IndividualAttraction {
+  }
+
+  class GroupAttraction {
+  }
+
+  class SpecialAttraction {
   }
 }
 
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+Admission <|-- IndividualAdmission
+Admission <|-- GroupAdmission
+Admission <|.. Ticket
+IndividualAdmission <|.. IndividualTicket
+GroupAdmission <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <<bind>> T -> Admission
+Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualAdmission
+Attraction <|-- GroupAttraction : <<bind>> T -> GroupAdmission
+Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualAdmission
+Attraction ..> AttractionType : type
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 

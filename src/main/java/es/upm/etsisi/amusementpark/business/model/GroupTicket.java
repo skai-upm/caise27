@@ -10,7 +10,7 @@ import java.util.List;
  * A joint ticket bought by a group, composed of one individual ticket per member
  * at purchase time. The composition never changes afterwards.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAdmission {
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 

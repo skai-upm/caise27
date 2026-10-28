@@ -77,13 +77,13 @@ class DependencyInjectionTest {
     }
 
     private static final class MemoryAttractions implements AttractionRepository {
-        private List<Attraction> stored = new ArrayList<>();
+        private List<Attraction<?>> stored = new ArrayList<>();
 
-        public List<Attraction> load() {
+        public List<Attraction<?>> load() {
             return stored;
         }
 
-        public void save(Collection<Attraction> attractions) {
+        public void save(Collection<Attraction<?>> attractions) {
             stored = new ArrayList<>(attractions);
         }
 

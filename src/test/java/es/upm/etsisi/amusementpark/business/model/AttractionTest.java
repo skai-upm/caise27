@@ -16,7 +16,7 @@ class AttractionTest {
 
     @Test
     void newAttractionIsEmpty() {
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction attraction = new GeneralAttraction("A01", "Dragon Rojo", 20);
         assertEquals("A01", attraction.getIdentifier());
         assertEquals("Dragon Rojo", attraction.getName());
         assertEquals(20, attraction.getCapacity());
@@ -25,7 +25,7 @@ class AttractionTest {
 
     @Test
     void capacityNeverExceeded() {
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 1);
+        Attraction attraction = new GeneralAttraction("A01", "Dragon Rojo", 1);
         attraction.addOccupant(ana);
         assertThrows(ParkException.class, () -> attraction.addOccupant(pedro));
         assertEquals(1, attraction.getOccupants().size());
@@ -33,7 +33,7 @@ class AttractionTest {
 
     @Test
     void noDuplicateOccupantsAndRemoval() {
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 5);
+        Attraction attraction = new GeneralAttraction("A01", "Dragon Rojo", 5);
         attraction.addOccupant(ana);
         assertThrows(ParkException.class, () -> attraction.addOccupant(ana));
         attraction.removeOccupant(ana);
@@ -43,7 +43,7 @@ class AttractionTest {
 
     @Test
     void admitIsAllOrNothing() {
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 2);
+        Attraction attraction = new GeneralAttraction("A01", "Dragon Rojo", 2);
         User luis = new User("11111111H", "luis@correo.com");
         attraction.admit(List.of(ana));
         assertThrows(ParkException.class, () -> attraction.admit(List.of(pedro, luis)));

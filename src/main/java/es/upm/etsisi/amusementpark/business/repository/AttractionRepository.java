@@ -10,9 +10,9 @@ import java.util.List;
  */
 public interface AttractionRepository {
 
-    List<Attraction> load();
+    List<Attraction<?>> load();
 
-    void save(Collection<Attraction> attractions);
+    void save(Collection<Attraction<?>> attractions);
 
     List<String> getProblems();
 }

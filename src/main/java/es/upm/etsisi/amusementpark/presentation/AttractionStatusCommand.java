@@ -16,7 +16,7 @@ public class AttractionStatusCommand extends ControllerCommand<ParkController> {
 
     @Override
     protected String run(ParkController controller, String[] fields) {
-        Attraction attraction = controller.findAttraction(fields[0])
+        Attraction<?> attraction = controller.findAttraction(fields[0])
                 .orElseThrow(() -> new NotFoundException("Attraction not found: " + fields[0]));
         StringBuilder occupants = new StringBuilder();
         for (User user : attraction.getOccupants()) {
@@ -28,6 +28,7 @@ public class AttractionStatusCommand extends ControllerCommand<ParkController> {
         String nl = System.lineSeparator();
         return "ATTRACTION: " + attraction.getIdentifier() + nl
                 + "NAME: " + attraction.getName() + nl
+                + "TYPE: " + attraction.getType() + nl
                 + "CAPACITY: " + attraction.getCapacity() + nl
                 + "USERS INSIDE: " + attraction.getOccupants().size() + nl
                 + "AVAILABLE PLACES: " + attraction.getAvailablePlaces() + nl

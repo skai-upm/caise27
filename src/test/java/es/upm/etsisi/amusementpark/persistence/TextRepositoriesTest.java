@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.model.AttractionType;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
 import es.upm.etsisi.amusementpark.business.model.User;
@@ -80,6 +81,17 @@ class TextRepositoriesTest {
     }
 
     @Test
+    void attractionTypesSurviveRestartAndUntypedLinesAreGeneral() throws Exception {
+        controller.createAttraction("A04", "Pasaje del Terror", "15", "SPECIAL");
+        reload();
+        assertEquals(AttractionType.SPECIAL, controller.findAttraction("A04").orElseThrow().getType());
+        Files.writeString(directory.resolve("attractions.txt"), "A01;Dragon Rojo;20\n");
+        controller.reset();
+        assertEquals(List.of(), controller.loadState());
+        assertEquals(AttractionType.GENERAL, controller.findAttraction("A01").orElseThrow().getType());
+    }
+
+    @Test
     void passesSurviveRestart() {
         controller.buySpeedPasses("SP01", "T001", "10");
         controller.buySpecialPass("PE01", "TG01:12345678Z");
@@ -136,7 +148,7 @@ class TextRepositoriesTest {
         assertEquals("12345678Z;ana@correo.com;", Files.readAllLines(directory.resolve("users.txt")).get(0));
         assertEquals("G01;Familia Garcia;ana@correo.com;pedro@correo.com",
                 Files.readAllLines(directory.resolve("groups.txt")).get(0));
-        assertEquals("A01;Dragon Rojo;20", Files.readAllLines(directory.resolve("attractions.txt")).get(0));
+        assertEquals("A01;Dragon Rojo;20;GENERAL", Files.readAllLines(directory.resolve("attractions.txt")).get(0));
         assertEquals("I;T001;2027-04-15;45.50;12345678Z;ana@correo.com",
                 Files.readAllLines(directory.resolve("tickets.txt")).get(0));
     }

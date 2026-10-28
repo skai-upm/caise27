@@ -2,26 +2,67 @@ package es.upm.etsisi.amusementpark.business.model;
 
 import es.upm.etsisi.amusementpark.business.exception.NotFoundException;
 import es.upm.etsisi.amusementpark.business.exception.OperationNotAllowedException;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * A park attraction. It references the users currently inside it; users do not
- * reference attractions.
+ * reference attractions. The type parameter is the ticket access capability the
+ * attraction accepts: only admissions of type {@code T} can enter.
+ *
+ * @param <T> accepted access capability
  */
-public class Attraction {
+public abstract class Attraction<T extends Admission> {
 
     private final String identifier;
     private final String name;
     private final int capacity;
     private final List<User> occupants = new ArrayList<>();
+    private final Class<T> admissionType;
 
-    public Attraction(String identifier, String name, int capacity) {
+    protected Attraction(String identifier, String name, int capacity, Class<T> admissionType) {
         this.identifier = identifier;
         this.name = name;
         this.capacity = capacity;
+        this.admissionType = admissionType;
+    }
+
+    public abstract AttractionType getType();
+
+    public boolean accepts(Admission admission) {
+        return admissionType.isInstance(admission);
+    }
+
+    /**
+     * Entry with a ticket of any type: rejected unless the attraction accepts it.
+     *
+     * @param passes passes associated with the admission's individual tickets
+     * @return the users that entered
+     */
+    public final List<User> enterWith(Admission admission, Collection<Pass> passes) {
+        if (!accepts(admission)) {
+            throw new OperationNotAllowedException(getType() + " attraction " + identifier
+                    + " does not accept ticket " + admission.getIdentifier());
+        }
+        return enter(admissionType.cast(admission), passes);
+    }
+
+    /**
+     * Lets the users of an accepted admission enter together, after the type-specific checks.
+     */
+    public List<User> enter(T admission, Collection<Pass> passes) {
+        checkEntry(admission, passes);
+        List<User> users = admission.getIndividualTickets().stream().map(IndividualTicket::getUser).toList();
+        admit(users);
+        return users;
+    }
+
+    /** Additional entry conditions of the attraction type; none by default. */
+    protected void checkEntry(T admission, Collection<Pass> passes) {
     }
 
     public String getIdentifier() {

@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Common abstraction for every ticket type: identifier, date of use and price.
  */
-public abstract class Ticket {
+public abstract class Ticket implements Admission {
 
     private final String identifier;
     private final LocalDate date;

@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * A ticket for a single user. The ticket knows its user; users do not know their tickets.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAdmission {
 
     private final User user;
     private final BigDecimal price;

@@ -7,6 +7,7 @@ import es.upm.etsisi.amusementpark.business.exception.NotFoundException;
 import es.upm.etsisi.amusementpark.business.exception.OperationNotAllowedException;
 import es.upm.etsisi.amusementpark.business.exception.ParkException;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
+import es.upm.etsisi.amusementpark.business.model.AttractionType;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
@@ -45,7 +46,7 @@ public final class ParkController {
     private final Map<String, User> users = new LinkedHashMap<>();
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
-    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
     private final Map<String, Pass> passes = new LinkedHashMap<>();
     private ParkRepositories repositories;
     private PasswordHasher passwordHasher = new BCryptPasswordHasher();
@@ -131,7 +132,7 @@ public final class ParkController {
                 (dni, email) -> resolveStoredUser(historicalUsers, dni, email))) {
             restore(problems, () -> registerTicket(ticket));
         }
-        for (Attraction attraction : repositories.attractions().load()) {
+        for (Attraction<?> attraction : repositories.attractions().load()) {
             restore(problems, () -> restoreAttraction(attraction));
         }
         for (Pass pass : repositories.passes().load(this::findIndividualTicket)) {
@@ -198,11 +199,11 @@ public final class ParkController {
         return Collections.unmodifiableCollection(passes.values());
     }
 
-    public Collection<Attraction> getAttractions() {
+    public Collection<Attraction<?>> getAttractions() {
         return Collections.unmodifiableCollection(attractions.values());
     }
 
-    private void restoreAttraction(Attraction attraction) {
+    private void restoreAttraction(Attraction<?> attraction) {
         if (attractions.containsKey(attraction.getIdentifier())) {
             throw new AlreadyExistsException("Attraction already exists: " + attraction.getIdentifier());
         }
@@ -558,17 +559,26 @@ public final class ParkController {
      *
      * @throws AlreadyExistsException for a duplicate identifier; {@link InvalidValueException} for a capacity that is not a positive integer
      */
-    public Attraction createAttraction(String identifier, String name, String capacityText) {
+    public Attraction<?> createAttraction(String identifier, String name, String capacityText) {
+        return createAttraction(identifier, name, capacityText, AttractionType.GENERAL.name());
+    }
+
+    /**
+     * Creates an attraction of the given type ({@code GENERAL}, {@code INDIVIDUAL}, {@code GROUP} or
+     * {@code SPECIAL}) with no occupants.
+     */
+    public Attraction<?> createAttraction(String identifier, String name, String capacityText, String typeText) {
         int capacity = parseCapacity(capacityText);
+        AttractionType type = AttractionType.parse(typeText);
         if (attractions.containsKey(identifier)) {
             throw new AlreadyExistsException("Attraction already exists: " + identifier);
         }
-        Attraction attraction = new Attraction(identifier, name, capacity);
+        Attraction<?> attraction = type.create(identifier, name, capacity);
         attractions.put(identifier, attraction);
         return attraction;
     }
 
-    public Optional<Attraction> findAttraction(String identifier) {
+    public Optional<Attraction<?>> findAttraction(String identifier) {
         return Optional.ofNullable(attractions.get(identifier));
     }
 
@@ -580,7 +590,7 @@ public final class ParkController {
      * @return the number of users that entered
      */
     public int enterAttraction(String attractionIdentifier, String ticketIdentifier) {
-        Attraction attraction = findAttraction(attractionIdentifier)
+        Attraction<?> attraction = findAttraction(attractionIdentifier)
                 .orElseThrow(() -> new NotFoundException("Attraction not found: " + attractionIdentifier));
         Ticket ticket = findTicket(ticketIdentifier)
                 .orElseThrow(() -> new NotFoundException("Ticket not found: " + ticketIdentifier));
@@ -588,16 +598,16 @@ public final class ParkController {
             throw new OperationNotAllowedException("Ticket " + ticketIdentifier + " is valid for " + ticket.getDate()
                     + ", not for the current date " + currentDate);
         }
-        List<User> entrants = ticket.getIndividualTickets().stream().map(IndividualTicket::getUser).toList();
-        attraction.admit(entrants);
-        return entrants.size();
+        List<IndividualTicket> parts = ticket.getIndividualTickets();
+        List<Pass> ticketPasses = passes.values().stream().filter(pass -> parts.contains(pass.getTicket())).toList();
+        return attraction.enterWith(ticket, ticketPasses).size();
     }
 
     /**
      * Removes the user with {@code email} from the attraction, releasing one place.
      */
     public void exitAttraction(String attractionIdentifier, String email) {
-        Attraction attraction = findAttraction(attractionIdentifier)
+        Attraction<?> attraction = findAttraction(attractionIdentifier)
                 .orElseThrow(() -> new NotFoundException("Attraction not found: " + attractionIdentifier));
         User user = attraction.findOccupant(email).orElseThrow(() -> new NotFoundException(
                 "User " + email + " is not inside attraction " + attractionIdentifier));

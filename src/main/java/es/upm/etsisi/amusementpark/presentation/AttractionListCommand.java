@@ -16,7 +16,7 @@ public class AttractionListCommand extends ControllerCommand<ParkController> {
 
     @Override
     protected String run(ParkController controller, String[] fields) {
-        Attraction attraction = controller.findAttraction(fields[0])
+        Attraction<?> attraction = controller.findAttraction(fields[0])
                 .orElseThrow(() -> new NotFoundException("Attraction not found: " + fields[0]));
         if (attraction.getOccupants().isEmpty()) {
             return "NO USERS IN ATTRACTION " + attraction.getIdentifier();

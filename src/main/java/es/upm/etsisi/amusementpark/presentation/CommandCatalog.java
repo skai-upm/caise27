@@ -43,7 +43,10 @@ public final class CommandCatalog {
             new CommandHelp("SPECIALPASS DELETE;<specialPassIdentifier>",
                     "Refunds an unconsumed Special Pass whose ticket is dated after the current date."),
             new CommandHelp("ATTRACTION CREATE;<identifier>;<name>;<capacity>",
-                    "Creates an attraction with its maximum capacity."),
+                    "Creates a GENERAL attraction with its maximum capacity."),
+            new CommandHelp("ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
+                    "Creates an attraction of type GENERAL, INDIVIDUAL, GROUP or SPECIAL, which restricts the "
+                            + "tickets accepted for entry."),
             new CommandHelp("ATTRACTION ENTER;<attraction>;<ticket>",
                     "Lets the user or the whole group of a ticket valid today enter an attraction."),
             new CommandHelp("ATTRACTION EXIT;<attraction>;<email>",

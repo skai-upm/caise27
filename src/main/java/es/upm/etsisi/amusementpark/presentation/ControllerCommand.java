@@ -13,23 +13,29 @@ import java.io.PrintStream;
 public abstract class ControllerCommand<C> implements Command {
 
     private final String usage;
-    private final int fieldCount;
+    private final int minFields;
+    private final int maxFields;
     private final C controller;
 
     protected ControllerCommand(String usage, int fieldCount, C controller) {
+        this(usage, fieldCount, fieldCount, controller);
+    }
+
+    protected ControllerCommand(String usage, int minFields, int maxFields, C controller) {
         this.usage = usage;
-        this.fieldCount = fieldCount;
+        this.minFields = minFields;
+        this.maxFields = maxFields;
         this.controller = controller;
     }
 
     @Override
     public boolean execute(String[] arguments, PrintStream out) {
-        if (arguments.length != fieldCount) {
+        if (arguments.length < minFields || arguments.length > maxFields) {
             out.println("ERROR: Usage: " + usage);
             return false;
         }
-        String[] fields = new String[fieldCount];
-        for (int i = 0; i < fieldCount; i++) {
+        String[] fields = new String[arguments.length];
+        for (int i = 0; i < arguments.length; i++) {
             fields[i] = arguments[i].trim();
             if (fields[i].isEmpty()) {
                 out.println("ERROR: Empty field in: " + usage);

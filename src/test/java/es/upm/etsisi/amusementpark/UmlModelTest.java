@@ -39,10 +39,11 @@ class UmlModelTest {
         String uml = diagram();
         for (String name : modelClassNames()) {
             Class<?> type = Class.forName(MODEL_PACKAGE + "." + name);
-            String declaration = (Modifier.isAbstract(type.getModifiers()) ? "abstract class " : "class ") + name + " ";
-            assertTrue(uml.contains(declaration), "missing " + declaration.trim());
+            String declaration = (type.isInterface() ? "interface " : type.isEnum() ? "enum "
+                    : Modifier.isAbstract(type.getModifiers()) ? "abstract class " : "class ") + name;
+            assertTrue(uml.contains(declaration + " ") || uml.contains(declaration + "<"), "missing " + declaration);
             for (Field field : type.getDeclaredFields()) {
-                if (!Modifier.isStatic(field.getModifiers())) {
+                if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
                     assertTrue(uml.contains(" " + field.getName() + " ") || uml.contains(": " + field.getName()),
                             "missing field " + name + "." + field.getName());
                 }
@@ -55,9 +56,14 @@ class UmlModelTest {
         List<String> known = modelClassNames();
         for (String line : diagram().lines().map(String::trim).toList()) {
             String rest = line.startsWith("abstract class ") ? line.substring("abstract class ".length())
-                    : line.startsWith("class ") ? line.substring("class ".length()) : null;
+                    : line.startsWith("class ") ? line.substring("class ".length())
+                    : line.startsWith("interface ") ? line.substring("interface ".length())
+                    : line.startsWith("enum ") ? line.substring("enum ".length()) : null;
             if (rest != null) {
                 String name = rest.substring(0, rest.indexOf(' '));
+                if (name.indexOf('<') > 0) {
+                    name = name.substring(0, name.indexOf('<'));
+                }
                 assertTrue(known.contains(name) || name.equals("ParkController"), "unknown class in diagram: " + name);
             }
         }
