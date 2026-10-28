@@ -10,9 +10,11 @@ import es.upm.amusementpark.model.Group;
 import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.persistence.UserStorage;
+import es.upm.amusementpark.repository.AttractionRepository;
 import es.upm.amusementpark.repository.GroupRepository;
 import es.upm.amusementpark.repository.TicketRepository;
 import es.upm.amusementpark.repository.UserRepository;
+import es.upm.amusementpark.service.AttractionService;
 import es.upm.amusementpark.service.GroupService;
 import es.upm.amusementpark.service.OperationException;
 import es.upm.amusementpark.service.TicketService;
@@ -33,6 +35,7 @@ public final class ParkController {
     private UserService users;
     private GroupService groups;
     private TicketService tickets;
+    private AttractionService attractions;
     private LocalDate currentDate;
     private BigDecimal basePrice;
 
@@ -65,12 +68,17 @@ public final class ParkController {
         this.tickets = new TicketService(new TicketRepository(), users, this::getCurrentDate, this::getBasePrice);
         this.groups = new GroupService(new GroupRepository(), users, tickets::hasActiveGroupTicket,
                 this::getCurrentDate);
+        this.attractions = new AttractionService(new AttractionRepository());
         this.currentDate = LocalDate.now();
         this.basePrice = INITIAL_BASE_PRICE;
     }
 
     public UserService users() {
         return users;
+    }
+
+    public AttractionService attractions() {
+        return attractions;
     }
 
     public TicketService tickets() {

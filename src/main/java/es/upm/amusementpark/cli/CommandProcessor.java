@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.List;
 
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.UserField;
@@ -38,6 +39,8 @@ public class CommandProcessor {
             "TICKET DELETE;<identifier>",
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
+            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "ATTRACTION LIST;<attraction>",
             "HELP",
             "EXIT");
 
@@ -78,6 +81,8 @@ public class CommandProcessor {
                 case "TICKET DELETE" -> ticketDelete(parts);
                 case "GROUPTICKET CREATE" -> groupTicketCreate(parts);
                 case "GROUPTICKET DELETE" -> groupTicketDelete(parts);
+                case "ATTRACTION CREATE" -> attractionCreate(parts);
+                case "ATTRACTION LIST" -> attractionList(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> error("Unknown command");
@@ -142,6 +147,25 @@ public class CommandProcessor {
         requireArguments(parts, 1, "GROUPTICKET DELETE");
         park.tickets().deleteGroupTicket(parts[1]);
         return "GROUPTICKET DELETED";
+    }
+
+    private String attractionCreate(String[] parts) throws OperationException {
+        requireArguments(parts, 3, "ATTRACTION CREATE");
+        park.attractions().createAttraction(parts[1], parts[2], parseCapacity(parts[3]));
+        return "ATTRACTION CREATED";
+    }
+
+    private String attractionList(String[] parts) throws OperationException {
+        requireArguments(parts, 1, "ATTRACTION LIST");
+        List<String> emails = park.attractions().listOccupantEmails(parts[1]);
+        return emails.isEmpty() ? "NO USERS IN ATTRACTION " + parts[1] : String.join(System.lineSeparator(), emails);
+    }
+
+    private static int parseCapacity(String text) throws OperationException {
+        if (text.isEmpty() || text.length() > 9 || !digits(text)) {
+            throw new OperationException("Capacity must be a whole number of at least 1: " + text);
+        }
+        return Integer.parseInt(text);
     }
 
     private String systemDate(String[] parts) throws OperationException {

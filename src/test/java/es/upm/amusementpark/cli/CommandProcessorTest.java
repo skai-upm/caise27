@@ -234,4 +234,21 @@ class CommandProcessorTest {
         assertTrue(processor.process("HELP").contains("GROUPTICKET CREATE;<identifier>;<group>;<date>"));
         assertTrue(processor.process("HELP").contains("GROUPTICKET DELETE;<identifier>"));
     }
+
+    @Test
+    void attractionCommands() throws Exception {
+        assertEquals("ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20"));
+        assertEquals("ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A02;Torre del Cielo;12"));
+        for (String bad : List.of("0", "-3", "abc", "2.5", "")) {
+            assertTrue(processor.process("ATTRACTION CREATE;A03;X;" + bad).startsWith("ERROR:"), bad);
+        }
+        assertTrue(processor.process("ATTRACTION CREATE;A01;Otra;5").startsWith("ERROR:"));
+        assertEquals("NO USERS IN ATTRACTION A01", processor.process("ATTRACTION LIST;A01"));
+        processor.process(ANA);
+        park.attractions().findById("A01").orElseThrow().addOccupant(park.users().findByDni("12345678Z").orElseThrow());
+        assertEquals("ana@correo.com", processor.process("ATTRACTION LIST;A01"));
+        assertTrue(processor.process("ATTRACTION LIST;A99").startsWith("ERROR: Attraction not found"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION CREATE;<identifier>;<name>;<capacity>"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION LIST;<attraction>"));
+    }
 }
