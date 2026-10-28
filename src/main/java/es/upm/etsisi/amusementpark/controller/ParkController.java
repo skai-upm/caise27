@@ -1,12 +1,16 @@
 package es.upm.etsisi.amusementpark.controller;
 
 import es.upm.etsisi.amusementpark.model.Group;
+import es.upm.etsisi.amusementpark.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.model.Ticket;
 import es.upm.etsisi.amusementpark.model.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -23,6 +27,7 @@ public final class ParkController {
     private BigDecimal currentPrice;
     private final Map<String, User> users = new LinkedHashMap<>();
     private final Map<String, Group> groups = new LinkedHashMap<>();
+    private final Map<String, Ticket> tickets = new LinkedHashMap<>();
 
     private ParkController() {
         reset();
@@ -38,6 +43,7 @@ public final class ParkController {
         currentPrice = INITIAL_PRICE;
         users.clear();
         groups.clear();
+        tickets.clear();
     }
 
     public LocalDate getCurrentDate() {
@@ -124,6 +130,119 @@ public final class ParkController {
             throw new IllegalStateException("Group " + identifier + " has an active group ticket and cannot be modified");
         }
         return group;
+    }
+
+    /**
+     * Deletes a user. Rejected while the user has an active ticket or belongs to a
+     * group that cannot be modified; otherwise the user is also removed from all
+     * their groups. Historical tickets keep referencing the user.
+     */
+    public void deleteUser(String email) {
+        User user = findUser(email).orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+        if (hasActiveTickets(user)) {
+            throw new IllegalStateException("User " + email + " has active tickets and cannot be deleted");
+        }
+        List<Group> memberships = groups.values().stream().filter(group -> group.hasMember(email)).toList();
+        for (Group group : memberships) {
+            if (!isGroupModifiable(group)) {
+                throw new IllegalStateException("User " + email + " belongs to group " + group.getIdentifier()
+                        + " which has an active group ticket");
+            }
+        }
+        memberships.forEach(group -> group.removeMember(email));
+        users.remove(email);
+    }
+
+    // ---- tickets ----
+
+    /** Identifier lookup over the shared space of all tickets, including composed ones. */
+    public boolean isTicketIdentifierInUse(String identifier) {
+        return findAnyTicket(identifier).isPresent();
+    }
+
+    public Optional<Ticket> findAnyTicket(String identifier) {
+        for (Ticket ticket : tickets.values()) {
+            if (ticket.getIdentifier().equals(identifier)) {
+                return Optional.of(ticket);
+            }
+            for (IndividualTicket part : ticket.getIndividualTickets()) {
+                if (part.getIdentifier().equals(identifier)) {
+                    return Optional.of(part);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    public Optional<Ticket> findTicket(String identifier) {
+        return Optional.ofNullable(tickets.get(identifier));
+    }
+
+    /**
+     * Registers a ticket after checking, in a common manner for every ticket type,
+     * that neither its identifier nor those of its individual tickets are in use.
+     * Nothing is registered if any identifier conflicts.
+     */
+    void registerTicket(Ticket ticket) {
+        List<String> identifiers = new ArrayList<>();
+        identifiers.add(ticket.getIdentifier());
+        for (IndividualTicket part : ticket.getIndividualTickets()) {
+            if (part != ticket) {
+                identifiers.add(part.getIdentifier());
+            }
+        }
+        for (String identifier : identifiers) {
+            if (isTicketIdentifierInUse(identifier) || identifiers.indexOf(identifier) != identifiers.lastIndexOf(identifier)) {
+                throw new IllegalArgumentException("Ticket identifier already in use: " + identifier);
+            }
+        }
+        tickets.put(ticket.getIdentifier(), ticket);
+    }
+
+    /**
+     * Creates an individual ticket at the current base price.
+     */
+    public IndividualTicket createIndividualTicket(String identifier, String email, String dateText) {
+        LocalDate date = parseDate(dateText);
+        User user = findUser(email).orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+        if (date.isBefore(currentDate)) {
+            throw new IllegalArgumentException("Tickets cannot be created for past dates: " + date);
+        }
+        IndividualTicket ticket = new IndividualTicket(identifier, date, user, currentPrice);
+        registerTicket(ticket);
+        return ticket;
+    }
+
+    /**
+     * Deletes an individual ticket dated strictly after the current date.
+     */
+    public void deleteIndividualTicket(String identifier) {
+        Ticket ticket = tickets.get(identifier);
+        if (!(ticket instanceof IndividualTicket)) {
+            if (isTicketIdentifierInUse(identifier)) {
+                throw new IllegalStateException("Ticket " + identifier
+                        + " is not an individual ticket or belongs to a group ticket and cannot be deleted directly");
+            }
+            throw new IllegalArgumentException("Ticket not found: " + identifier);
+        }
+        if (!ticket.isDeletable(currentDate)) {
+            throw new IllegalStateException("Ticket " + identifier
+                    + " is for the current day or an earlier date and cannot be deleted");
+        }
+        tickets.remove(identifier);
+    }
+
+    /** The individual tickets (standalone or composed) of a user, found by traversal. */
+    public List<IndividualTicket> findTicketsOfUser(User user) {
+        return tickets.values().stream()
+                .flatMap(ticket -> ticket.getIndividualTickets().stream())
+                .filter(part -> part.getUser() == user)
+                .toList();
+    }
+
+    /** Derived lock state of a user: any associated ticket that is still active. */
+    public boolean hasActiveTickets(User user) {
+        return findTicketsOfUser(user).stream().anyMatch(ticket -> ticket.isActive(currentDate));
     }
 
     public static LocalDate parseDate(String text) {
