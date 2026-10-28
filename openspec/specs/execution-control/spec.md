@@ -50,3 +50,10 @@ The component that generates help text SHALL receive, through dependency injecti
 #### Scenario: Alternative help behavior
 - **WHEN** the help generator is constructed with a different output behavior
 - **THEN** it produces that output for the same command catalog, and the command processor is unchanged
+
+### Requirement: HELP lists pass commands
+`HELP` and `HELP EXTENDED` SHALL also list `SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>`, `SPEEDPASS DELETE;<speedPassIdentifier>`, `SPECIALPASS CREATE;<identifier>;<individualTicket>` and `SPECIALPASS DELETE;<specialPassIdentifier>`.
+
+#### Scenario: Help shows passes
+- **WHEN** `HELP` is processed
+- **THEN** the four pass command syntaxes are shown
