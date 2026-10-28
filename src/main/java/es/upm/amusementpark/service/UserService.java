@@ -1,7 +1,11 @@
 package es.upm.amusementpark.service;
 
+import java.io.IOException;
+import java.util.List;
+
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.model.UserValidator;
+import es.upm.amusementpark.persistence.UserStorage;
 import es.upm.amusementpark.repository.UserRepository;
 
 /**
@@ -10,9 +14,11 @@ import es.upm.amusementpark.repository.UserRepository;
 public class UserService {
 
     private final UserRepository repository;
+    private final UserStorage storage;
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, UserStorage storage) {
         this.repository = repository;
+        this.storage = storage;
     }
 
     public User createUser(String firstName, String surnames, String dni, String email, String password,
@@ -36,7 +42,18 @@ public class UserService {
             throw new UserOperationException("A user with this email already exists");
         }
         User user = new User(firstName, surnames, dni, email, password, phone, cardNumber);
+        List<User> users = repository.findAll();
+        users.add(user);
+        persist(users);
         repository.save(user);
         return user;
+    }
+
+    private void persist(List<User> users) throws UserOperationException {
+        try {
+            storage.save(users);
+        } catch (IOException e) {
+            throw new UserOperationException("Could not save users: " + e.getMessage());
+        }
     }
 }

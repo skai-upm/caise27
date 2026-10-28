@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import es.upm.amusementpark.persistence.InMemoryUserStorage;
 import es.upm.amusementpark.repository.UserRepository;
 import es.upm.amusementpark.service.UserService;
 
@@ -14,7 +15,7 @@ class CommandProcessorTest {
     static final String ANA = "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
 
     private final UserRepository repository = new UserRepository();
-    private final CommandProcessor processor = new CommandProcessor(new UserService(repository));
+    private final CommandProcessor processor = new CommandProcessor(new UserService(repository, new InMemoryUserStorage()));
 
     @Test
     void createsUserFromSemicolonSeparatedCommand() {

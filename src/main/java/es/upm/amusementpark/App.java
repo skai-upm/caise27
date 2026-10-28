@@ -7,8 +7,13 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import es.upm.amusementpark.cli.CommandProcessor;
+import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.persistence.UserFileStorage;
+import es.upm.amusementpark.persistence.UserStorage;
 import es.upm.amusementpark.repository.UserRepository;
 import es.upm.amusementpark.service.UserService;
 
@@ -20,24 +25,39 @@ import es.upm.amusementpark.service.UserService;
  */
 public class App {
 
+    static final Path USERS_FILE = Path.of("users.txt");
+
     private final PrintStream out;
     private final CommandProcessor processor;
 
-    public App(PrintStream out) {
+    App(PrintStream out, PrintStream err, Path usersFile) throws IOException {
         this.out = out;
-        this.processor = new CommandProcessor(new UserService(new UserRepository()));
+        UserStorage storage = new UserFileStorage(usersFile);
+        UserRepository repository = new UserRepository();
+        List<String> warnings = new ArrayList<>();
+        for (User user : storage.load(warnings)) {
+            repository.save(user);
+        }
+        warnings.forEach(err::println);
+        this.processor = new CommandProcessor(new UserService(repository, storage));
     }
 
     public static void main(String[] args) {
         System.exit(execute(args, new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)),
-                System.out, System.err));
+                System.out, System.err, USERS_FILE));
     }
 
     /**
      * Runs the application and returns the process exit status.
      */
-    static int execute(String[] args, BufferedReader stdin, PrintStream out, PrintStream err) {
-        App app = new App(out);
+    static int execute(String[] args, BufferedReader stdin, PrintStream out, PrintStream err, Path usersFile) {
+        App app;
+        try {
+            app = new App(out, err, usersFile);
+        } catch (IOException e) {
+            err.println("Error: cannot load users from '" + usersFile + "'");
+            return 1;
+        }
         if (args.length == 0) {
             return app.runQuietly(stdin, err);
         }

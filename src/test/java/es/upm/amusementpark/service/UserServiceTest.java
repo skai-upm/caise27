@@ -6,12 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import es.upm.amusementpark.persistence.InMemoryUserStorage;
 import es.upm.amusementpark.repository.UserRepository;
 
 class UserServiceTest {
 
     private final UserRepository repository = new UserRepository();
-    private final UserService service = new UserService(repository);
+    private final InMemoryUserStorage storage = new InMemoryUserStorage();
+    private final UserService service = new UserService(repository, storage);
 
     private void create(String dni, String email, String password, String card) throws UserOperationException {
         service.createUser("Ana", "Garcia Lopez", dni, email, password, "612345678", card);
@@ -43,5 +45,18 @@ class UserServiceTest {
         assertRejected("DNI", "12345678Z", "otra@correo.com", "Clave1!", "1234567890123456");
         assertRejected("email", "87654321X", "ana@correo.com", "Clave1!", "1234567890123456");
         assertEquals(1, repository.findAll().size());
+    }
+
+    @Test
+    void createdUsersAreSaved() throws UserOperationException {
+        create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
+        assertEquals(repository.findAll(), storage.saved());
+    }
+
+    @Test
+    void failedSaveLeavesRepositoryUnchanged() {
+        storage.setFailing(true);
+        assertRejected("Could not save", "12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
+        assertTrue(repository.findAll().isEmpty());
     }
 }
