@@ -55,3 +55,14 @@ The type of each attraction SHALL be stored and restored; stored attractions wit
 #### Scenario: Data without type
 - **WHEN** the attraction file contains a line `A01;Dragon Rojo;20` without type
 - **THEN** `A01` is loaded as a GENERAL attraction
+
+### Requirement: User attributes persisted
+The user file SHALL store, for each user, DNI, e-mail, protected password, first name, surname(s), telephone number and card number, and restore them on the next execution; lines written by earlier versions with fewer fields SHALL still load.
+
+#### Scenario: Full user after restart
+- **WHEN** a user with all attributes is saved and the application restarts
+- **THEN** the user is restored with the same first name, surnames, DNI, e-mail, protected password, telephone and card
+
+#### Scenario: Earlier user line
+- **WHEN** the user file contains `12345678Z;ana@correo.com`
+- **THEN** the user loads with that DNI and e-mail and empty remaining attributes
