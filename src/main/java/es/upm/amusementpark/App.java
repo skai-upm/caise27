@@ -7,15 +7,10 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 import es.upm.amusementpark.cli.CommandProcessor;
-import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.park.ParkController;
 import es.upm.amusementpark.persistence.UserFileStorage;
-import es.upm.amusementpark.persistence.UserStorage;
-import es.upm.amusementpark.repository.UserRepository;
-import es.upm.amusementpark.service.UserService;
 
 /**
  * Application entry point.
@@ -32,14 +27,9 @@ public class App {
 
     App(PrintStream out, PrintStream err, Path usersFile) throws IOException {
         this.out = out;
-        UserStorage storage = new UserFileStorage(usersFile);
-        UserRepository repository = new UserRepository();
-        List<String> warnings = new ArrayList<>();
-        for (User user : storage.load(warnings)) {
-            repository.save(user);
-        }
-        warnings.forEach(err::println);
-        this.processor = new CommandProcessor(new UserService(repository, storage));
+        ParkController park = ParkController.getInstance();
+        park.initialize(new UserFileStorage(usersFile)).forEach(err::println);
+        this.processor = new CommandProcessor(park);
     }
 
     public static void main(String[] args) {

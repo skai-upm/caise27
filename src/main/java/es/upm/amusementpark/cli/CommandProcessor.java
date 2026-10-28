@@ -1,6 +1,13 @@
 package es.upm.amusementpark.cli;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+
 import es.upm.amusementpark.model.UserField;
+import es.upm.amusementpark.park.ParkController;
 import es.upm.amusementpark.service.UserOperationException;
 import es.upm.amusementpark.service.UserService;
 
@@ -11,20 +18,27 @@ import es.upm.amusementpark.service.UserService;
 public class CommandProcessor {
 
     private static final String SEPARATOR = ";";
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
+    private static final int PRICE_DECIMALS = 2;
 
     static final String HELP_TEXT = String.join(System.lineSeparator(),
             "Available commands:",
             "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
             "USER DELETE;<email>;<password>",
             "USER UPDATE;<email>;<password>;<field>;<value>  (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "SYSTEM DATE;<yyyy-MM-dd>",
+            "SYSTEM PRICE;<Price>",
             "HELP",
             "EXIT");
 
+    private final ParkController park;
     private final UserService userService;
     private boolean exitRequested;
 
-    public CommandProcessor(UserService userService) {
-        this.userService = userService;
+    public CommandProcessor(ParkController park) {
+        this.park = park;
+        this.userService = park.users();
     }
 
     /**
@@ -45,6 +59,8 @@ public class CommandProcessor {
                 case "USER CREATE" -> userCreate(parts);
                 case "USER DELETE" -> userDelete(parts);
                 case "USER UPDATE" -> userUpdate(parts);
+                case "SYSTEM DATE" -> systemDate(parts);
+                case "SYSTEM PRICE" -> systemPrice(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> error("Unknown command");
@@ -61,6 +77,50 @@ public class CommandProcessor {
      */
     public boolean isExitRequested() {
         return exitRequested;
+    }
+
+    private String systemDate(String[] parts) throws UserOperationException {
+        requireArguments(parts, 1, "SYSTEM DATE");
+        try {
+            park.setCurrentDate(LocalDate.parse(parts[1], DATE_FORMAT));
+        } catch (DateTimeParseException e) {
+            throw new UserOperationException("Invalid date, expected yyyy-MM-dd: " + parts[1]);
+        }
+        return "SYSTEM DATE UPDATED";
+    }
+
+    private String systemPrice(String[] parts) throws UserOperationException {
+        requireArguments(parts, 1, "SYSTEM PRICE");
+        BigDecimal price = parsePrice(parts[1]);
+        if (price == null) {
+            throw new UserOperationException("Invalid price, expected a positive amount: " + parts[1]);
+        }
+        park.setBasePrice(price);
+        return "SYSTEM PRICE UPDATED";
+    }
+
+    /**
+     * Parses a positive amount with at most two decimals, or returns {@code null}.
+     */
+    static BigDecimal parsePrice(String text) {
+        int dot = text.indexOf('.');
+        String whole = dot < 0 ? text : text.substring(0, dot);
+        String decimals = dot < 0 ? "" : text.substring(dot + 1);
+        if (whole.isEmpty() || !digits(whole) || !digits(decimals) || decimals.length() > PRICE_DECIMALS
+                || (dot >= 0 && decimals.isEmpty())) {
+            return null;
+        }
+        BigDecimal price = new BigDecimal(text).setScale(PRICE_DECIMALS);
+        return price.signum() > 0 ? price : null;
+    }
+
+    private static boolean digits(String text) {
+        for (char c : text.toCharArray()) {
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String help(String[] parts) throws UserOperationException {

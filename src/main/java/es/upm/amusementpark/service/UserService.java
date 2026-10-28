@@ -2,6 +2,7 @@ package es.upm.amusementpark.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.model.UserField;
@@ -20,6 +21,18 @@ public class UserService {
     public UserService(UserRepository repository, UserStorage storage) {
         this.repository = repository;
         this.storage = storage;
+    }
+
+    public Optional<User> findByDni(String dni) {
+        return repository.findByDni(dni);
+    }
+
+    public Optional<User> findByEmail(String email) {
+        return repository.findByEmail(email);
+    }
+
+    public List<User> findAll() {
+        return repository.findAll();
     }
 
     public User createUser(String firstName, String surnames, String dni, String email, String password,
