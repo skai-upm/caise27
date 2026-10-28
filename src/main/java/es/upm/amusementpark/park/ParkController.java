@@ -10,6 +10,11 @@ import es.upm.amusementpark.model.Group;
 import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.persistence.AttractionFileStorage;
+import es.upm.amusementpark.persistence.DataLocation;
+import es.upm.amusementpark.persistence.GroupFileStorage;
+import es.upm.amusementpark.persistence.TicketFileStorage;
+import es.upm.amusementpark.persistence.UserFileStorage;
 import es.upm.amusementpark.persistence.UserStorage;
 import es.upm.amusementpark.repository.AttractionRepository;
 import es.upm.amusementpark.repository.GroupRepository;
@@ -37,6 +42,10 @@ public final class ParkController {
     private GroupService groups;
     private TicketService tickets;
     private AttractionService attractions;
+    private GroupRepository groupRepository;
+    private TicketRepository ticketRepository;
+    private AttractionRepository attractionRepository;
+    private ParkFiles files;
     private LocalDate currentDate;
     private BigDecimal basePrice;
 
@@ -64,14 +73,56 @@ public final class ParkController {
         return warnings;
     }
 
+    /**
+     * Prepares the park state for a new execution from the data files of the given location:
+     * users, groups, tickets and (empty) attractions with their relationships.
+     *
+     * @return warnings produced while loading stored data
+     */
+    public List<String> initialize(DataLocation location) throws IOException {
+        List<String> warnings = initialize(new UserFileStorage(location.users()));
+        ParkFiles loaded = new ParkFiles(new GroupFileStorage(location.groups()),
+                new TicketFileStorage(location.tickets()), new AttractionFileStorage(location.attractions()));
+        for (Group group : loaded.groups().load(warnings)) {
+            for (String dni : group.getMemberDnis()) {
+                if (users.findByDni(dni).isEmpty()) {
+                    group.removeMember(dni);
+                    warnings.add("Removed unknown user " + dni + " from group " + group.getId());
+                }
+            }
+            groupRepository.save(group);
+        }
+        loaded.attractions().load(warnings).forEach(attractionRepository::save);
+        loaded.tickets().load(users::findByDni, groupRepository::findById, warnings).forEach(ticketRepository::save);
+        this.files = loaded;
+        return warnings;
+    }
+
+    /**
+     * Writes groups, tickets and attractions to their files, if this execution uses files.
+     */
+    public void saveState() throws IOException {
+        if (files != null) {
+            files.groups().save(groupRepository.findAll());
+            files.tickets().save(ticketRepository.findAll());
+            files.attractions().save(attractionRepository.findAll());
+        }
+    }
+
     private void reset(UserRepository repository, UserStorage storage) {
+        this.groupRepository = new GroupRepository();
+        this.ticketRepository = new TicketRepository();
+        this.attractionRepository = new AttractionRepository();
+        this.files = null;
         this.users = new UserService(repository, storage);
-        this.tickets = new TicketService(new TicketRepository(), users, this::getCurrentDate, this::getBasePrice);
-        this.groups = new GroupService(new GroupRepository(), users, tickets::hasActiveGroupTicket,
-                this::getCurrentDate);
-        this.attractions = new AttractionService(new AttractionRepository());
+        this.tickets = new TicketService(ticketRepository, users, this::getCurrentDate, this::getBasePrice);
+        this.groups = new GroupService(groupRepository, users, tickets::hasActiveGroupTicket, this::getCurrentDate);
+        this.attractions = new AttractionService(attractionRepository);
         this.currentDate = LocalDate.now();
         this.basePrice = INITIAL_BASE_PRICE;
+    }
+
+    private record ParkFiles(GroupFileStorage groups, TicketFileStorage tickets, AttractionFileStorage attractions) {
     }
 
     public UserService users() {

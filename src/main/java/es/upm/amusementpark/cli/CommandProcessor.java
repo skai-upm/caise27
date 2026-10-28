@@ -5,7 +5,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import es.upm.amusementpark.model.Ticket;
@@ -25,6 +27,9 @@ public class CommandProcessor {
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
     private static final int PRICE_DECIMALS = 2;
+    private static final Set<String> STATE_CHANGING = Set.of("USER CREATE", "USER DELETE", "USER UPDATE",
+            "GROUP CREATE", "GROUP ADD", "GROUP REMOVE", "GROUP DELETE", "TICKET CREATE", "TICKET DELETE",
+            "GROUPTICKET CREATE", "GROUPTICKET DELETE", "ATTRACTION CREATE");
 
     static final String HELP_TEXT = String.join(System.lineSeparator(),
             "Available commands:",
@@ -72,34 +77,44 @@ public class CommandProcessor {
             parts[i] = parts[i].trim();
         }
         try {
-            return switch (parts[0]) {
-                case "USER CREATE" -> userCreate(parts);
-                case "USER DELETE" -> userDelete(parts);
-                case "USER UPDATE" -> userUpdate(parts);
-                case "SYSTEM DATE" -> systemDate(parts);
-                case "SYSTEM PRICE" -> systemPrice(parts);
-                case "GROUP CREATE" -> groupCreate(parts);
-                case "GROUP ADD" -> groupAdd(parts);
-                case "GROUP REMOVE" -> groupRemove(parts);
-                case "GROUP DELETE" -> groupDelete(parts);
-                case "TICKET CREATE" -> ticketCreate(parts);
-                case "TICKET DELETE" -> ticketDelete(parts);
-                case "GROUPTICKET CREATE" -> groupTicketCreate(parts);
-                case "GROUPTICKET DELETE" -> groupTicketDelete(parts);
-                case "ATTRACTION CREATE" -> attractionCreate(parts);
-                case "ATTRACTION ENTER" -> attractionEnter(parts);
-                case "ATTRACTION EXIT" -> attractionExit(parts);
-                case "ATTRACTION LIST" -> attractionList(parts);
-                case "ATTRACTION STATUS" -> attractionStatus(parts);
-                case "HELP" -> help(parts);
-                case "EXIT" -> exit(parts);
-                default -> error("Unknown command");
-            };
+            String response = dispatch(parts);
+            if (STATE_CHANGING.contains(parts[0])) {
+                park.saveState();
+            }
+            return response;
         } catch (OperationException e) {
             return error(e.getMessage());
+        } catch (IOException e) {
+            return error("Could not save park data: " + e.getMessage());
         } catch (RuntimeException e) {
             return error("Unexpected error processing command");
         }
+    }
+
+    private String dispatch(String[] parts) throws OperationException {
+        return switch (parts[0]) {
+            case "USER CREATE" -> userCreate(parts);
+            case "USER DELETE" -> userDelete(parts);
+            case "USER UPDATE" -> userUpdate(parts);
+            case "SYSTEM DATE" -> systemDate(parts);
+            case "SYSTEM PRICE" -> systemPrice(parts);
+            case "GROUP CREATE" -> groupCreate(parts);
+            case "GROUP ADD" -> groupAdd(parts);
+            case "GROUP REMOVE" -> groupRemove(parts);
+            case "GROUP DELETE" -> groupDelete(parts);
+            case "TICKET CREATE" -> ticketCreate(parts);
+            case "TICKET DELETE" -> ticketDelete(parts);
+            case "GROUPTICKET CREATE" -> groupTicketCreate(parts);
+            case "GROUPTICKET DELETE" -> groupTicketDelete(parts);
+            case "ATTRACTION CREATE" -> attractionCreate(parts);
+            case "ATTRACTION ENTER" -> attractionEnter(parts);
+            case "ATTRACTION EXIT" -> attractionExit(parts);
+            case "ATTRACTION LIST" -> attractionList(parts);
+            case "ATTRACTION STATUS" -> attractionStatus(parts);
+            case "HELP" -> help(parts);
+            case "EXIT" -> exit(parts);
+            default -> error("Unknown command");
+        };
     }
 
     /**

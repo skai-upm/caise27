@@ -52,6 +52,6 @@ public class UserFileStorage implements UserStorage {
             lines.add(String.join(SEPARATOR, u.getFirstName(), u.getSurnames(), u.getDni(), u.getEmail(),
                     u.getPassword(), u.getPhone(), u.getCardNumber()));
         }
-        Files.write(file, lines, StandardCharsets.UTF_8);
+        TextFiles.writeLines(file, lines);
     }
 }

@@ -22,3 +22,9 @@ buildNumber.properties
 
 # Application data
 users.txt
+
+# Park data and temporary --fly directories
+groups.txt
+tickets.txt
+attractions.txt
+tmp/

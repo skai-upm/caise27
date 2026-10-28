@@ -35,7 +35,7 @@ class DeliveryOneIntegrationTest {
     private String run(String[] args, String stdin, Path users) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(bytes, true, StandardCharsets.UTF_8);
-        int status = App.execute(args, new BufferedReader(new StringReader(stdin)), out, out, users);
+        int status = App.execute(args, new BufferedReader(new StringReader(stdin)), out, out, users.getParent());
         assertEquals(0, status);
         return bytes.toString(StandardCharsets.UTF_8);
     }
@@ -54,13 +54,13 @@ class DeliveryOneIntegrationTest {
     void statementSessionFromFile() throws Exception {
         Path input = dir.resolve("input.txt");
         Files.writeString(input, SESSION);
-        Path users = dir.resolve("file-users.txt");
+        Path users = dir.resolve("file").resolve("users.txt");
         assertSession(run(new String[] {input.toString()}, "", users), users);
     }
 
     @Test
     void statementSessionInteractive() throws Exception {
-        Path users = dir.resolve("stdin-users.txt");
+        Path users = dir.resolve("stdin").resolve("users.txt");
         assertSession(run(new String[0], SESSION, users), users);
     }
 
