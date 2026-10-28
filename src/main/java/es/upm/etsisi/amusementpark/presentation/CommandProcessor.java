@@ -31,6 +31,7 @@ public class CommandProcessor {
      */
     public CommandProcessor(ParkController park, InvoiceController invoices) {
         register("USER CREATE", new UserCreateCommand(park));
+        register("USER DELETE", new UserDeleteCommand(park));
         register("SYSTEM DATE", new SystemDateCommand(park));
         register("SYSTEM PRICE", new SystemPriceCommand(park));
         register("GROUP CREATE", new GroupCreateCommand(park));

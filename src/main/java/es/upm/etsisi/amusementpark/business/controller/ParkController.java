@@ -335,6 +335,18 @@ public final class ParkController {
     }
 
     /**
+     * Deletes a user identified by e-mail after checking the password against the
+     * stored protected value; the ticket and group restrictions of {@link #deleteUser(String)} apply.
+     */
+    public void deleteUser(String email, String password) {
+        User user = findUser(email).orElseThrow(() -> new NotFoundException("User not found: " + email));
+        if (!user.hasPassword() || !passwordHasher.matches(password, user.getPasswordHash())) {
+            throw new AuthenticationException("Incorrect password for user " + email);
+        }
+        deleteUser(email);
+    }
+
+    /**
      * Deletes a user. Rejected while the user has an active ticket or belongs to a
      * group that cannot be modified; otherwise the user is also removed from all
      * their groups. Historical tickets keep referencing the user.
