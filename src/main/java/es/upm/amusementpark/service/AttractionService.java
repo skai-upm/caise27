@@ -75,6 +75,27 @@ public class AttractionService {
         return entering;
     }
 
+    /**
+     * Removes the user with that email from the attraction, freeing its place.
+     */
+    public User exit(String attractionId, String email) throws OperationException {
+        Attraction attraction = existing(attractionId);
+        User user = attraction.getOccupants().stream().filter(u -> u.getEmail().equals(email)).findFirst()
+                .orElseThrow(() -> new OperationException("User is not inside the attraction: " + email));
+        attraction.removeOccupant(user);
+        return user;
+    }
+
+    /**
+     * Current status, taken from the attraction's own state.
+     */
+    public AttractionStatus status(String attractionId) throws OperationException {
+        Attraction a = existing(attractionId);
+        List<String> emails = a.getOccupants().stream().map(User::getEmail).toList();
+        return new AttractionStatus(a.getId(), a.getName(), a.getCapacity(), emails.size(),
+                a.getCapacity() - emails.size(), emails);
+    }
+
     Attraction existing(String id) throws OperationException {
         return repository.findById(id).orElseThrow(() -> new OperationException("Attraction not found"));
     }

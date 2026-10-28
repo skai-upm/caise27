@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.park.ParkController;
+import es.upm.amusementpark.service.AttractionStatus;
 import es.upm.amusementpark.service.OperationException;
 import es.upm.amusementpark.service.UserService;
 
@@ -42,7 +43,9 @@ public class CommandProcessor {
             "GROUPTICKET DELETE;<identifier>",
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
             "ATTRACTION ENTER;<attraction>;<ticket>",
+            "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
+            "ATTRACTION STATUS;<attractionIdentifier>",
             "HELP",
             "EXIT");
 
@@ -85,7 +88,9 @@ public class CommandProcessor {
                 case "GROUPTICKET DELETE" -> groupTicketDelete(parts);
                 case "ATTRACTION CREATE" -> attractionCreate(parts);
                 case "ATTRACTION ENTER" -> attractionEnter(parts);
+                case "ATTRACTION EXIT" -> attractionExit(parts);
                 case "ATTRACTION LIST" -> attractionList(parts);
+                case "ATTRACTION STATUS" -> attractionStatus(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> error("Unknown command");
@@ -163,6 +168,23 @@ public class CommandProcessor {
         return park.enterAttraction(parts[1], parts[2]).stream()
                 .map(u -> "USER ENTERED ATTRACTION: " + u.getEmail())
                 .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    private String attractionExit(String[] parts) throws OperationException {
+        requireArguments(parts, 2, "ATTRACTION EXIT");
+        return "USER LEFT ATTRACTION: " + park.attractions().exit(parts[1], parts[2]).getEmail();
+    }
+
+    private String attractionStatus(String[] parts) throws OperationException {
+        requireArguments(parts, 1, "ATTRACTION STATUS");
+        AttractionStatus s = park.attractions().status(parts[1]);
+        return String.join(System.lineSeparator(),
+                "Attraction: " + s.id(),
+                "Name: " + s.name(),
+                "Capacity: " + s.capacity(),
+                "Occupants: " + s.occupants(),
+                "Available: " + s.available(),
+                "Users: " + (s.occupantEmails().isEmpty() ? "none" : String.join(", ", s.occupantEmails())));
     }
 
     private String attractionList(String[] parts) throws OperationException {

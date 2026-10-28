@@ -105,4 +105,20 @@ class GroupTicketFlowTest {
         park.tickets().createIndividualTicket("T001", "ana@correo.com", today.plusDays(1));
         assertRejected("Group ticket not found", () -> park.tickets().deleteGroupTicket("T001"));
     }
+
+    @Test
+    void groupTicketEntersAttractionAtomically() throws OperationException {
+        park.createGroupTicket("TG01", "G01", today);
+        park.attractions().createAttraction("A01", "Dragon Rojo", 20);
+        park.attractions().createAttraction("A02", "Mini", 2);
+        park.tickets().createIndividualTicket("T001", "luis@correo.com", today);
+        assertEquals(2, park.enterAttraction("A01", "TG01").size());
+        assertEquals(java.util.List.of("ana@correo.com", "pedro@correo.com"), park.attractions().listOccupantEmails("A01"));
+        park.enterAttraction("A02", "T001");
+        assertRejected("capacity", () -> park.enterAttraction("A02", "TG01"));
+        assertEquals(java.util.List.of("luis@correo.com"), park.attractions().listOccupantEmails("A02"));
+        park.attractions().exit("A01", "ana@correo.com");
+        assertEquals(java.util.List.of("pedro@correo.com"), park.attractions().listOccupantEmails("A01"));
+        assertEquals(19, park.attractions().status("A01").available());
+    }
 }

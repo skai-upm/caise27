@@ -123,9 +123,6 @@ public final class ParkController {
     public List<User> enterAttraction(String attractionId, String ticketId) throws OperationException {
         attractions.findById(attractionId).orElseThrow(() -> new OperationException("Attraction not found"));
         Ticket ticket = tickets.findAnyById(ticketId).orElseThrow(() -> new OperationException("Ticket not found"));
-        if (ticket instanceof GroupTicket) {
-            throw new OperationException("Access with group tickets is not available");
-        }
         return attractions.enter(attractionId, ticket, currentDate);
     }
 

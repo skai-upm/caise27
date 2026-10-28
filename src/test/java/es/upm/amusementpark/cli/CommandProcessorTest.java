@@ -274,4 +274,32 @@ class CommandProcessorTest {
         assertEquals("ana@correo.com", processor.process("ATTRACTION LIST;A01"));
         assertTrue(processor.process("HELP").contains("ATTRACTION ENTER;<attraction>;<ticket>"));
     }
+
+    @Test
+    void attractionExitAndStatusCommands() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process(ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("USER CREATE;Luis;Perez;11111111H;luis@correo.com;Luis3$;6;1111222233334444");
+        processor.process("GROUP CREATE;G01;Familia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2027-04-15");
+        processor.process("TICKET CREATE;T001;luis@correo.com;2027-04-15");
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        assertEquals("Attraction: A01\nName: Dragon Rojo\nCapacity: 20\nOccupants: 0\nAvailable: 20\nUsers: none"
+                .replace("\n", System.lineSeparator()), processor.process("ATTRACTION STATUS;A01"));
+        assertEquals("USER ENTERED ATTRACTION: ana@correo.com" + System.lineSeparator()
+                + "USER ENTERED ATTRACTION: pedro@correo.com", processor.process("ATTRACTION ENTER;A01;TG01"));
+        processor.process("ATTRACTION ENTER;A01;T001");
+        assertEquals("USER LEFT ATTRACTION: ana@correo.com", processor.process("ATTRACTION EXIT;A01;ana@correo.com"));
+        assertTrue(processor.process("ATTRACTION EXIT;A01;ana@correo.com").startsWith("ERROR: User is not inside"));
+        String status = processor.process("ATTRACTION STATUS;A01");
+        assertTrue(status.contains("Occupants: 2"));
+        assertTrue(status.contains("Available: 18"));
+        assertTrue(status.contains("Users: pedro@correo.com, luis@correo.com"));
+        assertTrue(processor.process("ATTRACTION STATUS;A99").startsWith("ERROR: Attraction not found"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION EXIT;<attraction>;<email>"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION STATUS;<attractionIdentifier>"));
+    }
 }
