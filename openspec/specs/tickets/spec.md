@@ -50,7 +50,7 @@ An individual ticket SHALL reference the user for whom it was purchased; users S
 - **THEN** the system finds exactly those two tickets when looking up the tickets of `ana@correo.com`
 
 ### Requirement: TICKET DELETE command
-The system SHALL accept `TICKET DELETE;<identifier>` and delete the individual ticket only when its date is strictly later than the current system date. Tickets for the current day or earlier SHALL be retained and the deletion rejected with an error message, as SHALL deletion of an unknown identifier or of an individual ticket belonging to a group ticket's composition.
+The system SHALL accept `TICKET DELETE;<identifier>` and delete the individual ticket, together with all SpeedPasses and the Special Pass associated with it, only when its date is strictly later than the current system date. Tickets for the current day or earlier SHALL be retained and the deletion rejected with an error message, as SHALL deletion of an unknown identifier or of an individual ticket belonging to a group ticket's composition.
 
 #### Scenario: Delete a future ticket
 - **WHEN** the system date is 2027-04-01, ticket `T001` is dated 2027-04-15 and `TICKET DELETE;T001` is processed
@@ -63,6 +63,10 @@ The system SHALL accept `TICKET DELETE;<identifier>` and delete the individual t
 #### Scenario: Unknown ticket
 - **WHEN** `TICKET DELETE;NOPE` is processed and no such ticket exists
 - **THEN** an error message is displayed
+
+#### Scenario: Passes deleted with their ticket
+- **WHEN** future ticket `T001` has SpeedPasses from two purchases and a Special Pass, and `TICKET DELETE;T001` is processed
+- **THEN** the ticket and all those passes no longer exist
 
 ### Requirement: Active tickets block user deletion
 Deleting a user SHALL be rejected while any active ticket (an individual ticket or an individual ticket in a group ticket's composition) references that user, and while the user belongs to a group that is not modifiable. The locked state SHALL be derived from the existing tickets and the current system date, not stored. When deletion is permitted, the user SHALL be removed from all groups they belong to, and historical tickets SHALL be retained.
