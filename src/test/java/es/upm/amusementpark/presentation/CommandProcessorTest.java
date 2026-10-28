@@ -309,4 +309,26 @@ class CommandProcessorTest {
         assertThrows(CommandSyntaxException.class, () -> CommandProcessor.parseDate("2027-02-30"));
         assertThrows(CommandSyntaxException.class, () -> CommandProcessor.parseCapacity("2.5"));
     }
+
+    @Test
+    void invoiceCommands() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process(ANA);
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("GROUP CREATE;G01;Familia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2027-04-16");
+        String user = processor.process("INVOICE CREATE;USER;ana@correo.com");
+        assertTrue(user.startsWith("INVOICE - USER"));
+        assertTrue(user.contains("  T001 (2027-04-15): 40.00 EUR"));
+        assertTrue(user.endsWith("TOTAL: 40.00 EUR"));
+        String group = processor.process("INVOICE CREATE;GROUP;G01");
+        assertTrue(group.contains("Group: G01 - Familia"));
+        assertTrue(group.contains("TG01:12345678Z"));
+        assertTrue(group.endsWith("TOTAL: 40.00 EUR"));
+        assertTrue(processor.process("INVOICE CREATE;PARK;X").startsWith("ERROR: Invoice type"));
+        assertTrue(processor.process("INVOICE CREATE;USER;x@correo.com").startsWith("ERROR: User not found"));
+        assertTrue(processor.process("HELP").contains("INVOICE CREATE;USER;<email>"));
+        assertTrue(processor.process("HELP").contains("INVOICE CREATE;GROUP;<groupIdentifier>"));
+    }
 }

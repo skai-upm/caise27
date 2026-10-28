@@ -50,6 +50,8 @@ public class CommandProcessor {
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
             "ATTRACTION STATUS;<attractionIdentifier>",
+            "INVOICE CREATE;USER;<email>",
+            "INVOICE CREATE;GROUP;<groupIdentifier>",
             "HELP",
             "EXIT",
             "(<Field>: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)");
@@ -109,6 +111,7 @@ public class CommandProcessor {
             case "ATTRACTION EXIT" -> attractionExit(parts);
             case "ATTRACTION LIST" -> attractionList(parts);
             case "ATTRACTION STATUS" -> attractionStatus(parts);
+            case "INVOICE CREATE" -> invoiceCreate(parts);
             case "HELP" -> help(parts);
             case "EXIT" -> exit(parts);
             default -> error("Unknown command");
@@ -168,6 +171,15 @@ public class CommandProcessor {
         requireArguments(parts, 1, "GROUPTICKET DELETE");
         park.tickets().deleteGroupTicket(parts[1]);
         return "GROUPTICKET DELETED";
+    }
+
+    private String invoiceCreate(String[] parts) throws ParkException {
+        requireArguments(parts, 2, "INVOICE CREATE");
+        return InvoiceFormatter.format(switch (parts[1]) {
+            case "USER" -> park.invoices().userInvoice(parts[2]);
+            case "GROUP" -> park.invoices().groupInvoice(parts[2]);
+            default -> throw new CommandSyntaxException("Invoice type must be USER or GROUP: " + parts[1]);
+        });
     }
 
     private String attractionCreate(String[] parts) throws ParkException {

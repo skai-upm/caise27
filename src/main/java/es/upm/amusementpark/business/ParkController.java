@@ -26,6 +26,7 @@ import es.upm.amusementpark.persistence.repository.TicketRepository;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
+import es.upm.amusementpark.business.service.InvoiceService;
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.service.TicketService;
 import es.upm.amusementpark.business.service.UserService;
@@ -46,6 +47,7 @@ public final class ParkController {
     private GroupService groups;
     private TicketService tickets;
     private AttractionService attractions;
+    private InvoiceService invoices;
     private GroupRepository groupRepository;
     private TicketRepository ticketRepository;
     private AttractionRepository attractionRepository;
@@ -163,6 +165,7 @@ public final class ParkController {
         this.tickets = new TicketService(ticketRepository, users, this::getCurrentDate, this::getBasePrice);
         this.groups = new GroupService(groupRepository, users, tickets::hasActiveGroupTicket, this::getCurrentDate);
         this.attractions = new AttractionService(attractionRepository);
+        this.invoices = new InvoiceService(users, groups, tickets);
         this.currentDate = LocalDate.now();
         this.basePrice = INITIAL_BASE_PRICE;
     }
@@ -172,6 +175,10 @@ public final class ParkController {
 
     public UserService users() {
         return users;
+    }
+
+    public InvoiceService invoices() {
+        return invoices;
     }
 
     public AttractionService attractions() {
