@@ -9,9 +9,10 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Stores users, one per line: {@code dni;email;passwordHash}. Only the BCrypt value of a
- * password is stored (empty when the user has none); {@code dni;email} lines of earlier
- * versions are still read.
+ * Stores users, one per line: {@code dni;email;passwordHash;firstName;surnames;phone;card}.
+ * Only the BCrypt value of a password is stored (empty when the user has none); the
+ * shorter {@code dni;email} and {@code dni;email;passwordHash} lines of earlier versions
+ * are still read.
  */
 public class TextUserRepository extends TextFileRepository implements UserRepository {
 
@@ -23,7 +24,8 @@ public class TextUserRepository extends TextFileRepository implements UserReposi
     public void save(Collection<User> users) {
         List<String> lines = new ArrayList<>();
         for (User user : users) {
-            lines.add(join(user.getDni(), user.getEmail(), user.hasPassword() ? user.getPasswordHash() : ""));
+            lines.add(join(user.getDni(), user.getEmail(), user.hasPassword() ? user.getPasswordHash() : "",
+                    user.getFirstName(), user.getSurnames(), user.getPhone(), user.getCard()));
         }
         writeLines(lines);
     }
@@ -38,11 +40,12 @@ public class TextUserRepository extends TextFileRepository implements UserReposi
                 continue;
             }
             String[] f = fields(line);
-            if (f.length < 2 || f.length > 3 || f[0].isEmpty() || f[1].isEmpty()) {
-                problem(i + 1, line, "expected dni;email;passwordHash");
+            if ((f.length != 2 && f.length != 3 && f.length != 7) || f[0].isEmpty() || f[1].isEmpty()) {
+                problem(i + 1, line, "expected dni;email;passwordHash;firstName;surnames;phone;card");
                 continue;
             }
-            users.add(new User(f[0], f[1], f.length == 3 && !f[2].isEmpty() ? f[2] : null));
+            String hash = f.length >= 3 && !f[2].isEmpty() ? f[2] : null;
+            users.add(f.length == 7 ? new User(f[3], f[4], f[0], f[1], hash, f[5], f[6]) : new User(f[0], f[1], hash));
         }
         return users;
     }

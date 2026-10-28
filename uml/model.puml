@@ -13,9 +13,13 @@ package es.upm.etsisi.amusementpark.business.controller {
 
 package es.upm.etsisi.amusementpark.business.model {
   class User {
-    - dni : String
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
     - email : String
     - passwordHash : String
+    - phone : String
+    - card : String
   }
 
   class Group {

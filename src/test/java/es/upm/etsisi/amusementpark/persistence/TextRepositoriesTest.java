@@ -92,6 +92,21 @@ class TextRepositoriesTest {
     }
 
     @Test
+    void fullUsersSurviveRestart() {
+        User full = new User("Luis", "Perez Gil", "11111111H", "luis@correo.com", null, "611111111", "4111111111111111");
+        controller.addUser(full);
+        controller.setUserPassword("luis@correo.com", "Clave1!");
+        reload();
+        User restored = controller.findUser("luis@correo.com").orElseThrow();
+        assertEquals("Luis", restored.getFirstName());
+        assertEquals("Perez Gil", restored.getSurnames());
+        assertEquals("11111111H", restored.getDni());
+        assertEquals("611111111", restored.getPhone());
+        assertEquals("4111111111111111", restored.getCard());
+        controller.authenticate("luis@correo.com", "Clave1!");
+    }
+
+    @Test
     void passesSurviveRestart() {
         controller.buySpeedPasses("SP01", "T001", "10");
         controller.buySpecialPass("PE01", "TG01:12345678Z");
@@ -145,7 +160,7 @@ class TextRepositoriesTest {
     @Test
     void textFilesAreWritten() throws Exception {
         controller.saveState();
-        assertEquals("12345678Z;ana@correo.com;", Files.readAllLines(directory.resolve("users.txt")).get(0));
+        assertEquals("12345678Z;ana@correo.com;;;;;", Files.readAllLines(directory.resolve("users.txt")).get(0));
         assertEquals("G01;Familia Garcia;ana@correo.com;pedro@correo.com",
                 Files.readAllLines(directory.resolve("groups.txt")).get(0));
         assertEquals("A01;Dragon Rojo;20;GENERAL", Files.readAllLines(directory.resolve("attractions.txt")).get(0));
