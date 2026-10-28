@@ -29,3 +29,10 @@ If the password does not match the user's password, the user SHALL NOT be delete
 #### Scenario: Wrong password
 - **WHEN** a user with email `ana@correo.com` and password `Clave1!` exists and `USER DELETE;ana@correo.com;Otra1!` is processed
 - **THEN** an `ERROR:` line reporting an incorrect password is printed and the user still exists, also in the users file
+
+### Requirement: Deleted users leave their groups
+When a user is deleted, the user SHALL also be removed from every group it belonged to, so that groups only contain existing users.
+
+#### Scenario: Member is deleted
+- **WHEN** Ana belongs to group `G01` and `USER DELETE;ana@correo.com;Clave1!` succeeds
+- **THEN** `G01` no longer contains Ana
