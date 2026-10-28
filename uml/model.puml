@@ -3,7 +3,7 @@ title Amusement Park - domain model (Phase 2)
 hide empty methods
 skinparam classAttributeIconSize 0
 
-package es.upm.etsisi.amusementpark.controller {
+package es.upm.etsisi.amusementpark.business.controller {
   class ParkController <<singleton>> {
     - {static} INSTANCE : ParkController
     - currentDate : LocalDate
@@ -11,7 +11,7 @@ package es.upm.etsisi.amusementpark.controller {
   }
 }
 
-package es.upm.etsisi.amusementpark.model {
+package es.upm.etsisi.amusementpark.business.model {
   class User {
     - dni : String
     - email : String

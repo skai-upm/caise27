@@ -1,7 +1,6 @@
 package es.upm.etsisi.amusementpark.persistence;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,7 +44,7 @@ abstract class TextFileRepository {
         try {
             return Files.readAllLines(file, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new UncheckedIOException("Cannot read " + file, e);
+            throw new PersistenceException("Cannot read " + file, e);
         }
     }
 
@@ -54,7 +53,7 @@ abstract class TextFileRepository {
             Files.createDirectories(file.toAbsolutePath().getParent());
             Files.write(file, lines, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new UncheckedIOException("Cannot write " + file, e);
+            throw new PersistenceException("Cannot write " + file, e);
         }
     }
 

@@ -1,7 +1,8 @@
 package es.upm.etsisi.amusementpark;
 
-import es.upm.etsisi.amusementpark.cli.CommandProcessor;
-import es.upm.etsisi.amusementpark.controller.ParkController;
+import es.upm.etsisi.amusementpark.persistence.PersistenceException;
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.persistence.ParkStorage;
 
 import java.io.BufferedReader;
@@ -9,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -63,14 +63,14 @@ public class App {
         controller.reset();
         try {
             storage.load(controller, out);
-        } catch (UncheckedIOException e) {
+        } catch (PersistenceException e) {
             out.println("ERROR: Cannot load stored data: " + e.getMessage());
         }
         CommandProcessor processor = new CommandProcessor();
         processor.setAfterCommand(() -> {
             try {
                 storage.save(controller);
-            } catch (UncheckedIOException e) {
+            } catch (PersistenceException e) {
                 out.println("ERROR: Cannot save data: " + e.getMessage());
             }
         });

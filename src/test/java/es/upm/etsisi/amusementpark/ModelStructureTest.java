@@ -5,13 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.etsisi.amusementpark.controller.ParkController;
-import es.upm.etsisi.amusementpark.model.Attraction;
-import es.upm.etsisi.amusementpark.model.Group;
-import es.upm.etsisi.amusementpark.model.GroupTicket;
-import es.upm.etsisi.amusementpark.model.IndividualTicket;
-import es.upm.etsisi.amusementpark.model.Ticket;
-import es.upm.etsisi.amusementpark.model.User;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.model.Attraction;
+import es.upm.etsisi.amusementpark.business.model.Group;
+import es.upm.etsisi.amusementpark.business.model.GroupTicket;
+import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.Ticket;
+import es.upm.etsisi.amusementpark.business.model.User;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

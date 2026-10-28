@@ -1,15 +1,16 @@
 package es.upm.etsisi.amusementpark.persistence;
 
+import es.upm.etsisi.amusementpark.business.exception.ParkException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.etsisi.amusementpark.controller.ParkController;
-import es.upm.etsisi.amusementpark.model.GroupTicket;
-import es.upm.etsisi.amusementpark.model.IndividualTicket;
-import es.upm.etsisi.amusementpark.model.User;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.model.GroupTicket;
+import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.User;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -71,7 +72,7 @@ class ParkStorageTest {
         assertEquals(new BigDecimal("91.00"), tg01.getPrice());
         assertEquals(20, controller.findAttraction("A01").orElseThrow().getCapacity());
         controller.setCurrentDate("2027-04-01");
-        assertThrows(IllegalStateException.class, () -> controller.removeUserFromGroup("G01", "ana@correo.com"));
+        assertThrows(ParkException.class, () -> controller.removeUserFromGroup("G01", "ana@correo.com"));
         assertTrue(controller.hasActiveTickets(ana));
     }
 

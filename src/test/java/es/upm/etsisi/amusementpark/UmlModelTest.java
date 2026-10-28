@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
  */
 class UmlModelTest {
 
-    private static final String MODEL_PACKAGE = "es.upm.etsisi.amusementpark.model";
-    private static final Path MODEL_SOURCES = Path.of("src/main/java/es/upm/etsisi/amusementpark/model");
+    private static final String MODEL_PACKAGE = "es.upm.etsisi.amusementpark.business.model";
+    private static final Path MODEL_SOURCES = Path.of("src/main/java/es/upm/etsisi/amusementpark/business/model");
 
     private static List<String> modelClassNames() throws IOException {
         try (Stream<Path> files = Files.list(MODEL_SOURCES)) {

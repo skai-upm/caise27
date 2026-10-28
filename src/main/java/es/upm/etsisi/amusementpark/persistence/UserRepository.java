@@ -1,6 +1,6 @@
 package es.upm.etsisi.amusementpark.persistence;
 
-import es.upm.etsisi.amusementpark.model.User;
+import es.upm.etsisi.amusementpark.business.model.User;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

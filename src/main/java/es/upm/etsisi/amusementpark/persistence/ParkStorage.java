@@ -1,10 +1,11 @@
 package es.upm.etsisi.amusementpark.persistence;
 
-import es.upm.etsisi.amusementpark.controller.ParkController;
-import es.upm.etsisi.amusementpark.model.Attraction;
-import es.upm.etsisi.amusementpark.model.Group;
-import es.upm.etsisi.amusementpark.model.Ticket;
-import es.upm.etsisi.amusementpark.model.User;
+import es.upm.etsisi.amusementpark.business.exception.ParkException;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.model.Attraction;
+import es.upm.etsisi.amusementpark.business.model.Group;
+import es.upm.etsisi.amusementpark.business.model.Ticket;
+import es.upm.etsisi.amusementpark.business.model.User;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -85,7 +86,7 @@ public class ParkStorage {
     private static void report(PrintStream out, Runnable action) {
         try {
             action.run();
-        } catch (IllegalArgumentException | IllegalStateException e) {
+        } catch (ParkException e) {
             out.println("ERROR: Stored data ignored: " + e.getMessage());
         }
     }

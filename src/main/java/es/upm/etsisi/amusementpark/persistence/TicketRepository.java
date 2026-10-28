@@ -1,10 +1,11 @@
 package es.upm.etsisi.amusementpark.persistence;
 
-import es.upm.etsisi.amusementpark.model.Group;
-import es.upm.etsisi.amusementpark.model.GroupTicket;
-import es.upm.etsisi.amusementpark.model.IndividualTicket;
-import es.upm.etsisi.amusementpark.model.Ticket;
-import es.upm.etsisi.amusementpark.model.User;
+import es.upm.etsisi.amusementpark.business.exception.InvalidValueException;
+import es.upm.etsisi.amusementpark.business.model.Group;
+import es.upm.etsisi.amusementpark.business.model.GroupTicket;
+import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.Ticket;
+import es.upm.etsisi.amusementpark.business.model.User;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -76,7 +77,7 @@ public class TicketRepository extends TextFileRepository {
                     while (i < lines.size() && lines.get(i).startsWith("C" + SEPARATOR)) {
                         String[] c = fields(lines.get(i++));
                         if (c.length != 5) {
-                            throw new IllegalArgumentException("malformed composition line");
+                            throw new InvalidValueException("malformed composition line");
                         }
                         composition.add(new IndividualTicket(c[1], LocalDate.parse(f[2]),
                                 userResolver.apply(c[3], c[4]), new BigDecimal(c[2])));
@@ -84,7 +85,7 @@ public class TicketRepository extends TextFileRepository {
                     Group group = f[3].equals(NO_GROUP) ? null : groups.apply(f[3]).orElse(null);
                     tickets.add(GroupTicket.restore(f[1], LocalDate.parse(f[2]), group, composition));
                 } else {
-                    throw new IllegalArgumentException("unknown record");
+                    throw new InvalidValueException("unknown record");
                 }
             } catch (RuntimeException e) {
                 problem(lineNumber, line, e.getMessage());

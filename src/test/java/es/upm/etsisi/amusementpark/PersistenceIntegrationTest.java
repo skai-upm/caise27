@@ -3,8 +3,8 @@ package es.upm.etsisi.amusementpark;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.etsisi.amusementpark.controller.ParkController;
-import es.upm.etsisi.amusementpark.model.User;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.persistence.ParkStorage;
 
 import java.io.ByteArrayInputStream;

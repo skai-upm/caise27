@@ -1,6 +1,7 @@
 package es.upm.etsisi.amusementpark.persistence;
 
-import es.upm.etsisi.amusementpark.model.Attraction;
+import es.upm.etsisi.amusementpark.business.exception.InvalidValueException;
+import es.upm.etsisi.amusementpark.business.model.Attraction;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -36,14 +37,14 @@ public class AttractionRepository extends TextFileRepository {
             String[] f = fields(line);
             try {
                 if (f.length != 3 || f[0].isEmpty() || f[1].isEmpty()) {
-                    throw new IllegalArgumentException("expected id;name;capacity");
+                    throw new InvalidValueException("expected id;name;capacity");
                 }
                 int capacity = Integer.parseInt(f[2]);
                 if (capacity <= 0) {
-                    throw new IllegalArgumentException("capacity must be positive");
+                    throw new InvalidValueException("capacity must be positive");
                 }
                 attractions.add(new Attraction(f[0], f[1], capacity));
-            } catch (IllegalArgumentException e) {
+            } catch (InvalidValueException | NumberFormatException e) {
                 problem(i + 1, line, e.getMessage());
             }
         }
