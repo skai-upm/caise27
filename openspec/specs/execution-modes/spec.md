@@ -37,3 +37,14 @@ Commands read from a file and commands read from standard input SHALL be process
 #### Scenario: Same sequence, same output
 - **WHEN** the same sequence of commands (including a valid create, a duplicate, an update and an unknown command) is run once from standard input and once from a file, each time starting from the same stored users
 - **THEN** both runs print exactly the same responses and leave the same users stored
+
+### Requirement: Supported argument forms
+The application SHALL accept exactly these forms: no arguments (interactive), `<file>` (file mode), `--fly` (interactive, temporary persistence) and `--fly <file>` (file mode, temporary persistence). Without `--fly`, argument handling SHALL be the same as in the previous delivery.
+
+#### Scenario: Fly with a command file
+- **WHEN** the user runs `java -jar target/amusement-park.jar --fly input.txt`
+- **THEN** the commands of `input.txt` are processed in temporary persistence mode
+
+#### Scenario: Fly interactive
+- **WHEN** the user runs `java -jar target/amusement-park.jar --fly` and types commands
+- **THEN** the commands are read from standard input in temporary persistence mode
