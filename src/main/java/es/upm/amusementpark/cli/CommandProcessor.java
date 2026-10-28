@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 
+import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.park.ParkController;
 import es.upm.amusementpark.service.OperationException;
@@ -33,6 +34,8 @@ public class CommandProcessor {
             "GROUP ADD;<Identifier>;<Email>",
             "GROUP REMOVE;<Identifier>;<Email>",
             "GROUP DELETE;<Identifier>",
+            "TICKET CREATE;<identifier>;<email>;<date>",
+            "TICKET DELETE;<identifier>",
             "HELP",
             "EXIT");
 
@@ -69,6 +72,8 @@ public class CommandProcessor {
                 case "GROUP ADD" -> groupAdd(parts);
                 case "GROUP REMOVE" -> groupRemove(parts);
                 case "GROUP DELETE" -> groupDelete(parts);
+                case "TICKET CREATE" -> ticketCreate(parts);
+                case "TICKET DELETE" -> ticketDelete(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> error("Unknown command");
@@ -111,14 +116,30 @@ public class CommandProcessor {
         return "GROUP DELETED";
     }
 
+    private String ticketCreate(String[] parts) throws OperationException {
+        requireArguments(parts, 3, "TICKET CREATE");
+        Ticket ticket = park.tickets().createIndividualTicket(parts[1], parts[2], parseDate(parts[3]));
+        return "TICKET CREATED. Price: " + ticket.getPrice().toPlainString() + " EUR";
+    }
+
+    private String ticketDelete(String[] parts) throws OperationException {
+        requireArguments(parts, 1, "TICKET DELETE");
+        park.tickets().deleteIndividualTicket(parts[1]);
+        return "TICKET DELETED";
+    }
+
     private String systemDate(String[] parts) throws OperationException {
         requireArguments(parts, 1, "SYSTEM DATE");
-        try {
-            park.setCurrentDate(LocalDate.parse(parts[1], DATE_FORMAT));
-        } catch (DateTimeParseException e) {
-            throw new OperationException("Invalid date, expected yyyy-MM-dd: " + parts[1]);
-        }
+        park.setCurrentDate(parseDate(parts[1]));
         return "SYSTEM DATE UPDATED";
+    }
+
+    private static LocalDate parseDate(String text) throws OperationException {
+        try {
+            return LocalDate.parse(text, DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new OperationException("Invalid date, expected yyyy-MM-dd: " + text);
+        }
     }
 
     private String systemPrice(String[] parts) throws OperationException {

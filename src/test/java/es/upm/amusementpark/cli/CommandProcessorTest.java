@@ -195,4 +195,25 @@ class CommandProcessorTest {
         assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR: Group not found"));
         assertTrue(processor.process("GROUP ADD;G01").startsWith("ERROR: Wrong number of arguments"));
     }
+
+    @Test
+    void ticketCommands() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process(ANA);
+        assertEquals("TICKET CREATED. Price: 40.00 EUR", processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15"));
+        processor.process("SYSTEM PRICE;45.50");
+        assertEquals("TICKET CREATED. Price: 45.50 EUR", processor.process("TICKET CREATE;T002;ana@correo.com;2027-04-16"));
+        assertTrue(processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-16").startsWith("ERROR: A ticket with this identifier"));
+        assertTrue(processor.process("TICKET CREATE;T003;ana@correo.com;2027-04-14").startsWith("ERROR: Tickets cannot be created for past dates"));
+        assertTrue(processor.process("TICKET CREATE;T003;ana@correo.com;2027-13-01").startsWith("ERROR: Invalid date"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR: User has active tickets"));
+        assertTrue(processor.process("TICKET DELETE;T001").startsWith("ERROR:"));
+        assertEquals("TICKET DELETED", processor.process("TICKET DELETE;T002"));
+        assertTrue(help().contains("TICKET CREATE;<identifier>;<email>;<date>"));
+        assertTrue(help().contains("TICKET DELETE;<identifier>"));
+    }
+
+    private String help() {
+        return processor.process("HELP");
+    }
 }

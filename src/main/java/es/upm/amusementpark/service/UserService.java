@@ -111,7 +111,16 @@ public class UserService {
         List<User> users = repository.findAll();
         users.set(users.indexOf(user), updated);
         persist(users);
-        repository.save(updated);
+        copyInto(updated, user);
+    }
+
+    private static void copyInto(User from, User to) {
+        to.setFirstName(from.getFirstName());
+        to.setSurnames(from.getSurnames());
+        to.setEmail(from.getEmail());
+        to.setPassword(from.getPassword());
+        to.setPhone(from.getPhone());
+        to.setCardNumber(from.getCardNumber());
     }
 
     private static User copy(User u) {
@@ -119,7 +128,10 @@ public class UserService {
                 u.getCardNumber());
     }
 
-    private User authenticate(String email, String password) throws OperationException {
+    /**
+     * Returns the user identified by email and password.
+     */
+    public User authenticate(String email, String password) throws OperationException {
         User user = repository.findByEmail(email)
                 .orElseThrow(() -> new OperationException("User not found"));
         if (!user.getPassword().equals(password)) {
