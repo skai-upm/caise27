@@ -1,13 +1,28 @@
 @startuml model
-title Amusement Park - domain model (Phase 2)
+title Amusement Park - final design (Delivery 3)
 hide empty methods
+hide empty fields
 skinparam classAttributeIconSize 0
+
+package es.upm.etsisi.amusementpark {
+  class App {
+  }
+}
+
+package es.upm.etsisi.amusementpark.presentation {
+  class CommandProcessor {
+  }
+}
 
 package es.upm.etsisi.amusementpark.business.controller {
   class ParkController <<singleton>> {
     - {static} INSTANCE : ParkController
     - currentDate : LocalDate
     - currentPrice : BigDecimal
+  }
+
+  class InvoiceController <<singleton>> {
+    - {static} INSTANCE : InvoiceController
   }
 }
 
@@ -25,6 +40,15 @@ package es.upm.etsisi.amusementpark.business.model {
   class Group {
     - identifier : String
     - name : String
+  }
+
+  interface Admission {
+  }
+
+  interface IndividualAdmission {
+  }
+
+  interface GroupAdmission {
   }
 
   abstract class Ticket {
@@ -51,15 +75,6 @@ package es.upm.etsisi.amusementpark.business.model {
   class SpecialPass {
   }
 
-  interface Admission {
-  }
-
-  interface IndividualAdmission {
-  }
-
-  interface GroupAdmission {
-  }
-
   enum AttractionType {
     GENERAL
     INDIVIDUAL
@@ -74,9 +89,6 @@ package es.upm.etsisi.amusementpark.business.model {
     - admissionType : Class<T>
   }
 
-  class EntryResult <<record>> {
-  }
-
   class GeneralAttraction {
   }
 
@@ -88,8 +100,97 @@ package es.upm.etsisi.amusementpark.business.model {
 
   class SpecialAttraction {
   }
+
+  class EntryResult <<record>> {
+  }
 }
 
+package es.upm.etsisi.amusementpark.business.invoice {
+  abstract class InvoiceBuilder {
+    - title : String
+  }
+
+  class UserInvoiceBuilder {
+  }
+
+  class GroupInvoiceBuilder {
+  }
+
+  class InvoiceDirector {
+  }
+
+  class Invoice {
+    - title : String
+    - recipient : List<String>
+  }
+
+  class InvoiceSection <<record>> {
+    - title : String
+  }
+
+  class InvoiceItem <<record>> {
+    - description : String
+    - amount : BigDecimal
+    - details : List<String>
+  }
+}
+
+package es.upm.etsisi.amusementpark.business.repository {
+  interface UserRepository {
+  }
+
+  interface GroupRepository {
+  }
+
+  interface TicketRepository {
+  }
+
+  interface AttractionRepository {
+  }
+
+  interface PassRepository {
+  }
+
+  class ParkRepositories <<record>> {
+  }
+}
+
+package es.upm.etsisi.amusementpark.business.security {
+  interface PasswordHasher {
+  }
+
+  class BCryptPasswordHasher {
+  }
+
+  class PasswordPolicy {
+  }
+}
+
+package es.upm.etsisi.amusementpark.persistence {
+  abstract class TextFileRepository {
+    - file : Path
+  }
+
+  class TextUserRepository {
+  }
+
+  class TextGroupRepository {
+  }
+
+  class TextTicketRepository {
+  }
+
+  class TextAttractionRepository {
+  }
+
+  class TextPassRepository {
+  }
+
+  class TextRepositories {
+  }
+}
+
+' ---- tickets ----
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 Admission <|-- IndividualAdmission
@@ -97,32 +198,86 @@ Admission <|-- GroupAdmission
 Admission <|.. Ticket
 IndividualAdmission <|.. IndividualTicket
 GroupAdmission <|.. GroupTicket
-Attraction <|-- GeneralAttraction : <<bind>> T -> Admission
-Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualAdmission
-Attraction <|-- GroupAttraction : <<bind>> T -> GroupAdmission
-Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualAdmission
-Attraction ..> AttractionType : type
-Attraction ..> EntryResult : enter
-EntryResult --> "1..*" User : users
-EntryResult --> "*" Pass : consumedPasses
-Pass <|-- SpeedPass
-Pass <|-- SpecialPass
 
 IndividualTicket "*" --> "1" User : user
 GroupTicket "1" *--> "1..*" IndividualTicket : composition
 GroupTicket "*" --> "0..1" Group : group
 Group "*" o--> "*" User : members
-Attraction "0..1" o--> "0..*" User : occupants
-Pass "*" --> "1" IndividualTicket : ticket
 
+' ---- passes (the ticket reference is declared in Pass) ----
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+SpeedPass "0..*" --> "1" IndividualTicket : ticket
+SpecialPass "0..1" --> "1" IndividualTicket : ticket
+
+' ---- attractions ----
+Attraction <|-- GeneralAttraction : <<bind>> T -> Admission
+Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualAdmission
+Attraction <|-- GroupAttraction : <<bind>> T -> GroupAdmission
+Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualAdmission
+Attraction "0..1" o--> "0..*" User : occupants
+Attraction ..> AttractionType : type
+Attraction ..> EntryResult : enter
+EntryResult --> "1..*" User : users
+EntryResult --> "*" Pass : consumedPasses
+
+' ---- invoices (Builder) ----
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceDirector ..> InvoiceBuilder : construct
+InvoiceBuilder ..> Invoice : getResult
+Invoice "1" *--> "*" InvoiceSection : sections
+InvoiceSection "1" *--> "1..*" InvoiceItem : items
+UserInvoiceBuilder --> "1" User : user
+UserInvoiceBuilder --> "*" IndividualTicket : directTickets
+UserInvoiceBuilder --> "*" Pass : passes
+GroupInvoiceBuilder --> "1" Group : group
+GroupInvoiceBuilder --> "*" GroupTicket : groupTickets
+
+' ---- controllers and dependency injection ----
 ParkController "1" *--> "*" User : users
 ParkController "1" *--> "*" Group : groups
 ParkController "1" *--> "*" Ticket : tickets
 ParkController "1" *--> "*" Attraction : attractions
 ParkController "1" *--> "*" Pass : passes
+ParkController --> "0..1" ParkRepositories : repositories
+ParkController --> "1" PasswordHasher : passwordHasher
+InvoiceController --> "0..1" ParkController : park
+InvoiceController --> "1" InvoiceDirector : director
+ParkRepositories --> UserRepository : users
+ParkRepositories --> GroupRepository : groups
+ParkRepositories --> TicketRepository : tickets
+ParkRepositories --> AttractionRepository : attractions
+ParkRepositories --> PassRepository : passes
+PasswordHasher <|.. BCryptPasswordHasher
+ParkController ..> PasswordPolicy : validates
+
+TextFileRepository <|-- TextUserRepository
+TextFileRepository <|-- TextGroupRepository
+TextFileRepository <|-- TextTicketRepository
+TextFileRepository <|-- TextAttractionRepository
+TextFileRepository <|-- TextPassRepository
+UserRepository <|.. TextUserRepository
+GroupRepository <|.. TextGroupRepository
+TicketRepository <|.. TextTicketRepository
+AttractionRepository <|.. TextAttractionRepository
+PassRepository <|.. TextPassRepository
+TextRepositories ..> ParkRepositories : creates
+
+App ..> TextRepositories : inDirectory(data | tmp)
+App ..> ParkController : configure(repositories)
+App ..> InvoiceController : configure(park)
+App ..> CommandProcessor : creates
+CommandProcessor --> ParkController : injected
+CommandProcessor --> InvoiceController : injected
 
 note bottom of Ticket
   price = sum of the prices of
   the individual tickets it consists of
+end note
+note right of Pass
+  each Pass references one IndividualTicket;
+  a ticket has any number of SpeedPasses
+  and at most one Special Pass
 end note
 @enduml

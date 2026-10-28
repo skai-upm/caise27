@@ -13,19 +13,32 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * Keeps {@code uml/model.puml} consistent with the model classes.
+ * Keeps {@code uml/model.puml} consistent with the code.
  */
 class UmlModelTest {
 
-    private static final String MODEL_PACKAGE = "es.upm.etsisi.amusementpark.business.model";
-    private static final Path MODEL_SOURCES = Path.of("src/main/java/es/upm/etsisi/amusementpark/business/model");
+    private static final String ROOT_PACKAGE = "es.upm.etsisi.amusementpark";
+    private static final Path SOURCES = Path.of("src/main/java/es/upm/etsisi/amusementpark");
+    /** Packages whose every type must be drawn (exceptions are deliberately not drawn). */
+    private static final List<String> DRAWN_PACKAGES = List.of("business.model", "business.controller",
+            "business.invoice", "business.repository", "business.security", "persistence");
 
-    private static List<String> modelClassNames() throws IOException {
-        try (Stream<Path> files = Files.list(MODEL_SOURCES)) {
+    private static List<String> typeNames(Path directory) throws IOException {
+        try (Stream<Path> files = Files.list(directory)) {
             return files.map(file -> file.getFileName().toString())
                     .filter(name -> name.endsWith(".java"))
                     .map(name -> name.substring(0, name.length() - ".java".length()))
+                    .filter(name -> !name.endsWith("Exception"))
                     .sorted()
+                    .toList();
+        }
+    }
+
+    private static List<String> allMainTypeNames() throws IOException {
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            return files.map(file -> file.getFileName().toString())
+                    .filter(name -> name.endsWith(".java"))
+                    .map(name -> name.substring(0, name.length() - ".java".length()))
                     .toList();
         }
     }
@@ -34,14 +47,28 @@ class UmlModelTest {
         return Files.readString(Path.of("uml/model.puml"));
     }
 
+    private static String declaration(Class<?> type) {
+        return (type.isInterface() ? "interface " : type.isEnum() ? "enum "
+                : Modifier.isAbstract(type.getModifiers()) ? "abstract class " : "class ") + type.getSimpleName();
+    }
+
     @Test
-    void everyModelClassAndFieldIsInTheDiagram() throws Exception {
+    void everyDrawnTypeIsDeclared() throws Exception {
         String uml = diagram();
-        for (String name : modelClassNames()) {
-            Class<?> type = Class.forName(MODEL_PACKAGE + "." + name);
-            String declaration = (type.isInterface() ? "interface " : type.isEnum() ? "enum "
-                    : Modifier.isAbstract(type.getModifiers()) ? "abstract class " : "class ") + name;
-            assertTrue(uml.contains(declaration + " ") || uml.contains(declaration + "<"), "missing " + declaration);
+        for (String pkg : DRAWN_PACKAGES) {
+            for (String name : typeNames(SOURCES.resolve(pkg.replace('.', '/')))) {
+                String declaration = declaration(Class.forName(ROOT_PACKAGE + "." + pkg + "." + name));
+                assertTrue(uml.contains(declaration + " ") || uml.contains(declaration + "<"),
+                        "missing " + declaration);
+            }
+        }
+    }
+
+    @Test
+    void everyModelFieldIsInTheDiagram() throws Exception {
+        String uml = diagram();
+        for (String name : typeNames(SOURCES.resolve("business/model"))) {
+            Class<?> type = Class.forName(ROOT_PACKAGE + ".business.model." + name);
             for (Field field : type.getDeclaredFields()) {
                 if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
                     assertTrue(uml.contains(" " + field.getName() + " ") || uml.contains(": " + field.getName()),
@@ -52,19 +79,22 @@ class UmlModelTest {
     }
 
     @Test
-    void diagramDeclaresOnlyExistingClasses() throws Exception {
-        List<String> known = modelClassNames();
+    void diagramDeclaresOnlyExistingTypes() throws Exception {
+        List<String> known = allMainTypeNames();
         for (String line : diagram().lines().map(String::trim).toList()) {
-            String rest = line.startsWith("abstract class ") ? line.substring("abstract class ".length())
-                    : line.startsWith("class ") ? line.substring("class ".length())
-                    : line.startsWith("interface ") ? line.substring("interface ".length())
-                    : line.startsWith("enum ") ? line.substring("enum ".length()) : null;
-            if (rest != null) {
-                String name = rest.substring(0, rest.indexOf(' '));
-                if (name.indexOf('<') > 0) {
-                    name = name.substring(0, name.indexOf('<'));
+            String rest = null;
+            for (String keyword : List.of("abstract class ", "class ", "interface ", "enum ")) {
+                if (rest == null && line.startsWith(keyword)) {
+                    rest = line.substring(keyword.length());
                 }
-                assertTrue(known.contains(name) || name.equals("ParkController"), "unknown class in diagram: " + name);
+            }
+            if (rest != null) {
+                int end = 0;
+                while (end < rest.length() && Character.isJavaIdentifierPart(rest.charAt(end))) {
+                    end++;
+                }
+                String name = rest.substring(0, end);
+                assertTrue(known.contains(name), "unknown type in diagram: " + name);
             }
         }
     }
@@ -79,7 +109,17 @@ class UmlModelTest {
                 "IndividualTicket \"*\" --> \"1\" User : user",
                 "GroupTicket \"*\" --> \"0..1\" Group : group",
                 "Group \"*\" o--> \"*\" User : members",
-                "Attraction \"0..1\" o--> \"0..*\" User : occupants")) {
+                "Attraction \"0..1\" o--> \"0..*\" User : occupants",
+                "IndividualAdmission <|.. IndividualTicket",
+                "GroupAdmission <|.. GroupTicket",
+                "abstract class Attraction<T extends Admission>",
+                "SpeedPass \"0..*\" --> \"1\" IndividualTicket : ticket",
+                "SpecialPass \"0..1\" --> \"1\" IndividualTicket : ticket",
+                "InvoiceBuilder <|-- UserInvoiceBuilder",
+                "InvoiceBuilder <|-- GroupInvoiceBuilder",
+                "class ParkController <<singleton>>",
+                "class InvoiceController <<singleton>>",
+                "InvoiceController --> \"0..1\" ParkController : park")) {
             assertTrue(uml.contains(relation), "missing relation " + relation);
         }
         assertTrue(!uml.contains("User \"") && !uml.contains("User -->"), "users must not reference other elements");
