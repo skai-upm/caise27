@@ -19,6 +19,10 @@ public class UserRepository {
         usersByDni.put(user.getDni(), user);
     }
 
+    public void delete(String dni) {
+        usersByDni.remove(dni);
+    }
+
     public Optional<User> findByDni(String dni) {
         return Optional.ofNullable(usersByDni.get(dni));
     }

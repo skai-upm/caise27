@@ -59,4 +59,27 @@ class UserServiceTest {
         assertRejected("Could not save", "12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
         assertTrue(repository.findAll().isEmpty());
     }
+
+    @Test
+    void deleteWithCorrectPasswordRemovesAndSaves() throws UserOperationException {
+        create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
+        create("87654321X", "pedro@correo.com", "Otra2#", "9876543210987654");
+        service.deleteUser("ana@correo.com", "Clave1!");
+        assertTrue(repository.findByDni("12345678Z").isEmpty());
+        assertEquals(1, storage.saved().size());
+        assertEquals("87654321X", storage.saved().get(0).getDni());
+    }
+
+    @Test
+    void deleteOfUnknownEmailOrWithWrongPasswordIsRejected() throws UserOperationException {
+        create("12345678Z", "ana@correo.com", "Clave1!", "1234567890123456");
+        UserOperationException notFound = assertThrows(UserOperationException.class,
+                () -> service.deleteUser("nadie@correo.com", "Clave1!"));
+        assertTrue(notFound.getMessage().contains("not found"));
+        UserOperationException wrong = assertThrows(UserOperationException.class,
+                () -> service.deleteUser("ana@correo.com", "Otra1!"));
+        assertTrue(wrong.getMessage().contains("Incorrect password"));
+        assertEquals(1, repository.findAll().size());
+        assertEquals(1, storage.saved().size());
+    }
 }

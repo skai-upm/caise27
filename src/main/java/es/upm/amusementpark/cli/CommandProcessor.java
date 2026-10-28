@@ -33,6 +33,7 @@ public class CommandProcessor {
         try {
             return switch (parts[0]) {
                 case "USER CREATE" -> userCreate(parts);
+                case "USER DELETE" -> userDelete(parts);
                 default -> error("Unknown command");
             };
         } catch (UserOperationException e) {
@@ -44,6 +45,12 @@ public class CommandProcessor {
         requireArguments(parts, 7, "USER CREATE");
         userService.createUser(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
         return "USER CREATED";
+    }
+
+    private String userDelete(String[] parts) throws UserOperationException {
+        requireArguments(parts, 2, "USER DELETE");
+        userService.deleteUser(parts[1], parts[2]);
+        return "USER DELETED";
     }
 
     private static void requireArguments(String[] parts, int expected, String command)

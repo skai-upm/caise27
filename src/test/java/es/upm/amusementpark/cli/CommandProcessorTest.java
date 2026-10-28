@@ -54,4 +54,21 @@ class CommandProcessorTest {
         assertNull(processor.process(""));
         assertNull(processor.process("   "));
     }
+
+    @Test
+    void userDeleteRemovesUserAndAllowsReuse() {
+        processor.process(ANA);
+        assertEquals("USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(repository.findAll().isEmpty());
+        assertEquals("USER CREATED", processor.process(ANA));
+    }
+
+    @Test
+    void userDeleteErrors() {
+        processor.process(ANA);
+        assertTrue(processor.process("USER DELETE;nadie@correo.com;Clave1!").startsWith("ERROR: User not found"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Otra1!").startsWith("ERROR: Incorrect password"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com").startsWith("ERROR: Wrong number of arguments"));
+        assertEquals(1, repository.findAll().size());
+    }
 }

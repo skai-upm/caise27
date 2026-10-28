@@ -49,6 +49,26 @@ public class UserService {
         return user;
     }
 
+    /**
+     * Deletes the user identified by email and password.
+     */
+    public void deleteUser(String email, String password) throws UserOperationException {
+        User user = authenticate(email, password);
+        List<User> users = repository.findAll();
+        users.remove(user);
+        persist(users);
+        repository.delete(user.getDni());
+    }
+
+    private User authenticate(String email, String password) throws UserOperationException {
+        User user = repository.findByEmail(email)
+                .orElseThrow(() -> new UserOperationException("User not found"));
+        if (!user.getPassword().equals(password)) {
+            throw new UserOperationException("Incorrect password");
+        }
+        return user;
+    }
+
     private void persist(List<User> users) throws UserOperationException {
         try {
             storage.save(users);

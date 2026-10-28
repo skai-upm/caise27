@@ -31,4 +31,13 @@ class UserRepositoryTest {
         repository.save(ana);
         assertEquals(List.of(pedro, ana), repository.findAll());
     }
+
+    @Test
+    void deleteRemovesTheUser() {
+        repository.save(ana);
+        repository.save(pedro);
+        repository.delete("12345678Z");
+        assertTrue(repository.findByDni("12345678Z").isEmpty());
+        assertEquals(List.of(pedro), repository.findAll());
+    }
 }
