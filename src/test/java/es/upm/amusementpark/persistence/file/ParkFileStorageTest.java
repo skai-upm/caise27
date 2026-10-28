@@ -23,6 +23,9 @@ import es.upm.amusementpark.business.model.SpecialAttraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
@@ -100,5 +103,33 @@ class ParkFileStorageTest {
         Attraction<?> loaded = new AttractionFileStorage(file).load(new ArrayList<>()).get(0);
         assertEquals(AttractionType.GENERAL, loaded.getType());
         assertEquals(20, loaded.getCapacity());
+    }
+
+    @Test
+    void passesRoundTripWithPriceAndState() throws Exception {
+        LocalDate day = LocalDate.of(2027, 4, 15);
+        IndividualTicket t1 = new IndividualTicket("T001", day, ana, new BigDecimal("40.00"));
+        GroupTicket tg = new GroupTicket("TG01", day, new Group("G01", "g"), List.of(ana, pedro, ana2()),
+                new BigDecimal("40.00"));
+        IndividualTicket composition = tg.individualTickets().get(1);
+        SpeedPass consumed = new SpeedPass("SP01:1", t1);
+        consumed.consume();
+        PassFileStorage storage = new PassFileStorage(dir.resolve("passes.txt"));
+        storage.save(List.of(consumed, new SpeedPass("SP02:1", composition), new SpecialPass("PE01", t1)));
+        Map<String, IndividualTicket> tickets = Map.of("T001", t1, composition.getId(), composition);
+        List<String> warnings = new ArrayList<>();
+        List<Pass> loaded = storage.load(id -> Optional.ofNullable(tickets.get(id)), warnings);
+        assertTrue(warnings.isEmpty(), warnings.toString());
+        assertEquals(3, loaded.size());
+        assertTrue(loaded.get(0) instanceof SpeedPass && loaded.get(0).isConsumed());
+        assertEquals(new BigDecimal("8.00"), loaded.get(0).getPrice());
+        assertSame(composition, loaded.get(1).getTicket());
+        assertEquals(new BigDecimal("7.20"), loaded.get(1).getPrice());
+        assertTrue(loaded.get(2) instanceof SpecialPass && !loaded.get(2).isConsumed());
+        assertEquals(new BigDecimal("40.00"), loaded.get(2).getPrice());
+    }
+
+    private User ana2() {
+        return new User("Luis", "P", "11111111H", "luis@correo.com", "x", "6", "1111222233334444");
     }
 }

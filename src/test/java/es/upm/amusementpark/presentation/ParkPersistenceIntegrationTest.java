@@ -141,4 +141,45 @@ class ParkPersistenceIntegrationTest {
         assertEquals(List.of("ERROR: Incorrect password", "USER UPDATED", "ERROR: Invalid password", "USER DELETED"),
                 List.of(out.split("\\R")));
     }
+
+    @Test
+    void passesAndTheirStateSurviveRestarts() throws Exception {
+        Path data = dir.resolve("data");
+        run(data, String.join("\n",
+                "SYSTEM DATE;2027-04-15",
+                "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                "TICKET CREATE;T001;ana@correo.com;2027-04-15",
+                "TICKET CREATE;T002;ana@correo.com;2027-04-20",
+                "ATTRACTION CREATE;A01;Dragon Rojo;20",
+                "SPEEDPASS CREATE;SP01;T001;1",
+                "SPEEDPASS CREATE;SP02;T001;1",
+                "SPECIALPASS CREATE;PE01;T001",
+                "SPEEDPASS CREATE;SP09;T002;10",
+                "ATTRACTION ENTER;A01;T001;SPEED"));
+        assertTrue(Files.readString(data.resolve("passes.txt")).contains("S;SP01:1;T001;8.00;true"));
+        String out = run(data, String.join("\n",
+                "SYSTEM DATE;2027-04-15",
+                "SPECIALPASS CREATE;PE02;T001",
+                "ATTRACTION ENTER;A01;T001;SPEED",
+                "TICKET DELETE;T002"));
+        List<String> l = List.of(out.split("\\R"));
+        assertTrue(l.get(1).startsWith("ERROR: Ticket already has a Special Pass"), l.get(1));
+        assertTrue(out.contains("SPEEDPASS CONSUMED: SP02:1 (ticket T001)"), out);
+        assertTrue(out.contains("TICKET DELETED"));
+        String third = run(data, "SYSTEM DATE;2027-04-15\nATTRACTION ENTER;A01;T001;SPEED\nSPEEDPASS DELETE;SP09:1");
+        assertTrue(third.contains("ERROR: Ticket T001 has no unconsumed SpeedPass"), third);
+        assertTrue(third.contains("ERROR: SpeedPass not found"), third);
+        String passes = Files.readString(data.resolve("passes.txt"));
+        assertTrue(passes.contains("P;PE01;T001;40.00;false"));
+        assertFalse(passes.contains("SP09"));
+    }
+
+    @Test
+    void flyModeDoesNotTouchPermanentPasses() throws Exception {
+        Path data = dir.resolve("data");
+        run(data, String.join("\n", "SYSTEM DATE;2027-04-15",
+                "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                "TICKET CREATE;T001;ana@correo.com;2027-04-15", "SPEEDPASS CREATE;SP01;T001;10"), "--fly");
+        assertTrue(Files.notExists(data.resolve("passes.txt")));
+    }
 }

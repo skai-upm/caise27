@@ -7,16 +7,17 @@ import java.math.BigDecimal;
  */
 public class SpecialPass extends Pass {
 
+    /**
+     * New unconsumed Special Pass priced from its ticket.
+     */
     public SpecialPass(String id, IndividualTicket ticket) {
-        this(id, ticket, false);
+        this(id, ticket, ticket.getPrice(), false);
     }
 
-    public SpecialPass(String id, IndividualTicket ticket, boolean consumed) {
-        super(id, ticket, consumed);
-    }
-
-    @Override
-    public BigDecimal getPrice() {
-        return getTicket().getPrice();
+    /**
+     * Special Pass rebuilt from stored data.
+     */
+    public SpecialPass(String id, IndividualTicket ticket, BigDecimal price, boolean consumed) {
+        super(id, ticket, price, consumed);
     }
 }

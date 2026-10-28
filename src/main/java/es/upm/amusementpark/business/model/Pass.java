@@ -11,11 +11,13 @@ public abstract class Pass {
 
     private final String id;
     private final IndividualTicket ticket;
+    private final BigDecimal price;
     private boolean consumed;
 
-    protected Pass(String id, IndividualTicket ticket, boolean consumed) {
+    protected Pass(String id, IndividualTicket ticket, BigDecimal price, boolean consumed) {
         this.id = id;
         this.ticket = ticket;
+        this.price = price;
         this.consumed = consumed;
     }
 
@@ -36,9 +38,11 @@ public abstract class Pass {
     }
 
     /**
-     * Price charged for the pass, derived from the price stored in its ticket.
+     * Price charged for the pass, fixed at purchase from the price stored in its ticket.
      */
-    public abstract BigDecimal getPrice();
+    public BigDecimal getPrice() {
+        return price;
+    }
 
     /**
      * A pass can be refunded while unconsumed and its ticket is dated after the current date.

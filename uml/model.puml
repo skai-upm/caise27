@@ -1,5 +1,5 @@
 @startuml model
-title Amusement Park - class model (layered: presentation / business / persistence)
+title Amusement Park - Delivery 3 class model (layered: presentation / business / persistence)
 
 skinparam classAttributeIconSize 0
 hide empty members
@@ -106,12 +106,12 @@ package es.upm.amusementpark.business.invoice {
 }
 
 package es.upm.amusementpark.business.service {
-  class PassService
-  class InvoiceService
-  class UserService
-  class GroupService
-  class TicketService
-  class AttractionService
+  class PassService <<singleton>>
+  class InvoiceService <<singleton>>
+  class UserService <<singleton>>
+  class GroupService <<singleton>>
+  class TicketService <<singleton>>
+  class AttractionService <<singleton>>
   interface ActiveGroupTicketCheck
   class AttractionStatus <<record>> {
     id : String
@@ -138,12 +138,16 @@ package es.upm.amusementpark.persistence.file {
   class GroupFileStorage
   class TicketFileStorage
   class AttractionFileStorage
+  class PassFileStorage
+  class ParkStorage <<record>>
   class DataLocation <<record>> {
     directory : Path
   }
 }
 
 package es.upm.amusementpark.business {
+  class ParkInitializer <<composition root>>
+  class ParkDependencies <<record>>
   class ParkController <<singleton>> {
     - {static} INSTANCE : ParkController
     - currentDate : LocalDate
@@ -157,6 +161,13 @@ package es.upm.amusementpark.presentation {
     - exitRequested : boolean
   }
   class CommandSyntaxException
+  class InvoiceFormatter
+  class CommandCatalog
+  class CommandDescriptor <<record>>
+  interface HelpFormat
+  class BasicHelpFormat
+  class ExtendedHelpFormat
+  class HelpGenerator
 }
 
 ' --- ticket hierarchy and composition
@@ -169,7 +180,8 @@ GroupTicket "0..*" --> "0..1" Group : group >
 ' --- passes (personal add-ons of individual tickets)
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
-Pass "0..*" --> "1" IndividualTicket : ticket >
+SpeedPass "0..*" --> "1" IndividualTicket : ticket >
+SpecialPass "0..1" --> "1" IndividualTicket : ticket >
 PassRepository "1" o-- "0..*" Pass
 PassService --> "1" PassRepository
 PassService --> "1" TicketService
@@ -183,8 +195,8 @@ InvoiceSection "1" *-- "1..*" InvoiceItem
 InvoiceService ..> UserInvoiceBuilder : directs >
 InvoiceService ..> GroupInvoiceBuilder : directs >
 InvoiceService --> "1" PassService
-ParkController "1" *-- "1" PassService
-ParkController "1" *-- "1" InvoiceService
+ParkController "1" --> "1" PassService
+ParkController "1" --> "1" InvoiceService
 
 ' --- access capabilities and generic attractions
 AccessTicket <|-- GeneralAccess
@@ -232,18 +244,44 @@ AttractionService ..> AttractionStatus
 
 ' --- persistence
 UserFileStorage ..|> UserStorage
-ParkController --> "0..1" GroupFileStorage
-ParkController --> "0..1" TicketFileStorage
-ParkController --> "0..1" AttractionFileStorage
+ParkStorage *-- "1" GroupFileStorage
+ParkStorage *-- "1" TicketFileStorage
+ParkStorage *-- "1" AttractionFileStorage
+ParkStorage *-- "1" PassFileStorage
+DataLocation <.. ParkStorage : paths >
+
+' --- dependency injection (composition root wires singletons with fresh repositories)
+ParkInitializer ..> ParkDependencies : creates >
+ParkInitializer ..> ParkController : configure() >
+ParkInitializer ..> UserService : configure() >
+ParkInitializer ..> GroupService : configure() >
+ParkInitializer ..> TicketService : configure() >
+ParkInitializer ..> AttractionService : configure() >
+ParkInitializer ..> PassService : configure() >
+ParkInitializer ..> InvoiceService : configure() >
+ParkDependencies --> "1" UserRepository
+ParkDependencies --> "1" GroupRepository
+ParkDependencies --> "1" TicketRepository
+ParkDependencies --> "1" AttractionRepository
+ParkDependencies --> "1" PassRepository
+ParkDependencies --> "0..1" UserStorage
+ParkDependencies --> "0..1" ParkStorage
+ParkController --> "1" ParkDependencies
+
+' --- help generation (injected strategy)
+HelpGenerator --> "1" HelpFormat : injected >
+HelpGenerator --> "1..*" CommandDescriptor
+BasicHelpFormat ..|> HelpFormat
+ExtendedHelpFormat ..|> HelpFormat
+CommandCatalog ..> CommandDescriptor
+CommandProcessor --> "2" HelpGenerator : HELP / HELP EXTENDED >
+CommandProcessor ..> InvoiceFormatter
 
 ' --- central management
-ParkController "1" *-- "1" UserService
-ParkController "1" *-- "1" GroupService
-ParkController "1" *-- "1" TicketService
-ParkController "1" *-- "1" AttractionService
-ParkController "1" *-- "1" GroupRepository
-ParkController "1" *-- "1" TicketRepository
-ParkController "1" *-- "1" AttractionRepository
+ParkController "1" --> "1" UserService
+ParkController "1" --> "1" GroupService
+ParkController "1" --> "1" TicketService
+ParkController "1" --> "1" AttractionService
 
 '' --- exceptions
 ParkException <|-- ValidationException

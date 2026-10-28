@@ -10,12 +10,18 @@ public class SpeedPass extends Pass {
 
     private static final BigDecimal RATE = new BigDecimal("0.20");
 
+    /**
+     * New unconsumed SpeedPass priced from its ticket.
+     */
     public SpeedPass(String id, IndividualTicket ticket) {
-        this(id, ticket, false);
+        this(id, ticket, ticket.getPrice().multiply(RATE).setScale(2, RoundingMode.HALF_UP), false);
     }
 
-    public SpeedPass(String id, IndividualTicket ticket, boolean consumed) {
-        super(id, ticket, consumed);
+    /**
+     * SpeedPass rebuilt from stored data.
+     */
+    public SpeedPass(String id, IndividualTicket ticket, BigDecimal price, boolean consumed) {
+        super(id, ticket, price, consumed);
     }
 
     /**
@@ -23,10 +29,5 @@ public class SpeedPass extends Pass {
      */
     public static String derivedId(String purchaseId, int number) {
         return purchaseId + ":" + number;
-    }
-
-    @Override
-    public BigDecimal getPrice() {
-        return getTicket().getPrice().multiply(RATE).setScale(2, RoundingMode.HALF_UP);
     }
 }

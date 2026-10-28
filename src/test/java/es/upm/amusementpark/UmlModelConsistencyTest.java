@@ -72,4 +72,19 @@ class UmlModelConsistencyTest {
             }
         }
     }
+
+    @Test
+    void deliveryThreeElementsAreRepresented() throws IOException {
+        String text = Files.readString(MODEL);
+        for (String required : List.of("interface AccessTicket", "abstract class Attraction<T extends AccessTicket>",
+                "Attraction <|-- GeneralAttraction", "Attraction <|-- IndividualAttraction",
+                "Attraction <|-- GroupAttraction", "Attraction <|-- SpecialAttraction", "enum AttractionType",
+                "SpeedPass \"0..*\" --> \"1\" IndividualTicket", "SpecialPass \"0..1\" --> \"1\" IndividualTicket",
+                "abstract class InvoiceBuilder", "InvoiceBuilder <|-- UserInvoiceBuilder",
+                "InvoiceBuilder <|-- GroupInvoiceBuilder", "class ParkInitializer",
+                "class ParkController <<singleton>>", "class UserService <<singleton>>", "class PassService <<singleton>>",
+                "HelpGenerator --> \"1\" HelpFormat")) {
+            assertTrue(text.contains(required), required);
+        }
+    }
 }

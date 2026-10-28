@@ -104,6 +104,7 @@ public final class ParkController {
             storage.groups().load(users::findByDni, warnings).forEach(deps.groups()::save);
             storage.attractions().load(warnings).forEach(deps.attractions()::save);
             storage.tickets().load(users::findByDni, deps.groups()::findById, warnings).forEach(deps.tickets()::save);
+            storage.passes().load(deps.tickets()::findIndividualById, warnings).forEach(deps.passes()::save);
         }
         return warnings;
     }
@@ -120,6 +121,7 @@ public final class ParkController {
             storage.groups().save(dependencies.groups().findAll());
             storage.tickets().save(dependencies.tickets().findAll());
             storage.attractions().save(dependencies.attractions().findAll());
+            storage.passes().save(dependencies.passes().findAll());
         } catch (IOException e) {
             throw new DataAccessException("Could not save park data: " + e.getMessage(), e);
         }
