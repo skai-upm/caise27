@@ -87,4 +87,28 @@ class CommandProcessorTest {
         assertEquals("Ana Maria", ana.getFirstName());
         assertEquals("9999888877776666", ana.getCardNumber());
     }
+
+    @Test
+    void helpListsEveryCommandSyntax() {
+        String help = processor.process("HELP");
+        assertTrue(help.contains("USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>"));
+        assertTrue(help.contains("USER DELETE;<email>;<password>"));
+        assertTrue(help.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
+        assertTrue(help.contains("HELP"));
+        assertTrue(help.contains("EXIT"));
+    }
+
+    @Test
+    void exitSetsTheExitFlag() {
+        assertTrue(!processor.isExitRequested());
+        assertEquals("Goodbye", processor.process("EXIT"));
+        assertTrue(processor.isExitRequested());
+    }
+
+    @Test
+    void helpAndExitTakeNoArguments() {
+        assertTrue(processor.process("HELP;x").startsWith("ERROR: Wrong number of arguments"));
+        assertTrue(processor.process("EXIT;x").startsWith("ERROR: Wrong number of arguments"));
+        assertTrue(!processor.isExitRequested());
+    }
 }

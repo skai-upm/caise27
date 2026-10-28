@@ -12,7 +12,16 @@ public class CommandProcessor {
 
     private static final String SEPARATOR = ";";
 
+    static final String HELP_TEXT = String.join(System.lineSeparator(),
+            "Available commands:",
+            "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
+            "USER DELETE;<email>;<password>",
+            "USER UPDATE;<email>;<password>;<field>;<value>  (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "HELP",
+            "EXIT");
+
     private final UserService userService;
+    private boolean exitRequested;
 
     public CommandProcessor(UserService userService) {
         this.userService = userService;
@@ -36,11 +45,31 @@ public class CommandProcessor {
                 case "USER CREATE" -> userCreate(parts);
                 case "USER DELETE" -> userDelete(parts);
                 case "USER UPDATE" -> userUpdate(parts);
+                case "HELP" -> help(parts);
+                case "EXIT" -> exit(parts);
                 default -> error("Unknown command");
             };
         } catch (UserOperationException e) {
             return error(e.getMessage());
         }
+    }
+
+    /**
+     * Tells whether an {@code EXIT} command has been processed; no further commands must run.
+     */
+    public boolean isExitRequested() {
+        return exitRequested;
+    }
+
+    private String help(String[] parts) throws UserOperationException {
+        requireArguments(parts, 0, "HELP");
+        return HELP_TEXT;
+    }
+
+    private String exit(String[] parts) throws UserOperationException {
+        requireArguments(parts, 0, "EXIT");
+        exitRequested = true;
+        return "Goodbye";
     }
 
     private String userCreate(String[] parts) throws UserOperationException {

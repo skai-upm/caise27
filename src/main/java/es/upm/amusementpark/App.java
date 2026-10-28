@@ -89,7 +89,7 @@ public class App {
      */
     public void run(BufferedReader reader) throws IOException {
         String line;
-        while ((line = reader.readLine()) != null) {
+        while (!processor.isExitRequested() && (line = reader.readLine()) != null) {
             processLine(line);
         }
     }

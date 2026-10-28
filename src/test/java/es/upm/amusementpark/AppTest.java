@@ -131,4 +131,23 @@ class AppTest {
         assertEquals(5, interactiveOutput.split("\\R").length);
         assertEquals(Files.readAllLines(stdinUsers), Files.readAllLines(fileUsers));
     }
+
+    @Test
+    void nothingRunsAfterExitInFileOrInteractiveMode(@TempDir Path dir) throws Exception {
+        String commands = String.join("\n",
+                "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                "EXIT",
+                "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        Path input = dir.resolve("input.txt");
+        Files.writeString(input, commands);
+        assertEquals(0, App.execute(new String[] {input.toString()}, reader(""), out, err, users()));
+        assertEquals(List.of("USER CREATED", "Goodbye"),
+                List.of(outBytes.toString(StandardCharsets.UTF_8).split("\\R")));
+        assertEquals(1, Files.readAllLines(users()).size());
+
+        Path otherUsers = dir.resolve("other.txt");
+        outBytes.reset();
+        assertEquals(0, App.execute(new String[0], reader(commands), out, err, otherUsers));
+        assertEquals(1, Files.readAllLines(otherUsers).size());
+    }
 }
