@@ -46,7 +46,9 @@ public class CommandProcessor {
         register("ATTRACTION EXIT", new AttractionExitCommand(park));
         register("ATTRACTION STATUS", new AttractionStatusCommand(park));
         register("INVOICE CREATE", new InvoiceCreateCommand(invoices));
-        register("HELP", new HelpCommand());
+        register("HELP", new HelpCommand(new HelpGenerator(new SyntaxHelpStrategy(), CommandCatalog.ENTRIES)));
+        register("HELP EXTENDED",
+                new HelpCommand(new HelpGenerator(new ExtendedHelpStrategy(), CommandCatalog.ENTRIES)));
         register("EXIT", new ExitCommand());
     }
 
