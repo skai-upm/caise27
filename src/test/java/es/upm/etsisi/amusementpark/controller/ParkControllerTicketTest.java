@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 class ParkControllerTicketTest {
 
     private final ParkController controller = ParkController.getInstance();
-    private final User ana = new User("ana@correo.com");
+    private final User ana = new User("DNI-ana@correo.com", "ana@correo.com");
 
     @BeforeEach
     void setUp() {

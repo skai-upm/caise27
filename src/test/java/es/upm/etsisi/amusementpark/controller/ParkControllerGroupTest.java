@@ -17,8 +17,8 @@ class ParkControllerGroupTest {
     @BeforeEach
     void setUp() {
         controller.reset();
-        controller.addUser(new User("ana@correo.com"));
-        controller.addUser(new User("pedro@correo.com"));
+        controller.addUser(new User("DNI-ana@correo.com", "ana@correo.com"));
+        controller.addUser(new User("DNI-pedro@correo.com", "pedro@correo.com"));
     }
 
     @Test
@@ -47,6 +47,6 @@ class ParkControllerGroupTest {
 
     @Test
     void duplicateUserRejected() {
-        assertThrows(IllegalArgumentException.class, () -> controller.addUser(new User("ana@correo.com")));
+        assertThrows(IllegalArgumentException.class, () -> controller.addUser(new User("DNI-ana@correo.com", "ana@correo.com")));
     }
 }

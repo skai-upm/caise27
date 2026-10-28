@@ -25,7 +25,14 @@ public abstract class Ticket {
         return date;
     }
 
-    public abstract BigDecimal getPrice();
+    /**
+     * Price of the ticket: the sum of the prices of the individual tickets it consists of.
+     */
+    public BigDecimal getPrice() {
+        return getIndividualTickets().stream()
+                .map(IndividualTicket::getUnitPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
     /**
      * The individual tickets this ticket consists of (itself for an individual ticket).

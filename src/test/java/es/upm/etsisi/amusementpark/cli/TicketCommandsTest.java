@@ -44,7 +44,7 @@ class TicketCommandsTest {
         String suffix = UUID.randomUUID().toString();
         ana = "ana-" + suffix + "@correo.com";
         id = "T-" + suffix;
-        controller.addUser(new User(ana));
+        controller.addUser(new User("DNI-" + ana, ana));
         controller.setCurrentDate("2027-04-01");
         controller.setCurrentPrice("40.00");
     }

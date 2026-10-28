@@ -47,8 +47,8 @@ class GroupCommandsTest {
         ana = "ana-" + suffix + "@correo.com";
         pedro = "pedro-" + suffix + "@correo.com";
         id = "G-" + suffix;
-        controller.addUser(new User(ana));
-        controller.addUser(new User(pedro));
+        controller.addUser(new User("DNI-" + ana, ana));
+        controller.addUser(new User("DNI-" + pedro, pedro));
     }
 
     private Group group() {

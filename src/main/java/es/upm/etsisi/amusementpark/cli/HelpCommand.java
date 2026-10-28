@@ -17,8 +17,11 @@ public class HelpCommand implements Command {
             "GROUP CREATE;<Identifier>;<Name>",
             "GROUP ADD;<Identifier>;<Email>",
             "GROUP REMOVE;<Identifier>;<Email>",
+            "GROUP DELETE;<Identifier>",
             "TICKET CREATE;<identifier>;<email>;<date>",
             "TICKET DELETE;<identifier>",
+            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
+            "GROUPTICKET DELETE;<identifier>",
             "HELP",
             "EXIT");
 

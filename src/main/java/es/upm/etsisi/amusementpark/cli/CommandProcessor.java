@@ -21,8 +21,11 @@ public class CommandProcessor {
         register("GROUP CREATE", new GroupCreateCommand());
         register("GROUP ADD", new GroupAddCommand());
         register("GROUP REMOVE", new GroupRemoveCommand());
+        register("GROUP DELETE", new GroupDeleteCommand());
         register("TICKET CREATE", new TicketCreateCommand());
         register("TICKET DELETE", new TicketDeleteCommand());
+        register("GROUPTICKET CREATE", new GroupTicketCreateCommand());
+        register("GROUPTICKET DELETE", new GroupTicketDeleteCommand());
         register("HELP", new HelpCommand());
         register("EXIT", new ExitCommand());
     }

@@ -22,8 +22,8 @@ public class IndividualTicket extends Ticket {
         return user;
     }
 
-    @Override
-    public BigDecimal getPrice() {
+    /** Price charged for this single ticket. */
+    public BigDecimal getUnitPrice() {
         return price;
     }
 

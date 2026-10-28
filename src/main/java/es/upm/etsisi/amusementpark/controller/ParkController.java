@@ -1,6 +1,7 @@
 package es.upm.etsisi.amusementpark.controller;
 
 import es.upm.etsisi.amusementpark.model.Group;
+import es.upm.etsisi.amusementpark.model.GroupTicket;
 import es.upm.etsisi.amusementpark.model.IndividualTicket;
 import es.upm.etsisi.amusementpark.model.Ticket;
 import es.upm.etsisi.amusementpark.model.User;
@@ -106,11 +107,29 @@ public final class ParkController {
 
     /**
      * A group is modifiable when it has no associated group ticket dated on or
-     * after the current system date. The state is derived, never stored; group
-     * tickets do not exist yet, so every group is currently modifiable.
+     * after the current system date. The state is derived, never stored.
      */
     public boolean isGroupModifiable(Group group) {
-        return true;
+        return findGroupTickets(group).stream().noneMatch(ticket -> ticket.isActive(currentDate));
+    }
+
+    /** Group tickets purchased by {@code group}, found by traversing the tickets. */
+    public List<GroupTicket> findGroupTickets(Group group) {
+        return tickets.values().stream()
+                .filter(GroupTicket.class::isInstance)
+                .map(GroupTicket.class::cast)
+                .filter(ticket -> ticket.getGroup() == group)
+                .toList();
+    }
+
+    /**
+     * Deletes a group without active group tickets. Its historical group tickets
+     * are kept, with their group reference cleared.
+     */
+    public void deleteGroup(String identifier) {
+        Group group = modifiableGroup(identifier);
+        findGroupTickets(group).forEach(GroupTicket::detachGroup);
+        groups.remove(identifier);
     }
 
     public void addUserToGroup(String identifier, String email) {
@@ -227,6 +246,40 @@ public final class ParkController {
         }
         if (!ticket.isDeletable(currentDate)) {
             throw new IllegalStateException("Ticket " + identifier
+                    + " is for the current day or an earlier date and cannot be deleted");
+        }
+        tickets.remove(identifier);
+    }
+
+    /**
+     * Creates a group ticket for the current members of a non-empty group, with the
+     * member-count discount applied to the current base price.
+     */
+    public GroupTicket createGroupTicket(String identifier, String groupIdentifier, String dateText) {
+        LocalDate date = parseDate(dateText);
+        Group group = findGroup(groupIdentifier)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupIdentifier));
+        if (group.getMembers().isEmpty()) {
+            throw new IllegalArgumentException("Group " + groupIdentifier + " is empty");
+        }
+        if (date.isBefore(currentDate)) {
+            throw new IllegalArgumentException("Tickets cannot be created for past dates: " + date);
+        }
+        GroupTicket ticket = GroupTicket.purchase(identifier, date, group, currentPrice);
+        registerTicket(ticket);
+        return ticket;
+    }
+
+    /**
+     * Deletes a group ticket dated strictly after the current date, together with its composition.
+     */
+    public void deleteGroupTicket(String identifier) {
+        Ticket ticket = tickets.get(identifier);
+        if (!(ticket instanceof GroupTicket)) {
+            throw new IllegalArgumentException("Group ticket not found: " + identifier);
+        }
+        if (!ticket.isDeletable(currentDate)) {
+            throw new IllegalStateException("Group ticket " + identifier
                     + " is for the current day or an earlier date and cannot be deleted");
         }
         tickets.remove(identifier);

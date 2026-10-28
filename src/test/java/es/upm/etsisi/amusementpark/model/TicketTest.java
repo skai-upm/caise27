@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class TicketTest {
 
-    private final User ana = new User("ana@correo.com");
+    private final User ana = new User("DNI-ana@correo.com", "ana@correo.com");
     private final Ticket ticket = new IndividualTicket("T001", LocalDate.of(2027, 4, 15), ana, new BigDecimal("40.00"));
 
     @Test
