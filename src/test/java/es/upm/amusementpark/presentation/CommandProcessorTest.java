@@ -385,8 +385,28 @@ class CommandProcessorTest {
         assertTrue(processor.process("ATTRACTION ENTER;A03;T001").startsWith("ERROR: GROUP attraction A03 does not accept"));
         assertTrue(processor.process("ATTRACTION ENTER;A04;T001").startsWith("ERROR: Ticket T001 has no unconsumed Special Pass"));
         processor.process("SPECIALPASS CREATE;PE01;T001");
-        assertEquals("USER ENTERED ATTRACTION: ana@correo.com", processor.process("ATTRACTION ENTER;A04;T001"));
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001").startsWith("USER ENTERED ATTRACTION: ana@correo.com"));
         assertTrue(processor.process("ATTRACTION ENTER;A03;TG01").contains("pedro@correo.com"));
         assertTrue(processor.process("ATTRACTION STATUS;A04").contains("Type: SPECIAL"));
+    }
+
+    @Test
+    void speedEntryCommands() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process(ANA);
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        processor.process("ATTRACTION CREATE;A04;Terror;15;SPECIAL");
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001;SPEED").startsWith("ERROR: Ticket T001 has no unconsumed SpeedPass"));
+        processor.process("SPEEDPASS CREATE;SP01;T001;10");
+        assertEquals("USER ENTERED ATTRACTION: ana@correo.com" + System.lineSeparator()
+                + "SPEEDPASS CONSUMED: SP01:1 (ticket T001)", processor.process("ATTRACTION ENTER;A01;T001;SPEED"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001;FAST").startsWith("ERROR: The only ATTRACTION ENTER option"));
+        processor.process("SPECIALPASS CREATE;PE01;T001");
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001;SPEED").startsWith("ERROR: SPECIAL attractions do not accept SpeedPasses"));
+        assertEquals("USER ENTERED ATTRACTION: ana@correo.com" + System.lineSeparator()
+                + "SPECIALPASS CONSUMED: PE01 (ticket T001)", processor.process("ATTRACTION ENTER;A04;T001"));
+        assertTrue(processor.process("SPEEDPASS DELETE;SP01:1").startsWith("ERROR: A consumed pass cannot be refunded"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION ENTER;<attraction>;<ticket>;SPEED"));
     }
 }

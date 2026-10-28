@@ -12,6 +12,7 @@ import es.upm.amusementpark.business.exception.ValidationException;
 import es.upm.amusementpark.business.model.AccessTicket;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.EntryResult;
 import es.upm.amusementpark.business.model.PassLookup;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.persistence.repository.AttractionRepository;
@@ -84,7 +85,12 @@ public class AttractionService {
      * @return the users who entered
      */
     public List<User> enter(String attractionId, AccessTicket ticket, LocalDate today) throws ParkException {
-        return existing(attractionId).enterAny(ticket, today, passes);
+        return enter(attractionId, ticket, today, false).users();
+    }
+
+    public EntryResult enter(String attractionId, AccessTicket ticket, LocalDate today, boolean speed)
+            throws ParkException {
+        return existing(attractionId).enterAny(ticket, today, passes, speed);
     }
 
     /**

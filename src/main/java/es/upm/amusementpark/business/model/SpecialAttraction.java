@@ -1,5 +1,8 @@
 package es.upm.amusementpark.business.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import es.upm.amusementpark.business.exception.OperationNotAllowedException;
 import es.upm.amusementpark.business.exception.ParkException;
 
@@ -18,13 +21,23 @@ public class SpecialAttraction extends Attraction<IndividualAccess> {
     }
 
     @Override
-    protected void checkAccess(IndividualAccess ticket, PassLookup passes) throws ParkException {
+    protected boolean acceptsSpeedPasses() {
+        return false;
+    }
+
+    /**
+     * The Special Pass of the ticket is used automatically.
+     */
+    @Override
+    protected List<Pass> passesToConsume(IndividualAccess ticket, PassLookup passes, boolean speed)
+            throws ParkException {
+        List<Pass> selected = new ArrayList<>();
         for (IndividualTicket individual : ticket.individualTickets()) {
-            boolean hasPass = passes.passesOf(individual).stream()
-                    .anyMatch(p -> p instanceof SpecialPass && !p.isConsumed());
-            if (!hasPass) {
-                throw new OperationNotAllowedException("Ticket " + individual.getId() + " has no unconsumed Special Pass");
-            }
+            selected.add(passes.passesOf(individual).stream()
+                    .filter(p -> p instanceof SpecialPass && !p.isConsumed()).findFirst()
+                    .orElseThrow(() -> new OperationNotAllowedException(
+                            "Ticket " + individual.getId() + " has no unconsumed Special Pass")));
         }
+        return selected;
     }
 }

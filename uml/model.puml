@@ -58,6 +58,7 @@ package es.upm.amusementpark.business.model {
   interface IndividualAccess
   interface GroupAccess
   interface PassLookup
+  class EntryResult <<record>>
 
   abstract class Attraction<T extends AccessTicket> {
     - id : String {readOnly}
@@ -202,6 +203,9 @@ SpecialAttraction ..> PassLookup : requires Special Pass
 PassService ..|> PassLookup
 AttractionService --> "1" PassLookup
 AttractionType ..> Attraction : creates >
+Attraction ..> EntryResult : enter() returns >
+EntryResult --> "0..*" User : users >
+EntryResult --> "0..*" Pass : consumed >
 
 ' --- users, groups and attractions
 Group "0..*" --> "0..*" User : members >

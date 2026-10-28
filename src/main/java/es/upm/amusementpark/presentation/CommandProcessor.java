@@ -5,14 +5,17 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.ParkController;
 import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.EntryResult;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.service.AttractionStatus;
 import es.upm.amusementpark.business.service.PassService;
 import es.upm.amusementpark.business.exception.ParkException;
@@ -220,10 +223,20 @@ public class CommandProcessor {
     }
 
     private String attractionEnter(String[] parts) throws ParkException {
-        requireArguments(parts, 2, "ATTRACTION ENTER");
-        return park.enterAttraction(parts[1], parts[2]).stream()
-                .map(u -> "USER ENTERED ATTRACTION: " + u.getEmail())
-                .collect(Collectors.joining(System.lineSeparator()));
+        if (parts.length != 3 && parts.length != 4) {
+            throw new CommandSyntaxException("Wrong number of arguments for ATTRACTION ENTER");
+        }
+        if (parts.length == 4 && !parts[3].equals("SPEED")) {
+            throw new CommandSyntaxException("The only ATTRACTION ENTER option is SPEED: " + parts[3]);
+        }
+        EntryResult result = park.enterAttraction(parts[1], parts[2], parts.length == 4);
+        List<String> lines = new ArrayList<>();
+        result.users().forEach(u -> lines.add("USER ENTERED ATTRACTION: " + u.getEmail()));
+        for (Pass pass : result.consumed()) {
+            String kind = pass instanceof SpeedPass ? "SPEEDPASS" : "SPECIALPASS";
+            lines.add(kind + " CONSUMED: " + pass.getId() + " (ticket " + pass.getTicket().getId() + ")");
+        }
+        return String.join(System.lineSeparator(), lines);
     }
 
     private String attractionExit(String[] parts) throws ParkException {

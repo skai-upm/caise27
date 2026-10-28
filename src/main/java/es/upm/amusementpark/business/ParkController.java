@@ -11,6 +11,7 @@ import es.upm.amusementpark.business.exception.DataAccessException;
 import es.upm.amusementpark.business.exception.NotFoundException;
 import es.upm.amusementpark.business.exception.OperationNotAllowedException;
 import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.EntryResult;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
@@ -232,9 +233,16 @@ public final class ParkController {
      * Lets the users of a ticket enter an attraction.
      */
     public List<User> enterAttraction(String attractionId, String ticketId) throws ParkException {
+        return enterAttraction(attractionId, ticketId, false).users();
+    }
+
+    /**
+     * Lets the users of a ticket enter an attraction, optionally using SpeedPasses.
+     */
+    public EntryResult enterAttraction(String attractionId, String ticketId, boolean speed) throws ParkException {
         attractions.findById(attractionId).orElseThrow(() -> new NotFoundException("Attraction not found"));
         Ticket ticket = tickets.findAnyById(ticketId).orElseThrow(() -> new NotFoundException("Ticket not found"));
-        return attractions.enter(attractionId, ticket, currentDate);
+        return attractions.enter(attractionId, ticket, currentDate, speed);
     }
 
     /**
