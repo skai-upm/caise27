@@ -70,6 +70,9 @@ package es.upm.etsisi.amusementpark.business.model {
     - admissionType : Class<T>
   }
 
+  class EntryResult <<record>> {
+  }
+
   class GeneralAttraction {
   }
 
@@ -95,6 +98,9 @@ Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualAdmission
 Attraction <|-- GroupAttraction : <<bind>> T -> GroupAdmission
 Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualAdmission
 Attraction ..> AttractionType : type
+Attraction ..> EntryResult : enter
+EntryResult --> "1..*" User : users
+EntryResult --> "*" Pass : consumedPasses
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 

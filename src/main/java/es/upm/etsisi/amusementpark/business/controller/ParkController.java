@@ -8,6 +8,7 @@ import es.upm.etsisi.amusementpark.business.exception.OperationNotAllowedExcepti
 import es.upm.etsisi.amusementpark.business.exception.ParkException;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.AttractionType;
+import es.upm.etsisi.amusementpark.business.model.EntryResult;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
@@ -590,6 +591,15 @@ public final class ParkController {
      * @return the number of users that entered
      */
     public int enterAttraction(String attractionIdentifier, String ticketIdentifier) {
+        return enterAttraction(attractionIdentifier, ticketIdentifier, false).users().size();
+    }
+
+    /**
+     * Entry with a ticket valid for the current date, optionally using SpeedPasses. The
+     * attraction type decides which tickets and passes are accepted and consumed; the
+     * operation is indivisible.
+     */
+    public EntryResult enterAttraction(String attractionIdentifier, String ticketIdentifier, boolean speed) {
         Attraction<?> attraction = findAttraction(attractionIdentifier)
                 .orElseThrow(() -> new NotFoundException("Attraction not found: " + attractionIdentifier));
         Ticket ticket = findTicket(ticketIdentifier)
@@ -600,7 +610,7 @@ public final class ParkController {
         }
         List<IndividualTicket> parts = ticket.getIndividualTickets();
         List<Pass> ticketPasses = passes.values().stream().filter(pass -> parts.contains(pass.getTicket())).toList();
-        return attraction.enterWith(ticket, ticketPasses).size();
+        return attraction.enterWith(ticket, ticketPasses, speed);
     }
 
     /**

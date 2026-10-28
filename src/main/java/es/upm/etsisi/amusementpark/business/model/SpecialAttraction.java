@@ -3,6 +3,7 @@ package es.upm.etsisi.amusementpark.business.model;
 import es.upm.etsisi.amusementpark.business.exception.OperationNotAllowedException;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Restricted-access attraction: individual tickets only, each needing an unconsumed
@@ -19,12 +20,19 @@ public class SpecialAttraction extends Attraction<IndividualAdmission> {
         return AttractionType.SPECIAL;
     }
 
+    /** Uses the ticket's unconsumed Special Pass automatically; SpeedPasses are not accepted. */
     @Override
-    protected void checkEntry(IndividualAdmission admission, Collection<Pass> passes) {
-        if (findSpecialPass(admission, passes) == null) {
+    protected List<Pass> passesToConsume(IndividualAdmission admission, Collection<Pass> passes, boolean speed) {
+        if (speed) {
+            throw new OperationNotAllowedException("Special attraction " + getIdentifier()
+                    + " does not accept SpeedPasses");
+        }
+        SpecialPass pass = findSpecialPass(admission, passes);
+        if (pass == null) {
             throw new OperationNotAllowedException("Ticket " + admission.getIdentifier()
                     + " has no unconsumed Special Pass for special attraction " + getIdentifier());
         }
+        return List.of(pass);
     }
 
     /** The unconsumed Special Pass of {@code admission}, or {@code null}. */

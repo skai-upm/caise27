@@ -45,20 +45,20 @@ class AttractionTypesTest {
     @Test
     void rejectedTypeAdmitsNobody() {
         Attraction<?> attraction = new IndividualAttraction("A02", "Montana", 9);
-        assertThrows(OperationNotAllowedException.class, () -> attraction.enterWith(group, List.of()));
+        assertThrows(OperationNotAllowedException.class, () -> attraction.enterWith(group, List.of(), false));
         assertTrue(attraction.getOccupants().isEmpty());
-        assertEquals(2, new GroupAttraction("A03", "Rafting", 9).enterWith(group, List.of()).size());
+        assertEquals(2, new GroupAttraction("A03", "Rafting", 9).enterWith(group, List.of(), false).users().size());
     }
 
     @Test
     void specialAttractionNeedsUnconsumedSpecialPass() {
         SpecialAttraction attraction = new SpecialAttraction("A04", "Terror", 9);
-        assertThrows(OperationNotAllowedException.class, () -> attraction.enter(individual, List.of()));
+        assertThrows(OperationNotAllowedException.class, () -> attraction.enter(individual, List.of(), false));
         SpecialPass consumed = new SpecialPass("PE0", individual);
         consumed.consume();
         assertThrows(OperationNotAllowedException.class, () -> attraction.enter(individual,
-                List.of(consumed, new SpeedPass("SP:1", individual))));
-        attraction.enter(individual, List.of(new SpecialPass("PE1", individual)));
+                List.of(consumed, new SpeedPass("SP:1", individual)), false));
+        attraction.enter(individual, List.of(new SpecialPass("PE1", individual)), false);
         assertTrue(attraction.isInside(ana));
     }
 

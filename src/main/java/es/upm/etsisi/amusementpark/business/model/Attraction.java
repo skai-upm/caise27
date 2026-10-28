@@ -41,28 +41,47 @@ public abstract class Attraction<T extends Admission> {
      * Entry with a ticket of any type: rejected unless the attraction accepts it.
      *
      * @param passes passes associated with the admission's individual tickets
-     * @return the users that entered
+     * @param speed  whether SpeedPasses are used
      */
-    public final List<User> enterWith(Admission admission, Collection<Pass> passes) {
+    public final EntryResult enterWith(Admission admission, Collection<Pass> passes, boolean speed) {
         if (!accepts(admission)) {
             throw new OperationNotAllowedException(getType() + " attraction " + identifier
                     + " does not accept ticket " + admission.getIdentifier());
         }
-        return enter(admissionType.cast(admission), passes);
+        return enter(admissionType.cast(admission), passes, speed);
     }
 
     /**
-     * Lets the users of an accepted admission enter together, after the type-specific checks.
+     * Lets the users of an accepted admission enter together and consumes the passes the
+     * entry requires. Every condition is checked before anything changes: either all users
+     * enter and the passes are consumed, or nothing happens.
      */
-    public List<User> enter(T admission, Collection<Pass> passes) {
-        checkEntry(admission, passes);
+    public EntryResult enter(T admission, Collection<Pass> passes, boolean speed) {
+        List<Pass> toConsume = passesToConsume(admission, passes, speed);
         List<User> users = admission.getIndividualTickets().stream().map(IndividualTicket::getUser).toList();
         admit(users);
-        return users;
+        toConsume.forEach(Pass::consume);
+        return new EntryResult(users, toConsume);
     }
 
-    /** Additional entry conditions of the attraction type; none by default. */
-    protected void checkEntry(T admission, Collection<Pass> passes) {
+    /**
+     * Checks the pass conditions of the entry and selects, without modifying them, the
+     * passes to consume. By default a SpeedPass entry needs one unconsumed SpeedPass per
+     * individual ticket of the admission.
+     */
+    protected List<Pass> passesToConsume(T admission, Collection<Pass> passes, boolean speed) {
+        if (!speed) {
+            return List.of();
+        }
+        List<Pass> selected = new ArrayList<>();
+        for (IndividualTicket part : admission.getIndividualTickets()) {
+            selected.add(passes.stream()
+                    .filter(pass -> pass instanceof SpeedPass && !pass.isConsumed() && pass.getTicket() == part)
+                    .findFirst()
+                    .orElseThrow(() -> new OperationNotAllowedException("Ticket " + part.getIdentifier()
+                            + " has no unconsumed SpeedPass")));
+        }
+        return selected;
     }
 
     public String getIdentifier() {

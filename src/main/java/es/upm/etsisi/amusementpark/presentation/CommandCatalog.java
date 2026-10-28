@@ -48,7 +48,10 @@ public final class CommandCatalog {
                     "Creates an attraction of type GENERAL, INDIVIDUAL, GROUP or SPECIAL, which restricts the "
                             + "tickets accepted for entry."),
             new CommandHelp("ATTRACTION ENTER;<attraction>;<ticket>",
-                    "Lets the user or the whole group of a ticket valid today enter an attraction."),
+                    "Lets the user or the whole group of a ticket valid today enter an attraction; at a SPECIAL "
+                            + "attraction the ticket's Special Pass is used automatically."),
+            new CommandHelp("ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
+                    "Enters using one unconsumed SpeedPass per individual ticket (not at SPECIAL attractions)."),
             new CommandHelp("ATTRACTION EXIT;<attraction>;<email>",
                     "Makes a user leave an attraction, releasing one place."),
             new CommandHelp("ATTRACTION LIST;<attraction>",
