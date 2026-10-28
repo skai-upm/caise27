@@ -54,3 +54,10 @@ When `--fly` is the first argument, the application SHALL create a new directory
 #### Scenario: Fly mode starts empty
 - **WHEN** permanent data contains Ana and the application runs with `--fly`
 - **THEN** Ana does not exist during that execution
+
+### Requirement: Attraction type persisted
+Attractions SHALL be stored with their type and reconstructed with it; stored attractions without a type SHALL be read as GENERAL.
+
+#### Scenario: Old attractions file
+- **WHEN** `attractions.txt` contains `A01;Dragon Rojo;20` without a type
+- **THEN** after startup `A01` is a GENERAL attraction
