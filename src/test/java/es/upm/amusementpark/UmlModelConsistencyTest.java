@@ -64,11 +64,11 @@ class UmlModelConsistencyTest {
     @Test
     void everyModelTypeIsInTheDiagram() throws IOException {
         Map<String, String> declared = declaredTypes();
-        Path modelSources = Path.of("src", "main", "java", "es", "upm", "amusementpark", "model");
+        Path modelSources = Path.of("src", "main", "java", "es", "upm", "amusementpark", "business", "model");
         try (Stream<Path> files = Files.list(modelSources)) {
             for (Path file : files.toList()) {
                 String name = file.getFileName().toString().replace(".java", "");
-                assertTrue("es.upm.amusementpark.model".equals(declared.get(name)), name + " missing in uml/model.puml");
+                assertTrue("es.upm.amusementpark.business.model".equals(declared.get(name)), name + " missing in uml/model.puml");
             }
         }
     }

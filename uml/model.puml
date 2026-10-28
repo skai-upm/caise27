@@ -1,10 +1,10 @@
 @startuml model
-title Amusement Park - Delivery 2 class model
+title Amusement Park - class model (layered: presentation / business / persistence)
 
 skinparam classAttributeIconSize 0
 hide empty members
 
-package es.upm.amusementpark.model {
+package es.upm.amusementpark.business.model {
   class User {
     - firstName : String
     - surnames : String
@@ -52,14 +52,14 @@ package es.upm.amusementpark.model {
   }
 }
 
-package es.upm.amusementpark.repository {
+package es.upm.amusementpark.persistence.repository {
   class UserRepository
   class GroupRepository
   class TicketRepository
   class AttractionRepository
 }
 
-package es.upm.amusementpark.service {
+package es.upm.amusementpark.business.service {
   class UserService
   class GroupService
   class TicketService
@@ -73,10 +73,18 @@ package es.upm.amusementpark.service {
     available : int
     occupantEmails : List<String>
   }
-  class OperationException
 }
 
-package es.upm.amusementpark.persistence {
+package es.upm.amusementpark.business.exception {
+  abstract class ParkException
+  class ValidationException
+  class NotFoundException
+  class ConflictException
+  class OperationNotAllowedException
+  class DataAccessException
+}
+
+package es.upm.amusementpark.persistence.file {
   interface UserStorage
   class UserFileStorage
   class GroupFileStorage
@@ -87,7 +95,7 @@ package es.upm.amusementpark.persistence {
   }
 }
 
-package es.upm.amusementpark.park {
+package es.upm.amusementpark.business {
   class ParkController <<singleton>> {
     - {static} INSTANCE : ParkController
     - currentDate : LocalDate
@@ -95,14 +103,12 @@ package es.upm.amusementpark.park {
   }
 }
 
-package es.upm.amusementpark.cli {
+package es.upm.amusementpark.presentation {
+  class App
   class CommandProcessor {
     - exitRequested : boolean
   }
-}
-
-package es.upm.amusementpark {
-  class App
+  class CommandSyntaxException
 }
 
 ' --- ticket hierarchy and composition
@@ -137,7 +143,6 @@ AttractionService ..> AttractionStatus
 
 ' --- persistence
 UserFileStorage ..|> UserStorage
-DataLocation <.. ParkController
 ParkController --> "0..1" GroupFileStorage
 ParkController --> "0..1" TicketFileStorage
 ParkController --> "0..1" AttractionFileStorage
@@ -151,8 +156,18 @@ ParkController "1" *-- "1" GroupRepository
 ParkController "1" *-- "1" TicketRepository
 ParkController "1" *-- "1" AttractionRepository
 
+'' --- exceptions
+ParkException <|-- ValidationException
+ParkException <|-- NotFoundException
+ParkException <|-- ConflictException
+ParkException <|-- OperationNotAllowedException
+ParkException <|-- DataAccessException
+ParkException <|-- CommandSyntaxException
+CommandProcessor ..> ParkException : handles >
+
 ' --- application layer
 App --> "1" CommandProcessor
 CommandProcessor --> "1" ParkController
 App ..> ParkController : getInstance()
+ParkController ..> DataLocation : temporary / delete
 @enduml
