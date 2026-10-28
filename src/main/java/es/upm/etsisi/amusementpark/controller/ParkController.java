@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.controller;
 
+import es.upm.etsisi.amusementpark.model.Attraction;
 import es.upm.etsisi.amusementpark.model.Group;
 import es.upm.etsisi.amusementpark.model.GroupTicket;
 import es.upm.etsisi.amusementpark.model.IndividualTicket;
@@ -29,6 +30,7 @@ public final class ParkController {
     private final Map<String, User> users = new LinkedHashMap<>();
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
+    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
 
     private ParkController() {
         reset();
@@ -45,6 +47,7 @@ public final class ParkController {
         users.clear();
         groups.clear();
         tickets.clear();
+        attractions.clear();
     }
 
     public LocalDate getCurrentDate() {
@@ -296,6 +299,42 @@ public final class ParkController {
     /** Derived lock state of a user: any associated ticket that is still active. */
     public boolean hasActiveTickets(User user) {
         return findTicketsOfUser(user).stream().anyMatch(ticket -> ticket.isActive(currentDate));
+    }
+
+    // ---- attractions ----
+
+    /**
+     * Creates an attraction with no occupants.
+     *
+     * @throws IllegalArgumentException for a duplicate identifier or a capacity that is not a positive integer
+     */
+    public Attraction createAttraction(String identifier, String name, String capacityText) {
+        int capacity = parseCapacity(capacityText);
+        if (attractions.containsKey(identifier)) {
+            throw new IllegalArgumentException("Attraction already exists: " + identifier);
+        }
+        Attraction attraction = new Attraction(identifier, name, capacity);
+        attractions.put(identifier, attraction);
+        return attraction;
+    }
+
+    public Optional<Attraction> findAttraction(String identifier) {
+        return Optional.ofNullable(attractions.get(identifier));
+    }
+
+    private static int parseCapacity(String text) {
+        if (text == null || text.isEmpty() || !isDigits(text)) {
+            throw new IllegalArgumentException("Invalid capacity, expected a positive integer: " + text);
+        }
+        try {
+            int capacity = Integer.parseInt(text);
+            if (capacity <= 0) {
+                throw new IllegalArgumentException("Invalid capacity, expected a positive integer: " + text);
+            }
+            return capacity;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid capacity, expected a positive integer: " + text);
+        }
     }
 
     public static LocalDate parseDate(String text) {

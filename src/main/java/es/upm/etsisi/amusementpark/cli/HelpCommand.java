@@ -22,6 +22,8 @@ public class HelpCommand implements Command {
             "TICKET DELETE;<identifier>",
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
+            "ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>",
+            "ATTRACTION LIST;<AttractionIdentifier>",
             "HELP",
             "EXIT");
 
