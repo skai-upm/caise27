@@ -51,6 +51,8 @@ public class CommandProcessor {
             };
         } catch (UserOperationException e) {
             return error(e.getMessage());
+        } catch (RuntimeException e) {
+            return error("Unexpected error processing command");
         }
     }
 

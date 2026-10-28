@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import es.upm.amusementpark.persistence.InMemoryUserStorage;
+import es.upm.amusementpark.service.UserOperationException;
 import es.upm.amusementpark.repository.UserRepository;
 import es.upm.amusementpark.service.UserService;
 
@@ -110,5 +111,18 @@ class CommandProcessorTest {
         assertTrue(processor.process("HELP;x").startsWith("ERROR: Wrong number of arguments"));
         assertTrue(processor.process("EXIT;x").startsWith("ERROR: Wrong number of arguments"));
         assertTrue(!processor.isExitRequested());
+    }
+
+    @Test
+    void unexpectedFailuresAreReportedAndProcessingContinues() {
+        CommandProcessor failing = new CommandProcessor(new UserService(repository, new InMemoryUserStorage()) {
+            @Override
+            public es.upm.amusementpark.model.User createUser(String firstName, String surnames, String dni,
+                    String email, String password, String phone, String cardNumber) throws UserOperationException {
+                throw new IllegalStateException("boom");
+            }
+        });
+        assertTrue(failing.process(ANA).startsWith("ERROR: Unexpected error"));
+        assertTrue(failing.process("HELP").contains("USER CREATE"));
     }
 }
