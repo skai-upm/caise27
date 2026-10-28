@@ -46,11 +46,15 @@ The application SHALL report situations it cannot process with an error message 
 - **THEN** an error message is displayed for the failing command and the help listing is still displayed
 
 ### Requirement: Delivery 1 technical restrictions
-The application SHALL use only the Java standard library, target Java 21, and parse commands with basic `String` operations and `split`, without regular expressions, databases, frameworks, external runtime libraries or encryption mechanisms.
+The application SHALL target Java 21 and parse commands with basic `String` operations and `split`, without regular expressions, databases or frameworks. External runtime libraries and encryption mechanisms SHALL NOT be used, except the jBCrypt library (`org.mindrot:jbcrypt`) introduced in Delivery 3 for password protection, which SHALL be packaged inside the executable JAR.
 
 #### Scenario: No external runtime dependencies
 - **WHEN** the project's `pom.xml` is inspected
-- **THEN** every declared dependency has `test` scope and the compiler release is 21
+- **THEN** every declared dependency has `test` scope except `org.mindrot:jbcrypt`, and the compiler release is 21
+
+#### Scenario: Self-contained executable JAR
+- **WHEN** `java -jar target/amusement-park.jar` runs an operation that protects a password
+- **THEN** the BCrypt classes are found inside the JAR without any extra classpath
 
 ### Requirement: Temporary persistence mode
 When `--fly` is the first argument, the application SHALL create an independent temporary directory `tmp/<yyyyMMdd_HHmmss>/`, make every repository use only files inside it, run interactively or with the command file given as optional second argument, and delete the directory and all its files when execution ends through EXIT or when the input ends. The repositories SHALL be the same as in normal mode, differing only in configured paths. Without `--fly`, argument handling SHALL remain unchanged.
