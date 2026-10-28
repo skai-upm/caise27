@@ -38,7 +38,7 @@ class TextRepositoriesTest {
 
     @AfterEach
     void detach() {
-        controller.configure(null);
+        controller.configure((es.upm.etsisi.amusementpark.business.repository.ParkRepositories) null);
     }
 
     @BeforeEach
@@ -119,7 +119,7 @@ class TextRepositoriesTest {
     @Test
     void textFilesAreWritten() throws Exception {
         controller.saveState();
-        assertEquals("12345678Z;ana@correo.com", Files.readAllLines(directory.resolve("users.txt")).get(0));
+        assertEquals("12345678Z;ana@correo.com;", Files.readAllLines(directory.resolve("users.txt")).get(0));
         assertEquals("G01;Familia Garcia;ana@correo.com;pedro@correo.com",
                 Files.readAllLines(directory.resolve("groups.txt")).get(0));
         assertEquals("A01;Dragon Rojo;20", Files.readAllLines(directory.resolve("attractions.txt")).get(0));

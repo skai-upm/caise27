@@ -93,7 +93,7 @@ class DependencyInjectionTest {
 
     @AfterEach
     void detach() {
-        park.configure(null);
+        park.configure((ParkRepositories) null);
         InvoiceController.getInstance().configure(park);
     }
 

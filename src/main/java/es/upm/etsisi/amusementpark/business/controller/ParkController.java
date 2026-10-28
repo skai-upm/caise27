@@ -1,6 +1,7 @@
 package es.upm.etsisi.amusementpark.business.controller;
 
 import es.upm.etsisi.amusementpark.business.exception.AlreadyExistsException;
+import es.upm.etsisi.amusementpark.business.exception.AuthenticationException;
 import es.upm.etsisi.amusementpark.business.exception.InvalidValueException;
 import es.upm.etsisi.amusementpark.business.exception.NotFoundException;
 import es.upm.etsisi.amusementpark.business.exception.OperationNotAllowedException;
@@ -12,6 +13,9 @@ import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.repository.ParkRepositories;
+import es.upm.etsisi.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.etsisi.amusementpark.business.security.PasswordHasher;
+import es.upm.etsisi.amusementpark.business.security.PasswordPolicy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -40,6 +44,7 @@ public final class ParkController {
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction> attractions = new LinkedHashMap<>();
     private ParkRepositories repositories;
+    private PasswordHasher passwordHasher = new BCryptPasswordHasher();
 
     private ParkController() {
         reset();
@@ -66,6 +71,35 @@ public final class ParkController {
      */
     public void configure(ParkRepositories repositories) {
         this.repositories = repositories;
+    }
+
+    /** Injects the password protection mechanism (BCrypt by default). */
+    public void configure(PasswordHasher passwordHasher) {
+        this.passwordHasher = passwordHasher;
+    }
+
+    /**
+     * Validates a new password with the Delivery 1 rule, protects it and stores
+     * only the protected value; changing it generates a new protected value.
+     */
+    public void setUserPassword(String email, String plainPassword) {
+        User user = findUser(email).orElseThrow(() -> new NotFoundException("User not found: " + email));
+        PasswordPolicy.validate(plainPassword);
+        user.setPasswordHash(passwordHasher.hash(plainPassword));
+    }
+
+    /**
+     * Verifies a user's password against the stored protected value.
+     *
+     * @return the authenticated user
+     * @throws AuthenticationException if the user is unknown, has no password or the password does not match
+     */
+    public User authenticate(String email, String plainPassword) {
+        User user = findUser(email).orElse(null);
+        if (user == null || !user.hasPassword() || !passwordHasher.matches(plainPassword, user.getPasswordHash())) {
+            throw new AuthenticationException("Invalid e-mail or password");
+        }
+        return user;
     }
 
     /**

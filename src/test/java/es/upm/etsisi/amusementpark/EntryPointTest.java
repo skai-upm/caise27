@@ -29,4 +29,18 @@ class EntryPointTest {
         assertTrue(Modifier.isPublic(main.getModifiers()) && Modifier.isStatic(main.getModifiers()));
         assertEquals(void.class, main.getReturnType());
     }
+
+    @Test
+    void onlyJbcryptIsARuntimeDependency() throws Exception {
+        String pom = Files.readString(Path.of("pom.xml"));
+        String dependencies = pom.substring(pom.indexOf("</dependencyManagement>"), pom.indexOf("<build>"));
+        int start = dependencies.indexOf("<dependency>");
+        while (start >= 0) {
+            String block = dependencies.substring(start, dependencies.indexOf("</dependency>", start));
+            assertTrue(block.contains("<scope>test</scope>") || block.contains("<artifactId>jbcrypt</artifactId>"),
+                    block);
+            start = dependencies.indexOf("<dependency>", start + 1);
+        }
+        assertTrue(dependencies.contains("<groupId>org.mindrot</groupId>"));
+    }
 }

@@ -15,6 +15,7 @@ package es.upm.etsisi.amusementpark.business.model {
   class User {
     - dni : String
     - email : String
+    - passwordHash : String
   }
 
   class Group {
