@@ -343,6 +343,17 @@ public final class ParkController {
         return entrants.size();
     }
 
+    /**
+     * Removes the user with {@code email} from the attraction, releasing one place.
+     */
+    public void exitAttraction(String attractionIdentifier, String email) {
+        Attraction attraction = findAttraction(attractionIdentifier)
+                .orElseThrow(() -> new IllegalArgumentException("Attraction not found: " + attractionIdentifier));
+        User user = attraction.findOccupant(email).orElseThrow(() -> new IllegalStateException(
+                "User " + email + " is not inside attraction " + attractionIdentifier));
+        attraction.removeOccupant(user);
+    }
+
     private static int parseCapacity(String text) {
         if (text == null || text.isEmpty() || !isDigits(text)) {
             throw new IllegalArgumentException("Invalid capacity, expected a positive integer: " + text);

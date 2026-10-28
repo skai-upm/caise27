@@ -3,6 +3,7 @@ package es.upm.etsisi.amusementpark.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A park attraction. It references the users currently inside it; users do not
@@ -35,6 +36,14 @@ public class Attraction {
 
     public List<User> getOccupants() {
         return Collections.unmodifiableList(occupants);
+    }
+
+    public int getAvailablePlaces() {
+        return capacity - occupants.size();
+    }
+
+    public Optional<User> findOccupant(String email) {
+        return occupants.stream().filter(user -> user.getEmail().equals(email)).findFirst();
     }
 
     public boolean isFull() {

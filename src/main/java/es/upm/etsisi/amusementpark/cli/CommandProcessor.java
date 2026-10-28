@@ -29,6 +29,8 @@ public class CommandProcessor {
         register("ATTRACTION CREATE", new AttractionCreateCommand());
         register("ATTRACTION LIST", new AttractionListCommand());
         register("ATTRACTION ENTER", new AttractionEnterCommand());
+        register("ATTRACTION EXIT", new AttractionExitCommand());
+        register("ATTRACTION STATUS", new AttractionStatusCommand());
         register("HELP", new HelpCommand());
         register("EXIT", new ExitCommand());
     }
