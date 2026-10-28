@@ -13,6 +13,7 @@ import es.upm.amusementpark.business.exception.ValidationException;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.model.UserValidator;
+import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.file.UserStorage;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 
@@ -74,7 +75,7 @@ public class UserService {
         if (repository.findByEmail(email).isPresent()) {
             throw new ConflictException("A user with this email already exists");
         }
-        User user = new User(firstName, surnames, dni, email, password, phone, cardNumber);
+        User user = new User(firstName, surnames, dni, email, PasswordHasher.hash(password), phone, cardNumber);
         List<User> users = repository.findAll();
         users.add(user);
         persist(users);
@@ -117,7 +118,7 @@ public class UserService {
                 if (!UserValidator.isValidPassword(value)) {
                     throw new ValidationException("Invalid password");
                 }
-                updated.setPassword(value);
+                updated.setPassword(PasswordHasher.hash(value));
             }
             case PHONE -> updated.setPhone(value);
             case CARD -> {
@@ -153,7 +154,7 @@ public class UserService {
     public User authenticate(String email, String password) throws ParkException {
         User user = repository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        if (!user.getPassword().equals(password)) {
+        if (!PasswordHasher.matches(password, user.getPassword())) {
             throw new OperationNotAllowedException("Incorrect password");
         }
         return user;

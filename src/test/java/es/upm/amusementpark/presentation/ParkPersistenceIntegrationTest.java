@@ -124,4 +124,21 @@ class ParkPersistenceIntegrationTest {
         assertTrue(second.getFileName().toString().startsWith(created.getFileName().toString()));
         assertFalse(created.equals(second));
     }
+
+    @Test
+    void passwordsAreStoredHashedAndVerifiedAfterRestart() throws Exception {
+        Path data = dir.resolve("data");
+        run(data, String.join("\n",
+                "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                "USER UPDATE;ana@correo.com;Clave1!;PASSWORD;Nueva2#"));
+        String stored = Files.readString(data.resolve("users.txt"));
+        assertFalse(stored.contains("Clave1!") || stored.contains("Nueva2#"));
+        String out = run(data, String.join("\n",
+                "USER UPDATE;ana@correo.com;Clave1!;PHONE;6",
+                "USER UPDATE;ana@correo.com;Nueva2#;PHONE;6",
+                "USER CREATE;Bea;X;87654321X;bea@correo.com;clave1!;6;1234567890123456",
+                "USER DELETE;ana@correo.com;Nueva2#"));
+        assertEquals(List.of("ERROR: Incorrect password", "USER UPDATED", "ERROR: Invalid password", "USER DELETED"),
+                List.of(out.split("\\R")));
+    }
 }

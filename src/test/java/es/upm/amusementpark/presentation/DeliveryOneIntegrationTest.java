@@ -46,8 +46,8 @@ class DeliveryOneIntegrationTest {
                 lines.subList(0, 5));
         assertTrue(output.contains("USER DELETE;<Email>;<Password>"));
         assertEquals("Goodbye", lines.get(lines.size() - 1));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456"),
-                Files.readAllLines(users));
+        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;<bcrypt>;699999999;1234567890123456"),
+                StoredUsers.masked(Files.readAllLines(users)));
     }
 
     @Test

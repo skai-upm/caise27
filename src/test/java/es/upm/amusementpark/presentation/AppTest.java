@@ -94,8 +94,8 @@ class AppTest {
     void usersAreLoadedAgainInANewRun() throws Exception {
         String ana = "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
         assertEquals(0, App.execute(new String[0], reader(ana), out, err, data));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
-                Files.readAllLines(users()));
+        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;<bcrypt>;612345678;1234567890123456"),
+                StoredUsers.masked(Files.readAllLines(users())));
         outBytes.reset();
         assertEquals(0, App.execute(new String[0], reader(ana), out, err, data));
         assertTrue(outBytes.toString(StandardCharsets.UTF_8).startsWith("ERROR: A user with this DNI"));
@@ -131,7 +131,7 @@ class AppTest {
 
         assertEquals(interactiveOutput, fileOutput);
         assertEquals(5, interactiveOutput.split("\\R").length);
-        assertEquals(Files.readAllLines(stdinUsers), Files.readAllLines(fileUsers));
+        assertEquals(StoredUsers.masked(Files.readAllLines(stdinUsers)), StoredUsers.masked(Files.readAllLines(fileUsers)));
     }
 
     @Test

@@ -12,6 +12,7 @@ public class User {
     private String surnames;
     private final String dni;
     private String email;
+    /** Protected (BCrypt) value of the password, never the original text. */
     private String password;
     private String phone;
     private String cardNumber;

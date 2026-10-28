@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.model.UserField;
+import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.file.InMemoryUserStorage;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 
@@ -106,9 +107,9 @@ class UserServiceTest {
         assertEquals("699999999", ana.getPhone());
         assertEquals("9999888877776666", ana.getCardNumber());
         assertEquals("ana.nueva@correo.com", ana.getEmail());
-        assertEquals("Nueva2#", ana.getPassword());
+        assertTrue(PasswordHasher.matches("Nueva2#", ana.getPassword()));
         assertEquals("12345678Z", storage.saved().get(0).getDni());
-        assertEquals("Nueva2#", storage.saved().get(0).getPassword());
+        assertTrue(PasswordHasher.matches("Nueva2#", storage.saved().get(0).getPassword()));
         assertEquals("87654321X", storage.saved().get(1).getDni());
     }
 
@@ -129,7 +130,7 @@ class UserServiceTest {
         assertUpdateRejected("Invalid card", "ana@correo.com", "Clave1!", UserField.CARD, "123456789012345");
         var ana = repository.findByDni("12345678Z").orElseThrow();
         assertEquals("ana@correo.com", ana.getEmail());
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(PasswordHasher.matches("Clave1!", ana.getPassword()));
         assertEquals("1234567890123456", ana.getCardNumber());
         assertEquals("612345678", ana.getPhone());
     }

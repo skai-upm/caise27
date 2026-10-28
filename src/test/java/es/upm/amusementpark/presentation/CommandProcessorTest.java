@@ -37,7 +37,7 @@ class CommandProcessorTest {
         assertEquals("Ana", ana.getFirstName());
         assertEquals("Garcia Lopez", ana.getSurnames());
         assertEquals("ana@correo.com", ana.getEmail());
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(es.upm.amusementpark.business.security.PasswordHasher.matches("Clave1!", ana.getPassword()));
         assertEquals("612345678", ana.getPhone());
         assertEquals("1234567890123456", ana.getCardNumber());
     }
