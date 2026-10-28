@@ -11,7 +11,7 @@ import java.util.List;
  * <p>Its price is the base price at purchase time minus an optional discount (used when the
  * ticket is part of a group ticket).
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess, GeneralAccess {
 
     private final User user;
     private final BigDecimal basePrice;

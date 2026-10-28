@@ -48,8 +48,8 @@ final class ParkInitializer {
                 park::getBasePrice);
         GroupService groups = GroupService.getInstance().configure(deps.groups(), users, tickets::hasActiveGroupTicket,
                 park::getCurrentDate);
-        AttractionService attractions = AttractionService.getInstance().configure(deps.attractions());
         PassService passes = PassService.getInstance().configure(deps.passes(), tickets, park::getCurrentDate);
+        AttractionService attractions = AttractionService.getInstance().configure(deps.attractions(), passes);
         InvoiceService invoices = InvoiceService.getInstance().configure(users, groups, tickets, passes);
         park.configure(deps, users, groups, tickets, attractions, invoices, passes);
     }

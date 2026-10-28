@@ -10,7 +10,7 @@ import java.util.List;
  * The composition never changes. The reference to the purchasing group is cleared if the group is
  * deleted; the group does not know its tickets.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess, GeneralAccess {
 
     private static final BigDecimal NO_DISCOUNT = BigDecimal.ZERO;
     private static final BigDecimal SMALL_GROUP_DISCOUNT = new BigDecimal("0.10");

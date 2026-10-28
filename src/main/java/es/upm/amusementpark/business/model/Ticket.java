@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Common abstraction of every ticket type: a unique identifier, a date of use and a price.
  */
-public abstract class Ticket {
+public abstract class Ticket implements AccessTicket {
 
     private final String id;
     private final LocalDate date;

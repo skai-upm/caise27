@@ -33,7 +33,7 @@ class UmlModelConsistencyTest {
             }
             for (String keyword : KEYWORDS) {
                 if (line.startsWith(keyword)) {
-                    String name = line.substring(keyword.length()).split(" ")[0].trim();
+                    String name = line.substring(keyword.length()).split("[ <]")[0].trim();
                     types.put(name, currentPackage);
                     break;
                 }

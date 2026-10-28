@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.ParkController;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.service.AttractionStatus;
 import es.upm.amusementpark.business.service.PassService;
 import es.upm.amusementpark.business.exception.ParkException;
@@ -209,8 +210,12 @@ public class CommandProcessor {
     }
 
     private String attractionCreate(String[] parts) throws ParkException {
-        requireArguments(parts, 3, "ATTRACTION CREATE");
-        park.attractions().createAttraction(parts[1], parts[2], parseCapacity(parts[3]));
+        if (parts.length != 4 && parts.length != 5) {
+            throw new CommandSyntaxException("Wrong number of arguments for ATTRACTION CREATE");
+        }
+        AttractionType type = parts.length == 4 ? AttractionType.GENERAL : AttractionType.fromName(parts[4])
+                .orElseThrow(() -> new CommandSyntaxException("Attraction type must be GENERAL, INDIVIDUAL, GROUP or SPECIAL"));
+        park.attractions().createAttraction(parts[1], parts[2], parseCapacity(parts[3]), type);
         return "ATTRACTION CREATED";
     }
 
@@ -232,6 +237,7 @@ public class CommandProcessor {
         return String.join(System.lineSeparator(),
                 "Attraction: " + s.id(),
                 "Name: " + s.name(),
+                "Type: " + s.type(),
                 "Capacity: " + s.capacity(),
                 "Occupants: " + s.occupants(),
                 "Available: " + s.available(),

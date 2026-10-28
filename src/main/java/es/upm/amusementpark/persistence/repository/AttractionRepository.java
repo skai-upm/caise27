@@ -13,17 +13,17 @@ import es.upm.amusementpark.business.model.Attraction;
  */
 public class AttractionRepository {
 
-    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
 
-    public void save(Attraction attraction) {
+    public void save(Attraction<?> attraction) {
         attractions.put(attraction.getId(), attraction);
     }
 
-    public Optional<Attraction> findById(String id) {
+    public Optional<Attraction<?>> findById(String id) {
         return Optional.ofNullable(attractions.get(id));
     }
 
-    public List<Attraction> findAll() {
+    public List<Attraction<?>> findAll() {
         return new ArrayList<>(attractions.values());
     }
 }

@@ -14,6 +14,7 @@ import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.exception.ValidationException;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.PassLookup;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.persistence.repository.PassRepository;
@@ -21,7 +22,7 @@ import es.upm.amusementpark.persistence.repository.PassRepository;
 /**
  * Purchase and refund of SpeedPasses and Special Passes.
  */
-public class PassService {
+public class PassService implements PassLookup {
 
     private static final PassService INSTANCE = new PassService();
 
@@ -50,6 +51,7 @@ public class PassService {
         return repository.findAll();
     }
 
+    @Override
     public List<Pass> passesOf(IndividualTicket ticket) {
         return repository.findByTicket(ticket);
     }

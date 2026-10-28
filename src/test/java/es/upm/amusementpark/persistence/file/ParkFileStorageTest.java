@@ -17,6 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.GeneralAttraction;
+import es.upm.amusementpark.business.model.SpecialAttraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
@@ -48,10 +51,11 @@ class ParkFileStorageTest {
     @Test
     void attractionsRoundTripWithoutOccupants() throws Exception {
         AttractionFileStorage storage = new AttractionFileStorage(dir.resolve("attractions.txt"));
-        Attraction a = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> a = new GeneralAttraction("A01", "Dragon Rojo", 20);
         a.addOccupant(ana);
-        storage.save(List.of(a));
-        Attraction loaded = storage.load(new ArrayList<>()).get(0);
+        storage.save(List.of(a, new SpecialAttraction("A04", "Pasaje del Terror", 15)));
+        Attraction<?> loaded = storage.load(new ArrayList<>()).get(0);
+        assertEquals(AttractionType.SPECIAL, storage.load(new ArrayList<>()).get(1).getType());
         assertEquals("Dragon Rojo", loaded.getName());
         assertEquals(20, loaded.getCapacity());
         assertTrue(loaded.getOccupants().isEmpty());
@@ -87,5 +91,14 @@ class ParkFileStorageTest {
         assertNull(tg0.getGroup());
         assertEquals(new BigDecimal("45.50"), tg0.getPrice());
         assertEquals(day.minusDays(3), tg0.getDate());
+    }
+
+    @Test
+    void attractionsWithoutTypeAreGeneral() throws Exception {
+        Path file = dir.resolve("old-attractions.txt");
+        java.nio.file.Files.writeString(file, "A01;Dragon Rojo;20\n");
+        Attraction<?> loaded = new AttractionFileStorage(file).load(new ArrayList<>()).get(0);
+        assertEquals(AttractionType.GENERAL, loaded.getType());
+        assertEquals(20, loaded.getCapacity());
     }
 }

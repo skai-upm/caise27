@@ -288,7 +288,7 @@ class CommandProcessorTest {
         processor.process("GROUPTICKET CREATE;TG01;G01;2027-04-15");
         processor.process("TICKET CREATE;T001;luis@correo.com;2027-04-15");
         processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
-        assertEquals("Attraction: A01\nName: Dragon Rojo\nCapacity: 20\nOccupants: 0\nAvailable: 20\nUsers: none"
+        assertEquals("Attraction: A01\nName: Dragon Rojo\nType: GENERAL\nCapacity: 20\nOccupants: 0\nAvailable: 20\nUsers: none"
                 .replace("\n", System.lineSeparator()), processor.process("ATTRACTION STATUS;A01"));
         assertEquals("USER ENTERED ATTRACTION: ana@correo.com" + System.lineSeparator()
                 + "USER ENTERED ATTRACTION: pedro@correo.com", processor.process("ATTRACTION ENTER;A01;TG01"));
@@ -365,5 +365,28 @@ class CommandProcessorTest {
                 "SPECIALPASS DELETE;<specialPassIdentifier>")) {
             assertTrue(processor.process("HELP").contains(s), s);
         }
+    }
+
+    @Test
+    void typedAttractionCommands() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process(ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;F");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2027-04-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        assertEquals("ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A02;Montana Rusa Individual;12;INDIVIDUAL"));
+        assertEquals("ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A03;Rafting Familiar;24;GROUP"));
+        assertEquals("ATTRACTION CREATED", processor.process("ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL"));
+        assertTrue(processor.process("ATTRACTION CREATE;A05;X;5;VIP").startsWith("ERROR: Attraction type"));
+        assertTrue(processor.process("ATTRACTION ENTER;A02;TG01").startsWith("ERROR: INDIVIDUAL attraction A02 does not accept"));
+        assertTrue(processor.process("ATTRACTION ENTER;A03;T001").startsWith("ERROR: GROUP attraction A03 does not accept"));
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001").startsWith("ERROR: Ticket T001 has no unconsumed Special Pass"));
+        processor.process("SPECIALPASS CREATE;PE01;T001");
+        assertEquals("USER ENTERED ATTRACTION: ana@correo.com", processor.process("ATTRACTION ENTER;A04;T001"));
+        assertTrue(processor.process("ATTRACTION ENTER;A03;TG01").contains("pedro@correo.com"));
+        assertTrue(processor.process("ATTRACTION STATUS;A04").contains("Type: SPECIAL"));
     }
 }

@@ -15,11 +15,12 @@ import es.upm.amusementpark.persistence.repository.AttractionRepository;
 
 class AttractionServiceTest {
 
-    private final AttractionService attractions = AttractionService.getInstance().configure(new AttractionRepository());
+    private final AttractionService attractions = AttractionService.getInstance().configure(new AttractionRepository(),
+            ticket -> List.of());
 
     @Test
     void createdAttractionIsEmpty() throws ParkException {
-        Attraction a = attractions.createAttraction("A01", "Dragon Rojo", 20);
+        Attraction<?> a = attractions.createAttraction("A01", "Dragon Rojo", 20);
         assertEquals("Dragon Rojo", a.getName());
         assertEquals(20, a.getCapacity());
         assertTrue(a.getOccupants().isEmpty());
@@ -38,7 +39,7 @@ class AttractionServiceTest {
 
     @Test
     void listShowsOccupantEmailsInEntryOrderWithoutChangingThem() throws ParkException {
-        Attraction a = attractions.createAttraction("A01", "Dragon Rojo", 2);
+        Attraction<?> a = attractions.createAttraction("A01", "Dragon Rojo", 2);
         User ana = new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
         User pedro = new User("Pedro", "L", "87654321X", "pedro@correo.com", "Otra2#", "6", "9876543210987654");
         a.addOccupant(ana);
