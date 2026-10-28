@@ -28,7 +28,11 @@ class CommandProcessorTest {
     }
 
     private static int count(String text, String fragment) {
-        return text.split(java.util.regex.Pattern.quote(fragment), -1).length - 1;
+        int count = 0;
+        for (int i = text.indexOf(fragment); i >= 0; i = text.indexOf(fragment, i + fragment.length())) {
+            count++;
+        }
+        return count;
     }
 
     @Test
@@ -56,6 +60,20 @@ class CommandProcessorTest {
         String out = run("FOO\nHELP\n");
         assertTrue(out.contains("ERROR: Unknown command: FOO"));
         assertTrue(out.indexOf("ERROR") < out.indexOf("Available commands:"));
+    }
+
+    @Test
+    void failingCommandIsReportedAndProcessingContinues() throws IOException {
+        CommandProcessor processor = new CommandProcessor();
+        processor.register("FAIL", (arguments, out) -> {
+            throw new IllegalStateException("boom");
+        });
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        processor.run(new BufferedReader(new StringReader("FAIL\nHELP\n")),
+                new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        String out = buffer.toString(StandardCharsets.UTF_8);
+        assertTrue(out.contains("ERROR: Could not execute command: FAIL (boom)"));
+        assertTrue(out.contains("Available commands:"));
     }
 
     @Test

@@ -52,6 +52,12 @@ public class CommandProcessor {
             out.println("ERROR: Unknown command: " + trimmed);
             return false;
         }
-        return command.execute(Arrays.copyOfRange(fields, 1, fields.length), out);
+        try {
+            return command.execute(Arrays.copyOfRange(fields, 1, fields.length), out);
+        } catch (RuntimeException e) {
+            out.println("ERROR: Could not execute command: " + trimmed
+                    + (e.getMessage() == null ? "" : " (" + e.getMessage() + ")"));
+            return false;
+        }
     }
 }
