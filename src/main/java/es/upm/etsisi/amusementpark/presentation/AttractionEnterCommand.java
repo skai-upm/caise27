@@ -5,10 +5,10 @@ import es.upm.etsisi.amusementpark.business.controller.ParkController;
 /**
  * ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier.
  */
-public class AttractionEnterCommand extends ControllerCommand {
+public class AttractionEnterCommand extends ControllerCommand<ParkController> {
 
-    public AttractionEnterCommand() {
-        super("ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>", 2);
+    public AttractionEnterCommand(ParkController controller) {
+        super("ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>", 2, controller);
     }
 
     @Override

@@ -5,10 +5,10 @@ import es.upm.etsisi.amusementpark.business.controller.ParkController;
 /**
  * GROUP REMOVE;Identifier;Email.
  */
-public class GroupRemoveCommand extends ControllerCommand {
+public class GroupRemoveCommand extends ControllerCommand<ParkController> {
 
-    public GroupRemoveCommand() {
-        super("GROUP REMOVE;<Identifier>;<Email>", 2);
+    public GroupRemoveCommand(ParkController controller) {
+        super("GROUP REMOVE;<Identifier>;<Email>", 2, controller);
     }
 
     @Override

@@ -2,8 +2,9 @@ package es.upm.etsisi.amusementpark;
 
 import es.upm.etsisi.amusementpark.persistence.PersistenceException;
 import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.business.controller.InvoiceController;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
-import es.upm.etsisi.amusementpark.persistence.ParkStorage;
+import es.upm.etsisi.amusementpark.persistence.TextRepositories;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -50,7 +51,7 @@ public class App {
             return;
         }
         try {
-            execute(file, stdin, out, new ParkStorage(storageDirectory));
+            execute(file, stdin, out, storageDirectory);
         } finally {
             if (fly) {
                 deleteRecursively(storageDirectory, out);
@@ -58,18 +59,25 @@ public class App {
         }
     }
 
-    private static void execute(String file, InputStream stdin, PrintStream out, ParkStorage storage) {
-        ParkController controller = ParkController.getInstance();
-        controller.reset();
+    /**
+     * Composition root: creates the repositories for the chosen directory and
+     * injects them and the controller collaborations before processing commands.
+     */
+    private static void execute(String file, InputStream stdin, PrintStream out, Path storageDirectory) {
+        ParkController park = ParkController.getInstance();
+        InvoiceController invoices = InvoiceController.getInstance();
+        park.configure(TextRepositories.inDirectory(storageDirectory));
+        invoices.configure(park);
+        park.reset();
         try {
-            storage.load(controller, out);
+            park.loadState().forEach(problem -> out.println("ERROR: " + problem));
         } catch (PersistenceException e) {
             out.println("ERROR: Cannot load stored data: " + e.getMessage());
         }
-        CommandProcessor processor = new CommandProcessor();
+        CommandProcessor processor = new CommandProcessor(park, invoices);
         processor.setAfterCommand(() -> {
             try {
-                storage.save(controller);
+                park.saveState();
             } catch (PersistenceException e) {
                 out.println("ERROR: Cannot save data: " + e.getMessage());
             }

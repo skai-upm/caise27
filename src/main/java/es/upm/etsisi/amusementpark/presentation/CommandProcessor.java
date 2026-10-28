@@ -1,5 +1,8 @@
 package es.upm.etsisi.amusementpark.presentation;
 
+import es.upm.etsisi.amusementpark.business.controller.InvoiceController;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -16,23 +19,33 @@ public class CommandProcessor {
     private final Map<String, Command> commands = new LinkedHashMap<>();
     private Runnable afterCommand = () -> { };
 
+    /**
+     * Wires the commands with the singleton controllers.
+     */
     public CommandProcessor() {
-        register("SYSTEM DATE", new SystemDateCommand());
-        register("SYSTEM PRICE", new SystemPriceCommand());
-        register("GROUP CREATE", new GroupCreateCommand());
-        register("GROUP ADD", new GroupAddCommand());
-        register("GROUP REMOVE", new GroupRemoveCommand());
-        register("GROUP DELETE", new GroupDeleteCommand());
-        register("TICKET CREATE", new TicketCreateCommand());
-        register("TICKET DELETE", new TicketDeleteCommand());
-        register("GROUPTICKET CREATE", new GroupTicketCreateCommand());
-        register("GROUPTICKET DELETE", new GroupTicketDeleteCommand());
-        register("ATTRACTION CREATE", new AttractionCreateCommand());
-        register("ATTRACTION LIST", new AttractionListCommand());
-        register("ATTRACTION ENTER", new AttractionEnterCommand());
-        register("ATTRACTION EXIT", new AttractionExitCommand());
-        register("ATTRACTION STATUS", new AttractionStatusCommand());
-        register("INVOICE CREATE", new InvoiceCreateCommand());
+        this(ParkController.getInstance(), InvoiceController.getInstance());
+    }
+
+    /**
+     * Creates the processor with the controllers its commands collaborate with.
+     */
+    public CommandProcessor(ParkController park, InvoiceController invoices) {
+        register("SYSTEM DATE", new SystemDateCommand(park));
+        register("SYSTEM PRICE", new SystemPriceCommand(park));
+        register("GROUP CREATE", new GroupCreateCommand(park));
+        register("GROUP ADD", new GroupAddCommand(park));
+        register("GROUP REMOVE", new GroupRemoveCommand(park));
+        register("GROUP DELETE", new GroupDeleteCommand(park));
+        register("TICKET CREATE", new TicketCreateCommand(park));
+        register("TICKET DELETE", new TicketDeleteCommand(park));
+        register("GROUPTICKET CREATE", new GroupTicketCreateCommand(park));
+        register("GROUPTICKET DELETE", new GroupTicketDeleteCommand(park));
+        register("ATTRACTION CREATE", new AttractionCreateCommand(park));
+        register("ATTRACTION LIST", new AttractionListCommand(park));
+        register("ATTRACTION ENTER", new AttractionEnterCommand(park));
+        register("ATTRACTION EXIT", new AttractionExitCommand(park));
+        register("ATTRACTION STATUS", new AttractionStatusCommand(park));
+        register("INVOICE CREATE", new InvoiceCreateCommand(invoices));
         register("HELP", new HelpCommand());
         register("EXIT", new ExitCommand());
     }

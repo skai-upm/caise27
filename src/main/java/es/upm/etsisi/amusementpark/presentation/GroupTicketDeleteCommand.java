@@ -5,10 +5,10 @@ import es.upm.etsisi.amusementpark.business.controller.ParkController;
 /**
  * GROUPTICKET DELETE;&lt;identifier&gt;.
  */
-public class GroupTicketDeleteCommand extends ControllerCommand {
+public class GroupTicketDeleteCommand extends ControllerCommand<ParkController> {
 
-    public GroupTicketDeleteCommand() {
-        super("GROUPTICKET DELETE;<identifier>", 1);
+    public GroupTicketDeleteCommand(ParkController controller) {
+        super("GROUPTICKET DELETE;<identifier>", 1, controller);
     }
 
     @Override

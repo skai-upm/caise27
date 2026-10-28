@@ -6,10 +6,10 @@ import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
 /**
  * TICKET CREATE;&lt;identifier&gt;;&lt;email&gt;;&lt;date&gt;.
  */
-public class TicketCreateCommand extends ControllerCommand {
+public class TicketCreateCommand extends ControllerCommand<ParkController> {
 
-    public TicketCreateCommand() {
-        super("TICKET CREATE;<identifier>;<email>;<date>", 3);
+    public TicketCreateCommand(ParkController controller) {
+        super("TICKET CREATE;<identifier>;<email>;<date>", 3, controller);
     }
 
     @Override

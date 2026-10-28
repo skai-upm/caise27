@@ -8,10 +8,10 @@ import es.upm.etsisi.amusementpark.business.model.User;
 /**
  * ATTRACTION STATUS;AttractionIdentifier: state of an attraction from its own data.
  */
-public class AttractionStatusCommand extends ControllerCommand {
+public class AttractionStatusCommand extends ControllerCommand<ParkController> {
 
-    public AttractionStatusCommand() {
-        super("ATTRACTION STATUS;<AttractionIdentifier>", 1);
+    public AttractionStatusCommand(ParkController controller) {
+        super("ATTRACTION STATUS;<AttractionIdentifier>", 1, controller);
     }
 
     @Override

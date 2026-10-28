@@ -4,16 +4,14 @@ import es.upm.etsisi.amusementpark.business.exception.AlreadyExistsException;
 import es.upm.etsisi.amusementpark.business.exception.InvalidValueException;
 import es.upm.etsisi.amusementpark.business.exception.NotFoundException;
 import es.upm.etsisi.amusementpark.business.exception.OperationNotAllowedException;
-import es.upm.etsisi.amusementpark.business.invoice.GroupInvoiceBuilder;
-import es.upm.etsisi.amusementpark.business.invoice.Invoice;
-import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
-import es.upm.etsisi.amusementpark.business.invoice.UserInvoiceBuilder;
+import es.upm.etsisi.amusementpark.business.exception.ParkException;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
+import es.upm.etsisi.amusementpark.business.repository.ParkRepositories;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -41,6 +39,7 @@ public final class ParkController {
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private ParkRepositories repositories;
 
     private ParkController() {
         reset();
@@ -60,6 +59,84 @@ public final class ParkController {
         attractions.clear();
     }
 
+    /**
+     * Injects the repositories used to load and save the park state. Called once
+     * during application initialization; different configurations (normal or
+     * temporary persistence, other implementations) need no change here.
+     */
+    public void configure(ParkRepositories repositories) {
+        this.repositories = repositories;
+    }
+
+    /**
+     * Loads the stored park state through the injected repositories.
+     *
+     * @return problems found; the affected records are skipped
+     */
+    public List<String> loadState() {
+        List<String> problems = new ArrayList<>();
+        if (repositories == null) {
+            return problems;
+        }
+        for (User user : repositories.users().load()) {
+            restore(problems, () -> addUser(user));
+        }
+        for (Group group : repositories.groups().load(this::findUser)) {
+            restore(problems, () -> {
+                Group created = createGroup(group.getIdentifier(), group.getName());
+                group.getMembers().forEach(created::addMember);
+            });
+        }
+        List<User> historicalUsers = new ArrayList<>();
+        for (Ticket ticket : repositories.tickets().load(this::findGroup,
+                (dni, email) -> resolveStoredUser(historicalUsers, dni, email))) {
+            restore(problems, () -> registerTicket(ticket));
+        }
+        for (Attraction attraction : repositories.attractions().load()) {
+            restore(problems, () -> restoreAttraction(attraction));
+        }
+        problems.addAll(repositories.users().getProblems());
+        problems.addAll(repositories.groups().getProblems());
+        problems.addAll(repositories.tickets().getProblems());
+        problems.addAll(repositories.attractions().getProblems());
+        return problems;
+    }
+
+    /** Saves the park state through the injected repositories (nothing when none are configured). */
+    public void saveState() {
+        if (repositories == null) {
+            return;
+        }
+        repositories.users().save(getUsers());
+        repositories.groups().save(getGroups());
+        repositories.tickets().save(getTickets());
+        repositories.attractions().save(getAttractions());
+    }
+
+    /** The active user with that DNI and e-mail, otherwise one shared historical user record. */
+    private User resolveStoredUser(List<User> historical, String dni, String email) {
+        Optional<User> active = findUser(email).filter(user -> user.getDni().equals(dni));
+        if (active.isPresent()) {
+            return active.get();
+        }
+        for (User user : historical) {
+            if (user.getDni().equals(dni) && user.getEmail().equals(email)) {
+                return user;
+            }
+        }
+        User user = new User(dni, email);
+        historical.add(user);
+        return user;
+    }
+
+    private static void restore(List<String> problems, Runnable action) {
+        try {
+            action.run();
+        } catch (ParkException e) {
+            problems.add("Stored data ignored: " + e.getMessage());
+        }
+    }
+
     public Collection<User> getUsers() {
         return Collections.unmodifiableCollection(users.values());
     }
@@ -77,19 +154,7 @@ public final class ParkController {
         return Collections.unmodifiableCollection(attractions.values());
     }
 
-    // ---- restoration of persisted state (no business-rule checks besides consistency) ----
-
-    /** Adds a stored member to a stored group. */
-    public void restoreGroupMember(Group group, User user) {
-        group.addMember(user);
-    }
-
-    /** Registers a stored ticket, keeping the shared identifier space consistent. */
-    public void restoreTicket(Ticket ticket) {
-        registerTicket(ticket);
-    }
-
-    public void restoreAttraction(Attraction attraction) {
+    private void restoreAttraction(Attraction attraction) {
         if (attractions.containsKey(attraction.getIdentifier())) {
             throw new AlreadyExistsException("Attraction already exists: " + attraction.getIdentifier());
         }
@@ -345,25 +410,6 @@ public final class ParkController {
     /** Derived lock state of a user: any associated ticket that is still active. */
     public boolean hasActiveTickets(User user) {
         return findTicketsOfUser(user).stream().anyMatch(ticket -> ticket.isActive(currentDate));
-    }
-
-    // ---- invoices ----
-
-    /** Invoice of an active user with the tickets bought directly for them. */
-    public Invoice createUserInvoice(String email) {
-        User user = findUser(email).orElseThrow(() -> new NotFoundException("User not found: " + email));
-        List<IndividualTicket> direct = tickets.values().stream()
-                .filter(IndividualTicket.class::isInstance)
-                .map(IndividualTicket.class::cast)
-                .filter(ticket -> ticket.getUser() == user)
-                .toList();
-        return new InvoiceDirector().construct(new UserInvoiceBuilder(user, direct));
-    }
-
-    /** Invoice of an existing group with its group tickets. */
-    public Invoice createGroupInvoice(String identifier) {
-        Group group = findGroup(identifier).orElseThrow(() -> new NotFoundException("Group not found: " + identifier));
-        return new InvoiceDirector().construct(new GroupInvoiceBuilder(group, findGroupTickets(group)));
     }
 
     // ---- attractions ----

@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.persistence;
 
+import es.upm.etsisi.amusementpark.business.repository.UserRepository;
 import es.upm.etsisi.amusementpark.business.model.User;
 
 import java.nio.file.Path;
@@ -10,12 +11,13 @@ import java.util.List;
 /**
  * Stores users, one per line: {@code dni;email}.
  */
-public class UserRepository extends TextFileRepository {
+public class TextUserRepository extends TextFileRepository implements UserRepository {
 
-    public UserRepository(Path file) {
+    public TextUserRepository(Path file) {
         super(file);
     }
 
+    @Override
     public void save(Collection<User> users) {
         List<String> lines = new ArrayList<>();
         for (User user : users) {
@@ -24,6 +26,7 @@ public class UserRepository extends TextFileRepository {
         writeLines(lines);
     }
 
+    @Override
     public List<User> load() {
         List<User> users = new ArrayList<>();
         List<String> lines = readLines();

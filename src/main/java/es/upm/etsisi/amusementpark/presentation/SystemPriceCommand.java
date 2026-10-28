@@ -10,6 +10,12 @@ import java.io.PrintStream;
  */
 public class SystemPriceCommand implements Command {
 
+    private final ParkController controller;
+
+    public SystemPriceCommand(ParkController controller) {
+        this.controller = controller;
+    }
+
     @Override
     public boolean execute(String[] arguments, PrintStream out) {
         if (arguments.length != 1) {
@@ -17,7 +23,6 @@ public class SystemPriceCommand implements Command {
             return false;
         }
         try {
-            ParkController controller = ParkController.getInstance();
             controller.setCurrentPrice(arguments[0].trim());
             out.println("SYSTEM PRICE UPDATED: " + controller.getCurrentPrice());
         } catch (ParkException e) {

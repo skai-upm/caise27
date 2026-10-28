@@ -8,10 +8,10 @@ import es.upm.etsisi.amusementpark.business.model.User;
 /**
  * ATTRACTION LIST;AttractionIdentifier: read-only listing of the users inside.
  */
-public class AttractionListCommand extends ControllerCommand {
+public class AttractionListCommand extends ControllerCommand<ParkController> {
 
-    public AttractionListCommand() {
-        super("ATTRACTION LIST;<AttractionIdentifier>", 1);
+    public AttractionListCommand(ParkController controller) {
+        super("ATTRACTION LIST;<AttractionIdentifier>", 1, controller);
     }
 
     @Override

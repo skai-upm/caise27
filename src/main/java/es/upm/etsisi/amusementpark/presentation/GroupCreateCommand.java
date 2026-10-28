@@ -5,10 +5,10 @@ import es.upm.etsisi.amusementpark.business.controller.ParkController;
 /**
  * GROUP CREATE;Identifier;Name.
  */
-public class GroupCreateCommand extends ControllerCommand {
+public class GroupCreateCommand extends ControllerCommand<ParkController> {
 
-    public GroupCreateCommand() {
-        super("GROUP CREATE;<Identifier>;<Name>", 2);
+    public GroupCreateCommand(ParkController controller) {
+        super("GROUP CREATE;<Identifier>;<Name>", 2, controller);
     }
 
     @Override

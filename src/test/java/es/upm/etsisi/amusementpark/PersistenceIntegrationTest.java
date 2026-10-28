@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.model.User;
-import es.upm.etsisi.amusementpark.persistence.ParkStorage;
+import es.upm.etsisi.amusementpark.persistence.TextRepositories;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -60,7 +60,8 @@ class PersistenceIntegrationTest {
         controller.addUser(new User("87654321X", "pedro@correo.com"));
         controller.createGroup("G02", "Amigos");
         controller.addUserToGroup("G02", "ana@correo.com");
-        new ParkStorage(workDir.resolve("data")).save(controller);
+        controller.configure(TextRepositories.inDirectory(workDir.resolve("data")));
+        controller.saveState();
         run("GROUPTICKET CREATE;TG01;G02;2099-01-01\nEXIT\n");
         String out = run("GROUP ADD;G02;pedro@correo.com\nEXIT\n");
         assertTrue(out.contains("ERROR: Group G02 has an active group ticket"), out);

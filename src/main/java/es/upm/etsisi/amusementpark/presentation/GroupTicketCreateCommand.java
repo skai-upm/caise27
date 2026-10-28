@@ -6,10 +6,10 @@ import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 /**
  * GROUPTICKET CREATE;&lt;identifier&gt;;&lt;group&gt;;&lt;date&gt;.
  */
-public class GroupTicketCreateCommand extends ControllerCommand {
+public class GroupTicketCreateCommand extends ControllerCommand<ParkController> {
 
-    public GroupTicketCreateCommand() {
-        super("GROUPTICKET CREATE;<identifier>;<group>;<date>", 3);
+    public GroupTicketCreateCommand(ParkController controller) {
+        super("GROUPTICKET CREATE;<identifier>;<group>;<date>", 3, controller);
     }
 
     @Override

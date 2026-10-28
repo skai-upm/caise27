@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.persistence;
 
+import es.upm.etsisi.amusementpark.business.repository.AttractionRepository;
 import es.upm.etsisi.amusementpark.business.exception.InvalidValueException;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
 
@@ -11,12 +12,13 @@ import java.util.List;
 /**
  * Stores attractions, one per line: {@code id;name;capacity}. Occupants are not stored.
  */
-public class AttractionRepository extends TextFileRepository {
+public class TextAttractionRepository extends TextFileRepository implements AttractionRepository {
 
-    public AttractionRepository(Path file) {
+    public TextAttractionRepository(Path file) {
         super(file);
     }
 
+    @Override
     public void save(Collection<Attraction> attractions) {
         List<String> lines = new ArrayList<>();
         for (Attraction attraction : attractions) {
@@ -26,6 +28,7 @@ public class AttractionRepository extends TextFileRepository {
         writeLines(lines);
     }
 
+    @Override
     public List<Attraction> load() {
         List<Attraction> attractions = new ArrayList<>();
         List<String> lines = readLines();

@@ -10,6 +10,12 @@ import java.io.PrintStream;
  */
 public class SystemDateCommand implements Command {
 
+    private final ParkController controller;
+
+    public SystemDateCommand(ParkController controller) {
+        this.controller = controller;
+    }
+
     @Override
     public boolean execute(String[] arguments, PrintStream out) {
         if (arguments.length != 1) {
@@ -17,7 +23,6 @@ public class SystemDateCommand implements Command {
             return false;
         }
         try {
-            ParkController controller = ParkController.getInstance();
             controller.setCurrentDate(arguments[0].trim());
             out.println("SYSTEM DATE UPDATED: " + controller.getCurrentDate());
         } catch (ParkException e) {

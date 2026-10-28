@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.persistence;
 
+import es.upm.etsisi.amusementpark.business.repository.TicketRepository;
 import es.upm.etsisi.amusementpark.business.exception.InvalidValueException;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
@@ -23,14 +24,15 @@ import java.util.function.Function;
  * followed by one {@code C;id;price;dni;email} line per ticket of its composition.
  * The user's DNI and e-mail are kept so historical tickets survive user deletion.
  */
-public class TicketRepository extends TextFileRepository {
+public class TextTicketRepository extends TextFileRepository implements TicketRepository {
 
     private static final String NO_GROUP = "-";
 
-    public TicketRepository(Path file) {
+    public TextTicketRepository(Path file) {
         super(file);
     }
 
+    @Override
     public void save(Collection<Ticket> tickets) {
         List<String> lines = new ArrayList<>();
         for (Ticket ticket : tickets) {
@@ -57,6 +59,7 @@ public class TicketRepository extends TextFileRepository {
      * @param groups       resolves a group identifier among the existing groups
      * @param userResolver resolves {@code (dni, email)} to the active user or a historical user record
      */
+    @Override
     public List<Ticket> load(Function<String, Optional<Group>> groups, BiFunction<String, String, User> userResolver) {
         List<Ticket> tickets = new ArrayList<>();
         List<String> lines = readLines();

@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.persistence;
 
+import es.upm.etsisi.amusementpark.business.repository.GroupRepository;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.User;
 
@@ -13,12 +14,13 @@ import java.util.function.Function;
 /**
  * Stores groups and their members, one group per line: {@code id;name;email1;email2;...}.
  */
-public class GroupRepository extends TextFileRepository {
+public class TextGroupRepository extends TextFileRepository implements GroupRepository {
 
-    public GroupRepository(Path file) {
+    public TextGroupRepository(Path file) {
         super(file);
     }
 
+    @Override
     public void save(Collection<Group> groups) {
         List<String> lines = new ArrayList<>();
         for (Group group : groups) {
@@ -34,6 +36,7 @@ public class GroupRepository extends TextFileRepository {
     /**
      * Loads groups, resolving members by e-mail among the active users.
      */
+    @Override
     public List<Group> load(Function<String, Optional<User>> usersByEmail) {
         List<Group> groups = new ArrayList<>();
         List<String> lines = readLines();

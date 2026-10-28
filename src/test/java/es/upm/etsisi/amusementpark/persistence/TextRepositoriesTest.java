@@ -12,36 +12,39 @@ import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
 import es.upm.etsisi.amusementpark.business.model.User;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class ParkStorageTest {
+class TextRepositoriesTest {
 
     private final ParkController controller = ParkController.getInstance();
 
     @TempDir
     Path directory;
 
-    private String reload() {
-        new ParkStorage(directory).save(controller);
+    private List<String> reload() {
+        controller.saveState();
         controller.reset();
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        new ParkStorage(directory).load(controller, new PrintStream(buffer, true, StandardCharsets.UTF_8));
-        return buffer.toString(StandardCharsets.UTF_8);
+        return controller.loadState();
+    }
+
+    @AfterEach
+    void detach() {
+        controller.configure(null);
     }
 
     @BeforeEach
     void setUp() {
         controller.reset();
+        controller.configure(TextRepositories.inDirectory(directory));
         controller.setCurrentDate("2027-04-01");
         controller.addUser(new User("12345678Z", "ana@correo.com"));
         controller.addUser(new User("87654321X", "pedro@correo.com"));
@@ -56,7 +59,7 @@ class ParkStorageTest {
 
     @Test
     void roundTripKeepsElementsAndRelationships() {
-        assertEquals("", reload());
+        assertEquals(List.of(), reload());
         User ana = controller.findUser("ana@correo.com").orElseThrow();
         assertEquals("12345678Z", ana.getDni());
         assertEquals(2, controller.findGroup("G01").orElseThrow().getMembers().size());
@@ -104,20 +107,18 @@ class ParkStorageTest {
 
     @Test
     void malformedLinesAreReportedAndSkipped() throws Exception {
-        new ParkStorage(directory).save(controller);
+        controller.saveState();
         Files.writeString(directory.resolve("attractions.txt"), "A01;Dragon Rojo;20\nbroken line\nA02;Noria;x\n");
         controller.reset();
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        new ParkStorage(directory).load(controller, new PrintStream(buffer, true, StandardCharsets.UTF_8));
-        String out = buffer.toString(StandardCharsets.UTF_8);
-        assertEquals(2, out.split("ERROR", -1).length - 1, out);
+        List<String> problems = controller.loadState();
+        assertEquals(2, problems.size(), problems.toString());
         assertTrue(controller.findAttraction("A01").isPresent());
         assertEquals(2, controller.getUsers().size());
     }
 
     @Test
     void textFilesAreWritten() throws Exception {
-        new ParkStorage(directory).save(controller);
+        controller.saveState();
         assertEquals("12345678Z;ana@correo.com", Files.readAllLines(directory.resolve("users.txt")).get(0));
         assertEquals("G01;Familia Garcia;ana@correo.com;pedro@correo.com",
                 Files.readAllLines(directory.resolve("groups.txt")).get(0));

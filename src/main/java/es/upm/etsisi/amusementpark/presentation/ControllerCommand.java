@@ -1,22 +1,25 @@
 package es.upm.etsisi.amusementpark.presentation;
 
 import es.upm.etsisi.amusementpark.business.exception.ParkException;
-import es.upm.etsisi.amusementpark.business.controller.ParkController;
 
 import java.io.PrintStream;
 
 /**
- * Base for commands with a fixed number of non-empty fields that operate on the
- * park controller. Rejected operations are reported as {@code ERROR: ...} lines.
+ * Base for commands with a fixed number of non-empty fields that operate on an
+ * injected controller. Rejected operations are reported as {@code ERROR: ...} lines.
+ *
+ * @param <C> type of the controller the command works with
  */
-public abstract class ControllerCommand implements Command {
+public abstract class ControllerCommand<C> implements Command {
 
     private final String usage;
     private final int fieldCount;
+    private final C controller;
 
-    protected ControllerCommand(String usage, int fieldCount) {
+    protected ControllerCommand(String usage, int fieldCount, C controller) {
         this.usage = usage;
         this.fieldCount = fieldCount;
+        this.controller = controller;
     }
 
     @Override
@@ -34,7 +37,7 @@ public abstract class ControllerCommand implements Command {
             }
         }
         try {
-            out.println(run(ParkController.getInstance(), fields));
+            out.println(run(controller, fields));
         } catch (ParkException e) {
             out.println("ERROR: " + e.getMessage());
         }
@@ -44,5 +47,5 @@ public abstract class ControllerCommand implements Command {
     /**
      * Performs the operation and returns the success message.
      */
-    protected abstract String run(ParkController controller, String[] fields);
+    protected abstract String run(C controller, String[] fields);
 }
