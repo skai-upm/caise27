@@ -30,39 +30,29 @@ public class CommandProcessor {
             "GROUP CREATE", "GROUP ADD", "GROUP REMOVE", "GROUP DELETE", "TICKET CREATE", "TICKET DELETE",
             "GROUPTICKET CREATE", "GROUPTICKET DELETE", "ATTRACTION CREATE");
 
-    static final String HELP_TEXT = String.join(System.lineSeparator(),
-            "Available commands:",
-            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
-            "USER DELETE;<Email>;<Password>",
-            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
-            "SYSTEM DATE;<yyyy-MM-dd>",
-            "SYSTEM PRICE;<Price>",
-            "GROUP CREATE;<Identifier>;<Name>",
-            "GROUP ADD;<Identifier>;<Email>",
-            "GROUP REMOVE;<Identifier>;<Email>",
-            "GROUP DELETE;<Identifier>",
-            "TICKET CREATE;<identifier>;<email>;<date>",
-            "TICKET DELETE;<identifier>",
-            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
-            "GROUPTICKET DELETE;<identifier>",
-            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
-            "ATTRACTION ENTER;<attraction>;<ticket>",
-            "ATTRACTION EXIT;<attraction>;<email>",
-            "ATTRACTION LIST;<attraction>",
-            "ATTRACTION STATUS;<attractionIdentifier>",
-            "INVOICE CREATE;USER;<email>",
-            "INVOICE CREATE;GROUP;<groupIdentifier>",
-            "HELP",
-            "EXIT",
-            "(<Field>: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)");
 
     private final ParkController park;
     private final UserService userService;
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
     private boolean exitRequested;
 
-    public CommandProcessor(ParkController park) {
+    /**
+     * Creates a processor with the given help generators for {@code HELP} and {@code HELP EXTENDED}.
+     */
+    public CommandProcessor(ParkController park, HelpGenerator help, HelpGenerator extendedHelp) {
         this.park = park;
         this.userService = park.users();
+        this.help = help;
+        this.extendedHelp = extendedHelp;
+    }
+
+    /**
+     * Creates a processor with the default basic and extended help.
+     */
+    public CommandProcessor(ParkController park) {
+        this(park, new HelpGenerator(CommandCatalog.all(), new BasicHelpFormat()),
+                new HelpGenerator(CommandCatalog.all(), new ExtendedHelpFormat()));
     }
 
     /**
@@ -112,7 +102,8 @@ public class CommandProcessor {
             case "ATTRACTION LIST" -> attractionList(parts);
             case "ATTRACTION STATUS" -> attractionStatus(parts);
             case "INVOICE CREATE" -> invoiceCreate(parts);
-            case "HELP" -> help(parts);
+            case "HELP" -> help(parts, help, "HELP");
+            case "HELP EXTENDED" -> help(parts, extendedHelp, "HELP EXTENDED");
             case "EXIT" -> exit(parts);
             default -> error("Unknown command");
         };
@@ -273,9 +264,9 @@ public class CommandProcessor {
         return true;
     }
 
-    private String help(String[] parts) throws ParkException {
-        requireArguments(parts, 0, "HELP");
-        return HELP_TEXT;
+    private String help(String[] parts, HelpGenerator generator, String command) throws ParkException {
+        requireArguments(parts, 0, command);
+        return generator.generate();
     }
 
     private String exit(String[] parts) throws ParkException {

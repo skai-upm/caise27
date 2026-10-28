@@ -54,7 +54,10 @@ public class App {
             return 1;
         }
         try {
-            return run(rest, stdin, out, err, new App(out, new CommandProcessor(park)));
+            CommandProcessor processor = new CommandProcessor(park,
+                    new HelpGenerator(CommandCatalog.all(), new BasicHelpFormat()),
+                    new HelpGenerator(CommandCatalog.all(), new ExtendedHelpFormat()));
+            return run(rest, stdin, out, err, new App(out, processor));
         } finally {
             try {
                 park.close();

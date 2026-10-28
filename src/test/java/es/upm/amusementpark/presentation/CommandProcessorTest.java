@@ -331,4 +331,16 @@ class CommandProcessorTest {
         assertTrue(processor.process("HELP").contains("INVOICE CREATE;USER;<email>"));
         assertTrue(processor.process("HELP").contains("INVOICE CREATE;GROUP;<groupIdentifier>"));
     }
+
+    @Test
+    void helpExtendedAndInjectedHelp() {
+        String extended = processor.process("HELP EXTENDED");
+        assertTrue(extended.startsWith("Available commands (extended):"));
+        assertTrue(extended.contains("GROUPTICKET CREATE;<identifier>;<group>;<date>" + System.lineSeparator() + "    "));
+        assertTrue(processor.process("HELP EXTENDED;x").startsWith("ERROR: Wrong number of arguments"));
+        CommandProcessor custom = new CommandProcessor(park, new HelpGenerator(CommandCatalog.all(), c -> "basic"),
+                new HelpGenerator(CommandCatalog.all(), c -> "extended"));
+        assertEquals("basic", custom.process("HELP"));
+        assertEquals("extended", custom.process("HELP EXTENDED"));
+    }
 }
