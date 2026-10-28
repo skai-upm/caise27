@@ -1,0 +1,62 @@
+@startuml model
+title Amusement Park - domain model (Phase 2)
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package es.upm.etsisi.amusementpark.controller {
+  class ParkController <<singleton>> {
+    - {static} INSTANCE : ParkController
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+  }
+}
+
+package es.upm.etsisi.amusementpark.model {
+  class User {
+    - dni : String
+    - email : String
+  }
+
+  class Group {
+    - identifier : String
+    - name : String
+  }
+
+  abstract class Ticket {
+    - identifier : String
+    - date : LocalDate
+  }
+
+  class IndividualTicket {
+    - price : BigDecimal
+  }
+
+  class GroupTicket {
+  }
+
+  class Attraction {
+    - identifier : String
+    - name : String
+    - capacity : int
+  }
+}
+
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+IndividualTicket "*" --> "1" User : user
+GroupTicket "1" *--> "1..*" IndividualTicket : composition
+GroupTicket "*" --> "0..1" Group : group
+Group "*" o--> "*" User : members
+Attraction "0..1" o--> "0..*" User : occupants
+
+ParkController "1" *--> "*" User : users
+ParkController "1" *--> "*" Group : groups
+ParkController "1" *--> "*" Ticket : tickets
+ParkController "1" *--> "*" Attraction : attractions
+
+note bottom of Ticket
+  price = sum of the prices of
+  the individual tickets it consists of
+end note
+@enduml
