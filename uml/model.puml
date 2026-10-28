@@ -29,7 +29,6 @@ package es.upm.amusementpark.model {
   class Group {
     - id : String {readOnly}
     - name : String
-    - memberDnis : Set<String>
   }
 
   abstract class Ticket {
@@ -114,7 +113,7 @@ IndividualTicket "0..*" --> "1" User : user >
 GroupTicket "0..*" --> "0..1" Group : group >
 
 ' --- users, groups and attractions
-Group "0..*" --> "0..*" User : members (by DNI) >
+Group "0..*" --> "0..*" User : members >
 Attraction "0..1" --> "0..*" User : occupants >
 UserService ..> UserField
 UserService ..> UserValidator

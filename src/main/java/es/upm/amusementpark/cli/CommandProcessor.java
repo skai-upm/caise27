@@ -33,9 +33,9 @@ public class CommandProcessor {
 
     static final String HELP_TEXT = String.join(System.lineSeparator(),
             "Available commands:",
-            "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-            "USER DELETE;<email>;<password>",
-            "USER UPDATE;<email>;<password>;<field>;<value>  (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+            "USER DELETE;<Email>;<Password>",
+            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
             "SYSTEM DATE;<yyyy-MM-dd>",
             "SYSTEM PRICE;<Price>",
             "GROUP CREATE;<Identifier>;<Name>",
@@ -52,7 +52,8 @@ public class CommandProcessor {
             "ATTRACTION LIST;<attraction>",
             "ATTRACTION STATUS;<attractionIdentifier>",
             "HELP",
-            "EXIT");
+            "EXIT",
+            "(<Field>: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)");
 
     private final ParkController park;
     private final UserService userService;

@@ -58,9 +58,9 @@ class GroupTicketTest {
     void compositionIsFixedAndGroupCanBeDetached() {
         Group group = new Group("G01", "g");
         List<User> users = members(2);
-        users.forEach(u -> group.addMember(u.getDni()));
+        users.forEach(group::addMember);
         GroupTicket ticket = new GroupTicket("TG01", DAY, group, users, FORTY);
-        group.removeMember(users.get(0).getDni());
+        group.removeMember(users.get(0));
         assertEquals(2, ticket.individualTickets().size());
         ticket.detachGroup();
         assertNull(ticket.getGroup());

@@ -41,10 +41,10 @@ class GroupServiceTest {
     @Test
     void createEmptyGroupAndAddMembers() throws OperationException {
         groups.createGroup("G01", "Familia Garcia");
-        assertTrue(groups.findById("G01").orElseThrow().getMemberDnis().isEmpty());
+        assertTrue(groups.findById("G01").orElseThrow().getMembers().isEmpty());
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
-        assertEquals(List.of("12345678Z", "87654321X"), groups.findById("G01").orElseThrow().getMemberDnis());
+        assertEquals(List.of("12345678Z", "87654321X"), groups.findById("G01").orElseThrow().getMembers().stream().map(es.upm.amusementpark.model.User::getDni).toList());
         assertEquals("Familia Garcia", groups.findById("G01").orElseThrow().getName());
     }
 
@@ -66,7 +66,7 @@ class GroupServiceTest {
         assertRejected("Group not found", () -> groups.addMember("G99", "ana@correo.com"));
         assertRejected("does not belong", () -> groups.removeMember("G01", "pedro@correo.com"));
         groups.removeMember("G01", "ana@correo.com");
-        assertTrue(groups.findById("G01").orElseThrow().getMemberDnis().isEmpty());
+        assertTrue(groups.findById("G01").orElseThrow().getMembers().isEmpty());
     }
 
     @Test
@@ -75,7 +75,7 @@ class GroupServiceTest {
         groups.addMember("G01", "ana@correo.com");
         users.updateUser("ana@correo.com", "Clave1!", es.upm.amusementpark.model.UserField.EMAIL, "ana2@correo.com");
         groups.removeMember("G01", "ana2@correo.com");
-        assertFalse(groups.findById("G01").orElseThrow().hasMember("12345678Z"));
+        assertFalse(groups.findById("G01").orElseThrow().hasMember(users.findByDni("12345678Z").orElseThrow()));
     }
 
     @Test
@@ -105,7 +105,8 @@ class GroupServiceTest {
         groups.createGroup("G02", "B");
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G02", "ana@correo.com");
-        groups.removeUserFromAllGroups("12345678Z");
-        assertTrue(groups.findAll().stream().noneMatch(g -> g.hasMember("12345678Z")));
+        var ana = users.findByDni("12345678Z").orElseThrow();
+        groups.removeUserFromAllGroups(ana);
+        assertTrue(groups.findAll().stream().noneMatch(g -> g.hasMember(ana)));
     }
 }

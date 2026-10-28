@@ -55,7 +55,7 @@ public class GroupService {
     public void addMember(String groupId, String email) throws OperationException {
         Group group = modifiableGroup(groupId);
         User user = users.findByEmail(email).orElseThrow(() -> new OperationException("User not found"));
-        if (!group.addMember(user.getDni())) {
+        if (!group.addMember(user)) {
             throw new OperationException("User already belongs to this group");
         }
     }
@@ -63,7 +63,7 @@ public class GroupService {
     public void removeMember(String groupId, String email) throws OperationException {
         Group group = modifiableGroup(groupId);
         Optional<User> user = users.findByEmail(email);
-        if (user.isEmpty() || !group.removeMember(user.get().getDni())) {
+        if (user.isEmpty() || !group.removeMember(user.get())) {
             throw new OperationException("User does not belong to this group");
         }
     }
@@ -79,8 +79,8 @@ public class GroupService {
     /**
      * Removes a deleted user from every group.
      */
-    public void removeUserFromAllGroups(String dni) {
-        repository.findAll().forEach(g -> g.removeMember(dni));
+    public void removeUserFromAllGroups(User user) {
+        repository.findAll().forEach(g -> g.removeMember(user));
     }
 
     private Group existingGroup(String groupId) throws OperationException {

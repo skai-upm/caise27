@@ -103,9 +103,9 @@ class CommandProcessorTest {
     @Test
     void helpListsEveryCommandSyntax() {
         String help = processor.process("HELP");
-        assertTrue(help.contains("USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>"));
-        assertTrue(help.contains("USER DELETE;<email>;<password>"));
-        assertTrue(help.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
+        assertTrue(help.contains("USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>"));
+        assertTrue(help.contains("USER DELETE;<Email>;<Password>"));
+        assertTrue(help.contains("USER UPDATE;<Email>;<Password>;<Field>;<NewValue>"));
         assertTrue(help.contains("SYSTEM DATE;<yyyy-MM-dd>"));
         assertTrue(help.contains("SYSTEM PRICE;<Price>"));
         for (String group : List.of("GROUP CREATE;<Identifier>;<Name>", "GROUP ADD;<Identifier>;<Email>",
@@ -190,7 +190,7 @@ class CommandProcessorTest {
         assertEquals("USER REMOVED FROM GROUP", processor.process("GROUP REMOVE;G01;pedro@correo.com"));
         assertTrue(processor.process("GROUP REMOVE;G01;pedro@correo.com").startsWith("ERROR:"));
         assertEquals("USER DELETED", processor.process("USER DELETE;ana@correo.com;Clave1!"));
-        assertTrue(park.groups().findById("G01").orElseThrow().getMemberDnis().isEmpty());
+        assertTrue(park.groups().findById("G01").orElseThrow().getMembers().isEmpty());
         assertEquals("GROUP DELETED", processor.process("GROUP DELETE;G01"));
         assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR: Group not found"));
         assertTrue(processor.process("GROUP ADD;G01").startsWith("ERROR: Wrong number of arguments"));

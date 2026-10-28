@@ -6,14 +6,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A group of registered users, identified by a unique identifier. Members are referenced by their
- * DNI, which never changes.
+ * A group of registered users, identified by a unique identifier. The group knows its members;
+ * it never knows the tickets it bought.
  */
 public class Group {
 
     private final String id;
     private String name;
-    private final Set<String> memberDnis = new LinkedHashSet<>();
+    private final Set<User> members = new LinkedHashSet<>();
 
     public Group(String id, String name) {
         this.id = id;
@@ -32,25 +32,28 @@ public class Group {
         this.name = name;
     }
 
-    public boolean hasMember(String dni) {
-        return memberDnis.contains(dni);
+    public boolean hasMember(User user) {
+        return members.contains(user);
     }
 
     /**
      * Adds a member; returns {@code false} if it already belonged to the group.
      */
-    public boolean addMember(String dni) {
-        return memberDnis.add(dni);
+    public boolean addMember(User user) {
+        return members.add(user);
     }
 
     /**
      * Removes a member; returns {@code false} if it did not belong to the group.
      */
-    public boolean removeMember(String dni) {
-        return memberDnis.remove(dni);
+    public boolean removeMember(User user) {
+        return members.remove(user);
     }
 
-    public List<String> getMemberDnis() {
-        return new ArrayList<>(memberDnis);
+    /**
+     * Current members, in order of addition.
+     */
+    public List<User> getMembers() {
+        return new ArrayList<>(members);
     }
 }

@@ -35,13 +35,14 @@ class ParkFileStorageTest {
     void groupsRoundTrip() throws Exception {
         GroupFileStorage storage = new GroupFileStorage(dir.resolve("sub").resolve("groups.txt"));
         Group g = new Group("G01", "Familia, Garcia");
-        g.addMember("12345678Z");
-        g.addMember("87654321X");
+        g.addMember(ana);
+        g.addMember(pedro);
         storage.save(List.of(g, new Group("G02", "Vacio")));
-        List<Group> loaded = storage.load(new ArrayList<>());
+        Map<String, User> users = Map.of(ana.getDni(), ana, pedro.getDni(), pedro);
+        List<Group> loaded = storage.load(dni -> Optional.ofNullable(users.get(dni)), new ArrayList<>());
         assertEquals("Familia, Garcia", loaded.get(0).getName());
-        assertEquals(List.of("12345678Z", "87654321X"), loaded.get(0).getMemberDnis());
-        assertTrue(loaded.get(1).getMemberDnis().isEmpty());
+        assertEquals(List.of(ana, pedro), loaded.get(0).getMembers());
+        assertTrue(loaded.get(1).getMembers().isEmpty());
     }
 
     @Test

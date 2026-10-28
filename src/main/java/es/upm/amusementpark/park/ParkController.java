@@ -83,15 +83,7 @@ public final class ParkController {
         List<String> warnings = initialize(new UserFileStorage(location.users()));
         ParkFiles loaded = new ParkFiles(new GroupFileStorage(location.groups()),
                 new TicketFileStorage(location.tickets()), new AttractionFileStorage(location.attractions()));
-        for (Group group : loaded.groups().load(warnings)) {
-            for (String dni : group.getMemberDnis()) {
-                if (users.findByDni(dni).isEmpty()) {
-                    group.removeMember(dni);
-                    warnings.add("Removed unknown user " + dni + " from group " + group.getId());
-                }
-            }
-            groupRepository.save(group);
-        }
+        loaded.groups().load(users::findByDni, warnings).forEach(groupRepository::save);
         loaded.attractions().load(warnings).forEach(attractionRepository::save);
         loaded.tickets().load(users::findByDni, groupRepository::findById, warnings).forEach(ticketRepository::save);
         this.files = loaded;
@@ -145,15 +137,15 @@ public final class ParkController {
      * Deletes the user identified by email and password and removes it from every group.
      */
     public void deleteUser(String email, String password) throws OperationException {
-        String dni = users.authenticate(email, password).getDni();
-        if (tickets.hasActiveTicket(dni)) {
+        User user = users.authenticate(email, password);
+        if (tickets.hasActiveTicket(user.getDni())) {
             throw new OperationException("User has active tickets");
         }
-        if (groups.findAll().stream().anyMatch(g -> g.hasMember(dni) && groups.isLocked(g))) {
+        if (groups.findAll().stream().anyMatch(g -> g.hasMember(user) && groups.isLocked(g))) {
             throw new OperationException("User belongs to a group locked by an active group ticket");
         }
         users.deleteUser(email, password);
-        groups.removeUserFromAllGroups(dni);
+        groups.removeUserFromAllGroups(user);
     }
 
     /**
@@ -161,11 +153,7 @@ public final class ParkController {
      */
     public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) throws OperationException {
         Group group = groups.findById(groupId).orElseThrow(() -> new OperationException("Group not found"));
-        List<User> members = new ArrayList<>();
-        for (String dni : group.getMemberDnis()) {
-            members.add(users.findByDni(dni).orElseThrow());
-        }
-        return tickets.createGroupTicket(id, group, members, date);
+        return tickets.createGroupTicket(id, group, group.getMembers(), date);
     }
 
     /**
