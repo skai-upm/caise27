@@ -8,6 +8,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import es.upm.amusementpark.cli.CommandProcessor;
+import es.upm.amusementpark.repository.UserRepository;
+import es.upm.amusementpark.service.UserService;
+
 /**
  * Application entry point.
  *
@@ -17,9 +21,11 @@ import java.nio.file.Path;
 public class App {
 
     private final PrintStream out;
+    private final CommandProcessor processor;
 
     public App(PrintStream out) {
         this.out = out;
+        this.processor = new CommandProcessor(new UserService(new UserRepository()));
     }
 
     public static void main(String[] args) {
@@ -65,13 +71,12 @@ public class App {
     }
 
     /**
-     * Handles a single command line. No commands are defined yet.
+     * Handles a single command line and prints its response.
      */
     void processLine(String line) {
-        // Commands are added by later milestones.
-    }
-
-    PrintStream out() {
-        return out;
+        String response = processor.process(line);
+        if (response != null) {
+            out.println(response);
+        }
     }
 }

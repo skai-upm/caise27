@@ -63,4 +63,21 @@ class AppTest {
         assertEquals(1, status);
         assertTrue(errBytes.toString(StandardCharsets.UTF_8).contains(missing));
     }
+
+    @Test
+    void fileCommandsAreProcessedInOrderAndErrorsDoNotStopExecution(@TempDir Path dir) throws Exception {
+        Path input = dir.resolve("input.txt");
+        Files.writeString(input, String.join("\n",
+                "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                "NOT A COMMAND",
+                "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"));
+        int status = App.execute(new String[] {input.toString()}, reader(""), out, err);
+        assertEquals(0, status);
+        String[] lines = outBytes.toString(StandardCharsets.UTF_8).split("\\R");
+        assertEquals("USER CREATED", lines[0]);
+        assertTrue(lines[1].startsWith("ERROR:"));
+        assertTrue(lines[2].startsWith("ERROR:"));
+        assertEquals("USER CREATED", lines[3]);
+    }
 }
