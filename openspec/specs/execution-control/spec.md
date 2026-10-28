@@ -25,3 +25,10 @@ Once `EXIT` has been processed, no subsequent command SHALL be processed, in eit
 #### Scenario: Commands after EXIT in a file
 - **WHEN** a file contains `USER CREATE;...` (valid user A), then `EXIT`, then `USER CREATE;...` (valid user B)
 - **THEN** user A is created, user B is not created, and no response is printed for the third line
+
+### Requirement: HELP lists invoice commands
+`HELP` SHALL also list `INVOICE CREATE;USER;<email>` and `INVOICE CREATE;GROUP;<groupIdentifier>`.
+
+#### Scenario: Help shows invoices
+- **WHEN** `HELP` is processed
+- **THEN** both invoice command forms are shown
