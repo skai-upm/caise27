@@ -57,3 +57,10 @@ The component that generates help text SHALL receive, through dependency injecti
 #### Scenario: Help shows passes
 - **WHEN** `HELP` is processed
 - **THEN** the four pass command syntaxes are shown
+
+### Requirement: HELP lists SpeedPass entry
+`HELP` and `HELP EXTENDED` SHALL also list `ATTRACTION ENTER;<attraction>;<ticket>;SPEED`.
+
+#### Scenario: Help shows the SPEED variant
+- **WHEN** `HELP` is processed
+- **THEN** `ATTRACTION ENTER;<attraction>;<ticket>;SPEED` is shown
