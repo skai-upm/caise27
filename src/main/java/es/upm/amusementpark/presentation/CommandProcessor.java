@@ -13,6 +13,7 @@ import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.ParkController;
 import es.upm.amusementpark.business.service.AttractionStatus;
+import es.upm.amusementpark.business.service.PassService;
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.service.UserService;
 
@@ -28,7 +29,8 @@ public class CommandProcessor {
     private static final int PRICE_DECIMALS = 2;
     private static final Set<String> STATE_CHANGING = Set.of("USER CREATE", "USER DELETE", "USER UPDATE",
             "GROUP CREATE", "GROUP ADD", "GROUP REMOVE", "GROUP DELETE", "TICKET CREATE", "TICKET DELETE",
-            "GROUPTICKET CREATE", "GROUPTICKET DELETE", "ATTRACTION CREATE");
+            "GROUPTICKET CREATE", "GROUPTICKET DELETE", "ATTRACTION CREATE", "SPEEDPASS CREATE", "SPEEDPASS DELETE",
+            "SPECIALPASS CREATE", "SPECIALPASS DELETE");
 
 
     private final ParkController park;
@@ -102,6 +104,10 @@ public class CommandProcessor {
             case "ATTRACTION LIST" -> attractionList(parts);
             case "ATTRACTION STATUS" -> attractionStatus(parts);
             case "INVOICE CREATE" -> invoiceCreate(parts);
+            case "SPEEDPASS CREATE" -> speedPassCreate(parts);
+            case "SPEEDPASS DELETE" -> speedPassDelete(parts);
+            case "SPECIALPASS CREATE" -> specialPassCreate(parts);
+            case "SPECIALPASS DELETE" -> specialPassDelete(parts);
             case "HELP" -> help(parts, help, "HELP");
             case "HELP EXTENDED" -> help(parts, extendedHelp, "HELP EXTENDED");
             case "EXIT" -> exit(parts);
@@ -148,7 +154,7 @@ public class CommandProcessor {
 
     private String ticketDelete(String[] parts) throws ParkException {
         requireArguments(parts, 1, "TICKET DELETE");
-        park.tickets().deleteIndividualTicket(parts[1]);
+        park.deleteIndividualTicket(parts[1]);
         return "TICKET DELETED";
     }
 
@@ -160,8 +166,37 @@ public class CommandProcessor {
 
     private String groupTicketDelete(String[] parts) throws ParkException {
         requireArguments(parts, 1, "GROUPTICKET DELETE");
-        park.tickets().deleteGroupTicket(parts[1]);
+        park.deleteGroupTicket(parts[1]);
         return "GROUPTICKET DELETED";
+    }
+
+    private String speedPassCreate(String[] parts) throws ParkException {
+        requireArguments(parts, 3, "SPEEDPASS CREATE");
+        int quantity = switch (parts[3]) {
+            case "1" -> 1;
+            case "10" -> 10;
+            default -> throw new CommandSyntaxException("SpeedPass quantity must be 1 or 10: " + parts[3]);
+        };
+        var passes = park.passes().buySpeedPasses(parts[1], parts[2], quantity);
+        return "SPEEDPASS CREATED. Total price: " + PassService.total(passes).toPlainString() + " EUR";
+    }
+
+    private String speedPassDelete(String[] parts) throws ParkException {
+        requireArguments(parts, 1, "SPEEDPASS DELETE");
+        park.passes().refundSpeedPass(parts[1]);
+        return "SPEEDPASS DELETED";
+    }
+
+    private String specialPassCreate(String[] parts) throws ParkException {
+        requireArguments(parts, 2, "SPECIALPASS CREATE");
+        return "SPECIALPASS CREATED. Price: " + park.passes().buySpecialPass(parts[1], parts[2]).getPrice().toPlainString()
+                + " EUR";
+    }
+
+    private String specialPassDelete(String[] parts) throws ParkException {
+        requireArguments(parts, 1, "SPECIALPASS DELETE");
+        park.passes().refundSpecialPass(parts[1]);
+        return "SPECIALPASS DELETED";
     }
 
     private String invoiceCreate(String[] parts) throws ParkException {

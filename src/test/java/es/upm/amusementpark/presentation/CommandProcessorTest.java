@@ -343,4 +343,27 @@ class CommandProcessorTest {
         assertEquals("basic", custom.process("HELP"));
         assertEquals("extended", custom.process("HELP EXTENDED"));
     }
+
+    @Test
+    void passCommands() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process(ANA);
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-16");
+        assertEquals("SPEEDPASS CREATED. Total price: 8.00 EUR", processor.process("SPEEDPASS CREATE;SP01;T001;1"));
+        assertEquals("SPEEDPASS CREATED. Total price: 80.00 EUR", processor.process("SPEEDPASS CREATE;SP02;T001;10"));
+        assertTrue(processor.process("SPEEDPASS CREATE;SP03;T001;2").startsWith("ERROR: SpeedPass quantity"));
+        assertEquals("SPECIALPASS CREATED. Price: 40.00 EUR", processor.process("SPECIALPASS CREATE;PE01;T001"));
+        assertTrue(processor.process("SPECIALPASS CREATE;PE02;T001").startsWith("ERROR: Ticket already has a Special Pass"));
+        assertEquals("SPEEDPASS DELETED", processor.process("SPEEDPASS DELETE;SP02:4"));
+        assertEquals("SPECIALPASS DELETED", processor.process("SPECIALPASS DELETE;PE01"));
+        assertTrue(processor.process("SPECIALPASS DELETE;SP02:1").startsWith("ERROR: Special Pass not found"));
+        assertTrue(processor.process("INVOICE CREATE;USER;ana@correo.com").contains("SP02:10 (ticket T001): 8.00 EUR"));
+        assertEquals("TICKET DELETED", processor.process("TICKET DELETE;T001"));
+        assertTrue(park.passes().findAll().isEmpty());
+        for (String s : List.of("SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>",
+                "SPEEDPASS DELETE;<speedPassIdentifier>", "SPECIALPASS CREATE;<identifier>;<individualTicket>",
+                "SPECIALPASS DELETE;<specialPassIdentifier>")) {
+            assertTrue(processor.process("HELP").contains(s), s);
+        }
+    }
 }

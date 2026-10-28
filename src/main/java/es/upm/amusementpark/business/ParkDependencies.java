@@ -4,6 +4,7 @@ import es.upm.amusementpark.persistence.file.ParkStorage;
 import es.upm.amusementpark.persistence.file.UserStorage;
 import es.upm.amusementpark.persistence.repository.AttractionRepository;
 import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.PassRepository;
 import es.upm.amusementpark.persistence.repository.TicketRepository;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 
@@ -12,5 +13,5 @@ import es.upm.amusementpark.persistence.repository.UserRepository;
  * controllers. {@code userStorage} and {@code storage} are absent for purely in-memory executions.
  */
 public record ParkDependencies(UserRepository users, GroupRepository groups, TicketRepository tickets,
-        AttractionRepository attractions, UserStorage userStorage, ParkStorage storage) {
+        AttractionRepository attractions, PassRepository passes, UserStorage userStorage, ParkStorage storage) {
 }

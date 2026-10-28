@@ -45,6 +45,14 @@ package es.upm.amusementpark.business.model {
   class GroupTicket {
   }
 
+  abstract class Pass {
+    - id : String {readOnly}
+    - consumed : boolean
+  }
+
+  class SpeedPass
+  class SpecialPass
+
   class Attraction {
     - id : String {readOnly}
     - name : String
@@ -57,9 +65,30 @@ package es.upm.amusementpark.persistence.repository {
   class GroupRepository
   class TicketRepository
   class AttractionRepository
+  class PassRepository
+}
+
+package es.upm.amusementpark.business.invoice {
+  class Invoice {
+    - title : String
+    - header : List<String>
+    - total : BigDecimal
+  }
+  class InvoiceSection <<record>> {
+    title : String
+  }
+  class InvoiceItem {
+    - description : String
+    - amount : BigDecimal [0..1]
+  }
+  abstract class InvoiceBuilder
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
 }
 
 package es.upm.amusementpark.business.service {
+  class PassService
+  class InvoiceService
   class UserService
   class GroupService
   class TicketService
@@ -117,6 +146,26 @@ Ticket <|-- GroupTicket
 GroupTicket "1" *-- "1..*" IndividualTicket : composition >
 IndividualTicket "0..*" --> "1" User : user >
 GroupTicket "0..*" --> "0..1" Group : group >
+
+' --- passes (personal add-ons of individual tickets)
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Pass "0..*" --> "1" IndividualTicket : ticket >
+PassRepository "1" o-- "0..*" Pass
+PassService --> "1" PassRepository
+PassService --> "1" TicketService
+
+' --- invoices (Builder)
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder ..> Invoice : builds >
+Invoice "1" *-- "0..*" InvoiceSection
+InvoiceSection "1" *-- "1..*" InvoiceItem
+InvoiceService ..> UserInvoiceBuilder : directs >
+InvoiceService ..> GroupInvoiceBuilder : directs >
+InvoiceService --> "1" PassService
+ParkController "1" *-- "1" PassService
+ParkController "1" *-- "1" InvoiceService
 
 ' --- users, groups and attractions
 Group "0..*" --> "0..*" User : members >

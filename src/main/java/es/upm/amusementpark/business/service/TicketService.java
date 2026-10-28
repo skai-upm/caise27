@@ -62,6 +62,10 @@ public class TicketService {
         return ticket.isPresent() ? ticket : repository.findIndividualById(id).map(Ticket.class::cast);
     }
 
+    public Optional<IndividualTicket> findIndividualById(String id) {
+        return repository.findIndividualById(id);
+    }
+
     public List<Ticket> findAll() {
         return repository.findAll();
     }
@@ -76,7 +80,7 @@ public class TicketService {
         return ticket;
     }
 
-    public void deleteIndividualTicket(String id) throws ParkException {
+    public IndividualTicket deleteIndividualTicket(String id) throws ParkException {
         if (repository.findById(id).orElse(null) instanceof GroupTicket) {
             throw new OperationNotAllowedException("Ticket is a group ticket; use GROUPTICKET DELETE");
         }
@@ -89,6 +93,7 @@ public class TicketService {
             throw new OperationNotAllowedException("Only tickets dated after the current date can be deleted");
         }
         repository.delete(id);
+        return ticket;
     }
 
     /**
@@ -113,7 +118,7 @@ public class TicketService {
         return ticket;
     }
 
-    public void deleteGroupTicket(String id) throws ParkException {
+    public GroupTicket deleteGroupTicket(String id) throws ParkException {
         if (!(repository.findById(id).orElse(null) instanceof GroupTicket ticket)) {
             throw new NotFoundException("Group ticket not found");
         }
@@ -121,6 +126,7 @@ public class TicketService {
             throw new OperationNotAllowedException("Only group tickets dated after the current date can be deleted");
         }
         repository.delete(id);
+        return ticket;
     }
 
     /**

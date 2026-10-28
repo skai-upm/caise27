@@ -20,6 +20,7 @@ import es.upm.amusementpark.persistence.file.UserStorage;
 import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
 import es.upm.amusementpark.business.service.InvoiceService;
+import es.upm.amusementpark.business.service.PassService;
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.service.TicketService;
 import es.upm.amusementpark.business.service.UserService;
@@ -41,6 +42,7 @@ public final class ParkController {
     private TicketService tickets;
     private AttractionService attractions;
     private InvoiceService invoices;
+    private PassService passes;
     private ParkDependencies dependencies;
     private DataLocation temporary;
     private LocalDate currentDate;
@@ -59,13 +61,14 @@ public final class ParkController {
      * execution state: date is today and the base price is the initial one.
      */
     void configure(ParkDependencies dependencies, UserService users, GroupService groups, TicketService tickets,
-            AttractionService attractions, InvoiceService invoices) {
+            AttractionService attractions, InvoiceService invoices, PassService passes) {
         this.dependencies = dependencies;
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
         this.invoices = invoices;
+        this.passes = passes;
         this.currentDate = LocalDate.now();
         this.basePrice = INITIAL_BASE_PRICE;
     }
@@ -166,6 +169,24 @@ public final class ParkController {
 
     public UserService users() {
         return users;
+    }
+
+    public PassService passes() {
+        return passes;
+    }
+
+    /**
+     * Deletes a future individual ticket together with all its passes.
+     */
+    public void deleteIndividualTicket(String id) throws ParkException {
+        passes.deletePassesOf(tickets.deleteIndividualTicket(id).individualTickets());
+    }
+
+    /**
+     * Deletes a future group ticket, its composition and all passes of the composition.
+     */
+    public void deleteGroupTicket(String id) throws ParkException {
+        passes.deletePassesOf(tickets.deleteGroupTicket(id).individualTickets());
     }
 
     public InvoiceService invoices() {
