@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import es.upm.amusementpark.model.Group;
+import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.IndividualTicket;
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
@@ -49,6 +51,9 @@ public class TicketService {
     }
 
     public void deleteIndividualTicket(String id) throws OperationException {
+        if (repository.findById(id).orElse(null) instanceof GroupTicket) {
+            throw new OperationException("Ticket is a group ticket; use GROUPTICKET DELETE");
+        }
         IndividualTicket ticket = repository.findIndividualById(id)
                 .orElseThrow(() -> new OperationException("Ticket not found"));
         if (ticket.isPartOfGroupTicket()) {
@@ -58,6 +63,59 @@ public class TicketService {
             throw new OperationException("Only tickets dated after the current date can be deleted");
         }
         repository.delete(id);
+    }
+
+    /**
+     * Buys a group ticket for the given members of the group. All identifiers (the group ticket's and
+     * every derived one) are checked before anything is created.
+     */
+    public GroupTicket createGroupTicket(String id, Group group, List<User> members, LocalDate date)
+            throws OperationException {
+        requireNewIdentifier(id);
+        if (members.isEmpty()) {
+            throw new OperationException("Group has no members");
+        }
+        requireNotPast(date);
+        for (User member : members) {
+            String derived = GroupTicket.derivedId(id, member.getDni());
+            if (repository.isIdentifierUsed(derived)) {
+                throw new OperationException("A ticket with this identifier already exists: " + derived);
+            }
+        }
+        GroupTicket ticket = new GroupTicket(id, date, group, members, basePrice.get());
+        repository.save(ticket);
+        return ticket;
+    }
+
+    public void deleteGroupTicket(String id) throws OperationException {
+        if (!(repository.findById(id).orElse(null) instanceof GroupTicket ticket)) {
+            throw new OperationException("Group ticket not found");
+        }
+        if (!ticket.isDeletableOn(today.get())) {
+            throw new OperationException("Only group tickets dated after the current date can be deleted");
+        }
+        repository.delete(id);
+    }
+
+    /**
+     * Tells whether the group has a group ticket dated on or after the given day.
+     */
+    public boolean hasActiveGroupTicket(String groupId, LocalDate day) {
+        return repository.findAll().stream()
+                .filter(GroupTicket.class::isInstance)
+                .map(GroupTicket.class::cast)
+                .anyMatch(t -> t.getGroup() != null && t.getGroup().getId().equals(groupId) && t.isActiveOn(day));
+    }
+
+    /**
+     * Clears the group reference of the tickets bought by a deleted group; they stay as records.
+     */
+    public void detachGroup(Group group) {
+        repository.findAll().stream()
+                .filter(GroupTicket.class::isInstance)
+                .map(GroupTicket.class::cast)
+                .filter(t -> t.getGroup() == group)
+                .forEach(GroupTicket::detachGroup);
     }
 
     /**

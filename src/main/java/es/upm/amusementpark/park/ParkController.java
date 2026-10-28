@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import es.upm.amusementpark.model.Group;
+import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.persistence.UserStorage;
 import es.upm.amusementpark.repository.GroupRepository;
@@ -60,10 +62,9 @@ public final class ParkController {
 
     private void reset(UserRepository repository, UserStorage storage) {
         this.users = new UserService(repository, storage);
-        // No group tickets exist yet, so no group is locked.
-        this.groups = new GroupService(new GroupRepository(), users, (groupId, today) -> false,
-                this::getCurrentDate);
         this.tickets = new TicketService(new TicketRepository(), users, this::getCurrentDate, this::getBasePrice);
+        this.groups = new GroupService(new GroupRepository(), users, tickets::hasActiveGroupTicket,
+                this::getCurrentDate);
         this.currentDate = LocalDate.now();
         this.basePrice = INITIAL_BASE_PRICE;
     }
@@ -93,6 +94,27 @@ public final class ParkController {
         }
         users.deleteUser(email, password);
         groups.removeUserFromAllGroups(dni);
+    }
+
+    /**
+     * Buys a group ticket for the members the group has right now.
+     */
+    public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) throws OperationException {
+        Group group = groups.findById(groupId).orElseThrow(() -> new OperationException("Group not found"));
+        List<User> members = new ArrayList<>();
+        for (String dni : group.getMemberDnis()) {
+            members.add(users.findByDni(dni).orElseThrow());
+        }
+        return tickets.createGroupTicket(id, group, members, date);
+    }
+
+    /**
+     * Deletes a group; its historical group tickets are kept without the group reference.
+     */
+    public void deleteGroup(String groupId) throws OperationException {
+        Group group = groups.findById(groupId).orElseThrow(() -> new OperationException("Group not found"));
+        groups.deleteGroup(groupId);
+        tickets.detachGroup(group);
     }
 
     public LocalDate getCurrentDate() {

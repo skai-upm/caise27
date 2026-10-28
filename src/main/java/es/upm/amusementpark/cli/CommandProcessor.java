@@ -36,6 +36,8 @@ public class CommandProcessor {
             "GROUP DELETE;<Identifier>",
             "TICKET CREATE;<identifier>;<email>;<date>",
             "TICKET DELETE;<identifier>",
+            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
+            "GROUPTICKET DELETE;<identifier>",
             "HELP",
             "EXIT");
 
@@ -74,6 +76,8 @@ public class CommandProcessor {
                 case "GROUP DELETE" -> groupDelete(parts);
                 case "TICKET CREATE" -> ticketCreate(parts);
                 case "TICKET DELETE" -> ticketDelete(parts);
+                case "GROUPTICKET CREATE" -> groupTicketCreate(parts);
+                case "GROUPTICKET DELETE" -> groupTicketDelete(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> error("Unknown command");
@@ -112,7 +116,7 @@ public class CommandProcessor {
 
     private String groupDelete(String[] parts) throws OperationException {
         requireArguments(parts, 1, "GROUP DELETE");
-        park.groups().deleteGroup(parts[1]);
+        park.deleteGroup(parts[1]);
         return "GROUP DELETED";
     }
 
@@ -126,6 +130,18 @@ public class CommandProcessor {
         requireArguments(parts, 1, "TICKET DELETE");
         park.tickets().deleteIndividualTicket(parts[1]);
         return "TICKET DELETED";
+    }
+
+    private String groupTicketCreate(String[] parts) throws OperationException {
+        requireArguments(parts, 3, "GROUPTICKET CREATE");
+        Ticket ticket = park.createGroupTicket(parts[1], parts[2], parseDate(parts[3]));
+        return "GROUPTICKET CREATED. Total price: " + ticket.getPrice().toPlainString() + " EUR";
+    }
+
+    private String groupTicketDelete(String[] parts) throws OperationException {
+        requireArguments(parts, 1, "GROUPTICKET DELETE");
+        park.tickets().deleteGroupTicket(parts[1]);
+        return "GROUPTICKET DELETED";
     }
 
     private String systemDate(String[] parts) throws OperationException {

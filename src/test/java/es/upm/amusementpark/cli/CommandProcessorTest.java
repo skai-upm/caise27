@@ -216,4 +216,22 @@ class CommandProcessorTest {
     private String help() {
         return processor.process("HELP");
     }
+
+    @Test
+    void groupTicketCommands() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process(ANA);
+        processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        assertEquals("GROUPTICKET CREATED. Total price: 80.00 EUR", processor.process("GROUPTICKET CREATE;TG01;G01;2027-04-20"));
+        assertTrue(processor.process("GROUP REMOVE;G01;pedro@correo.com").startsWith("ERROR: Group is locked"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR:"));
+        assertEquals("GROUPTICKET DELETED", processor.process("GROUPTICKET DELETE;TG01"));
+        assertEquals("USER REMOVED FROM GROUP", processor.process("GROUP REMOVE;G01;pedro@correo.com"));
+        assertTrue(processor.process("GROUPTICKET DELETE;TG01").startsWith("ERROR: Group ticket not found"));
+        assertTrue(processor.process("HELP").contains("GROUPTICKET CREATE;<identifier>;<group>;<date>"));
+        assertTrue(processor.process("HELP").contains("GROUPTICKET DELETE;<identifier>"));
+    }
 }
