@@ -34,7 +34,7 @@ class PasswordStorageTest {
         controller.saveState();
         String file = Files.readString(directory.resolve("users.txt"));
         assertFalse(file.contains("Clave1!"));
-        assertTrue(file.startsWith("12345678Z;ana@correo.com;$2a$"));
+        assertTrue(file.startsWith(";;12345678Z;ana@correo.com;$2a$"), file);
         controller.reset();
         assertTrue(controller.loadState().isEmpty());
         controller.authenticate("ana@correo.com", "Clave1!");

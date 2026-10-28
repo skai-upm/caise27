@@ -23,6 +23,14 @@ class UserCreationIntegrationTest {
         return buffer.toString(StandardCharsets.UTF_8);
     }
 
+    private static String readFile(Path file) {
+        try {
+            return java.nio.file.Files.readString(file);
+        } catch (java.io.IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     @Test
     void createUsersFromCommandsAndRestart(@TempDir Path workDir) {
         String out = run(workDir, String.join("\n",
@@ -36,6 +44,9 @@ class UserCreationIntegrationTest {
         assertEquals(2, out.split("USER CREATED", -1).length - 1, out);
         assertEquals(3, out.split("ERROR", -1).length - 1, out);
         assertTrue(out.contains("Available commands:"), out);
+        String file = readFile(workDir.resolve("data").resolve("users.txt"));
+        assertTrue(file.startsWith("Ana;Garcia Lopez;12345678Z;ana@correo.com;$2a$"), file);
+        assertTrue(file.contains(";612345678;1234567890123456"), file);
         run(workDir, "EXIT\n");
         ParkController park = ParkController.getInstance();
         assertEquals(2, park.getUsers().size());
