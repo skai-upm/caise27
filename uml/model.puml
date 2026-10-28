@@ -1,0 +1,159 @@
+@startuml model
+title Amusement Park - Delivery 2 class model
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+package es.upm.amusementpark.model {
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - cardNumber : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class UserValidator <<utility>>
+
+  class Group {
+    - id : String {readOnly}
+    - name : String
+    - memberDnis : Set<String>
+  }
+
+  abstract class Ticket {
+    - id : String {readOnly}
+    - date : LocalDate {readOnly}
+  }
+
+  class IndividualTicket {
+    - basePrice : BigDecimal
+    - discount : BigDecimal
+    - partOfGroupTicket : boolean
+  }
+
+  class GroupTicket {
+  }
+
+  class Attraction {
+    - id : String {readOnly}
+    - name : String
+    - capacity : int {readOnly}
+  }
+}
+
+package es.upm.amusementpark.repository {
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class AttractionRepository
+}
+
+package es.upm.amusementpark.service {
+  class UserService
+  class GroupService
+  class TicketService
+  class AttractionService
+  interface ActiveGroupTicketCheck
+  class AttractionStatus <<record>> {
+    id : String
+    name : String
+    capacity : int
+    occupants : int
+    available : int
+    occupantEmails : List<String>
+  }
+  class OperationException
+}
+
+package es.upm.amusementpark.persistence {
+  interface UserStorage
+  class UserFileStorage
+  class GroupFileStorage
+  class TicketFileStorage
+  class AttractionFileStorage
+  class DataLocation <<record>> {
+    directory : Path
+  }
+}
+
+package es.upm.amusementpark.park {
+  class ParkController <<singleton>> {
+    - {static} INSTANCE : ParkController
+    - currentDate : LocalDate
+    - basePrice : BigDecimal
+  }
+}
+
+package es.upm.amusementpark.cli {
+  class CommandProcessor {
+    - exitRequested : boolean
+  }
+}
+
+package es.upm.amusementpark {
+  class App
+}
+
+' --- ticket hierarchy and composition
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+GroupTicket "1" *-- "1..*" IndividualTicket : composition >
+IndividualTicket "0..*" --> "1" User : user >
+GroupTicket "0..*" --> "0..1" Group : group >
+
+' --- users, groups and attractions
+Group "0..*" --> "0..*" User : members (by DNI) >
+Attraction "0..1" --> "0..*" User : occupants >
+UserService ..> UserField
+UserService ..> UserValidator
+
+' --- repositories own the domain objects
+UserRepository "1" o-- "0..*" User
+GroupRepository "1" o-- "0..*" Group
+TicketRepository "1" o-- "0..*" Ticket
+AttractionRepository "1" o-- "0..*" Attraction
+
+' --- services
+UserService --> "1" UserRepository
+UserService --> "0..1" UserStorage
+GroupService --> "1" GroupRepository
+GroupService --> "1" UserService
+GroupService --> "1" ActiveGroupTicketCheck : lock check >
+TicketService --> "1" TicketRepository
+TicketService --> "1" UserService
+AttractionService --> "1" AttractionRepository
+AttractionService ..> AttractionStatus
+
+' --- persistence
+UserFileStorage ..|> UserStorage
+DataLocation <.. ParkController
+ParkController --> "0..1" GroupFileStorage
+ParkController --> "0..1" TicketFileStorage
+ParkController --> "0..1" AttractionFileStorage
+
+' --- central management
+ParkController "1" *-- "1" UserService
+ParkController "1" *-- "1" GroupService
+ParkController "1" *-- "1" TicketService
+ParkController "1" *-- "1" AttractionService
+ParkController "1" *-- "1" GroupRepository
+ParkController "1" *-- "1" TicketRepository
+ParkController "1" *-- "1" AttractionRepository
+
+' --- application layer
+App --> "1" CommandProcessor
+CommandProcessor --> "1" ParkController
+App ..> ParkController : getInstance()
+@enduml
