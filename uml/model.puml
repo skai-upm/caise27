@@ -37,6 +37,9 @@ package es.upm.etsisi.amusementpark.business.model {
     - card : String
   }
 
+  class UserValidator <<utility>> {
+  }
+
   class Group {
     - identifier : String
     - name : String
@@ -251,6 +254,8 @@ ParkRepositories --> AttractionRepository : attractions
 ParkRepositories --> PassRepository : passes
 PasswordHasher <|.. BCryptPasswordHasher
 ParkController ..> PasswordPolicy : validates
+UserValidator ..> PasswordPolicy : password rule
+UserValidator ..> User : validates data
 
 TextFileRepository <|-- TextUserRepository
 TextFileRepository <|-- TextGroupRepository
