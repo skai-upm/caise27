@@ -17,6 +17,7 @@ import es.upm.etsisi.amusementpark.business.model.SpecialPass;
 import es.upm.etsisi.amusementpark.business.model.SpeedPass;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
+import es.upm.etsisi.amusementpark.business.model.UserValidator;
 import es.upm.etsisi.amusementpark.business.repository.ParkRepositories;
 import es.upm.etsisi.amusementpark.business.security.BCryptPasswordHasher;
 import es.upm.etsisi.amusementpark.business.security.PasswordHasher;
@@ -83,6 +84,24 @@ public final class ParkController {
     /** Injects the password protection mechanism (BCrypt by default). */
     public void configure(PasswordHasher passwordHasher) {
         this.passwordHasher = passwordHasher;
+    }
+
+    /**
+     * Registers a new user after validating the data and checking that no active
+     * user has the same DNI or e-mail. Only the protected password is stored.
+     */
+    public User registerUser(String firstName, String surnames, String dni, String email, String password,
+            String phone, String card) {
+        UserValidator.validate(dni, email, password, card);
+        if (users.values().stream().anyMatch(user -> user.getDni().equals(dni))) {
+            throw new AlreadyExistsException("A user with DNI " + dni + " already exists");
+        }
+        if (users.containsKey(email)) {
+            throw new AlreadyExistsException("A user with email " + email + " already exists");
+        }
+        User user = new User(firstName, surnames, dni, email, passwordHasher.hash(password), phone, card);
+        addUser(user);
+        return user;
     }
 
     /**
