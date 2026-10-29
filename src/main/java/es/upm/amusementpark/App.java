@@ -1,9 +1,11 @@
 package es.upm.amusementpark;
 
-import es.upm.amusementpark.command.CommandProcessor;
-import es.upm.amusementpark.command.CommandRunner;
-import es.upm.amusementpark.persistence.ParkStorage;
-import es.upm.amusementpark.service.Park;
+import es.upm.amusementpark.business.controller.Park;
+import es.upm.amusementpark.business.exception.PersistenceException;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
+import es.upm.amusementpark.persistence.StorageConfiguration;
+import es.upm.amusementpark.presentation.CommandRunner;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,32 +33,34 @@ public class App {
 
     public static void main(String[] args) {
         LocalDateTime now = LocalDateTime.now();
-        int status = run(args, System.in, System.out, System.err, Path.of(""), now.toLocalDate(), now);
+        int status = run(args, System.in, System.out, System.err, Path.of(""), now,
+                new BCryptPasswordHasher(BCryptPasswordHasher.DEFAULT_LOG_ROUNDS));
         if (status != 0) {
             System.exit(status);
         }
     }
 
     /**
-     * Runs the application with the given streams, working directory and start time.
+     * Runs the application with the given streams, working directory, start time and password hasher.
      *
      * @return the process exit status
      */
     static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path workDir,
-                   LocalDate today, LocalDateTime now) {
+                   LocalDateTime now, PasswordHasher hasher) {
         boolean fly = args.length > 0 && args[0].equals(FLY);
         int fileIndex = fly ? 1 : 0;
         String commandFile = args.length > fileIndex ? args[fileIndex] : null;
 
-        ParkStorage storage;
+        StorageConfiguration storage;
         try {
-            storage = fly ? ParkStorage.temporary(workDir, now, err) : ParkStorage.persistent(workDir, err);
+            storage = fly ? StorageConfiguration.temporary(workDir, now, err)
+                    : StorageConfiguration.persistent(workDir, err);
         } catch (IOException e) {
             err.println("ERROR: could not create temporary directory: " + e.getMessage());
             return 1;
         }
         try {
-            return execute(storage, commandFile, in, out, err, today);
+            return execute(storage, commandFile, in, out, err, now.toLocalDate(), hasher);
         } finally {
             try {
                 storage.cleanup();
@@ -66,16 +70,16 @@ public class App {
         }
     }
 
-    private static int execute(ParkStorage storage, String commandFile, InputStream in, PrintStream out,
-                               PrintStream err, LocalDate today) {
-        Park park = Park.getInstance();
+    private static int execute(StorageConfiguration storage, String commandFile, InputStream in,
+                               PrintStream out, PrintStream err, LocalDate today, PasswordHasher hasher) {
+        Park park;
         try {
-            park.initialize(storage, today);
-        } catch (IOException e) {
-            err.println("ERROR: could not load park data: " + e.getMessage());
+            park = ParkInitializer.initialize(storage.createRepositories(), hasher, today);
+        } catch (PersistenceException e) {
+            err.println("ERROR: " + e.getMessage());
             return 1;
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(park, out));
+        CommandRunner runner = new CommandRunner(ParkInitializer.commandProcessor(park, out));
 
         if (commandFile == null) {
             try {

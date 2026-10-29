@@ -1,25 +1,16 @@
 @startuml model
-title Amusement Park - Delivery 2 class model
+title Amusement Park - Delivery 3 design
 
 hide empty methods
 skinparam classAttributeIconSize 0
 
-package es.upm.amusementpark.service {
-  class Park <<singleton>> {
-    - {static} INSTANCE : Park
-    - currentDate : LocalDate
-    - currentPrice : BigDecimal
-  }
-  class UserService
-}
-
-package es.upm.amusementpark.model {
+package es.upm.amusementpark.business.model {
   class User {
     - firstName : String
     - surnames : String
     - dni : String {readOnly}
     - email : String
-    - password : String
+    - passwordHash : String
     - phone : String
     - card : String
   }
@@ -37,15 +28,13 @@ package es.upm.amusementpark.model {
     - id : String {readOnly}
     - name : String {readOnly}
   }
-
-  class Attraction {
-    - id : String {readOnly}
-    - name : String {readOnly}
-    - capacity : int {readOnly}
-  }
 }
 
-package es.upm.amusementpark.model.ticket {
+package es.upm.amusementpark.business.model.ticket {
+  interface AccessTicket
+  interface IndividualAccess
+  interface GroupAccess
+
   abstract class Ticket {
     - id : String {readOnly}
     - date : LocalDate {readOnly}
@@ -59,27 +48,174 @@ package es.upm.amusementpark.model.ticket {
   class GroupTicket
 }
 
-' Central management (single instance owning every element)
-Park "1" *--> "1" UserService : users
-UserService "1" o--> "*" User : usersByEmail
-Park "1" o--> "*" Group : groups
-Park "1" o--> "*" Ticket : tickets
-Park "1" o--> "*" Attraction : attractions
+package es.upm.amusementpark.business.model.pass {
+  abstract class Pass {
+    - id : String {readOnly}
+    - price : BigDecimal {readOnly}
+    - consumed : boolean
+  }
+  class SpeedPass
+  class SpecialPass
+  interface PassLookup
+}
 
-' Ticket hierarchy
+package es.upm.amusementpark.business.model.attraction {
+  abstract class "Attraction<T extends AccessTicket>" as Attraction {
+    - id : String {readOnly}
+    - name : String {readOnly}
+    - capacity : int {readOnly}
+    - accessType : Class<T> {readOnly}
+  }
+  class "GeneralAttraction" as GeneralAttraction
+  class "IndividualAttraction" as IndividualAttraction
+  class "GroupAttraction" as GroupAttraction
+  class "SpecialAttraction" as SpecialAttraction
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+  class EntryResult <<record>> {
+    - admitted : int
+  }
+}
+
+package es.upm.amusementpark.business.invoice {
+  interface InvoiceBuilder
+  abstract class AbstractInvoiceBuilder
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
+  class InvoiceDirector
+  class Invoice {
+    - title : String
+    - total : BigDecimal
+  }
+  class InvoiceSection <<record>> {
+    - title : String
+  }
+  class InvoiceLine <<record>> {
+    - description : String
+    - amount : BigDecimal
+  }
+}
+
+package es.upm.amusementpark.business.controller {
+  class Park <<singleton>>
+  class SystemController <<singleton>> {
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+  }
+  class UserController <<singleton>>
+  class GroupController <<singleton>>
+  class TicketController <<singleton>>
+  class PassController <<singleton>>
+  class AttractionController <<singleton>>
+  class InvoiceController <<singleton>>
+}
+
+package es.upm.amusementpark.business.repository {
+  interface UserRepository
+  interface GroupRepository
+  interface TicketRepository
+  interface AttractionRepository
+  interface PassRepository
+}
+
+package es.upm.amusementpark.business.security {
+  interface PasswordHasher
+  class BCryptPasswordHasher
+}
+
+package es.upm.amusementpark {
+  class ParkInitializer <<composition root>>
+}
+
+' ---- Ticket hierarchy and access capabilities ----
+AccessTicket <|-- IndividualAccess
+AccessTicket <|-- GroupAccess
+AccessTicket <|.. Ticket
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
-
-' Group ticket is composed of the individual tickets of its members
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
 GroupTicket "1" *--> "1..*" IndividualTicket : composition {readOnly}
-
-' Directed associations (the target never refers back)
 IndividualTicket "*" --> "1" User : user
 GroupTicket "*" --> "0..1" Group : group
 Group "*" --> "*" User : members
-Attraction "*" --> "*" User : occupants
 
-' Modifiable user fields
+' ---- Passes ----
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+SpeedPass "*" --> "1" IndividualTicket : ticket
+SpecialPass "0..1" --> "1" IndividualTicket : ticket
+PassLookup ..> SpeedPass
+PassLookup ..> SpecialPass
+
+' ---- Generic attractions (bound restricts accepted access type) ----
+Attraction <|-- GeneralAttraction : <<bind>> T -> AccessTicket
+Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T -> GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualAccess
+Attraction "*" --> "*" User : occupants
+Attraction ..> AttractionType
+Attraction ..> PassLookup : uses
+Attraction ..> EntryResult : creates
+EntryResult --> "*" Pass : consumedPasses
+
+' ---- Builder ----
+InvoiceBuilder <|.. AbstractInvoiceBuilder
+AbstractInvoiceBuilder <|-- UserInvoiceBuilder
+AbstractInvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceDirector ..> InvoiceBuilder : construct()
+InvoiceBuilder ..> Invoice : getResult()
+Invoice "1" *--> "*" InvoiceSection
+InvoiceSection "1" *--> "*" InvoiceLine
+UserInvoiceBuilder --> "1" User
+GroupInvoiceBuilder --> "1" Group
+
+' ---- Controllers and injected dependencies ----
+Park --> "1" SystemController
+Park --> "1" UserController
+Park --> "1" GroupController
+Park --> "1" TicketController
+Park --> "1" PassController
+Park --> "1" AttractionController
+Park --> "1" InvoiceController
+UserController --> "1" UserRepository : <<inject>>
+UserController --> "1" PasswordHasher : <<inject>>
+GroupController --> "1" GroupRepository : <<inject>>
+TicketController --> "1" TicketRepository : <<inject>>
+PassController --> "1" PassRepository : <<inject>>
+AttractionController --> "1" AttractionRepository : <<inject>>
+UserController --> TicketController : <<inject>>
+UserController --> GroupController : <<inject>>
+UserController --> AttractionController : <<inject>>
+GroupController --> UserController : <<inject>>
+GroupController --> TicketController : <<inject>>
+TicketController --> SystemController : <<inject>>
+TicketController --> UserController : <<inject>>
+TicketController --> GroupController : <<inject>>
+TicketController --> PassController : <<inject>>
+PassController --> SystemController : <<inject>>
+PassController --> TicketController : <<inject>>
+AttractionController --> SystemController : <<inject>>
+AttractionController --> UserController : <<inject>>
+AttractionController --> TicketController : <<inject>>
+AttractionController --> PassController : <<inject>>
+InvoiceController --> InvoiceDirector
+InvoiceController --> UserController : <<inject>>
+InvoiceController --> GroupController : <<inject>>
+InvoiceController --> TicketController : <<inject>>
+InvoiceController --> PassController : <<inject>>
+PassLookup <|.. PassController
+PasswordHasher <|.. BCryptPasswordHasher
+UserController "1" o--> "*" User
+GroupController "1" o--> "*" Group
+TicketController "1" o--> "*" Ticket
+PassController "1" o--> "*" Pass
+AttractionController "1" o--> "*" Attraction
+ParkInitializer ..> Park : wires
 UserField ..> User : names modifiable attributes
 
 @enduml

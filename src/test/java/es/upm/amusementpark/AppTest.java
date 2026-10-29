@@ -11,7 +11,6 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 class AppTest {
 
-    private static final LocalDate TODAY = LocalDate.of(2027, 4, 15);
     private static final LocalDateTime NOW = LocalDateTime.of(2027, 4, 15, 19, 3, 15);
 
     @TempDir
@@ -31,7 +29,7 @@ class AppTest {
 
     private int run(String[] args, String stdin) {
         InputStream in = new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8));
-        return App.run(args, in, new PrintStream(out, true), new PrintStream(err, true), dir, TODAY, NOW);
+        return App.run(args, in, new PrintStream(out, true), new PrintStream(err, true), dir, NOW, TestParks.FAST_HASHER);
     }
 
     private Path writeInput(String name, String... lines) throws Exception {
@@ -57,8 +55,11 @@ class AppTest {
         assertTrue(output.startsWith(String.join(System.lineSeparator(),
                 "USER CREATED", "USER CREATED", "USER UPDATED", "USER UPDATED", "USER DELETED")));
         assertTrue(output.contains("USER DELETE;<Email>;<Password>"));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456"),
-                Files.readAllLines(dir.resolve("users.txt")));
+        List<String> users = Files.readAllLines(dir.resolve("users.txt"));
+        assertEquals(1, users.size());
+        assertTrue(users.get(0).startsWith("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;$2a$"));
+        assertTrue(users.get(0).endsWith(";699999999;1234567890123456"));
+        assertFalse(users.get(0).contains("Clave1!"));
     }
 
     @Test
