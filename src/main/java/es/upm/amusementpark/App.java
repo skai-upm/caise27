@@ -6,7 +6,11 @@ import es.upm.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.amusementpark.persistence.DataDirectories;
 import es.upm.amusementpark.persistence.PersistenceException;
 import es.upm.amusementpark.persistence.TextFileRepositories;
+import es.upm.amusementpark.presentation.CommandCatalog;
 import es.upm.amusementpark.presentation.CommandProcessor;
+import es.upm.amusementpark.presentation.ExtendedHelpFormatter;
+import es.upm.amusementpark.presentation.HelpGenerator;
+import es.upm.amusementpark.presentation.SyntaxHelpFormatter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -48,7 +52,10 @@ public class App {
             }
             InvoiceController invoices = InvoiceController.getInstance();
             invoices.configure(park, new InvoiceDirector());
-            CommandProcessor processor = new CommandProcessor(out, park, invoices);
+            CommandCatalog catalog = CommandCatalog.standard();
+            CommandProcessor processor = new CommandProcessor(out, park, invoices,
+                    new HelpGenerator(catalog, new SyntaxHelpFormatter()),
+                    new HelpGenerator(catalog, new ExtendedHelpFormatter()));
             processor.setAfterCommand(park::persist);
             process(processor, commandFile, in, out);
         } catch (PersistenceException e) {

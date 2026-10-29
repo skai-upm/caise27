@@ -22,46 +22,29 @@ import java.util.List;
  */
 public class CommandProcessor {
 
-    static final List<String> COMMAND_SYNTAX = List.of(
-            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
-            "USER DELETE;<Email>;<Password>",
-            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
-            "SYSTEM DATE;<yyyy-MM-dd>",
-            "SYSTEM PRICE;<Price>",
-            "GROUP CREATE;<Identifier>;<Name>",
-            "GROUP ADD;<Identifier>;<Email>",
-            "GROUP REMOVE;<Identifier>;<Email>",
-            "GROUP DELETE;<Identifier>",
-            "TICKET CREATE;<identifier>;<email>;<date>",
-            "TICKET DELETE;<identifier>",
-            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
-            "GROUPTICKET DELETE;<identifier>",
-            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
-            "ATTRACTION ENTER;<attraction>;<ticket>",
-            "ATTRACTION EXIT;<attraction>;<email>",
-            "ATTRACTION LIST;<attraction>",
-            "ATTRACTION STATUS;<attractionIdentifier>",
-            "INVOICE CREATE;USER;<email>",
-            "INVOICE CREATE;GROUP;<groupIdentifier>",
-            "HELP",
-            "EXIT");
-
     private final PrintStream out;
     private final ParkController park;
     private final InvoiceController invoices;
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
 
     private Runnable afterCommand = () -> { };
 
     /** Processor using the controllers injected by the application's initialization. */
-    public CommandProcessor(PrintStream out, ParkController park, InvoiceController invoices) {
+    public CommandProcessor(PrintStream out, ParkController park, InvoiceController invoices,
+            HelpGenerator help, HelpGenerator extendedHelp) {
         this.out = out;
         this.park = park;
         this.invoices = invoices;
+        this.help = help;
+        this.extendedHelp = extendedHelp;
     }
 
-    /** Convenience wiring to the singleton controllers with a default invoice director. */
+    /** Convenience wiring to the singleton controllers and the standard help generators. */
     public CommandProcessor(PrintStream out) {
-        this(out, ParkController.getInstance(), InvoiceController.getInstance());
+        this(out, ParkController.getInstance(), InvoiceController.getInstance(),
+                new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter()),
+                new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter()));
         invoices.configure(park, new InvoiceDirector());
     }
 
@@ -118,7 +101,13 @@ public class CommandProcessor {
                 if (rejectArguments(keyword, fields)) {
                     return true;
                 }
-                printHelp();
+                out.println(help.generate());
+                return true;
+            case "HELP EXTENDED":
+                if (rejectArguments(keyword, fields)) {
+                    return true;
+                }
+                out.println(extendedHelp.generate());
                 return true;
             case "EXIT":
                 if (rejectArguments(keyword, fields)) {
@@ -273,12 +262,5 @@ public class CommandProcessor {
             throw new InvalidCommandException("invalid arguments for " + keyword + " (expected no arguments)");
         }
         return false;
-    }
-
-    private void printHelp() {
-        out.println("Available commands:");
-        for (String syntax : COMMAND_SYNTAX) {
-            out.println("  " + syntax);
-        }
     }
 }

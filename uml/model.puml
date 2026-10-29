@@ -97,6 +97,15 @@ package "es.upm.amusementpark.presentation" {
     - out : PrintStream
   }
   class InvalidCommandException
+  class CommandInfo <<record>> {
+    - syntax : String
+    - description : String
+  }
+  class CommandCatalog
+  interface HelpFormatter
+  class SyntaxHelpFormatter
+  class ExtendedHelpFormatter
+  class HelpGenerator
 }
 
 package "es.upm.amusementpark" {
@@ -162,6 +171,13 @@ TextFileRepository ..> PersistenceException : throws
 ' --- command interface
 CommandProcessor --> "1" ParkController : park
 CommandProcessor --> "1" InvoiceController : invoices
+CommandProcessor --> "1" HelpGenerator : help
+CommandProcessor --> "1" HelpGenerator : extendedHelp
+HelpGenerator --> "1" CommandCatalog : catalog
+HelpGenerator --> "1" HelpFormatter : formatter (injected)
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+CommandCatalog *--> "1..*" CommandInfo : commands
 App ..> CommandProcessor : creates
 App ..> TextFileRepositories : creates and injects repositories
 App ..> DataDirectories : selects data directory
