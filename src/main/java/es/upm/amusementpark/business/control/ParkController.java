@@ -17,6 +17,7 @@ import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.repository.Repositories;
 import es.upm.amusementpark.business.security.PasswordProtector;
 import es.upm.amusementpark.business.validation.UserDataValidator;
@@ -201,6 +202,52 @@ public final class ParkController {
             group.removeMember(user);
         }
         users.remove(user.getEmail());
+    }
+
+    /**
+     * Changes one modifiable field of a user after checking the current email and
+     * password; new values follow the same rules as user creation.
+     */
+    public User updateUser(String email, String password, String fieldText, String newValue) {
+        User user = verifyPassword(email == null ? null : email.trim(), password == null ? null : password.trim());
+        UserField field = UserField.parse(fieldText);
+        String value = newValue == null ? "" : newValue.trim();
+        switch (field) {
+            case EMAIL:
+                if (!UserDataValidator.isValidEmail(value)) {
+                    throw new InvalidValueException("invalid email: " + value);
+                }
+                User other = users.get(value);
+                if (other != null && other != user) {
+                    throw new DuplicateElementException("a user with email " + value + " already exists");
+                }
+                users.remove(user.getEmail());
+                user.setEmail(value);
+                users.put(value, user);
+                break;
+            case PASSWORD:
+                setPassword(user.getEmail(), value);
+                break;
+            case CARD:
+                if (!UserDataValidator.isValidCard(value)) {
+                    throw new InvalidValueException("invalid card number (expected 16 digits): " + value);
+                }
+                user.setCard(value);
+                break;
+            default:
+                if (value.isEmpty()) {
+                    throw new InvalidValueException(field.name().toLowerCase() + " must not be empty");
+                }
+                if (field == UserField.NAME) {
+                    user.setFirstName(value);
+                } else if (field == UserField.SURNAME) {
+                    user.setSurnames(value);
+                } else {
+                    user.setPhone(value);
+                }
+                break;
+        }
+        return user;
     }
 
     /** Sets or changes a user's password, storing a new BCrypt-protected value. */

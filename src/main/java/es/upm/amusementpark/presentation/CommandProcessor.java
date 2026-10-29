@@ -132,6 +132,12 @@ public class CommandProcessor {
                     out.println("USER DELETED");
                 }
                 return true;
+            case "USER UPDATE":
+                if (requireArguments(keyword, fields, 4)) {
+                    park.updateUser(fields[1], fields[2], fields[3], fields[4]);
+                    out.println("USER UPDATED");
+                }
+                return true;
             case "SYSTEM DATE":
                 if (requireArguments(keyword, fields, 1)) {
                     park.setCurrentDate(fields[1]);

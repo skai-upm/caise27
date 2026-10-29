@@ -15,6 +15,15 @@ package "es.upm.amusementpark.business.model" {
     - card : String
   }
 
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
   class Group {
     - identifier : String
     - name : String
@@ -212,6 +221,7 @@ TextFileRepositories ..> Repositories : creates
 ParkController --> "0..1" Repositories : injected
 ParkController *--> "1" PasswordProtector : passwords
 ParkController ..> UserDataValidator : validates
+ParkController ..> UserField : updates
 
 ''' --- invoices (Builder)
 InvoiceBuilder <|-- UserInvoiceBuilder
