@@ -94,13 +94,10 @@ class ParkAttractionAccessTest {
     }
 
     @Test
-    void groupAndComposedTicketsNotUsableYet() {
+    void composedTicketsNotUsableIndividually() {
         park.createGroup("G01", "F");
         park.addUserToGroup("G01", "pedro@correo.com");
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        IllegalArgumentException group = assertThrows(IllegalArgumentException.class,
-                () -> park.enterAttraction("A01", "TG01"));
-        assertTrue(group.getMessage().contains("not available yet"));
         IllegalArgumentException composed = assertThrows(IllegalArgumentException.class,
                 () -> park.enterAttraction("A01", "TG01:87654321X"));
         assertTrue(composed.getMessage().contains("use the group ticket"));

@@ -228,10 +228,6 @@ public final class ParkController {
     public List<User> enterAttraction(String attractionIdentifier, String ticketIdentifier) {
         Attraction attraction = existingAttraction(attractionIdentifier);
         Ticket ticket = existingTopLevelTicket(ticketIdentifier);
-        if (ticket instanceof GroupTicket) {
-            throw new IllegalArgumentException("access with group tickets is not available yet: "
-                    + ticket.getIdentifier());
-        }
         if (!ticket.getDate().equals(currentDate)) {
             throw new IllegalArgumentException("ticket " + ticket.getIdentifier() + " is valid on "
                     + ticket.getDate() + ", not on the current date " + currentDate);
@@ -251,6 +247,20 @@ public final class ParkController {
             attraction.addOccupant(user);
         }
         return entrants;
+    }
+
+    /** Removes the user with that email from the attraction, releasing the place. */
+    public User exitAttraction(String attractionIdentifier, String email) {
+        Attraction attraction = existingAttraction(attractionIdentifier);
+        String address = requireText(email, "email");
+        for (User user : attraction.getOccupants()) {
+            if (user.getEmail().equals(address)) {
+                attraction.removeOccupant(user);
+                return user;
+            }
+        }
+        throw new IllegalArgumentException("user " + address + " is not inside attraction "
+                + attraction.getIdentifier());
     }
 
     private Ticket existingTopLevelTicket(String identifier) {

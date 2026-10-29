@@ -3,6 +3,7 @@ package es.upm.amusementpark;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,7 +28,9 @@ public class CommandProcessor {
             "GROUPTICKET DELETE;<identifier>",
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
             "ATTRACTION ENTER;<attraction>;<ticket>",
+            "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
+            "ATTRACTION STATUS;<attraction>",
             "HELP",
             "EXIT");
 
@@ -166,6 +169,17 @@ public class CommandProcessor {
                     }
                 }
                 return true;
+            case "ATTRACTION EXIT":
+                if (requireArguments(keyword, fields, 2)) {
+                    User user = park.exitAttraction(fields[1], fields[2]);
+                    out.println("USER " + user.getEmail() + " LEFT ATTRACTION " + fields[1].trim());
+                }
+                return true;
+            case "ATTRACTION STATUS":
+                if (requireArguments(keyword, fields, 1)) {
+                    printStatus(park.existingAttraction(fields[1]));
+                }
+                return true;
             case "ATTRACTION LIST":
                 if (requireArguments(keyword, fields, 1)) {
                     listOccupants(park.existingAttraction(fields[1]));
@@ -175,6 +189,19 @@ public class CommandProcessor {
                 out.println("Error: unknown command: " + command);
                 return true;
         }
+    }
+
+    private void printStatus(Attraction attraction) {
+        List<String> emails = new ArrayList<>();
+        for (User user : attraction.getOccupants()) {
+            emails.add(user.getEmail());
+        }
+        out.println("ATTRACTION: " + attraction.getIdentifier());
+        out.println("NAME: " + attraction.getName());
+        out.println("CAPACITY: " + attraction.getCapacity());
+        out.println("USERS INSIDE: " + emails.size());
+        out.println("AVAILABLE PLACES: " + attraction.getAvailablePlaces());
+        out.println("OCCUPANTS: " + (emails.isEmpty() ? "none" : String.join(", ", emails)));
     }
 
     private void listOccupants(Attraction attraction) {
