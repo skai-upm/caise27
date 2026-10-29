@@ -4,6 +4,7 @@ import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
@@ -37,17 +38,26 @@ public final class InvoiceController {
         this.director = Objects.requireNonNull(invoiceDirector);
     }
 
-    /** Invoice of an active user: only tickets purchased directly for that user. */
+    /**
+     * Invoice of an active user: tickets purchased directly for the user and
+     * the passes of all the user's individual tickets (also inside group tickets).
+     */
     public Invoice createUserInvoice(String email) {
         requireConfigured();
         User user = park.existingUser(email);
         List<IndividualTicket> direct = new ArrayList<>();
+        List<Pass> passes = new ArrayList<>();
         for (Ticket ticket : park.getTickets()) {
-            if (ticket instanceof IndividualTicket individual && individual.getUser().equals(user)) {
-                direct.add(individual);
+            for (IndividualTicket individual : ticket.individualTickets()) {
+                if (individual.getUser().equals(user)) {
+                    passes.addAll(park.passesOf(individual));
+                    if (individual == ticket) {
+                        direct.add(individual);
+                    }
+                }
             }
         }
-        return director.userInvoice(user, direct);
+        return director.userInvoice(user, direct, passes);
     }
 
     /** Invoice of an existing group: the group tickets it purchased. */
