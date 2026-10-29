@@ -186,6 +186,23 @@ public final class ParkController {
         return user;
     }
 
+    /**
+     * Deletes a user after locating it by email and checking its password. The
+     * user must have no active ticket and belong to no locked group; it is then
+     * removed from its groups. Historical tickets keep the user's data.
+     */
+    public void deleteUser(String email, String password) {
+        User user = verifyPassword(email == null ? null : email.trim(), password == null ? null : password.trim());
+        if (!canDeleteUser(user)) {
+            throw new OperationNotAllowedException("user " + user.getEmail()
+                    + " has an active ticket or belongs to a group with an active group ticket");
+        }
+        for (Group group : groups.values()) {
+            group.removeMember(user);
+        }
+        users.remove(user.getEmail());
+    }
+
     /** Sets or changes a user's password, storing a new BCrypt-protected value. */
     public void setPassword(String email, String plainPassword) {
         User user = existingUser(email);
