@@ -37,8 +37,15 @@ public class CommandProcessor {
     private final PrintStream out;
     private final ParkController park = ParkController.getInstance();
 
+    private Runnable afterCommand = () -> { };
+
     public CommandProcessor(PrintStream out) {
         this.out = out;
+    }
+
+    /** Action run after every processed line (for example, saving the park state). */
+    public void setAfterCommand(Runnable afterCommand) {
+        this.afterCommand = afterCommand;
     }
 
     /**
@@ -55,6 +62,7 @@ public class CommandProcessor {
                 out.println("Error: could not process command: " + line.trim());
                 keepGoing = true;
             }
+            afterCommand.run();
             if (!keepGoing) {
                 return;
             }

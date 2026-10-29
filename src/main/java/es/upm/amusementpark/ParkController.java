@@ -133,6 +133,34 @@ public final class ParkController {
         return users.get(email);
     }
 
+    public Collection<User> getUsers() {
+        return Collections.unmodifiableCollection(users.values());
+    }
+
+    // --- reconstruction (used by the persistence layer) ------------------
+
+    /** The registered user with that email, or a detached user with the stored data. */
+    User resolveUser(String email, String dni) {
+        User user = users.get(email);
+        return user != null ? user : new User(email, dni);
+    }
+
+    void restoreGroup(String identifier, String name) {
+        createGroup(identifier, name);
+    }
+
+    void restoreMember(String groupIdentifier, String email) {
+        Group group = existingGroup(groupIdentifier);
+        if (!group.addMember(existingUser(email))) {
+            throw new IllegalArgumentException("duplicate member " + email);
+        }
+    }
+
+    /** Adds a stored ticket, keeping identifier uniqueness but not date rules. */
+    void restoreTicket(Ticket ticket) {
+        addTicket(ticket);
+    }
+
     // --- groups ----------------------------------------------------------
 
     public Group findGroup(String identifier) {

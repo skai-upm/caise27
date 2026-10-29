@@ -6,14 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -21,65 +21,98 @@ class AppTest {
 
     private static final String INPUT = "HELP\nFOO\nEXIT\nHELP\n";
 
-    private final PrintStream originalOut = System.out;
-    private final InputStream originalIn = System.in;
-    private ByteArrayOutputStream buffer;
-
     @TempDir
-    Path tempDir;
+    Path base;
 
-    @BeforeEach
-    void captureOutput() {
-        buffer = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(buffer, true, StandardCharsets.UTF_8));
-    }
-
-    @AfterEach
-    void restoreStreams() {
-        System.setOut(originalOut);
-        System.setIn(originalIn);
-    }
-
-    private String runWithStdin(String input) {
-        System.setIn(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
-        App.main(new String[0]);
+    private String run(String stdin, String... args) {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        InputStream in = new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8));
+        App.run(args, base, in, new PrintStream(buffer, true, StandardCharsets.UTF_8));
         return buffer.toString(StandardCharsets.UTF_8);
     }
 
-    private String runWithFile(String input) throws Exception {
-        Path file = tempDir.resolve("input.txt");
-        Files.writeString(file, input, StandardCharsets.UTF_8);
-        App.main(new String[] {file.toString()});
-        return buffer.toString(StandardCharsets.UTF_8);
+    private Path commandFile(String content) throws IOException {
+        Path file = base.resolve("input.txt");
+        Files.writeString(file, content, StandardCharsets.UTF_8);
+        return file;
+    }
+
+    private boolean tmpIsEmpty() throws IOException {
+        Path tmp = base.resolve(App.TEMP_DIRECTORY);
+        if (!Files.exists(tmp)) {
+            return true;
+        }
+        try (Stream<Path> children = Files.list(tmp)) {
+            return children.findAny().isEmpty();
+        }
     }
 
     @Test
-    void stdinAndFileProduceIdenticalOutput() throws Exception {
-        String fromStdin = runWithStdin(INPUT);
-        buffer.reset();
-        String fromFile = runWithFile(INPUT);
+    void stdinAndFileProduceIdenticalOutput() throws IOException {
+        String fromStdin = run(INPUT);
+        String fromFile = run("", commandFile(INPUT).toString());
         assertEquals(fromStdin, fromFile);
     }
 
     @Test
-    void fileModeStopsAtExit() throws Exception {
-        String out = runWithFile(INPUT);
+    void fileModeStopsAtExit() throws IOException {
+        String out = run("", commandFile(INPUT).toString());
         assertEquals(1, out.split("Available commands:", -1).length - 1);
         assertTrue(out.contains("Error: unknown command: FOO"));
     }
 
     @Test
     void stdinModeStopsAtExit() {
-        String out = runWithStdin("EXIT\nHELP\n");
-        assertFalse(out.contains("Available commands:"));
+        assertFalse(run("EXIT\nHELP\n").contains("Available commands:"));
     }
 
     @Test
     void missingFileIsHandledInAControlledManner() {
-        Path missing = tempDir.resolve("missing.txt");
-        App.main(new String[] {missing.toString()});
-        String out = buffer.toString(StandardCharsets.UTF_8);
+        Path missing = base.resolve("missing.txt");
+        String out = run("", missing.toString());
         assertTrue(out.contains("Error: could not read command file: " + missing));
         assertFalse(out.contains("Exception"));
+    }
+
+    @Test
+    void normalModeReconstructsStateOnRestart() {
+        run("ATTRACTION CREATE;A01;Dragon Rojo;20\nGROUP CREATE;G01;Familia Garcia\nEXIT\n");
+        assertTrue(Files.exists(base.resolve(App.DATA_DIRECTORY).resolve("attractions.txt")));
+        String out = run("ATTRACTION STATUS;A01\nGROUP CREATE;G01;Otra\nEXIT\n");
+        assertTrue(out.contains("NAME: Dragon Rojo"));
+        assertTrue(out.contains("Error: group already exists: G01"));
+    }
+
+    @Test
+    void stateSavedWhenFileEndsWithoutExit() throws IOException {
+        run("", commandFile("ATTRACTION CREATE;A01;Dragon Rojo;20\n").toString());
+        assertTrue(run("ATTRACTION STATUS;A01\n").contains("CAPACITY: 20"));
+    }
+
+    @Test
+    void flyInteractiveLeavesNoDataAndIsIsolated() throws IOException {
+        run("ATTRACTION CREATE;A01;Dragon Rojo;20\nEXIT\n");
+        String fly = run("ATTRACTION STATUS;A01\nATTRACTION CREATE;A02;Torre del Cielo;12\nEXIT\n", App.FLY);
+        assertTrue(fly.contains("Error: attraction not found: A01"));
+        assertTrue(tmpIsEmpty());
+        String normal = run("ATTRACTION STATUS;A02\nATTRACTION STATUS;A01\n");
+        assertTrue(normal.contains("Error: attraction not found: A02"));
+        assertTrue(normal.contains("NAME: Dragon Rojo"));
+    }
+
+    @Test
+    void flyWithCommandFileCleansUpAtEndOfFile() throws IOException {
+        Path file = commandFile("GROUP CREATE;G01;Familia Garcia\nATTRACTION CREATE;A01;Dragon Rojo;20\n");
+        String out = run("", App.FLY, file.toString());
+        assertTrue(out.contains("GROUP CREATED"));
+        assertTrue(tmpIsEmpty());
+        assertFalse(Files.exists(base.resolve(App.DATA_DIRECTORY)));
+    }
+
+    @Test
+    void flyWithMissingFileStillCleansUp() throws IOException {
+        String out = run("", App.FLY, base.resolve("missing.txt").toString());
+        assertTrue(out.contains("Error: could not read command file"));
+        assertTrue(tmpIsEmpty());
     }
 }
