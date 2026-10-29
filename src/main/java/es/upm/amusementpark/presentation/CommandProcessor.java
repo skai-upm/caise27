@@ -2,7 +2,9 @@ package es.upm.amusementpark.presentation;
 
 import es.upm.amusementpark.business.exception.ParkException;
 import es.upm.amusementpark.business.invoice.Invoice;
+import es.upm.amusementpark.business.invoice.InvoiceDirector;
 
+import es.upm.amusementpark.business.control.InvoiceController;
 import es.upm.amusementpark.business.control.ParkController;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Ticket;
@@ -45,12 +47,22 @@ public class CommandProcessor {
             "EXIT");
 
     private final PrintStream out;
-    private final ParkController park = ParkController.getInstance();
+    private final ParkController park;
+    private final InvoiceController invoices;
 
     private Runnable afterCommand = () -> { };
 
-    public CommandProcessor(PrintStream out) {
+    /** Processor using the controllers injected by the application's initialization. */
+    public CommandProcessor(PrintStream out, ParkController park, InvoiceController invoices) {
         this.out = out;
+        this.park = park;
+        this.invoices = invoices;
+    }
+
+    /** Convenience wiring to the singleton controllers with a default invoice director. */
+    public CommandProcessor(PrintStream out) {
+        this(out, ParkController.getInstance(), InvoiceController.getInstance());
+        invoices.configure(park, new InvoiceDirector());
     }
 
     /** Action run after every processed line (for example, saving the park state). */
@@ -216,9 +228,9 @@ public class CommandProcessor {
     private Invoice createInvoice(String target, String identifier) {
         switch (target) {
             case "USER":
-                return park.createUserInvoice(identifier);
+                return invoices.createUserInvoice(identifier);
             case "GROUP":
-                return park.createGroupInvoice(identifier);
+                return invoices.createGroupInvoice(identifier);
             default:
                 throw new InvalidCommandException("invalid invoice target (expected USER or GROUP): " + target);
         }

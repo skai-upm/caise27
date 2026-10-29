@@ -6,6 +6,7 @@ import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.repository.TicketRepository;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -20,14 +21,16 @@ import java.util.List;
  * longer exists) followed by {@code COMPONENT;groupTicketId;id;price;email;dni}
  * lines. User data is embedded so historical tickets can always be rebuilt.
  */
-public class TicketRepository extends TextFileRepository {
+public class TextFileTicketRepository extends TextFileRepository
+        implements TicketRepository {
 
     private static final String NO_GROUP = "-";
 
-    public TicketRepository(Path file) {
+    public TextFileTicketRepository(Path file) {
         super(file);
     }
 
+    @Override
     public void saveAll(Collection<Ticket> tickets) {
         List<String> lines = new ArrayList<>();
         for (Ticket ticket : tickets) {
@@ -47,6 +50,7 @@ public class TicketRepository extends TextFileRepository {
         writeLines(lines);
     }
 
+    @Override
     public void loadInto(ParkController park, List<String> skipped) {
         List<String> pending = null;
         List<String> pendingLines = new ArrayList<>();

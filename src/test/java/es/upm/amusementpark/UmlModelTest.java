@@ -40,12 +40,13 @@ class UmlModelTest {
 
     static boolean declares(String model, String className) {
         for (String line : model.split("\n")) {
-            String trimmed = line.trim();
-            if (trimmed.startsWith("class " + className + " ") || trimmed.equals("class " + className)
-                    || trimmed.startsWith("abstract class " + className + " ")
-                    || trimmed.startsWith("interface " + className + " ")
-                    || trimmed.startsWith("enum " + className + " ")) {
-                return true;
+            String[] words = line.trim().split(" ");
+            for (int i = 0; i + 1 < words.length; i++) {
+                boolean keyword = words[i].equals("class") || words[i].equals("interface") || words[i].equals("enum");
+                boolean firstWords = i == 0 || (i == 1 && words[0].equals("abstract"));
+                if (keyword && firstWords && words[i + 1].equals(className)) {
+                    return true;
+                }
             }
         }
         return false;

@@ -4,14 +4,13 @@ import es.upm.amusementpark.business.exception.DuplicateElementException;
 import es.upm.amusementpark.business.exception.ElementNotFoundException;
 import es.upm.amusementpark.business.exception.InvalidValueException;
 import es.upm.amusementpark.business.exception.OperationNotAllowedException;
-import es.upm.amusementpark.business.invoice.Invoice;
-import es.upm.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.repository.Repositories;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -45,6 +44,7 @@ public final class ParkController {
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private Repositories repositories;
 
     private ParkController() {
         reset();
@@ -58,8 +58,9 @@ public final class ParkController {
         return Holder.INSTANCE;
     }
 
-    /** Restores the start-of-execution state (used by tests). */
+    /** Restores the start-of-execution state and removes any repository configuration. */
     public void reset() {
+        repositories = null;
         currentDate = LocalDate.now();
         basePrice = DEFAULT_PRICE;
         users.clear();
@@ -150,7 +151,44 @@ public final class ParkController {
         return Collections.unmodifiableCollection(users.values());
     }
 
-    // --- reconstruction (used by the persistence layer) ------------------
+    // --- persistence through injected repositories ----------------------
+
+    /** Injects the repositories configured at application initialization. */
+    public void configure(Repositories configured) {
+        this.repositories = configured;
+    }
+
+    /**
+     * Rebuilds the park state from the configured repositories.
+     *
+     * @return stored entries that could not be read and were skipped
+     */
+    public List<String> load() {
+        List<String> skipped = new ArrayList<>();
+        if (repositories == null) {
+            return skipped;
+        }
+        for (User user : repositories.users().loadAll(skipped)) {
+            registerUser(user);
+        }
+        repositories.groups().loadInto(this, skipped);
+        repositories.attractions().loadInto(this, skipped);
+        repositories.tickets().loadInto(this, skipped);
+        return skipped;
+    }
+
+    /** Saves the park state through the configured repositories, if any. */
+    public void persist() {
+        if (repositories == null) {
+            return;
+        }
+        repositories.users().saveAll(getUsers());
+        repositories.groups().saveAll(getGroups());
+        repositories.attractions().saveAll(getAttractions());
+        repositories.tickets().saveAll(getTickets());
+    }
+
+    // --- reconstruction (used by the repositories) -----------------------
 
     /** The registered user with that email, or a detached user with the stored data. */
     public User resolveUser(String email, String dni) {
@@ -226,26 +264,6 @@ public final class ParkController {
             ticket.releaseGroup();
         }
         groups.remove(group.getIdentifier());
-    }
-
-    // --- invoices --------------------------------------------------------
-
-    /** Invoice of an active user: only tickets purchased directly for that user. */
-    public Invoice createUserInvoice(String email) {
-        User user = existingUser(email);
-        List<IndividualTicket> direct = new ArrayList<>();
-        for (Ticket ticket : tickets.values()) {
-            if (ticket instanceof IndividualTicket individual && individual.getUser().equals(user)) {
-                direct.add(individual);
-            }
-        }
-        return new InvoiceDirector().userInvoice(user, direct);
-    }
-
-    /** Invoice of an existing group: the group tickets it purchased. */
-    public Invoice createGroupInvoice(String groupIdentifier) {
-        Group group = existingGroup(groupIdentifier);
-        return new InvoiceDirector().groupInvoice(group, groupTicketsOf(group));
     }
 
     // --- attractions -----------------------------------------------------
@@ -506,7 +524,8 @@ public final class ParkController {
         return false;
     }
 
-    private List<GroupTicket> groupTicketsOf(Group group) {
+    /** Group tickets purchased by the group, found by traversing the park tickets. */
+    public List<GroupTicket> groupTicketsOf(Group group) {
         List<GroupTicket> result = new ArrayList<>();
         for (Ticket ticket : tickets.values()) {
             if (ticket instanceof GroupTicket groupTicket && groupTicket.getGroup() == group) {
@@ -523,7 +542,7 @@ public final class ParkController {
         }
     }
 
-    private Group existingGroup(String identifier) {
+    public Group existingGroup(String identifier) {
         String id = requireText(identifier, "group identifier");
         Group group = groups.get(id);
         if (group == null) {
@@ -532,7 +551,7 @@ public final class ParkController {
         return group;
     }
 
-    private User existingUser(String email) {
+    public User existingUser(String email) {
         String address = requireText(email, "email");
         User user = users.get(address);
         if (user == null) {

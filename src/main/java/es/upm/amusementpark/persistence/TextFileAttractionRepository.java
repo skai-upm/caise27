@@ -1,6 +1,7 @@
 package es.upm.amusementpark.persistence;
 
 import es.upm.amusementpark.business.exception.ParkException;
+import es.upm.amusementpark.business.repository.AttractionRepository;
 
 import es.upm.amusementpark.business.control.ParkController;
 import es.upm.amusementpark.business.model.Attraction;
@@ -11,12 +12,14 @@ import java.util.Collection;
 import java.util.List;
 
 /** Persists attractions as {@code id;name;capacity} lines (occupants are not stored). */
-public class AttractionRepository extends TextFileRepository {
+public class TextFileAttractionRepository extends TextFileRepository
+        implements AttractionRepository {
 
-    public AttractionRepository(Path file) {
+    public TextFileAttractionRepository(Path file) {
         super(file);
     }
 
+    @Override
     public void saveAll(Collection<Attraction> attractions) {
         List<String> lines = new ArrayList<>();
         for (Attraction attraction : attractions) {
@@ -25,6 +28,7 @@ public class AttractionRepository extends TextFileRepository {
         writeLines(lines);
     }
 
+    @Override
     public void loadInto(ParkController park, List<String> skipped) {
         for (String line : readLines()) {
             if (line.isBlank()) {

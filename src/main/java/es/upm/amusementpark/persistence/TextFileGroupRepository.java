@@ -1,6 +1,7 @@
 package es.upm.amusementpark.persistence;
 
 import es.upm.amusementpark.business.exception.ParkException;
+import es.upm.amusementpark.business.repository.GroupRepository;
 
 import es.upm.amusementpark.business.control.ParkController;
 import es.upm.amusementpark.business.model.Group;
@@ -15,12 +16,14 @@ import java.util.List;
  * Persists groups as {@code GROUP;id;name} lines followed by one
  * {@code MEMBER;groupId;email} line per member.
  */
-public class GroupRepository extends TextFileRepository {
+public class TextFileGroupRepository extends TextFileRepository
+        implements GroupRepository {
 
-    public GroupRepository(Path file) {
+    public TextFileGroupRepository(Path file) {
         super(file);
     }
 
+    @Override
     public void saveAll(Collection<Group> groups) {
         List<String> lines = new ArrayList<>();
         for (Group group : groups) {
@@ -32,6 +35,7 @@ public class GroupRepository extends TextFileRepository {
         writeLines(lines);
     }
 
+    @Override
     public void loadInto(ParkController park, List<String> skipped) {
         for (String line : readLines()) {
             if (line.isBlank()) {

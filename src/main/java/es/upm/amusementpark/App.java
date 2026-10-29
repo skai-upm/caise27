@@ -1,9 +1,11 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.control.InvoiceController;
 import es.upm.amusementpark.business.control.ParkController;
+import es.upm.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.amusementpark.persistence.DataDirectories;
-import es.upm.amusementpark.persistence.ParkStorage;
 import es.upm.amusementpark.persistence.PersistenceException;
+import es.upm.amusementpark.persistence.TextFileRepositories;
 import es.upm.amusementpark.presentation.CommandProcessor;
 
 import java.io.BufferedReader;
@@ -14,7 +16,6 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 /**
  * Application entry point and composition root: {@code [--fly] [commandFile]}.
@@ -41,13 +42,14 @@ public class App {
                     : DataDirectories.permanent(baseDirectory);
             ParkController park = ParkController.getInstance();
             park.reset();
-            ParkStorage storage = new ParkStorage(dataDirectory);
-            List<String> skipped = storage.load(park);
-            for (String line : skipped) {
+            park.configure(TextFileRepositories.create(dataDirectory));
+            for (String line : park.load()) {
                 out.println("Warning: skipped unreadable stored data: " + line);
             }
-            CommandProcessor processor = new CommandProcessor(out);
-            processor.setAfterCommand(() -> storage.save(park));
+            InvoiceController invoices = InvoiceController.getInstance();
+            invoices.configure(park, new InvoiceDirector());
+            CommandProcessor processor = new CommandProcessor(out, park, invoices);
+            processor.setAfterCommand(park::persist);
             process(processor, commandFile, in, out);
         } catch (PersistenceException e) {
             out.println("Error: could not access park data: " + e.getMessage());

@@ -7,7 +7,7 @@ import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
-import es.upm.amusementpark.persistence.ParkStorage;
+import es.upm.amusementpark.persistence.TextFileRepositories;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -39,6 +39,17 @@ class ParkStorageTest {
         park.reset();
     }
 
+    private void save(Path directory) {
+        park.configure(TextFileRepositories.create(directory));
+        park.persist();
+    }
+
+    private List<String> load(Path directory) {
+        park.reset();
+        park.configure(TextFileRepositories.create(directory));
+        return park.load();
+    }
+
     private void buildState() {
         park.registerUser(new User("ana@correo.com", "12345678Z"));
         park.registerUser(new User("pedro@correo.com", "87654321X"));
@@ -60,9 +71,9 @@ class ParkStorageTest {
     @Test
     void fullStateRoundTrip() {
         buildState();
-        new ParkStorage(dir).save(park);
+        save(dir);
         park.reset();
-        List<String> skipped = new ParkStorage(dir).load(park);
+        List<String> skipped = load(dir);
         assertTrue(skipped.isEmpty());
 
         User ana = park.findUser("ana@correo.com");
@@ -101,9 +112,9 @@ class ParkStorageTest {
         Path other = Files.createDirectory(dir.resolve("other"));
         Path first = Files.createDirectory(dir.resolve("first"));
         park.createAttraction("A01", "Dragon Rojo", "20");
-        new ParkStorage(first).save(park);
+        save(first);
         park.reset();
-        new ParkStorage(other).load(park);
+        load(other);
         assertNull(park.findAttraction("A01"));
         try (var files = Files.list(other)) {
             assertFalse(files.findAny().isPresent());
@@ -115,7 +126,7 @@ class ParkStorageTest {
     void historicalTicketOfUnknownUserStillLoads() throws IOException {
         Files.writeString(dir.resolve("tickets.txt"),
                 "INDIVIDUAL;T009;2026-01-01;40.00;gone@correo.com;99999999R\n", StandardCharsets.UTF_8);
-        new ParkStorage(dir).load(park);
+        load(dir);
         IndividualTicket ticket = (IndividualTicket) park.findTicket("T009");
         assertEquals("gone@correo.com", ticket.getUser().getEmail());
         assertNull(park.findUser("gone@correo.com"));
@@ -125,7 +136,7 @@ class ParkStorageTest {
     void malformedLinesAreSkipped() throws IOException {
         Files.writeString(dir.resolve("attractions.txt"), "A01;Dragon Rojo;20\nbroken\nA02;X;abc\n",
                 StandardCharsets.UTF_8);
-        List<String> skipped = new ParkStorage(dir).load(park);
+        List<String> skipped = load(dir);
         assertEquals(List.of("broken", "A02;X;abc"), skipped);
         assertEquals(1, park.getAttractions().size());
     }
@@ -134,7 +145,7 @@ class ParkStorageTest {
     void filesAreTextLines() throws IOException {
         park.registerUser(new User("ana@correo.com", "12345678Z"));
         park.createAttraction("A01", "Dragon Rojo", "20");
-        new ParkStorage(dir).save(park);
+        save(dir);
         assertEquals(List.of("ana@correo.com;12345678Z"), Files.readAllLines(dir.resolve("users.txt")));
         assertEquals(List.of("A01;Dragon Rojo;20"), Files.readAllLines(dir.resolve("attractions.txt")));
     }

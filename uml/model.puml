@@ -35,11 +35,20 @@ package "es.upm.amusementpark.business.model" {
 }
 
 package "es.upm.amusementpark.business.control" {
+  class InvoiceController <<singleton>>
   class ParkController <<singleton>> {
     - {static} DEFAULT_PRICE : BigDecimal
     - currentDate : LocalDate
     - basePrice : BigDecimal
   }
+}
+
+package "es.upm.amusementpark.business.repository" {
+  interface UserRepository
+  interface GroupRepository
+  interface TicketRepository
+  interface AttractionRepository
+  class Repositories <<record>>
 }
 
 package "es.upm.amusementpark.business.invoice" {
@@ -76,11 +85,11 @@ package "es.upm.amusementpark.persistence" {
   }
   class DataDirectories <<utility>>
   class PersistenceException
-  class UserRepository
-  class GroupRepository
-  class TicketRepository
-  class AttractionRepository
-  class ParkStorage
+  class TextFileUserRepository
+  class TextFileGroupRepository
+  class TextFileTicketRepository
+  class TextFileAttractionRepository
+  class TextFileRepositories <<factory>>
 }
 
 package "es.upm.amusementpark.presentation" {
@@ -112,15 +121,20 @@ ParkController o--> "0..*" Ticket : tickets
 ParkController o--> "0..*" Attraction : attractions
 
 ' --- persistence
-TextFileRepository <|-- UserRepository
-TextFileRepository <|-- GroupRepository
-TextFileRepository <|-- TicketRepository
-TextFileRepository <|-- AttractionRepository
-ParkStorage *--> "1" UserRepository : users
-ParkStorage *--> "1" GroupRepository : groups
-ParkStorage *--> "1" TicketRepository : tickets
-ParkStorage *--> "1" AttractionRepository : attractions
-ParkStorage ..> ParkController : loads / saves
+TextFileRepository <|-- TextFileUserRepository
+TextFileRepository <|-- TextFileGroupRepository
+TextFileRepository <|-- TextFileTicketRepository
+TextFileRepository <|-- TextFileAttractionRepository
+UserRepository <|.. TextFileUserRepository
+GroupRepository <|.. TextFileGroupRepository
+TicketRepository <|.. TextFileTicketRepository
+AttractionRepository <|.. TextFileAttractionRepository
+Repositories --> "1" UserRepository : users
+Repositories --> "1" GroupRepository : groups
+Repositories --> "1" TicketRepository : tickets
+Repositories --> "1" AttractionRepository : attractions
+TextFileRepositories ..> Repositories : creates
+ParkController --> "0..1" Repositories : injected
 
 ''' --- invoices (Builder)
 InvoiceBuilder <|-- UserInvoiceBuilder
@@ -131,7 +145,8 @@ InvoiceSection *--> "1..*" InvoiceLine : lines
 InvoiceBuilder ..> Invoice : builds
 InvoiceDirector ..> UserInvoiceBuilder : directs
 InvoiceDirector ..> GroupInvoiceBuilder : directs
-ParkController ..> InvoiceDirector : uses
+InvoiceController --> "1" ParkController : injected
+InvoiceController --> "1" InvoiceDirector : injected
 
 ' --- exceptions
 RuntimeException <|-- ParkException
@@ -146,8 +161,9 @@ TextFileRepository ..> PersistenceException : throws
 
 ' --- command interface
 CommandProcessor --> "1" ParkController : park
+CommandProcessor --> "1" InvoiceController : invoices
 App ..> CommandProcessor : creates
-App ..> ParkStorage : configures
+App ..> TextFileRepositories : creates and injects repositories
 App ..> DataDirectories : selects data directory
 
 @enduml

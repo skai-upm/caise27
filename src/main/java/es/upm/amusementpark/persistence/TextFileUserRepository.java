@@ -1,6 +1,7 @@
 package es.upm.amusementpark.persistence;
 
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.repository.UserRepository;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -8,12 +9,14 @@ import java.util.Collection;
 import java.util.List;
 
 /** Persists users as {@code email;dni} lines. */
-public class UserRepository extends TextFileRepository {
+public class TextFileUserRepository extends TextFileRepository
+        implements UserRepository {
 
-    public UserRepository(Path file) {
+    public TextFileUserRepository(Path file) {
         super(file);
     }
 
+    @Override
     public void saveAll(Collection<User> users) {
         List<String> lines = new ArrayList<>();
         for (User user : users) {
@@ -22,7 +25,7 @@ public class UserRepository extends TextFileRepository {
         writeLines(lines);
     }
 
-    /** @param skipped receives each line that could not be read */
+    @Override
     public List<User> loadAll(List<String> skipped) {
         List<User> users = new ArrayList<>();
         for (String line : readLines()) {

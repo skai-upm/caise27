@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.amusementpark.business.control.InvoiceController;
 import es.upm.amusementpark.business.control.ParkController;
 import es.upm.amusementpark.business.exception.ElementNotFoundException;
 import es.upm.amusementpark.business.invoice.GroupInvoiceBuilder;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 class InvoiceTest {
 
     private final ParkController park = ParkController.getInstance();
+    private final InvoiceController invoices = InvoiceController.getInstance();
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private final CommandProcessor processor =
             new CommandProcessor(new PrintStream(buffer, true, StandardCharsets.UTF_8));
@@ -75,7 +77,7 @@ class InvoiceTest {
         park.createIndividualTicket("T001", "ana@correo.com", "2027-04-15");
         park.setBasePrice("45.50");
         park.createIndividualTicket("T002", "ana@correo.com", "2027-04-16");
-        Invoice invoice = park.createUserInvoice("ana@correo.com");
+        Invoice invoice = invoices.createUserInvoice("ana@correo.com");
         assertEquals(new BigDecimal("85.50"), invoice.getTotal());
         String text = invoice.toText();
         assertTrue(text.contains("ana@correo.com") && text.contains("12345678Z"));
@@ -87,7 +89,7 @@ class InvoiceTest {
         park.createGroup("G01", "F");
         park.addUserToGroup("G01", "ana@correo.com");
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        Invoice invoice = park.createUserInvoice("ana@correo.com");
+        Invoice invoice = invoices.createUserInvoice("ana@correo.com");
         assertEquals(List.of("User"), sectionTitles(invoice));
         assertEquals(new BigDecimal("0.00"), invoice.getTotal());
     }
@@ -106,13 +108,13 @@ class InvoiceTest {
         assertEquals(6, out.split("TG02:", -1).length - 1);
         assertTrue(out.contains("TOTAL: 192.00 EUR"));
         assertFalse(out.contains("T009"));
-        assertEquals(new BigDecimal("192.00"), park.createGroupInvoice("G01").getTotal());
+        assertEquals(new BigDecimal("192.00"), invoices.createGroupInvoice("G01").getTotal());
     }
 
     @Test
     void unknownRecipientsAndBadTargets() throws IOException {
-        assertThrows(ElementNotFoundException.class, () -> park.createUserInvoice("nadie@correo.com"));
-        assertThrows(ElementNotFoundException.class, () -> park.createGroupInvoice("G99"));
+        assertThrows(ElementNotFoundException.class, () -> invoices.createUserInvoice("nadie@correo.com"));
+        assertThrows(ElementNotFoundException.class, () -> invoices.createGroupInvoice("G99"));
         String out = run("INVOICE CREATE;COMPANY;X\nINVOICE CREATE;USER\nINVOICE CREATE;GROUP;G99\nHELP\n");
         assertTrue(out.contains("Error: invalid invoice target"));
         assertTrue(out.contains("Error: invalid arguments for INVOICE CREATE"));
