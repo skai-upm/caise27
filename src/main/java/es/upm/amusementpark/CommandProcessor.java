@@ -17,6 +17,10 @@ public class CommandProcessor {
             "USER UPDATE;<email>;<password>;<field>;<value>",
             "SYSTEM DATE;<yyyy-MM-dd>",
             "SYSTEM PRICE;<Price>",
+            "GROUP CREATE;<Identifier>;<Name>",
+            "GROUP ADD;<Identifier>;<Email>",
+            "GROUP REMOVE;<Identifier>;<Email>",
+            "GROUP DELETE;<Identifier>",
             "HELP",
             "EXIT");
 
@@ -92,6 +96,30 @@ public class CommandProcessor {
                 if (requireArguments(keyword, fields, 1)) {
                     park.setBasePrice(fields[1]);
                     out.println("SYSTEM PRICE UPDATED: " + park.getBasePrice());
+                }
+                return true;
+            case "GROUP CREATE":
+                if (requireArguments(keyword, fields, 2)) {
+                    park.createGroup(fields[1], fields[2]);
+                    out.println("GROUP CREATED");
+                }
+                return true;
+            case "GROUP ADD":
+                if (requireArguments(keyword, fields, 2)) {
+                    park.addUserToGroup(fields[1], fields[2]);
+                    out.println("USER ADDED TO GROUP");
+                }
+                return true;
+            case "GROUP REMOVE":
+                if (requireArguments(keyword, fields, 2)) {
+                    park.removeUserFromGroup(fields[1], fields[2]);
+                    out.println("USER REMOVED FROM GROUP");
+                }
+                return true;
+            case "GROUP DELETE":
+                if (requireArguments(keyword, fields, 1)) {
+                    park.deleteGroup(fields[1]);
+                    out.println("GROUP DELETED");
                 }
                 return true;
             default:

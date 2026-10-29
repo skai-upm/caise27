@@ -22,7 +22,7 @@ The application SHALL process commands one per line, in order, through a single 
 - **THEN** it processes the commands contained in that file
 
 ### Requirement: HELP command
-The `HELP` command SHALL display the available commands and their basic syntax, including at least `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `HELP` and `EXIT`.
+The `HELP` command SHALL display the available commands and their basic syntax, including at least `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `HELP` and `EXIT`.
 
 #### Scenario: HELP lists the minimum command set
 - **WHEN** the line `HELP` is processed
@@ -31,6 +31,10 @@ The `HELP` command SHALL display the available commands and their basic syntax, 
 #### Scenario: HELP lists the SYSTEM commands
 - **WHEN** the line `HELP` is processed
 - **THEN** the output contains `SYSTEM DATE;<yyyy-MM-dd>` and `SYSTEM PRICE;<Price>`
+
+#### Scenario: HELP lists the GROUP commands
+- **WHEN** the line `HELP` is processed
+- **THEN** the output contains `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>` and `GROUP DELETE;<Identifier>`
 
 #### Scenario: HELP does not stop processing
 - **WHEN** `HELP` is followed by another command line
