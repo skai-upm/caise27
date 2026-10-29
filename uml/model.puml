@@ -8,6 +8,7 @@ package "es.upm.amusementpark.business.model" {
   class User {
     - email : String
     - dni : String
+    - passwordHash : String
   }
 
   class Group {
@@ -41,6 +42,10 @@ package "es.upm.amusementpark.business.control" {
     - currentDate : LocalDate
     - basePrice : BigDecimal
   }
+}
+
+package "es.upm.amusementpark.business.security" {
+  class PasswordProtector
 }
 
 package "es.upm.amusementpark.business.repository" {
@@ -144,6 +149,7 @@ Repositories --> "1" TicketRepository : tickets
 Repositories --> "1" AttractionRepository : attractions
 TextFileRepositories ..> Repositories : creates
 ParkController --> "0..1" Repositories : injected
+ParkController *--> "1" PasswordProtector : passwords
 
 ''' --- invoices (Builder)
 InvoiceBuilder <|-- UserInvoiceBuilder

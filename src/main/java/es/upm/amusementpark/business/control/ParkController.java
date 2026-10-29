@@ -11,6 +11,7 @@ import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.repository.Repositories;
+import es.upm.amusementpark.business.security.PasswordProtector;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -45,6 +46,7 @@ public final class ParkController {
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction> attractions = new LinkedHashMap<>();
     private Repositories repositories;
+    private final PasswordProtector passwords = new PasswordProtector();
 
     private ParkController() {
         reset();
@@ -145,6 +147,28 @@ public final class ParkController {
     /** @return the registered user with that email, or {@code null} */
     public User findUser(String email) {
         return users.get(email);
+    }
+
+    /** Sets or changes a user's password, storing a new BCrypt-protected value. */
+    public void setPassword(String email, String plainPassword) {
+        User user = existingUser(email);
+        if (plainPassword == null || plainPassword.isEmpty()) {
+            throw new InvalidValueException("password must not be empty");
+        }
+        user.setPasswordHash(passwords.protect(plainPassword));
+    }
+
+    /**
+     * Verifies the entered password of a user against the stored protected value.
+     *
+     * @throws OperationNotAllowedException if the password does not match or none is stored
+     */
+    public User verifyPassword(String email, String plainPassword) {
+        User user = existingUser(email);
+        if (!passwords.matches(plainPassword, user.getPasswordHash())) {
+            throw new OperationNotAllowedException("invalid password for user " + user.getEmail());
+        }
+        return user;
     }
 
     public Collection<User> getUsers() {

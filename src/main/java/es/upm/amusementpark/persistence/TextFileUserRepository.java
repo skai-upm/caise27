@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/** Persists users as {@code email;dni} lines. */
+/**
+ * Persists users as {@code email;dni;passwordHash} lines; only the BCrypt-protected
+ * value is stored. Legacy {@code email;dni} lines are still read.
+ */
 public class TextFileUserRepository extends TextFileRepository
         implements UserRepository {
 
@@ -20,7 +23,8 @@ public class TextFileUserRepository extends TextFileRepository
     public void saveAll(Collection<User> users) {
         List<String> lines = new ArrayList<>();
         for (User user : users) {
-            lines.add(join(user.getEmail(), user.getDni()));
+            String hash = user.getPasswordHash();
+            lines.add(join(user.getEmail(), user.getDni(), hash == null ? "" : hash));
         }
         writeLines(lines);
     }
@@ -33,8 +37,12 @@ public class TextFileUserRepository extends TextFileRepository
                 continue;
             }
             String[] f = fields(line);
-            if (f.length == 2 && !f[0].isEmpty()) {
-                users.add(new User(f[0], f[1]));
+            if ((f.length == 2 || f.length == 3) && !f[0].isEmpty()) {
+                User user = new User(f[0], f[1]);
+                if (f.length == 3 && !f[2].isEmpty()) {
+                    user.setPasswordHash(f[2]);
+                }
+                users.add(user);
             } else {
                 skipped.add(line);
             }

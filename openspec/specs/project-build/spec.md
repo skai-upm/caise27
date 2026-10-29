@@ -47,11 +47,15 @@ Building the project with `mvn package` SHALL produce an executable JAR in `targ
 - **THEN** the build succeeds and `target/amusement-park.jar` exists
 
 ### Requirement: Java standard library only
-The application's runtime code SHALL depend only on the Java standard library: no databases, frameworks, external libraries or regular expressions are used.
+The application's runtime code SHALL depend only on the Java standard library and, from Delivery 3, on the BCrypt library used to protect passwords: no databases, frameworks, other external libraries or regular expressions are used. The BCrypt library SHALL be packaged in the executable JAR.
 
 #### Scenario: No runtime dependencies
 - **WHEN** the project's dependencies are inspected
-- **THEN** every declared dependency has `test` scope
+- **THEN** every declared dependency has `test` scope except the BCrypt library `org.mindrot:jbcrypt`
+
+#### Scenario: JAR self-contained
+- **WHEN** `java -jar target/amusement-park.jar` runs on a machine with only a Java runtime
+- **THEN** the BCrypt classes are found inside the JAR
 
 ### Requirement: PlantUML class model
 The repository SHALL contain the PlantUML source file `uml/model.puml` with a class diagram of the implemented design showing its classes, interfaces and relevant enumerations, relevant attributes, inheritance, interface implementations, associations, compositions, relationship directions and multiplicities, without methods or constructors. The diagram SHALL correspond to the code: the ticket hierarchy, the composition between a group ticket and its individual tickets, and the relationships among users, groups, tickets and attractions SHALL be represented as implemented.

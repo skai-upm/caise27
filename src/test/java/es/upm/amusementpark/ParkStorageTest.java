@@ -146,7 +146,7 @@ class ParkStorageTest {
         park.registerUser(new User("ana@correo.com", "12345678Z"));
         park.createAttraction("A01", "Dragon Rojo", "20");
         save(dir);
-        assertEquals(List.of("ana@correo.com;12345678Z"), Files.readAllLines(dir.resolve("users.txt")));
+        assertEquals(List.of("ana@correo.com;12345678Z;"), Files.readAllLines(dir.resolve("users.txt")));
         assertEquals(List.of("A01;Dragon Rojo;20"), Files.readAllLines(dir.resolve("attractions.txt")));
     }
 }

@@ -9,6 +9,7 @@ public class User {
 
     private final String email;
     private final String dni;
+    private String passwordHash;
 
     public User(String email, String dni) {
         this.email = Objects.requireNonNull(email);
@@ -21,6 +22,16 @@ public class User {
 
     public String getDni() {
         return dni;
+    }
+
+    /** @return the BCrypt-protected password, or {@code null} if none is set */
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    /** Stores an already protected password value; plain passwords are never stored. */
+    public void setPasswordHash(String protectedValue) {
+        this.passwordHash = protectedValue;
     }
 
     @Override
