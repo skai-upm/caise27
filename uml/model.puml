@@ -1,0 +1,85 @@
+@startuml model
+title Amusement Park - Delivery 2 class model
+
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package es.upm.amusementpark.service {
+  class Park <<singleton>> {
+    - {static} INSTANCE : Park
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+  }
+  class UserService
+}
+
+package es.upm.amusementpark.model {
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    - id : String {readOnly}
+    - name : String {readOnly}
+  }
+
+  class Attraction {
+    - id : String {readOnly}
+    - name : String {readOnly}
+    - capacity : int {readOnly}
+  }
+}
+
+package es.upm.amusementpark.model.ticket {
+  abstract class Ticket {
+    - id : String {readOnly}
+    - date : LocalDate {readOnly}
+  }
+
+  class IndividualTicket {
+    - basePrice : BigDecimal {readOnly}
+    - discountPercent : int {readOnly}
+  }
+
+  class GroupTicket
+}
+
+' Central management (single instance owning every element)
+Park "1" *--> "1" UserService : users
+UserService "1" o--> "*" User : usersByEmail
+Park "1" o--> "*" Group : groups
+Park "1" o--> "*" Ticket : tickets
+Park "1" o--> "*" Attraction : attractions
+
+' Ticket hierarchy
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' Group ticket is composed of the individual tickets of its members
+GroupTicket "1" *--> "1..*" IndividualTicket : composition {readOnly}
+
+' Directed associations (the target never refers back)
+IndividualTicket "*" --> "1" User : user
+GroupTicket "*" --> "0..1" Group : group
+Group "*" --> "*" User : members
+Attraction "*" --> "*" User : occupants
+
+' Modifiable user fields
+UserField ..> User : names modifiable attributes
+
+@enduml

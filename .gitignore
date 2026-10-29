@@ -22,6 +22,10 @@ buildNumber.properties
 
 # Application data
 users.txt
+groups.txt
+tickets.txt
+attractions.txt
+tmp/
 
 # SDDX / Sonar generated output (run records embed the scanner command line incl. token)
 experiments/
