@@ -160,6 +160,32 @@ public final class ParkController {
         return users.get(email);
     }
 
+    /**
+     * Creates and registers a user after validating its data and checking that
+     * neither the DNI nor the email is already used. Only the BCrypt-protected
+     * password is kept.
+     */
+    public User createUser(String firstName, String surnames, String dni, String email, String password,
+            String phone, String card) {
+        String userDni = dni == null ? "" : dni.trim();
+        String userEmail = email == null ? "" : email.trim();
+        String plain = password == null ? "" : password.trim();
+        String userCard = card == null ? "" : card.trim();
+        UserDataValidator.validate(userDni, userEmail, plain, userCard);
+        if (users.containsKey(userEmail)) {
+            throw new DuplicateElementException("a user with email " + userEmail + " already exists");
+        }
+        for (User existing : users.values()) {
+            if (existing.getDni().equals(userDni)) {
+                throw new DuplicateElementException("a user with DNI " + userDni + " already exists");
+            }
+        }
+        User user = new User(firstName.trim(), surnames.trim(), userDni, userEmail, passwords.protect(plain),
+                phone.trim(), userCard);
+        registerUser(user);
+        return user;
+    }
+
     /** Sets or changes a user's password, storing a new BCrypt-protected value. */
     public void setPassword(String email, String plainPassword) {
         User user = existingUser(email);

@@ -120,6 +120,12 @@ public class CommandProcessor {
                 }
                 out.println("Exiting application.");
                 return false;
+            case "USER CREATE":
+                if (requireArguments(keyword, fields, 7)) {
+                    park.createUser(fields[1], fields[2], fields[3], fields[4], fields[5], fields[6], fields[7]);
+                    out.println("USER CREATED");
+                }
+                return true;
             case "SYSTEM DATE":
                 if (requireArguments(keyword, fields, 1)) {
                     park.setCurrentDate(fields[1]);
