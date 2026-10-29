@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 class GroupTest {
 
-    private final User ana = new User("ana@correo.com");
+    private final User ana = new User("ana@correo.com", "12345678Z");
 
     @Test
     void newGroupIsEmpty() {
@@ -25,7 +25,7 @@ class GroupTest {
     void sameUserCannotBeAddedTwice() {
         Group group = new Group("G01", "Familia Garcia");
         assertTrue(group.addMember(ana));
-        assertFalse(group.addMember(new User("ana@correo.com")));
+        assertFalse(group.addMember(new User("ana@correo.com", "12345678Z")));
         assertEquals(1, group.getMembers().size());
     }
 

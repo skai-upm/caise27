@@ -23,6 +23,8 @@ public class CommandProcessor {
             "GROUP DELETE;<Identifier>",
             "TICKET CREATE;<identifier>;<email>;<date>",
             "TICKET DELETE;<identifier>",
+            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
+            "GROUPTICKET DELETE;<identifier>",
             "HELP",
             "EXIT");
 
@@ -134,6 +136,18 @@ public class CommandProcessor {
                 if (requireArguments(keyword, fields, 1)) {
                     park.deleteTicket(fields[1]);
                     out.println("TICKET DELETED");
+                }
+                return true;
+            case "GROUPTICKET CREATE":
+                if (requireArguments(keyword, fields, 3)) {
+                    Ticket ticket = park.createGroupTicket(fields[1], fields[2], fields[3]);
+                    out.println("GROUP TICKET CREATED. TOTAL PRICE: " + ticket.getPrice() + " EUR");
+                }
+                return true;
+            case "GROUPTICKET DELETE":
+                if (requireArguments(keyword, fields, 1)) {
+                    park.deleteGroupTicket(fields[1]);
+                    out.println("GROUP TICKET DELETED");
                 }
                 return true;
             default:

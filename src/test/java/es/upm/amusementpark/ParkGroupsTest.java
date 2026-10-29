@@ -29,8 +29,8 @@ class ParkGroupsTest {
     @BeforeEach
     void setUp() {
         park.reset();
-        ana = new User("ana@correo.com");
-        pedro = new User("pedro@correo.com");
+        ana = new User("ana@correo.com", "12345678Z");
+        pedro = new User("pedro@correo.com", "87654321X");
         park.registerUser(ana);
         park.registerUser(pedro);
     }

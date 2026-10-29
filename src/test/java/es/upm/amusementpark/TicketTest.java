@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class TicketTest {
 
     private static final LocalDate DAY = LocalDate.of(2027, 4, 15);
-    private final User ana = new User("ana@correo.com");
+    private final User ana = new User("ana@correo.com", "12345678Z");
     private final Ticket ticket = new IndividualTicket("T001", ana, DAY, new BigDecimal("40.00"));
 
     @Test
@@ -43,8 +43,8 @@ class TicketTest {
     @Test
     void ticketKnowsItsUser() {
         assertSame(ana, ((IndividualTicket) ticket).getUser());
-        assertTrue(ticket.involves(new User("ana@correo.com")));
-        assertFalse(ticket.involves(new User("pedro@correo.com")));
+        assertTrue(ticket.involves(new User("ana@correo.com", "12345678Z")));
+        assertFalse(ticket.involves(new User("pedro@correo.com", "87654321X")));
     }
 
     @Test

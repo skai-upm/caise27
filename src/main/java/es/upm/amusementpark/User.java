@@ -8,13 +8,19 @@ import java.util.Objects;
 public class User {
 
     private final String email;
+    private final String dni;
 
-    public User(String email) {
+    public User(String email, String dni) {
         this.email = Objects.requireNonNull(email);
+        this.dni = Objects.requireNonNull(dni);
     }
 
     public String getEmail() {
         return email;
+    }
+
+    public String getDni() {
+        return dni;
     }
 
     @Override

@@ -6,10 +6,13 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Central park management. Only one instance exists per execution; it keeps
@@ -176,6 +179,9 @@ public final class ParkController {
             throw new IllegalArgumentException("group " + group.getIdentifier()
                     + " has a group ticket for the current date or later");
         }
+        for (GroupTicket ticket : groupTicketsOf(group)) {
+            ticket.releaseGroup();
+        }
         groups.remove(group.getIdentifier());
     }
 
@@ -209,10 +215,68 @@ public final class ParkController {
         return ticket;
     }
 
+    public GroupTicket createGroupTicket(String identifier, String groupIdentifier, String dateText) {
+        String id = requireText(identifier, "ticket identifier");
+        Group group = existingGroup(groupIdentifier);
+        LocalDate date = parseDate(dateText);
+        requireNotPast(date);
+        Set<User> members = group.getMembers();
+        if (members.isEmpty()) {
+            throw new IllegalArgumentException("group " + group.getIdentifier() + " has no members");
+        }
+        BigDecimal price = GroupTicket.discountedPrice(basePrice, members.size());
+        List<IndividualTicket> composition = new ArrayList<>();
+        for (User member : members) {
+            composition.add(new IndividualTicket(
+                    GroupTicket.componentIdentifier(id, member.getDni()), member, date, price));
+        }
+        GroupTicket ticket = new GroupTicket(id, group, date, composition);
+        addTicket(ticket);
+        return ticket;
+    }
+
+    public void deleteGroupTicket(String identifier) {
+        String id = requireText(identifier, "ticket identifier");
+        if (!(tickets.get(id) instanceof GroupTicket ticket)) {
+            throw new IllegalArgumentException("group ticket not found: " + id);
+        }
+        if (!ticket.isDeletableOn(currentDate)) {
+            throw new IllegalArgumentException("group ticket " + id
+                    + " is for the current date or earlier and must be kept");
+        }
+        tickets.remove(id);
+    }
+
+    /**
+     * A user may be deleted only without active tickets (including those inside
+     * group tickets) and when every group they belong to can be modified.
+     */
+    public boolean canDeleteUser(User user) {
+        if (hasActiveTicket(user)) {
+            return false;
+        }
+        for (Group group : groups.values()) {
+            if (group.hasMember(user) && hasActiveGroupTicket(group)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void deleteTicket(String identifier) {
         String id = requireText(identifier, "ticket identifier");
         Ticket ticket = tickets.get(id);
-        if (!(ticket instanceof IndividualTicket)) {
+        if (ticket instanceof GroupTicket) {
+            throw new IllegalArgumentException("ticket " + id
+                    + " is a group ticket; use GROUPTICKET DELETE");
+        }
+        if (ticket == null) {
+            for (Ticket candidate : tickets.values()) {
+                if (candidate.identifiers().contains(id)) {
+                    throw new IllegalArgumentException("ticket " + id + " belongs to group ticket "
+                            + candidate.getIdentifier() + " and cannot be deleted directly");
+                }
+            }
             throw new IllegalArgumentException("ticket not found: " + id);
         }
         if (!ticket.isDeletableOn(currentDate)) {
@@ -238,8 +302,9 @@ public final class ParkController {
     }
 
     private void addTicket(Ticket ticket) {
+        Set<String> seen = new HashSet<>();
         for (String id : ticket.identifiers()) {
-            if (isTicketIdentifierUsed(id)) {
+            if (isTicketIdentifierUsed(id) || !seen.add(id)) {
                 throw new IllegalArgumentException("ticket identifier already in use: " + id);
             }
         }
@@ -255,12 +320,26 @@ public final class ParkController {
 
     /**
      * A group has an active group ticket when one of its group tickets is
-     * dated on or after the current system date. The state is always computed,
-     * never stored. Group tickets are not part of the park yet, so no group
-     * currently has one.
+     * dated on or after the current system date. The state is always computed
+     * from the tickets, never stored.
      */
     public boolean hasActiveGroupTicket(Group group) {
+        for (GroupTicket ticket : groupTicketsOf(group)) {
+            if (ticket.isActiveOn(currentDate)) {
+                return true;
+            }
+        }
         return false;
+    }
+
+    private List<GroupTicket> groupTicketsOf(Group group) {
+        List<GroupTicket> result = new ArrayList<>();
+        for (Ticket ticket : tickets.values()) {
+            if (ticket instanceof GroupTicket groupTicket && groupTicket.getGroup() == group) {
+                result.add(groupTicket);
+            }
+        }
+        return result;
     }
 
     private void requireModifiable(Group group) {

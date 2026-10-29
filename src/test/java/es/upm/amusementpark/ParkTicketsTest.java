@@ -25,8 +25,8 @@ class ParkTicketsTest {
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private final CommandProcessor processor =
             new CommandProcessor(new PrintStream(buffer, true, StandardCharsets.UTF_8));
-    private final User ana = new User("ana@correo.com");
-    private final User pedro = new User("pedro@correo.com");
+    private final User ana = new User("ana@correo.com", "12345678Z");
+    private final User pedro = new User("pedro@correo.com", "87654321X");
 
     @BeforeEach
     void setUp() {
