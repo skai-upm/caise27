@@ -86,7 +86,7 @@ class PasswordProtectionTest {
         park.persist();
         String file = Files.readString(dir.resolve("users.txt"), StandardCharsets.UTF_8);
         assertFalse(file.contains("Clave1!"));
-        assertTrue(file.startsWith("ana@correo.com;12345678Z;$2a$"));
+        assertTrue(file.startsWith(";;12345678Z;ana@correo.com;$2a$"));
 
         park.reset();
         park.configure(TextFileRepositories.create(dir));
