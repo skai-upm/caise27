@@ -3,6 +3,7 @@ package es.upm.amusementpark;
 import es.upm.amusementpark.business.exception.ParkException;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.GeneralAttraction;
 import es.upm.amusementpark.business.model.User;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,7 +23,7 @@ class AttractionTest {
 
     @Test
     void newAttractionIsEmpty() {
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> attraction = new GeneralAttraction("A01", "Dragon Rojo", 20);
         assertEquals("A01", attraction.getIdentifier());
         assertEquals("Dragon Rojo", attraction.getName());
         assertEquals(20, attraction.getCapacity());
@@ -31,7 +32,7 @@ class AttractionTest {
 
     @Test
     void capacityBoundRespected() {
-        Attraction attraction = new Attraction("A03", "Mini", 1);
+        Attraction<?> attraction = new GeneralAttraction("A03", "Mini", 1);
         assertTrue(attraction.addOccupant(ana));
         assertTrue(attraction.isFull());
         assertFalse(attraction.addOccupant(pedro));
@@ -40,7 +41,7 @@ class AttractionTest {
 
     @Test
     void sameUserNotTwice() {
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> attraction = new GeneralAttraction("A01", "Dragon Rojo", 20);
         attraction.addOccupant(ana);
         assertFalse(attraction.addOccupant(new User("ana@correo.com", "12345678Z")));
         assertTrue(attraction.removeOccupant(ana));
@@ -49,7 +50,7 @@ class AttractionTest {
 
     @Test
     void nonPositiveCapacityRejected() {
-        assertThrows(ParkException.class, () -> new Attraction("A01", "X", 0));
+        assertThrows(ParkException.class, () -> new GeneralAttraction("A01", "X", 0));
     }
 
     @Test

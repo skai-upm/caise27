@@ -44,7 +44,12 @@ class UmlModelTest {
             for (int i = 0; i + 1 < words.length; i++) {
                 boolean keyword = words[i].equals("class") || words[i].equals("interface") || words[i].equals("enum");
                 boolean firstWords = i == 0 || (i == 1 && words[0].equals("abstract"));
-                if (keyword && firstWords && words[i + 1].equals(className)) {
+                String declared = words[i + 1];
+                int generic = declared.indexOf('<');
+                if (generic > 0) {
+                    declared = declared.substring(0, generic);
+                }
+                if (keyword && firstWords && declared.equals(className)) {
                     return true;
                 }
             }

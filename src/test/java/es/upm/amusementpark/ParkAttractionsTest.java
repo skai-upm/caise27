@@ -67,7 +67,7 @@ class ParkAttractionsTest {
 
     @Test
     void listOccupantsIsReadOnly() throws IOException {
-        Attraction attraction = park.createAttraction("A01", "Dragon Rojo", "20");
+        Attraction<?> attraction = park.createAttraction("A01", "Dragon Rojo", "20");
         User ana = new User("ana@correo.com", "12345678Z");
         User pedro = new User("pedro@correo.com", "87654321X");
         attraction.addOccupant(ana);

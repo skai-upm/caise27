@@ -179,10 +179,12 @@ public class CommandProcessor {
                 }
                 return true;
             case "ATTRACTION CREATE":
-                if (requireArguments(keyword, fields, 3)) {
+                if (fields.length == 5) {
+                    park.createAttraction(fields[1], fields[2], fields[3], fields[4]);
+                } else if (requireArguments(keyword, fields, 3)) {
                     park.createAttraction(fields[1], fields[2], fields[3]);
-                    out.println("ATTRACTION CREATED");
                 }
+                out.println("ATTRACTION CREATED");
                 return true;
             case "ATTRACTION ENTER":
                 if (requireArguments(keyword, fields, 2)) {
@@ -256,20 +258,21 @@ public class CommandProcessor {
         }
     }
 
-    private void printStatus(Attraction attraction) {
+    private void printStatus(Attraction<?> attraction) {
         List<String> emails = new ArrayList<>();
         for (User user : attraction.getOccupants()) {
             emails.add(user.getEmail());
         }
         out.println("ATTRACTION: " + attraction.getIdentifier());
         out.println("NAME: " + attraction.getName());
+        out.println("TYPE: " + attraction.getType());
         out.println("CAPACITY: " + attraction.getCapacity());
         out.println("USERS INSIDE: " + emails.size());
         out.println("AVAILABLE PLACES: " + attraction.getAvailablePlaces());
         out.println("OCCUPANTS: " + (emails.isEmpty() ? "none" : String.join(", ", emails)));
     }
 
-    private void listOccupants(Attraction attraction) {
+    private void listOccupants(Attraction<?> attraction) {
         if (attraction.getOccupants().isEmpty()) {
             out.println("NO USERS IN ATTRACTION " + attraction.getIdentifier());
             return;

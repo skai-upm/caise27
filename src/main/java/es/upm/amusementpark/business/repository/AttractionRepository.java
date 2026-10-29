@@ -9,7 +9,7 @@ import java.util.List;
 /** Replaceable storage of the park's attractions. */
 public interface AttractionRepository {
 
-    void saveAll(Collection<Attraction> attractions);
+    void saveAll(Collection<Attraction<?>> attractions);
 
     /**
      * Rebuilds the stored attractions into the park through its reconstruction methods.

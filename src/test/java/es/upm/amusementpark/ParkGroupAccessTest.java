@@ -90,7 +90,7 @@ class ParkGroupAccessTest {
         park.enterAttraction("A01", "TG01");
         String out = run("ATTRACTION EXIT;A01;ana@correo.com\n");
         assertTrue(out.contains("USER ana@correo.com LEFT ATTRACTION A01"));
-        Attraction attraction = park.findAttraction("A01");
+        Attraction<?> attraction = park.findAttraction("A01");
         assertEquals(List.of(pedro), attraction.getOccupants());
         assertEquals(19, attraction.getAvailablePlaces());
     }

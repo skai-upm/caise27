@@ -4,9 +4,12 @@ import es.upm.amusementpark.business.exception.DuplicateElementException;
 import es.upm.amusementpark.business.exception.ElementNotFoundException;
 import es.upm.amusementpark.business.exception.InvalidValueException;
 import es.upm.amusementpark.business.exception.OperationNotAllowedException;
+import es.upm.amusementpark.business.model.AccessTicket;
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.IndividualAccess;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.SpecialPass;
@@ -47,7 +50,7 @@ public final class ParkController {
     private final Map<String, User> users = new LinkedHashMap<>();
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
-    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
     private final Map<String, Pass> passes = new LinkedHashMap<>();
     private Repositories repositories;
     private final PasswordProtector passwords = new PasswordProtector();
@@ -420,29 +423,35 @@ public final class ParkController {
 
     // --- attractions -----------------------------------------------------
 
-    public Attraction findAttraction(String identifier) {
+    public Attraction<?> findAttraction(String identifier) {
         return attractions.get(identifier);
     }
 
-    public Collection<Attraction> getAttractions() {
+    public Collection<Attraction<?>> getAttractions() {
         return Collections.unmodifiableCollection(attractions.values());
     }
 
-    public Attraction createAttraction(String identifier, String name, String capacityText) {
+    /** Creates a GENERAL attraction (Delivery 2 syntax). */
+    public Attraction<?> createAttraction(String identifier, String name, String capacityText) {
+        return createAttraction(identifier, name, capacityText, AttractionType.GENERAL.name());
+    }
+
+    public Attraction<?> createAttraction(String identifier, String name, String capacityText, String typeText) {
         String id = requireText(identifier, "attraction identifier");
         String attractionName = requireText(name, "attraction name");
         int capacity = parseCapacity(capacityText);
+        AttractionType type = AttractionType.parse(typeText);
         if (attractions.containsKey(id)) {
             throw new DuplicateElementException("attraction already exists: " + id);
         }
-        Attraction attraction = new Attraction(id, attractionName, capacity);
+        Attraction<?> attraction = type.create(id, attractionName, capacity);
         attractions.put(id, attraction);
         return attraction;
     }
 
-    public Attraction existingAttraction(String identifier) {
+    public Attraction<?> existingAttraction(String identifier) {
         String id = requireText(identifier, "attraction identifier");
-        Attraction attraction = attractions.get(id);
+        Attraction<?> attraction = attractions.get(id);
         if (attraction == null) {
             throw new ElementNotFoundException("attraction not found: " + id);
         }
@@ -457,32 +466,29 @@ public final class ParkController {
      * @return the users who entered
      */
     public List<User> enterAttraction(String attractionIdentifier, String ticketIdentifier) {
-        Attraction attraction = existingAttraction(attractionIdentifier);
+        Attraction<?> attraction = existingAttraction(attractionIdentifier);
         Ticket ticket = existingTopLevelTicket(ticketIdentifier);
-        if (!ticket.getDate().equals(currentDate)) {
-            throw new OperationNotAllowedException("ticket " + ticket.getIdentifier() + " is valid on "
-                    + ticket.getDate() + ", not on the current date " + currentDate);
-        }
-        List<User> entrants = ticket.admittedUsers();
-        for (User user : entrants) {
-            if (attraction.isInside(user)) {
-                throw new DuplicateElementException("user " + user.getEmail()
-                        + " is already inside attraction " + attraction.getIdentifier());
+        return enter(attraction, ticket);
+    }
+
+    /** Normal entry through the attraction's own access capability {@code T}. */
+    private <T extends AccessTicket> List<User> enter(Attraction<T> attraction, Ticket ticket) {
+        T access = attraction.accessFor(ticket);
+        return attraction.enter(access, currentDate, this::hasUnconsumedSpecialPass);
+    }
+
+    private boolean hasUnconsumedSpecialPass(IndividualAccess ticket) {
+        for (Pass pass : passes.values()) {
+            if (pass instanceof SpecialPass && pass.getTicket() == ticket && !pass.isConsumed()) {
+                return true;
             }
         }
-        if (attraction.getOccupants().size() + entrants.size() > attraction.getCapacity()) {
-            throw new OperationNotAllowedException("attraction " + attraction.getIdentifier()
-                    + " does not have enough capacity");
-        }
-        for (User user : entrants) {
-            attraction.addOccupant(user);
-        }
-        return entrants;
+        return false;
     }
 
     /** Removes the user with that email from the attraction, releasing the place. */
     public User exitAttraction(String attractionIdentifier, String email) {
-        Attraction attraction = existingAttraction(attractionIdentifier);
+        Attraction<?> attraction = existingAttraction(attractionIdentifier);
         String address = requireText(email, "email");
         for (User user : attraction.getOccupants()) {
             if (user.getEmail().equals(address)) {

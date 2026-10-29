@@ -11,7 +11,7 @@ import java.util.List;
  * A joint ticket bought by a group, composed of one individual ticket per
  * member at purchase time. Its price is the sum of the composed tickets.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
@@ -57,6 +57,7 @@ public class GroupTicket extends Ticket {
         return groupTicketIdentifier + ":" + dni;
     }
 
+    @Override
     public List<IndividualTicket> getComposition() {
         return composition;
     }

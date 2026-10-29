@@ -62,7 +62,7 @@ class ParkStorageTest {
         park.createIndividualTicket("T001", "ana@correo.com", "2027-04-15");
         park.createGroupTicket("TG01", "G01", "2027-04-15");
         park.createGroupTicket("TG02", "G02", "2027-04-02");
-        Attraction a01 = park.createAttraction("A01", "Dragon Rojo", "20");
+        Attraction<?> a01 = park.createAttraction("A01", "Dragon Rojo", "20");
         a01.addOccupant(park.findUser("ana@correo.com"));
         park.setCurrentDate("2027-04-03");
         park.deleteGroup("G02");
@@ -101,7 +101,7 @@ class ParkStorageTest {
         assertEquals(1, tg02.getComposition().size());
         assertEquals(LocalDate.of(2027, 4, 2), tg02.getDate());
 
-        Attraction a01 = park.findAttraction("A01");
+        Attraction<?> a01 = park.findAttraction("A01");
         assertEquals("Dragon Rojo", a01.getName());
         assertEquals(20, a01.getCapacity());
         assertTrue(a01.getOccupants().isEmpty());
@@ -147,6 +147,6 @@ class ParkStorageTest {
         park.createAttraction("A01", "Dragon Rojo", "20");
         save(dir);
         assertEquals(List.of("ana@correo.com;12345678Z;"), Files.readAllLines(dir.resolve("users.txt")));
-        assertEquals(List.of("A01;Dragon Rojo;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Dragon Rojo;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
     }
 }

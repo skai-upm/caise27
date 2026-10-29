@@ -9,7 +9,7 @@ import java.util.Objects;
  * A ticket for a single user. The ticket knows its user; the user does not
  * know its tickets.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final User user;
 
@@ -18,6 +18,7 @@ public class IndividualTicket extends Ticket {
         this.user = Objects.requireNonNull(user);
     }
 
+    @Override
     public User getUser() {
         return user;
     }

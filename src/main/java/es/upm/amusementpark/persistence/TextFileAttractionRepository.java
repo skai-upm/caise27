@@ -11,7 +11,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/** Persists attractions as {@code id;name;capacity} lines (occupants are not stored). */
+/**
+ * Persists attractions as {@code id;name;capacity;type} lines (occupants are not
+ * stored). Lines without a type are read as GENERAL attractions.
+ */
 public class TextFileAttractionRepository extends TextFileRepository
         implements AttractionRepository {
 
@@ -20,10 +23,11 @@ public class TextFileAttractionRepository extends TextFileRepository
     }
 
     @Override
-    public void saveAll(Collection<Attraction> attractions) {
+    public void saveAll(Collection<Attraction<?>> attractions) {
         List<String> lines = new ArrayList<>();
-        for (Attraction attraction : attractions) {
-            lines.add(join(attraction.getIdentifier(), attraction.getName(), attraction.getCapacity()));
+        for (Attraction<?> attraction : attractions) {
+            lines.add(join(attraction.getIdentifier(), attraction.getName(), attraction.getCapacity(),
+                    attraction.getType()));
         }
         writeLines(lines);
     }
@@ -38,6 +42,8 @@ public class TextFileAttractionRepository extends TextFileRepository
             try {
                 if (f.length == 3) {
                     park.createAttraction(f[0], f[1], f[2]);
+                } else if (f.length == 4) {
+                    park.createAttraction(f[0], f[1], f[2], f[3]);
                 } else {
                     skipped.add(line);
                 }

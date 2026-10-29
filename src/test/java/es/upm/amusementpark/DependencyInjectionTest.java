@@ -97,17 +97,17 @@ class DependencyInjectionTest {
     }
 
     private static final class MemoryAttractions implements AttractionRepository {
-        private final List<Attraction> stored = new ArrayList<>();
+        private final List<Attraction<?>> stored = new ArrayList<>();
 
         @Override
-        public void saveAll(Collection<Attraction> attractions) {
+        public void saveAll(Collection<Attraction<?>> attractions) {
             stored.clear();
             stored.addAll(attractions);
         }
 
         @Override
         public void loadInto(ParkController controller, List<String> skipped) {
-            for (Attraction attraction : stored) {
+            for (Attraction<?> attraction : stored) {
                 controller.createAttraction(attraction.getIdentifier(), attraction.getName(),
                         String.valueOf(attraction.getCapacity()));
             }

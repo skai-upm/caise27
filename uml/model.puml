@@ -37,10 +37,27 @@ package "es.upm.amusementpark.business.model" {
   class SpeedPass
   class SpecialPass
 
-  class Attraction {
+  interface AccessTicket
+  interface IndividualAccess
+  interface GroupAccess
+  interface PassLookup
+
+  abstract class Attraction<T extends AccessTicket> {
     - identifier : String
     - name : String
     - capacity : int
+    - accessType : Class<T>
+  }
+  class GeneralAttraction
+  class IndividualAttraction
+  class GroupAttraction
+  class SpecialAttraction
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 }
 
@@ -138,6 +155,18 @@ GroupTicket *--> "1..*" IndividualTicket : composition
 GroupTicket --> "0..1" Group : group
 Group o--> "0..*" User : members
 Attraction --> "0..*" User : occupants
+AccessTicket <|-- IndividualAccess
+AccessTicket <|-- GroupAccess
+AccessTicket <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <T = AccessTicket>
+Attraction <|-- IndividualAttraction : <T = IndividualAccess>
+Attraction <|-- GroupAttraction : <T = GroupAccess>
+Attraction <|-- SpecialAttraction : <T = IndividualAccess>
+Attraction ..> PassLookup : checks special passes
+Attraction ..> AttractionType : type
+ParkController ..|> PassLookup : provides
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 Pass --> "1" IndividualTicket : ticket

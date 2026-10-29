@@ -42,6 +42,8 @@ public class CommandCatalog {
                         "Deletes a group ticket dated after today together with its individual tickets."),
                 new CommandInfo("ATTRACTION CREATE;<identifier>;<name>;<capacity>",
                         "Creates an attraction with a maximum capacity."),
+                new CommandInfo("ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
+                        "Creates an attraction of type GENERAL, INDIVIDUAL, GROUP or SPECIAL."),
                 new CommandInfo("ATTRACTION ENTER;<attraction>;<ticket>",
                         "Lets the users of a ticket valid today enter an attraction, all or none."),
                 new CommandInfo("ATTRACTION EXIT;<attraction>;<email>",

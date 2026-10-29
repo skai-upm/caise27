@@ -10,7 +10,7 @@ import java.util.Objects;
  * Information and behavior shared by every ticket type: identifier, date of
  * use and price.
  */
-public abstract class Ticket {
+public abstract class Ticket implements AccessTicket {
 
     private final String identifier;
     private final LocalDate date;
@@ -56,5 +56,6 @@ public abstract class Ticket {
     public abstract boolean involves(User user);
 
     /** Users that enter an attraction together when this ticket is used. */
+    @Override
     public abstract List<User> admittedUsers();
 }
