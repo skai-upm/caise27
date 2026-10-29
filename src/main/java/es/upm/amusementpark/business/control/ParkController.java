@@ -7,11 +7,12 @@ import es.upm.amusementpark.business.exception.OperationNotAllowedException;
 import es.upm.amusementpark.business.model.AccessTicket;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.Entry;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
-import es.upm.amusementpark.business.model.IndividualAccess;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.PassLookup;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
@@ -31,6 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -465,25 +467,43 @@ public final class ParkController {
      *
      * @return the users who entered
      */
-    public List<User> enterAttraction(String attractionIdentifier, String ticketIdentifier) {
+    /** Normal entry (Delivery 2 syntax). */
+    public Entry enterAttraction(String attractionIdentifier, String ticketIdentifier) {
+        return enterAttraction(attractionIdentifier, ticketIdentifier, false);
+    }
+
+    /** Entry optionally using SpeedPasses; Special Passes are consumed automatically. */
+    public Entry enterAttraction(String attractionIdentifier, String ticketIdentifier, boolean speed) {
         Attraction<?> attraction = existingAttraction(attractionIdentifier);
         Ticket ticket = existingTopLevelTicket(ticketIdentifier);
-        return enter(attraction, ticket);
+        return enter(attraction, ticket, speed);
     }
 
-    /** Normal entry through the attraction's own access capability {@code T}. */
-    private <T extends AccessTicket> List<User> enter(Attraction<T> attraction, Ticket ticket) {
+    /** Entry through the attraction's own access capability {@code T}. */
+    private <T extends AccessTicket> Entry enter(Attraction<T> attraction, Ticket ticket, boolean speed) {
         T access = attraction.accessFor(ticket);
-        return attraction.enter(access, currentDate, this::hasUnconsumedSpecialPass);
+        return attraction.enter(access, currentDate, passLookup, speed);
     }
 
-    private boolean hasUnconsumedSpecialPass(IndividualAccess ticket) {
+    private final PassLookup passLookup = new PassLookup() {
+        @Override
+        public Optional<Pass> unconsumedSpeedPass(IndividualTicket ticket) {
+            return firstUnconsumed(SpeedPass.class, ticket);
+        }
+
+        @Override
+        public Optional<Pass> unconsumedSpecialPass(IndividualTicket ticket) {
+            return firstUnconsumed(SpecialPass.class, ticket);
+        }
+    };
+
+    private Optional<Pass> firstUnconsumed(Class<? extends Pass> type, IndividualTicket ticket) {
         for (Pass pass : passes.values()) {
-            if (pass instanceof SpecialPass && pass.getTicket() == ticket && !pass.isConsumed()) {
-                return true;
+            if (type.isInstance(pass) && pass.getTicket() == ticket && !pass.isConsumed()) {
+                return Optional.of(pass);
             }
         }
-        return false;
+        return Optional.empty();
     }
 
     /** Removes the user with that email from the attraction, releasing the place. */

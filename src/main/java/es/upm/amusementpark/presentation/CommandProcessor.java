@@ -7,6 +7,8 @@ import es.upm.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.amusementpark.business.control.InvoiceController;
 import es.upm.amusementpark.business.control.ParkController;
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.Entry;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
@@ -187,10 +189,9 @@ public class CommandProcessor {
                 out.println("ATTRACTION CREATED");
                 return true;
             case "ATTRACTION ENTER":
-                if (requireArguments(keyword, fields, 2)) {
-                    for (User user : park.enterAttraction(fields[1], fields[2])) {
-                        out.println("USER " + user.getEmail() + " ENTERED ATTRACTION " + fields[1].trim());
-                    }
+                boolean speed = fields.length == 4 && fields[3].trim().equals("SPEED");
+                if (speed || requireArguments(keyword, fields, 2)) {
+                    printEntry(park.enterAttraction(fields[1], fields[2], speed), fields[1].trim());
                 }
                 return true;
             case "ATTRACTION EXIT":
@@ -255,6 +256,16 @@ public class CommandProcessor {
                 return invoices.createGroupInvoice(identifier);
             default:
                 throw new InvalidCommandException("invalid invoice target (expected USER or GROUP): " + target);
+        }
+    }
+
+    private void printEntry(Entry entry, String attractionIdentifier) {
+        for (User user : entry.entrants()) {
+            out.println("USER " + user.getEmail() + " ENTERED ATTRACTION " + attractionIdentifier);
+        }
+        for (Pass pass : entry.consumedPasses()) {
+            String kind = pass instanceof SpecialPass ? "SPECIALPASS " : "SPEEDPASS ";
+            out.println(kind + pass.getIdentifier() + " CONSUMED");
         }
     }
 

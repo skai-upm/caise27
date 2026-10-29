@@ -101,16 +101,16 @@ public abstract class Attraction<T extends AccessTicket> {
     }
 
     /**
-     * Normal entry with a ticket valid today: all admitted users enter or none.
-     *
-     * @return the users who entered
+     * Entry with a ticket valid today, optionally using SpeedPasses. Every
+     * condition is checked before any change: on success all admitted users
+     * enter and the selected passes are consumed; otherwise nothing changes.
      */
-    public List<User> enter(T ticket, LocalDate today, PassLookup passes) {
+    public Entry enter(T ticket, LocalDate today, PassLookup passes, boolean speed) {
         if (!ticket.getDate().equals(today)) {
             throw new OperationNotAllowedException("ticket " + ticket.getIdentifier() + " is valid on "
                     + ticket.getDate() + ", not on the current date " + today);
         }
-        checkAdmission(ticket, passes);
+        List<Pass> toConsume = passesToConsume(ticket, passes, speed);
         List<User> entrants = ticket.admittedUsers();
         for (User user : entrants) {
             if (isInside(user)) {
@@ -122,11 +122,27 @@ public abstract class Attraction<T extends AccessTicket> {
             throw new OperationNotAllowedException("attraction " + identifier + " does not have enough capacity");
         }
         occupants.addAll(entrants);
-        return entrants;
+        for (Pass pass : toConsume) {
+            pass.consume();
+        }
+        return new Entry(entrants, toConsume);
     }
 
-    /** Additional admission conditions of an attraction type; none by default. */
-    protected void checkAdmission(T ticket, PassLookup passes) {
-        // no extra conditions
+    /**
+     * Passes this entry will consume. By default, with {@code speed} each
+     * individual ticket admitted must have an unconsumed SpeedPass, one of
+     * which is selected; without it no pass is used.
+     */
+    protected List<Pass> passesToConsume(T ticket, PassLookup passes, boolean speed) {
+        List<Pass> selected = new ArrayList<>();
+        if (!speed) {
+            return selected;
+        }
+        for (IndividualTicket individual : ticket.individualTickets()) {
+            Pass pass = passes.unconsumedSpeedPass(individual).orElseThrow(() -> new OperationNotAllowedException(
+                    "ticket " + individual.getIdentifier() + " has no unconsumed speed pass"));
+            selected.add(pass);
+        }
+        return selected;
     }
 }

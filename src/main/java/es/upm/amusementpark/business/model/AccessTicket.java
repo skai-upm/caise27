@@ -12,4 +12,7 @@ public interface AccessTicket {
 
     /** Users that enter together when the ticket is used. */
     List<User> admittedUsers();
+
+    /** Individual tickets of the users that enter (passes are associated with them). */
+    List<IndividualTicket> individualTickets();
 }

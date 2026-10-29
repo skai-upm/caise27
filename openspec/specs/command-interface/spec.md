@@ -130,3 +130,10 @@ The HELP and HELP EXTENDED outputs SHALL include `ATTRACTION CREATE;<identifier>
 #### Scenario: HELP shows typed creation
 - **WHEN** the line `HELP` is processed
 - **THEN** the output contains `ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>`
+
+### Requirement: HELP lists SpeedPass entry
+The HELP and HELP EXTENDED outputs SHALL include `ATTRACTION ENTER;<attraction>;<ticket>;SPEED`.
+
+#### Scenario: HELP shows the SPEED variant
+- **WHEN** the line `HELP` is processed
+- **THEN** the output contains `ATTRACTION ENTER;<attraction>;<ticket>;SPEED`

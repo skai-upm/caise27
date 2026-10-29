@@ -83,6 +83,11 @@ public class GroupTicket extends Ticket implements GroupAccess {
     }
 
     @Override
+    public List<IndividualTicket> individualTickets() {
+        return composition;
+    }
+
+    @Override
     public List<User> admittedUsers() {
         List<User> users = new ArrayList<>();
         for (IndividualTicket ticket : composition) {

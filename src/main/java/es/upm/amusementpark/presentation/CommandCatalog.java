@@ -46,6 +46,8 @@ public class CommandCatalog {
                         "Creates an attraction of type GENERAL, INDIVIDUAL, GROUP or SPECIAL."),
                 new CommandInfo("ATTRACTION ENTER;<attraction>;<ticket>",
                         "Lets the users of a ticket valid today enter an attraction, all or none."),
+                new CommandInfo("ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
+                        "Enters using one unconsumed SpeedPass per individual ticket (not at special attractions)."),
                 new CommandInfo("ATTRACTION EXIT;<attraction>;<email>",
                         "Makes a user leave an attraction, releasing the place."),
                 new CommandInfo("ATTRACTION LIST;<attraction>", "Lists the emails of the users inside an attraction."),

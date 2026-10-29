@@ -93,7 +93,7 @@ class AttractionTypesTest {
     void generalAcceptsBoth() {
         park.enterAttraction("A01", "T001");
         park.findAttraction("A01").removeOccupant(park.findUser("ana@correo.com"));
-        assertEquals(2, park.enterAttraction("A01", "TG01").size());
+        assertEquals(2, park.enterAttraction("A01", "TG01").entrants().size());
     }
 
     @Test
@@ -101,14 +101,14 @@ class AttractionTypesTest {
         ParkException e = assertThrows(ParkException.class, () -> park.enterAttraction("A02", "TG01"));
         assertTrue(e.getMessage().contains("of type INDIVIDUAL does not accept ticket TG01"));
         assertTrue(park.findAttraction("A02").getOccupants().isEmpty());
-        assertEquals(1, park.enterAttraction("A02", "T001").size());
+        assertEquals(1, park.enterAttraction("A02", "T001").entrants().size());
     }
 
     @Test
     void groupRejectsIndividualTicket() {
         assertThrows(ParkException.class, () -> park.enterAttraction("A03", "T001"));
         assertTrue(park.findAttraction("A03").getOccupants().isEmpty());
-        assertEquals(2, park.enterAttraction("A03", "TG01").size());
+        assertEquals(2, park.enterAttraction("A03", "TG01").entrants().size());
     }
 
     @Test
@@ -117,7 +117,7 @@ class AttractionTypesTest {
         ParkException e = assertThrows(ParkException.class, () -> park.enterAttraction("A04", "T001"));
         assertTrue(e.getMessage().contains("has no unconsumed special pass"));
         park.buySpecialPass("PE01", "T001");
-        assertEquals(1, park.enterAttraction("A04", "T001").size());
+        assertEquals(1, park.enterAttraction("A04", "T001").entrants().size());
     }
 
     @Test
@@ -139,7 +139,7 @@ class AttractionTypesTest {
             assertEquals(entry.getValue(), superType.getActualTypeArguments()[0]);
         }
         Method enter = Attraction.class.getMethod("enter", AccessTicket.class, java.time.LocalDate.class,
-                es.upm.amusementpark.business.model.PassLookup.class);
+                es.upm.amusementpark.business.model.PassLookup.class, boolean.class);
         assertEquals("T", enter.getGenericParameterTypes()[0].getTypeName());
         assertTrue(IndividualAccess.class.isAssignableFrom(IndividualTicket.class));
         assertTrue(GroupAccess.class.isAssignableFrom(GroupTicket.class));

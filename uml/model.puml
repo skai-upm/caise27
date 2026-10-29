@@ -41,6 +41,7 @@ package "es.upm.amusementpark.business.model" {
   interface IndividualAccess
   interface GroupAccess
   interface PassLookup
+  class Entry <<record>>
 
   abstract class Attraction<T extends AccessTicket> {
     - identifier : String
@@ -164,7 +165,10 @@ Attraction <|-- GeneralAttraction : <T = AccessTicket>
 Attraction <|-- IndividualAttraction : <T = IndividualAccess>
 Attraction <|-- GroupAttraction : <T = GroupAccess>
 Attraction <|-- SpecialAttraction : <T = IndividualAccess>
-Attraction ..> PassLookup : checks special passes
+Attraction ..> PassLookup : finds passes to consume
+Attraction ..> Entry : returns
+Entry --> "0..*" User : entrants
+Entry --> "0..*" Pass : consumedPasses
 Attraction ..> AttractionType : type
 ParkController ..|> PassLookup : provides
 Pass <|-- SpeedPass
