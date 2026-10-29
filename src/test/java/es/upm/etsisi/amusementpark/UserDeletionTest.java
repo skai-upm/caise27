@@ -1,5 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.*;
+import es.upm.etsisi.amusementpark.business.exception.*;
+import es.upm.etsisi.amusementpark.business.invoice.*;
+import es.upm.etsisi.amusementpark.business.model.*;
+import es.upm.etsisi.amusementpark.business.model.attraction.*;
+import es.upm.etsisi.amusementpark.business.security.*;
+import es.upm.etsisi.amusementpark.persistence.*;
+import es.upm.etsisi.amusementpark.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,8 +30,8 @@ class UserDeletionTest extends ParkFixture {
 
     @Test
     void credentialsChecked() {
-        assertThrows(OperationException.class, () -> park.deleteUser(PEDRO, "Otra2?"));
-        assertThrows(OperationException.class, () -> park.deleteUser("nadie@correo.com", "Otra2#"));
+        assertThrows(ParkException.class, () -> park.deleteUser(PEDRO, "Otra2?"));
+        assertThrows(ParkException.class, () -> park.deleteUser("nadie@correo.com", "Otra2#"));
         assertNotNull(user(PEDRO));
     }
 
@@ -31,9 +39,9 @@ class UserDeletionTest extends ParkFixture {
     void activeIndividualTicketBlocksUntilDeletedOrHistorical() throws Exception {
         park.createTicket("T001", ANA, "2027-04-15");
         park.createTicket("T002", ANA, "2027-04-20");
-        assertThrows(OperationException.class, () -> park.deleteUser(ANA, "Clave1!"));
+        assertThrows(ParkException.class, () -> park.deleteUser(ANA, "Clave1!"));
         park.deleteTicket("T002");
-        assertThrows(OperationException.class, () -> park.deleteUser(ANA, "Clave1!"));
+        assertThrows(ParkException.class, () -> park.deleteUser(ANA, "Clave1!"));
         park.setCurrentDate("2027-04-16");
         User ana = user(ANA);
         park.deleteUser(ANA, "Clave1!");
@@ -47,7 +55,7 @@ class UserDeletionTest extends ParkFixture {
         park.addToGroup("G01", ANA);
         park.createGroupTicket("TG01", "G01", "2027-04-15");
         park.setCurrentDate("2027-04-15");
-        assertThrows(OperationException.class, () -> park.deleteUser(ANA, "Clave1!"));
+        assertThrows(ParkException.class, () -> park.deleteUser(ANA, "Clave1!"));
     }
 
     @Test
@@ -60,7 +68,7 @@ class UserDeletionTest extends ParkFixture {
         // Moving the date back makes TG01 active again: G01 is locked, Pedro is a member
         // but not part of TG01's composition and has no ticket of his own.
         park.setCurrentDate("2027-04-16");
-        assertThrows(OperationException.class, () -> park.deleteUser(PEDRO, "Otra2#"));
+        assertThrows(ParkException.class, () -> park.deleteUser(PEDRO, "Otra2#"));
         assertNotNull(user(PEDRO));
         park.setCurrentDate("2027-04-21");
         park.deleteUser(PEDRO, "Otra2#");

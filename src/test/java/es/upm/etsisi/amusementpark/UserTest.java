@@ -1,5 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.*;
+import es.upm.etsisi.amusementpark.business.exception.*;
+import es.upm.etsisi.amusementpark.business.invoice.*;
+import es.upm.etsisi.amusementpark.business.model.*;
+import es.upm.etsisi.amusementpark.business.model.attraction.*;
+import es.upm.etsisi.amusementpark.business.security.*;
+import es.upm.etsisi.amusementpark.persistence.*;
+import es.upm.etsisi.amusementpark.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -24,8 +32,6 @@ class UserTest {
         assertEquals("Clave1!", u.getPassword());
         assertEquals("612345678", u.getPhone());
         assertEquals("1234567890123456", u.getCard());
-        assertTrue(u.checkPassword("Clave1!"));
-        assertFalse(u.checkPassword("Clave1?"));
     }
 
     @Test

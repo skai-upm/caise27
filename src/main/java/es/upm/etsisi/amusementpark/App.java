@@ -1,5 +1,21 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.InvoiceController;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.controller.PassController;
+import es.upm.etsisi.amusementpark.business.controller.UserController;
+import es.upm.etsisi.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.etsisi.amusementpark.business.security.PasswordHasher;
+import es.upm.etsisi.amusementpark.persistence.Storage;
+import es.upm.etsisi.amusementpark.persistence.TextAttractionRepository;
+import es.upm.etsisi.amusementpark.persistence.TextGroupRepository;
+import es.upm.etsisi.amusementpark.persistence.TextPassRepository;
+import es.upm.etsisi.amusementpark.persistence.TextTicketRepository;
+import es.upm.etsisi.amusementpark.persistence.TextUserRepository;
+import es.upm.etsisi.amusementpark.presentation.BasicHelpFormat;
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.presentation.ExtendedHelpFormat;
+import es.upm.etsisi.amusementpark.presentation.HelpGenerator;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -14,7 +30,9 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 
 /**
- * Application entry point. Supported forms: no arguments (interactive), {@code <file>},
+ * Application entry point and composition root: it creates the repositories for the selected
+ * storage, injects them into the singleton controllers and wires the presentation layer.
+ * Supported forms: no arguments (interactive), {@code <file>},
  * {@code --fly} and {@code --fly <file>}. With --fly all data lives in a temporary directory
  * that is deleted when execution ends.
  */
@@ -42,9 +60,7 @@ public class App {
                 flyDir = createFlyDirectory(workDir.resolve("tmp"));
                 dataDir = flyDir;
             }
-            ParkController park = ParkController.getInstance();
-            park.load(new Storage(dataDir), LocalDate.now());
-            CommandProcessor processor = new CommandProcessor(park);
+            CommandProcessor processor = bootstrap(new Storage(dataDir), LocalDate.now(), new BCryptPasswordHasher());
             if (commandFile == null) {
                 return execute(processor, stdin, out, err);
             }
@@ -64,6 +80,24 @@ public class App {
                 deleteFlyDirectory(flyDir, err);
             }
         }
+    }
+
+    /**
+     * Creates the text-file repositories for the storage, injects them and the collaborations into
+     * the controllers, and returns the command processor with its injected help generators.
+     */
+    public static CommandProcessor bootstrap(Storage storage, LocalDate today, PasswordHasher hasher) {
+        UserController users = UserController.getInstance();
+        users.configure(new TextUserRepository(storage.usersFile()), hasher);
+        PassController passes = PassController.getInstance();
+        passes.configure(new TextPassRepository(storage.passesFile()));
+        ParkController park = ParkController.getInstance();
+        park.configure(today, users, passes, new TextGroupRepository(storage.groupsFile()),
+                new TextTicketRepository(storage.ticketsFile()), new TextAttractionRepository(storage.attractionsFile()));
+        InvoiceController invoices = InvoiceController.getInstance();
+        invoices.configure(users, park, passes);
+        return new CommandProcessor(park, invoices, new HelpGenerator(new BasicHelpFormat()),
+                new HelpGenerator(new ExtendedHelpFormat()));
     }
 
     private static int execute(CommandProcessor processor, BufferedReader input, PrintStream out, PrintStream err) {

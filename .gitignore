@@ -25,6 +25,7 @@ users.txt
 groups.txt
 tickets.txt
 attractions.txt
+passes.txt
 tmp/
 
 # SDDX/Sonar generated outputs (run records embed the Sonar token)

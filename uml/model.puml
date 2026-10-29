@@ -1,74 +1,221 @@
 @startuml
-' Amusement Park - Delivery 2 class model (es.upm.etsisi.amusementpark)
+' Amusement Park - Delivery 3 class model (root package es.upm.etsisi.amusementpark)
 hide methods
 skinparam classAttributeIconSize 0
+set separator none
 
-class ParkController <<singleton>> {
-  - {static} INSTANCE : ParkController
-  - currentDate : LocalDate
-  - currentPrice : BigDecimal
+package "es.upm.etsisi.amusementpark" {
+  class App <<composition root>>
 }
 
-class User {
-  - firstName : String
-  - surnames : String
-  - dni : String {readOnly}
-  - email : String
-  - password : String
-  - phone : String
-  - card : String
+package "presentation" {
+  class CommandProcessor
+  class HelpGenerator
+  interface HelpFormat
+  class BasicHelpFormat
+  class ExtendedHelpFormat
+  class CommandCatalog
+  class CommandInfo <<record>> {
+    syntax : String
+    description : String
+  }
+  class InvoicePrinter
 }
 
-enum UserField {
-  NAME
-  SURNAME
-  EMAIL
-  PASSWORD
-  PHONE
-  CARD
+package "business.controller" {
+  class UserController <<singleton>>
+  class ParkController <<singleton>> {
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+  }
+  class PassController <<singleton>>
+  class InvoiceController <<singleton>>
 }
 
-class Group {
-  - id : String
-  - name : String
+package "business.model" {
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String <<BCrypt hash>>
+    - phone : String
+    - card : String
+  }
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+  class Group {
+    - id : String
+    - name : String
+  }
+  interface GeneralAccess
+  interface IndividualAccess
+  interface GroupAccess
+  abstract class Ticket {
+    - id : String
+    - date : LocalDate
+    - basePrice : BigDecimal
+    - discountPercent : int
+  }
+  class IndividualTicket
+  class GroupTicket
+  class GroupDiscount <<utility>>
+  abstract class Pass {
+    - id : String
+    - price : BigDecimal
+    - consumed : boolean
+  }
+  class SpeedPass
+  class SpecialPass
+  interface PassLookup
 }
 
-abstract class Ticket {
-  - id : String
-  - date : LocalDate
-  - basePrice : BigDecimal
-  - discountPercent : int
+package "business.model.attraction" {
+  abstract class "Attraction<T extends GeneralAccess>" as Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+  }
+  class "GeneralAttraction" as GeneralAttraction
+  class "IndividualAttraction" as IndividualAttraction
+  class "GroupAttraction" as GroupAttraction
+  class "SpecialAttraction" as SpecialAttraction
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
 }
 
-class IndividualTicket
-
-class GroupTicket
-
-class GroupDiscount <<utility>>
-
-class Attraction {
-  - id : String
-  - name : String
-  - capacity : int
+package "business.invoice" {
+  abstract class InvoiceBuilder
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
+  class Invoice {
+    - title : String
+    - total : BigDecimal
+  }
+  class InvoiceSection <<record>>
+  class InvoiceLine <<record>> {
+    description : String
+    amount : BigDecimal
+  }
 }
 
-' central management
-ParkController "1" --> "*" Group : groups
-ParkController "1" --> "*" Ticket : tickets
-ParkController "1" --> "*" Attraction : attractions
-ParkController "1" --> "*" User : users (via UserService)
+package "business.repository" {
+  interface UserRepository
+  interface GroupRepository
+  interface TicketRepository
+  interface AttractionRepository
+  interface PassRepository
+}
 
-' ticket hierarchy
+package "business.security" {
+  interface PasswordHasher
+  class BCryptPasswordHasher
+}
+
+package "persistence" {
+  class Storage <<record>>
+  class TextUserRepository
+  class TextGroupRepository
+  class TextTicketRepository
+  class TextAttractionRepository
+  class TextPassRepository
+}
+
+' ----- ticket hierarchy and access capabilities -----
+GeneralAccess <|-- IndividualAccess
+GeneralAccess <|-- GroupAccess
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
 GroupTicket "1" *-- "1..*" IndividualTicket : composition
 IndividualTicket "*" --> "1" User : user
 GroupTicket "*" --> "0..1" Group : group
 GroupTicket ..> GroupDiscount : uses
 
-' other relationships (unidirectional)
-Group "*" --> "*" User : members
+' ----- passes -----
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+SpeedPass "0..*" --> "1" IndividualTicket : ticket
+SpecialPass "0..1" --> "1" IndividualTicket : ticket
+
+' ----- attractions with bounded generics -----
+Attraction <|-- GeneralAttraction : <<bind>> T = GeneralAccess
+Attraction <|-- IndividualAttraction : <<bind>> T = IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T = GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T = IndividualAccess
 Attraction "*" --> "*" User : occupants
+Attraction ..> GeneralAccess : T admits
+Attraction ..> PassLookup : consumes passes
+AttractionType ..> Attraction : creates
+
+' ----- other model relationships -----
+Group "*" --> "*" User : members
 User ..> UserField : modifiable fields
+
+' ----- controllers (singletons) and injected dependencies -----
+UserController "1" --> "*" User : users
+UserController --> UserRepository : <<inject>>
+UserController --> PasswordHasher : <<inject>>
+PassController ..|> PassLookup
+PassController "1" --> "*" Pass : passes
+PassController --> PassRepository : <<inject>>
+ParkController "1" --> "*" Group : groups
+ParkController "1" --> "*" Ticket : tickets
+ParkController "1" --> "*" Attraction : attractions
+ParkController --> UserController : <<inject>>
+ParkController --> PassController : <<inject>>
+ParkController --> GroupRepository : <<inject>>
+ParkController --> TicketRepository : <<inject>>
+ParkController --> AttractionRepository : <<inject>>
+InvoiceController --> UserController : <<inject>>
+InvoiceController --> ParkController : <<inject>>
+InvoiceController --> PassController : <<inject>>
+
+' ----- invoices (Builder) -----
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder ..> Invoice : builds
+Invoice "1" *-- "*" InvoiceSection
+InvoiceSection "1" *-- "1..*" InvoiceLine
+InvoiceController ..> UserInvoiceBuilder : directs
+InvoiceController ..> GroupInvoiceBuilder : directs
+
+' ----- persistence implementations -----
+UserRepository <|.. TextUserRepository
+GroupRepository <|.. TextGroupRepository
+TicketRepository <|.. TextTicketRepository
+AttractionRepository <|.. TextAttractionRepository
+PassRepository <|.. TextPassRepository
+PasswordHasher <|.. BCryptPasswordHasher
+
+' ----- presentation and wiring -----
+CommandProcessor --> ParkController : <<inject>>
+CommandProcessor --> InvoiceController : <<inject>>
+CommandProcessor --> "2" HelpGenerator : <<inject>> help / extended
+HelpGenerator --> HelpFormat : <<inject>>
+HelpFormat <|.. BasicHelpFormat
+HelpFormat <|.. ExtendedHelpFormat
+HelpGenerator ..> CommandCatalog
+CommandCatalog "1" --> "*" CommandInfo
+CommandProcessor ..> InvoicePrinter
+App ..> Storage
+App ..> CommandProcessor : creates
+App ..> TextUserRepository : creates
+App ..> TextGroupRepository : creates
+App ..> TextTicketRepository : creates
+App ..> TextAttractionRepository : creates
+App ..> TextPassRepository : creates
+App ..> BCryptPasswordHasher : creates
 
 @enduml

@@ -1,5 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.*;
+import es.upm.etsisi.amusementpark.business.exception.*;
+import es.upm.etsisi.amusementpark.business.invoice.*;
+import es.upm.etsisi.amusementpark.business.model.*;
+import es.upm.etsisi.amusementpark.business.model.attraction.*;
+import es.upm.etsisi.amusementpark.business.security.*;
+import es.upm.etsisi.amusementpark.persistence.*;
+import es.upm.etsisi.amusementpark.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,8 +35,8 @@ class GroupTest extends ParkFixture {
 
     @Test
     void duplicateOrEmptyIdentifierRejected() {
-        assertThrows(OperationException.class, () -> park.createGroup("G01", "Otro"));
-        assertThrows(OperationException.class, () -> park.createGroup("", "Otro"));
+        assertThrows(ParkException.class, () -> park.createGroup("G01", "Otro"));
+        assertThrows(ParkException.class, () -> park.createGroup("", "Otro"));
         assertEquals(1, park.getGroups().size());
     }
 
@@ -44,11 +52,11 @@ class GroupTest extends ParkFixture {
     @Test
     void invalidMembershipChangesRejected() throws Exception {
         park.addToGroup("G01", ANA);
-        assertThrows(OperationException.class, () -> park.addToGroup("G01", ANA));
-        assertThrows(OperationException.class, () -> park.addToGroup("G01", "nadie@correo.com"));
-        assertThrows(OperationException.class, () -> park.addToGroup("G99", ANA));
-        assertThrows(OperationException.class, () -> park.removeFromGroup("G01", PEDRO));
-        assertThrows(OperationException.class, () -> park.removeFromGroup("G99", ANA));
+        assertThrows(ParkException.class, () -> park.addToGroup("G01", ANA));
+        assertThrows(ParkException.class, () -> park.addToGroup("G01", "nadie@correo.com"));
+        assertThrows(ParkException.class, () -> park.addToGroup("G99", ANA));
+        assertThrows(ParkException.class, () -> park.removeFromGroup("G01", PEDRO));
+        assertThrows(ParkException.class, () -> park.removeFromGroup("G99", ANA));
         assertEquals(List.of(user(ANA)), park.findGroup("G01").getMembers());
     }
 
@@ -57,9 +65,9 @@ class GroupTest extends ParkFixture {
         park.addToGroup("G01", ANA);
         park.createGroupTicket("TG01", "G01", "2027-04-15");
         assertTrue(park.isGroupLocked(park.findGroup("G01")));
-        assertThrows(OperationException.class, () -> park.addToGroup("G01", PEDRO));
-        assertThrows(OperationException.class, () -> park.removeFromGroup("G01", ANA));
-        assertThrows(OperationException.class, () -> park.deleteGroup("G01"));
+        assertThrows(ParkException.class, () -> park.addToGroup("G01", PEDRO));
+        assertThrows(ParkException.class, () -> park.removeFromGroup("G01", ANA));
+        assertThrows(ParkException.class, () -> park.deleteGroup("G01"));
 
         park.setCurrentDate("2027-04-16");
         assertFalse(park.isGroupLocked(park.findGroup("G01")));
@@ -73,7 +81,7 @@ class GroupTest extends ParkFixture {
         park.createGroupTicket("TG01", "G01", "2027-04-20");
         park.createGroupTicket("TG02", "G01", "2027-04-21");
         park.deleteGroupTicket("TG01");
-        assertThrows(OperationException.class, () -> park.addToGroup("G01", PEDRO));
+        assertThrows(ParkException.class, () -> park.addToGroup("G01", PEDRO));
         park.deleteGroupTicket("TG02");
         park.addToGroup("G01", PEDRO);
     }
@@ -96,6 +104,6 @@ class GroupTest extends ParkFixture {
     void deleteGroupWithoutTickets() throws Exception {
         park.deleteGroup("G01");
         assertNull(park.findGroup("G01"));
-        assertThrows(OperationException.class, () -> park.deleteGroup("G01"));
+        assertThrows(ParkException.class, () -> park.deleteGroup("G01"));
     }
 }

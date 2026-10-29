@@ -1,5 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.*;
+import es.upm.etsisi.amusementpark.business.exception.*;
+import es.upm.etsisi.amusementpark.business.invoice.*;
+import es.upm.etsisi.amusementpark.business.model.*;
+import es.upm.etsisi.amusementpark.business.model.attraction.*;
+import es.upm.etsisi.amusementpark.business.security.*;
+import es.upm.etsisi.amusementpark.persistence.*;
+import es.upm.etsisi.amusementpark.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,15 +35,13 @@ class CommandProcessorTest {
     @TempDir
     Path dir;
 
-    private UserService service;
+    private UserController service;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() {
-        ParkController park = ParkController.getInstance();
-        park.load(new Storage(dir), LocalDate.of(2027, 4, 15));
-        service = park.getUserService();
-        processor = new CommandProcessor(park);
+        processor = App.bootstrap(new Storage(dir), LocalDate.of(2027, 4, 15), ParkFixture.FAST_HASHER);
+        service = UserController.getInstance();
     }
 
     private String runAll(String input) throws Exception {

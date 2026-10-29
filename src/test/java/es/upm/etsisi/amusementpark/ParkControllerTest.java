@@ -1,5 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.*;
+import es.upm.etsisi.amusementpark.business.exception.*;
+import es.upm.etsisi.amusementpark.business.invoice.*;
+import es.upm.etsisi.amusementpark.business.model.*;
+import es.upm.etsisi.amusementpark.business.model.attraction.*;
+import es.upm.etsisi.amusementpark.business.security.*;
+import es.upm.etsisi.amusementpark.persistence.*;
+import es.upm.etsisi.amusementpark.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,7 +35,7 @@ class ParkControllerTest extends ParkFixture {
     void initialDateAndPrice() {
         assertEquals(TODAY, park.getCurrentDate());
         assertEquals(new BigDecimal("40.00"), park.getCurrentPrice());
-        park.load(new Storage(dir), LocalDate.now());
+        App.bootstrap(new Storage(dir), LocalDate.now(), FAST_HASHER);
         assertEquals(LocalDate.now(), park.getCurrentDate());
     }
 
@@ -42,7 +50,7 @@ class ParkControllerTest extends ParkFixture {
     @ParameterizedTest
     @ValueSource(strings = {"15/04/2027", "2027-02-30", "", "2027-4-1"})
     void invalidDateRejected(String text) {
-        assertThrows(OperationException.class, () -> park.setCurrentDate(text));
+        assertThrows(ParkException.class, () -> park.setCurrentDate(text));
         assertEquals(TODAY, park.getCurrentDate());
     }
 
@@ -59,7 +67,7 @@ class ParkControllerTest extends ParkFixture {
     @ParameterizedTest
     @ValueSource(strings = {"0", "0.00", "-3", "abc", "10.999", "1e3", ".5", "5.", "", "1.2.3", "4,5"})
     void invalidPriceRejected(String text) {
-        assertThrows(OperationException.class, () -> park.setCurrentPrice(text));
+        assertThrows(ParkException.class, () -> park.setCurrentPrice(text));
         assertEquals(new BigDecimal("40.00"), park.getCurrentPrice());
     }
 

@@ -1,5 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.*;
+import es.upm.etsisi.amusementpark.business.exception.*;
+import es.upm.etsisi.amusementpark.business.invoice.*;
+import es.upm.etsisi.amusementpark.business.model.*;
+import es.upm.etsisi.amusementpark.business.model.attraction.*;
+import es.upm.etsisi.amusementpark.business.security.*;
+import es.upm.etsisi.amusementpark.persistence.*;
+import es.upm.etsisi.amusementpark.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,13 +24,13 @@ class UserRepositoryTest {
 
     @Test
     void missingFileMeansNoUsers() {
-        assertTrue(new UserRepository(dir.resolve("users.txt")).load().isEmpty());
+        assertTrue(new TextUserRepository(dir.resolve("users.txt")).load().isEmpty());
     }
 
     @Test
     void savesOneSemicolonSeparatedLinePerUser() throws Exception {
         Path file = dir.resolve("users.txt");
-        UserRepository repo = new UserRepository(file);
+        TextUserRepository repo = new TextUserRepository(file);
         repo.save(List.of(
                 new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                         "1234567890123456"),
@@ -41,7 +49,7 @@ class UserRepositoryTest {
                 "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
                 "",
                 "broken;line"));
-        List<User> users = new UserRepository(file).load();
+        List<User> users = new TextUserRepository(file).load();
         assertEquals(1, users.size());
         User ana = users.get(0);
         assertEquals("Garcia Lopez", ana.getSurnames());

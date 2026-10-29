@@ -1,5 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.*;
+import es.upm.etsisi.amusementpark.business.exception.*;
+import es.upm.etsisi.amusementpark.business.invoice.*;
+import es.upm.etsisi.amusementpark.business.model.*;
+import es.upm.etsisi.amusementpark.business.model.attraction.*;
+import es.upm.etsisi.amusementpark.business.security.*;
+import es.upm.etsisi.amusementpark.persistence.*;
+import es.upm.etsisi.amusementpark.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,7 +29,7 @@ class AttractionTest extends ParkFixture {
 
     @Test
     void createAttraction() {
-        Attraction a = park.findAttraction("A01");
+        Attraction<?> a = park.findAttraction("A01");
         assertEquals("Dragon Rojo", a.getName());
         assertEquals(20, a.getCapacity());
         assertTrue(a.getOccupants().isEmpty());
@@ -29,27 +37,27 @@ class AttractionTest extends ParkFixture {
 
     @Test
     void invalidAttractionsRejected() {
-        assertThrows(OperationException.class, () -> park.createAttraction("A01", "Otra", "5"));
-        assertThrows(OperationException.class, () -> park.createAttraction("A03", "Noria", "0"));
-        assertThrows(OperationException.class, () -> park.createAttraction("A03", "Noria", "-1"));
-        assertThrows(OperationException.class, () -> park.createAttraction("A03", "Noria", "diez"));
-        assertThrows(OperationException.class, () -> park.createAttraction("", "Noria", "5"));
+        assertThrows(ParkException.class, () -> park.createAttraction("A01", "Otra", "5"));
+        assertThrows(ParkException.class, () -> park.createAttraction("A03", "Noria", "0"));
+        assertThrows(ParkException.class, () -> park.createAttraction("A03", "Noria", "-1"));
+        assertThrows(ParkException.class, () -> park.createAttraction("A03", "Noria", "diez"));
+        assertThrows(ParkException.class, () -> park.createAttraction("", "Noria", "5"));
     }
 
     @Test
     void individualEntryAndExit() throws Exception {
         park.createTicket("T001", ANA, "2027-04-15");
-        assertEquals(1, park.enterAttraction("A01", "T001"));
+        assertEquals(1, park.enterAttraction("A01", "T001", false).users());
         assertEquals(List.of(user(ANA)), park.findAttraction("A01").getOccupants());
         park.exitAttraction("A01", ANA);
         assertTrue(park.findAttraction("A01").getOccupants().isEmpty());
-        assertThrows(OperationException.class, () -> park.exitAttraction("A01", ANA));
+        assertThrows(ParkException.class, () -> park.exitAttraction("A01", ANA));
     }
 
     @Test
     void groupEntryThenIndividualExits() throws Exception {
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        assertEquals(2, park.enterAttraction("A01", "TG01"));
+        assertEquals(2, park.enterAttraction("A01", "TG01", false).users());
         park.exitAttraction("A01", ANA);
         assertEquals(List.of(user(PEDRO)), park.findAttraction("A01").getOccupants());
     }
@@ -57,11 +65,11 @@ class AttractionTest extends ParkFixture {
     @Test
     void entryRequiresTicketValidToday() throws Exception {
         park.createTicket("T001", ANA, "2027-04-16");
-        assertThrows(OperationException.class, () -> park.enterAttraction("A01", "T001"));
-        assertThrows(OperationException.class, () -> park.enterAttraction("A01", "NOPE"));
-        assertThrows(OperationException.class, () -> park.enterAttraction("A99", "T001"));
+        assertThrows(ParkException.class, () -> park.enterAttraction("A01", "T001", false).users());
+        assertThrows(ParkException.class, () -> park.enterAttraction("A01", "NOPE", false).users());
+        assertThrows(ParkException.class, () -> park.enterAttraction("A99", "T001", false).users());
         park.setCurrentDate("2027-04-16");
-        park.enterAttraction("A01", "T001");
+        park.enterAttraction("A01", "T001", false).users();
         park.setCurrentDate("2027-04-17");
         assertEquals(List.of(user(ANA)), park.findAttraction("A01").getOccupants());
     }
@@ -73,8 +81,8 @@ class AttractionTest extends ParkFixture {
         park.addToGroup("G02", PEDRO);
         addMembers("G02", 1);
         park.createGroupTicket("TG02", "G02", "2027-04-15");
-        park.enterAttraction("A02", "T001");
-        assertThrows(OperationException.class, () -> park.enterAttraction("A02", "TG02"));
+        park.enterAttraction("A02", "T001", false).users();
+        assertThrows(ParkException.class, () -> park.enterAttraction("A02", "TG02", false).users());
         assertEquals(List.of(user(ANA)), park.findAttraction("A02").getOccupants());
         assertEquals(1, park.findAttraction("A02").getAvailablePlaces());
     }
@@ -82,21 +90,21 @@ class AttractionTest extends ParkFixture {
     @Test
     void userAlreadyInsideCannotReenter() throws Exception {
         park.createTicket("T001", ANA, "2027-04-15");
-        park.enterAttraction("A01", "T001");
-        assertThrows(OperationException.class, () -> park.enterAttraction("A01", "T001"));
+        park.enterAttraction("A01", "T001", false).users();
+        assertThrows(ParkException.class, () -> park.enterAttraction("A01", "T001", false).users());
         assertEquals(1, park.findAttraction("A01").getOccupants().size());
     }
 
     @Test
     void compositionTicketAdmitsOnlyItsUser() throws Exception {
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        assertEquals(1, park.enterAttraction("A01", "TG01:87654321X"));
+        assertEquals(1, park.enterAttraction("A01", "TG01:87654321X", false).users());
         assertEquals(List.of(user(PEDRO)), park.findAttraction("A01").getOccupants());
     }
 
     @Test
     void listAndStatusThroughCommands() throws Exception {
-        CommandProcessor processor = new CommandProcessor(park);
+        CommandProcessor processor = processor();
         assertEquals("NO USERS IN ATTRACTION A01", processor.process("ATTRACTION LIST;A01"));
         park.createGroupTicket("TG01", "G01", "2027-04-15");
         processor.process("ATTRACTION ENTER;A01;TG01");

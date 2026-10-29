@@ -1,5 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.*;
+import es.upm.etsisi.amusementpark.business.exception.*;
+import es.upm.etsisi.amusementpark.business.invoice.*;
+import es.upm.etsisi.amusementpark.business.model.*;
+import es.upm.etsisi.amusementpark.business.model.attraction.*;
+import es.upm.etsisi.amusementpark.business.security.*;
+import es.upm.etsisi.amusementpark.persistence.*;
+import es.upm.etsisi.amusementpark.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -63,8 +71,12 @@ class AppTest {
 
         assertEquals(fileOutput, interactiveOutput);
         assertTrue(fileOutput.startsWith("USER CREATED"));
-        assertEquals(List.of(ANA_LINE), Files.readAllLines(fileWork.resolve("users.txt")));
-        assertEquals(List.of(ANA_LINE), Files.readAllLines(interactiveWork.resolve("users.txt")));
+        List<String> fileUsers = Files.readAllLines(fileWork.resolve("users.txt"));
+        List<String> interactiveUsers = Files.readAllLines(interactiveWork.resolve("users.txt"));
+        assertEquals(1, fileUsers.size());
+        assertEquals(1, interactiveUsers.size());
+        ParkFixture.assertStoredUser(ANA_LINE, fileUsers.get(0));
+        ParkFixture.assertStoredUser(ANA_LINE, interactiveUsers.get(0));
     }
 
     @Test
