@@ -13,10 +13,12 @@ import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.repository.AttractionRepository;
 import es.upm.amusementpark.business.repository.GroupRepository;
+import es.upm.amusementpark.business.repository.PassRepository;
 import es.upm.amusementpark.business.repository.Repositories;
 import es.upm.amusementpark.business.repository.TicketRepository;
 import es.upm.amusementpark.business.repository.UserRepository;
@@ -124,6 +126,18 @@ class DependencyInjectionTest {
         }
     }
 
+    private static final class NoPasses implements PassRepository {
+        @Override
+        public void saveAll(Collection<Pass> passes) {
+            // nothing stored in this test double
+        }
+
+        @Override
+        public void loadInto(ParkController controller, List<String> skipped) {
+            // nothing to rebuild
+        }
+    }
+
     private static final class NoTickets implements TicketRepository {
         @Override
         public void saveAll(Collection<Ticket> tickets) {
@@ -139,7 +153,7 @@ class DependencyInjectionTest {
     @Test
     void inMemoryRepositoriesCanReplaceTextFiles() {
         Repositories memory = new Repositories(new MemoryUsers(), new NoGroups(), new NoTickets(),
-                new MemoryAttractions());
+                new MemoryAttractions(), new NoPasses());
         park.configure(memory);
         park.registerUser(new User("ana@correo.com", "12345678Z"));
         park.createAttraction("A01", "Dragon Rojo", "20");

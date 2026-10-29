@@ -8,6 +8,9 @@ import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.repository.Repositories;
@@ -45,6 +48,7 @@ public final class ParkController {
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Pass> passes = new LinkedHashMap<>();
     private Repositories repositories;
     private final PasswordProtector passwords = new PasswordProtector();
 
@@ -69,6 +73,7 @@ public final class ParkController {
         groups.clear();
         tickets.clear();
         attractions.clear();
+        passes.clear();
     }
 
     public LocalDate getCurrentDate() {
@@ -198,6 +203,7 @@ public final class ParkController {
         repositories.groups().loadInto(this, skipped);
         repositories.attractions().loadInto(this, skipped);
         repositories.tickets().loadInto(this, skipped);
+        repositories.passes().loadInto(this, skipped);
         return skipped;
     }
 
@@ -210,6 +216,7 @@ public final class ParkController {
         repositories.groups().saveAll(getGroups());
         repositories.attractions().saveAll(getAttractions());
         repositories.tickets().saveAll(getTickets());
+        repositories.passes().saveAll(getPasses());
     }
 
     // --- reconstruction (used by the repositories) -----------------------
@@ -229,6 +236,14 @@ public final class ParkController {
         if (!group.addMember(existingUser(email))) {
             throw new DuplicateElementException("duplicate member " + email);
         }
+    }
+
+    /** Adds a stored pass, keeping pass identifier uniqueness but not date rules. */
+    public void restorePass(Pass pass) {
+        if (passes.containsKey(pass.getIdentifier())) {
+            throw new DuplicateElementException("pass identifier already in use: " + pass.getIdentifier());
+        }
+        passes.put(pass.getIdentifier(), pass);
     }
 
     /** Adds a stored ticket, keeping identifier uniqueness but not date rules. */
@@ -288,6 +303,119 @@ public final class ParkController {
             ticket.releaseGroup();
         }
         groups.remove(group.getIdentifier());
+    }
+
+    // --- passes ----------------------------------------------------------
+
+    public Pass findPass(String identifier) {
+        return passes.get(identifier);
+    }
+
+    public Collection<Pass> getPasses() {
+        return Collections.unmodifiableCollection(passes.values());
+    }
+
+    /** Passes associated with an individual ticket, found by traversing the park's passes. */
+    public List<Pass> passesOf(IndividualTicket ticket) {
+        return passes.values().stream().filter(p -> p.getTicket() == ticket).toList();
+    }
+
+    /** Individual ticket with that identifier, either top-level or part of a group ticket. */
+    public IndividualTicket findIndividualTicket(String identifier) {
+        for (Ticket ticket : tickets.values()) {
+            if (ticket instanceof IndividualTicket individual && individual.getIdentifier().equals(identifier)) {
+                return individual;
+            }
+            if (ticket instanceof GroupTicket group) {
+                for (IndividualTicket component : group.getComposition()) {
+                    if (component.getIdentifier().equals(identifier)) {
+                        return component;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Buys 1 or 10 SpeedPasses named {@code <purchase>:<n>}; all or nothing. */
+    public List<SpeedPass> buySpeedPasses(String purchaseIdentifier, String ticketIdentifier, String quantityText) {
+        String purchase = requireText(purchaseIdentifier, "purchase identifier");
+        IndividualTicket ticket = purchasableTicket(ticketIdentifier);
+        String quantityValue = quantityText == null ? "" : quantityText.trim();
+        if (!quantityValue.equals("1") && !quantityValue.equals("10")) {
+            throw new InvalidValueException("quantity must be 1 or 10: " + quantityText);
+        }
+        int quantity = Integer.parseInt(quantityValue);
+        List<SpeedPass> bought = new ArrayList<>();
+        for (int n = 1; n <= quantity; n++) {
+            String id = purchase + ":" + n;
+            if (passes.containsKey(id)) {
+                throw new DuplicateElementException("pass identifier already in use: " + id);
+            }
+            bought.add(new SpeedPass(id, ticket));
+        }
+        for (SpeedPass pass : bought) {
+            passes.put(pass.getIdentifier(), pass);
+        }
+        return bought;
+    }
+
+    /** Buys the Special Pass of an individual ticket (at most one per ticket). */
+    public SpecialPass buySpecialPass(String identifier, String ticketIdentifier) {
+        String id = requireText(identifier, "pass identifier");
+        IndividualTicket ticket = purchasableTicket(ticketIdentifier);
+        if (passes.containsKey(id)) {
+            throw new DuplicateElementException("pass identifier already in use: " + id);
+        }
+        for (Pass pass : passesOf(ticket)) {
+            if (pass instanceof SpecialPass) {
+                throw new DuplicateElementException("ticket " + ticket.getIdentifier()
+                        + " already has special pass " + pass.getIdentifier());
+            }
+        }
+        SpecialPass pass = new SpecialPass(id, ticket);
+        passes.put(id, pass);
+        return pass;
+    }
+
+    public void refundSpeedPass(String identifier) {
+        refund(identifier, SpeedPass.class, "speed pass");
+    }
+
+    public void refundSpecialPass(String identifier) {
+        refund(identifier, SpecialPass.class, "special pass");
+    }
+
+    private void refund(String identifier, Class<? extends Pass> type, String what) {
+        String id = requireText(identifier, "pass identifier");
+        Pass pass = passes.get(id);
+        if (!type.isInstance(pass)) {
+            throw new ElementNotFoundException(what + " not found: " + id);
+        }
+        if (pass.isConsumed()) {
+            throw new OperationNotAllowedException(what + " " + id + " has been consumed and cannot be refunded");
+        }
+        if (!pass.isRefundableOn(currentDate)) {
+            throw new OperationNotAllowedException(what + " " + id
+                    + " belongs to a ticket for the current date or earlier and cannot be refunded");
+        }
+        passes.remove(id);
+    }
+
+    private IndividualTicket purchasableTicket(String ticketIdentifier) {
+        String id = requireText(ticketIdentifier, "ticket identifier");
+        IndividualTicket ticket = findIndividualTicket(id);
+        if (ticket == null) {
+            throw new ElementNotFoundException("individual ticket not found: " + id);
+        }
+        if (ticket.getDate().isBefore(currentDate)) {
+            throw new OperationNotAllowedException("ticket " + id + " is for a past date");
+        }
+        return ticket;
+    }
+
+    private void removePassesOf(IndividualTicket ticket) {
+        passes.values().removeIf(pass -> pass.getTicket() == ticket);
     }
 
     // --- attractions -----------------------------------------------------
@@ -460,6 +588,9 @@ public final class ParkController {
             throw new OperationNotAllowedException("group ticket " + id
                     + " is for the current date or earlier and must be kept");
         }
+        for (IndividualTicket component : ticket.getComposition()) {
+            removePassesOf(component);
+        }
         tickets.remove(id);
     }
 
@@ -499,6 +630,7 @@ public final class ParkController {
             throw new OperationNotAllowedException("ticket " + id
                     + " is for the current date or earlier and must be kept");
         }
+        removePassesOf((IndividualTicket) ticket);
         tickets.remove(id);
     }
 

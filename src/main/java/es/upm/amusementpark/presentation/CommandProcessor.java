@@ -7,12 +7,15 @@ import es.upm.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.amusementpark.business.control.InvoiceController;
 import es.upm.amusementpark.business.control.ParkController;
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -202,6 +205,34 @@ public class CommandProcessor {
             case "ATTRACTION LIST":
                 if (requireArguments(keyword, fields, 1)) {
                     listOccupants(park.existingAttraction(fields[1]));
+                }
+                return true;
+            case "SPEEDPASS CREATE":
+                if (requireArguments(keyword, fields, 3)) {
+                    List<SpeedPass> bought = park.buySpeedPasses(fields[1], fields[2], fields[3]);
+                    BigDecimal total = BigDecimal.ZERO.setScale(2);
+                    for (SpeedPass pass : bought) {
+                        total = total.add(pass.getPrice());
+                    }
+                    out.println("SPEEDPASS PURCHASED (" + bought.size() + "). TOTAL PRICE: " + total + " EUR");
+                }
+                return true;
+            case "SPEEDPASS DELETE":
+                if (requireArguments(keyword, fields, 1)) {
+                    park.refundSpeedPass(fields[1]);
+                    out.println("SPEEDPASS REFUNDED");
+                }
+                return true;
+            case "SPECIALPASS CREATE":
+                if (requireArguments(keyword, fields, 2)) {
+                    SpecialPass pass = park.buySpecialPass(fields[1], fields[2]);
+                    out.println("SPECIALPASS PURCHASED. PRICE: " + pass.getPrice() + " EUR");
+                }
+                return true;
+            case "SPECIALPASS DELETE":
+                if (requireArguments(keyword, fields, 1)) {
+                    park.refundSpecialPass(fields[1]);
+                    out.println("SPECIALPASS REFUNDED");
                 }
                 return true;
             case "INVOICE CREATE":
