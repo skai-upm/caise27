@@ -76,7 +76,10 @@ class AppTest {
 
     @Test
     void missingFileIsHandledInAControlledManner() {
-        App.main(new String[] {tempDir.resolve("missing.txt").toString()});
-        assertTrue(buffer.toString(StandardCharsets.UTF_8).contains("Error: could not read command file"));
+        Path missing = tempDir.resolve("missing.txt");
+        App.main(new String[] {missing.toString()});
+        String out = buffer.toString(StandardCharsets.UTF_8);
+        assertTrue(out.contains("Error: could not read command file: " + missing));
+        assertFalse(out.contains("Exception"));
     }
 }

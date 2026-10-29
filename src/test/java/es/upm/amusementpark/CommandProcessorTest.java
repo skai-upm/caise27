@@ -72,6 +72,40 @@ class CommandProcessorTest {
     }
 
     @Test
+    void generalCommandsRejectExtraFields() throws IOException {
+        run("HELP;extra\nEXIT;x\nHELP;\nHELP\n");
+        String out = output();
+        assertTrue(out.contains("Error: invalid arguments for HELP"));
+        assertTrue(out.contains("Error: invalid arguments for EXIT"));
+        assertEquals(1, occurrences(out, "Available commands:"));
+    }
+
+    @Test
+    void surroundingWhitespaceIsIgnored() {
+        assertTrue(processor.execute("  HELP  "));
+        assertTrue(output().contains("Available commands:"));
+        assertFalse(processor.execute(" EXIT "));
+    }
+
+    @Test
+    void unexpectedErrorOnOneLineDoesNotStopProcessing() throws IOException {
+        CommandProcessor failing = new CommandProcessor(
+                new PrintStream(buffer, true, StandardCharsets.UTF_8)) {
+            @Override
+            public boolean execute(String line) {
+                if (line.equals("BOOM")) {
+                    throw new IllegalStateException("boom");
+                }
+                return super.execute(line);
+            }
+        };
+        failing.run(new BufferedReader(new StringReader("BOOM\nHELP\n")));
+        String out = output();
+        assertTrue(out.contains("Error: could not process command: BOOM"));
+        assertEquals(1, occurrences(out, "Available commands:"));
+    }
+
+    @Test
     void blankLinesAreIgnored() throws IOException {
         run("\n   \nHELP\n");
         assertFalse(output().contains("Error"));

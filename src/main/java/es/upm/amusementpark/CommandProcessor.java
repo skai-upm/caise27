@@ -31,14 +31,22 @@ public class CommandProcessor {
     public void run(BufferedReader in) throws IOException {
         String line;
         while ((line = in.readLine()) != null) {
-            if (!execute(line)) {
+            boolean keepGoing;
+            try {
+                keepGoing = execute(line);
+            } catch (RuntimeException e) {
+                out.println("Error: could not process command: " + line.trim());
+                keepGoing = true;
+            }
+            if (!keepGoing) {
                 return;
             }
         }
     }
 
     /**
-     * Executes a single command line.
+     * Executes a single command line. Fields are separated by ';' and the first
+     * field is the command keyword.
      *
      * @return {@code false} when processing must stop (EXIT), {@code true} otherwise
      */
@@ -47,17 +55,33 @@ public class CommandProcessor {
         if (command.isEmpty()) {
             return true;
         }
-        switch (command) {
+        String[] fields = command.split(";", -1);
+        String keyword = fields[0].trim();
+        switch (keyword) {
             case "HELP":
+                if (rejectArguments(keyword, fields)) {
+                    return true;
+                }
                 printHelp();
                 return true;
             case "EXIT":
+                if (rejectArguments(keyword, fields)) {
+                    return true;
+                }
                 out.println("Exiting application.");
                 return false;
             default:
                 out.println("Error: unknown command: " + command);
                 return true;
         }
+    }
+
+    private boolean rejectArguments(String keyword, String[] fields) {
+        if (fields.length == 1) {
+            return false;
+        }
+        out.println("Error: invalid arguments for " + keyword + " (expected no arguments)");
+        return true;
     }
 
     private void printHelp() {
