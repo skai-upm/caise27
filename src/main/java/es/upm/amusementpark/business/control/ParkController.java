@@ -19,6 +19,7 @@ import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.repository.Repositories;
 import es.upm.amusementpark.business.security.PasswordProtector;
+import es.upm.amusementpark.business.validation.UserDataValidator;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -162,8 +163,9 @@ public final class ParkController {
     /** Sets or changes a user's password, storing a new BCrypt-protected value. */
     public void setPassword(String email, String plainPassword) {
         User user = existingUser(email);
-        if (plainPassword == null || plainPassword.isEmpty()) {
-            throw new InvalidValueException("password must not be empty");
+        if (!UserDataValidator.isValidPassword(plainPassword)) {
+            throw new InvalidValueException("password must contain an upper-case letter, a lower-case letter,"
+                    + " a digit and a symbol");
         }
         user.setPasswordHash(passwords.protect(plainPassword));
     }

@@ -75,6 +75,10 @@ package "es.upm.amusementpark.business.control" {
   }
 }
 
+package "es.upm.amusementpark.business.validation" {
+  class UserDataValidator <<utility>>
+}
+
 package "es.upm.amusementpark.business.security" {
   class PasswordProtector
 }
@@ -207,6 +211,7 @@ Repositories --> "1" AttractionRepository : attractions
 TextFileRepositories ..> Repositories : creates
 ParkController --> "0..1" Repositories : injected
 ParkController *--> "1" PasswordProtector : passwords
+ParkController ..> UserDataValidator : validates
 
 ''' --- invoices (Builder)
 InvoiceBuilder <|-- UserInvoiceBuilder
