@@ -43,22 +43,22 @@ class UserServiceTest {
 
     @Test
     void createRejectsInvalidData() {
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.create("Eva", "Ruiz", "11111111A", "eva@correo.com", "Clave1!", "6", "1111222233334444"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.create("Eva", "Ruiz", "11111111H", "eva@correo.es", "Clave1!", "6", "1111222233334444"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.create("Eva", "Ruiz", "11111111H", "eva@correo.com", "clave1!", "6", "1111222233334444"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.create("Eva", "Ruiz", "11111111H", "eva@correo.com", "Clave1!", "6", "111122223333444"));
         assertEquals(2, service.getUsers().size());
     }
 
     @Test
     void createRejectsDuplicateDniAndEmail() {
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.create("Eva", "Ruiz", "12345678Z", "eva@correo.com", "Clave1!", "6", "1111222233334444"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.create("Eva", "Ruiz", "11111111H", "ana@correo.com", "Clave1!", "6", "1111222233334444"));
         assertEquals(2, restart().getUsers().size());
     }
@@ -66,13 +66,13 @@ class UserServiceTest {
     @Test
     void duplicateDniDetectedAfterRestart() {
         UserService again = restart();
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> again.create("Eva", "Ruiz", "12345678Z", "eva@correo.com", "Clave1!", "6", "1111222233334444"));
     }
 
     @Test
-    void deleteWithCorrectPasswordIsPersisted() throws Exception {
-        service.delete("pedro@correo.com", "Otra2#");
+    void removeAuthenticatedUserIsPersisted() throws Exception {
+        service.remove(service.authenticate("pedro@correo.com", "Otra2#"));
         assertNull(service.findByEmail("pedro@correo.com"));
         assertNull(restart().findByEmail("pedro@correo.com"));
         assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
@@ -80,9 +80,9 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteRejectsWrongPasswordAndUnknownEmail() {
-        assertThrows(UserOperationException.class, () -> service.delete("pedro@correo.com", "Otra2?"));
-        assertThrows(UserOperationException.class, () -> service.delete("nadie@correo.com", "Otra2#"));
+    void authenticateRejectsWrongPasswordAndUnknownEmail() {
+        assertThrows(OperationException.class, () -> service.authenticate("pedro@correo.com", "Otra2?"));
+        assertThrows(OperationException.class, () -> service.authenticate("nadie@correo.com", "Otra2#"));
         assertEquals(2, restart().getUsers().size());
     }
 
@@ -108,26 +108,26 @@ class UserServiceTest {
 
     @Test
     void updateRejectsBadCredentials() {
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Wrong1!", "PHONE", "600000000"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("nadie@correo.com", "Clave1!", "PHONE", "600000000"));
         assertEquals("612345678", restart().findByEmail("ana@correo.com").getPhone());
     }
 
     @Test
     void updateRejectsDniUnknownFieldAndInvalidValues() {
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "DNI", "87654321X"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "AGE", "30"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "PASSWORD", "clave1!"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "CARD", "123456789012345"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo.es"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> service.update("ana@correo.com", "Clave1!", "EMAIL", "pedro@correo.com"));
 
         User ana = restart().findByEmail("ana@correo.com");

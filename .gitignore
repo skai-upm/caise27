@@ -22,6 +22,10 @@ buildNumber.properties
 
 # Amusement Park runtime data
 users.txt
+groups.txt
+tickets.txt
+attractions.txt
+tmp/
 
 # SDDX/Sonar generated outputs (run records embed the Sonar token)
 experiments/

@@ -7,7 +7,7 @@ Defines how the application reads, interprets and executes text commands, both i
 ## Requirements
 
 ### Requirement: Command syntax
-Commands SHALL be single lines whose elements are separated by `;`, interpreted with basic String operations including `split`. The first element identifies the command; the recognised commands are `USER CREATE`, `USER DELETE`, `USER UPDATE`, `HELP` and `EXIT`.
+Commands SHALL be single lines whose elements are separated by `;`, interpreted with basic String operations including `split`. The first element identifies the command; the recognised commands are `USER CREATE`, `USER DELETE`, `USER UPDATE`, `SYSTEM DATE`, `SYSTEM PRICE`, `GROUP CREATE`, `GROUP ADD`, `GROUP REMOVE`, `GROUP DELETE`, `TICKET CREATE`, `TICKET DELETE`, `GROUPTICKET CREATE`, `GROUPTICKET DELETE`, `ATTRACTION CREATE`, `ATTRACTION ENTER`, `ATTRACTION EXIT`, `ATTRACTION LIST`, `ATTRACTION STATUS`, `HELP` and `EXIT`.
 
 #### Scenario: Recognised command is dispatched
 - **WHEN** the line `USER DELETE;ana@correo.com;Clave1!` is processed
@@ -20,6 +20,10 @@ Commands SHALL be single lines whose elements are separated by `;`, interpreted 
 #### Scenario: Wrong number of arguments
 - **WHEN** the line `USER DELETE;ana@correo.com` is processed
 - **THEN** an error message is shown, no operation is executed and the application keeps running
+
+#### Scenario: Delivery 2 command is dispatched
+- **WHEN** the line `GROUP CREATE;G01;Familia Garcia` is processed
+- **THEN** the group creation operation is executed
 
 ### Requirement: Robustness against incorrect input
 An incorrect, malformed or rejected command MUST NOT terminate the application unexpectedly; the application SHALL report the problem and continue with the next command.
@@ -58,11 +62,11 @@ Commands SHALL be processed by the same logic regardless of whether they come fr
 - **THEN** the produced messages and resulting user data are the same
 
 ### Requirement: HELP command
-The `HELP` command SHALL display the available commands and their basic syntax, including at least `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `HELP` and `EXIT`.
+The `HELP` command SHALL display the available commands and their basic syntax, including at least `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>`, `USER DELETE;<Email>;<Password>`, `USER UPDATE;<Email>;<Password>;<Field>;<NewValue>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `GROUPTICKET CREATE;<identifier>;<group>;<date>`, `GROUPTICKET DELETE;<identifier>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>`, `ATTRACTION ENTER;<attraction>;<ticket>`, `ATTRACTION EXIT;<attraction>;<email>`, `ATTRACTION LIST;<attraction>`, `ATTRACTION STATUS;<attractionIdentifier>`, `HELP` and `EXIT`.
 
 #### Scenario: Help lists commands
 - **WHEN** `HELP` is processed
-- **THEN** the output contains the syntax of USER CREATE, USER DELETE, USER UPDATE, HELP and EXIT
+- **THEN** the output contains the syntax of every Delivery 1 and Delivery 2 command listed above, including HELP and EXIT
 
 ### Requirement: EXIT command
 The `EXIT` command SHALL terminate the application in a controlled manner; once EXIT is processed no subsequent command is executed, in either mode.
