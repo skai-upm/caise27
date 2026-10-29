@@ -6,9 +6,13 @@ hide empty methods
 
 package "es.upm.amusementpark.business.model" {
   class User {
+    - firstName : String
+    - surnames : String
+    - {final} dni : String
     - email : String
-    - dni : String
     - passwordHash : String
+    - phone : String
+    - card : String
   }
 
   class Group {

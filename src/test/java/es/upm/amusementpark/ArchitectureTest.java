@@ -96,4 +96,22 @@ class ArchitectureTest {
             }
         }
     }
+
+    @Test
+    void userClassDoesNoIoAndEntryClassWritesNoFiles() throws IOException {
+        for (Source source : sources()) {
+            String file = source.path().getFileName().toString();
+            if (file.equals("User.java")) {
+                for (String imported : source.imports()) {
+                    assertFalse(imported.startsWith("java.io") || imported.startsWith("java.nio"),
+                            "User performs I/O: " + imported);
+                }
+            }
+            if (file.equals("App.java")) {
+                String text = Files.readString(source.path(), StandardCharsets.UTF_8);
+                assertFalse(text.contains("Files.write") || text.contains("newBufferedWriter")
+                        || text.contains("FileWriter"), "App writes files directly");
+            }
+        }
+    }
 }

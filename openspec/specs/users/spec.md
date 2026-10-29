@@ -1,0 +1,39 @@
+# users Specification
+
+## Purpose
+
+Defines the park's users as independent domain objects: the data each user keeps, its encapsulation, and the immutability of the DNI.
+
+## Requirements
+
+### Requirement: User data
+Each user SHALL be an independent object with first name, surname(s), DNI, email address, password, telephone number and card number. The password SHALL be kept only in its protected form.
+
+#### Scenario: User keeps all attributes
+- **WHEN** a user is created with first name `Ana`, surnames `Garcia Lopez`, DNI `12345678Z`, email `ana@correo.com`, password `Clave1!`, phone `612345678` and card `1234567890123456`
+- **THEN** each value can be read back from the user, and the password is available only as a protected value that verifies `Clave1!`
+
+### Requirement: Encapsulated attributes
+User attributes SHALL be private and accessible only through the user's operations; the DNI SHALL NOT be changeable after creation.
+
+#### Scenario: Fields are private
+- **WHEN** the user class is inspected
+- **THEN** every attribute is private and the DNI attribute is final with no operation that changes it
+
+#### Scenario: Other attributes changeable through operations
+- **WHEN** the telephone of a user is changed through its operation
+- **THEN** the new value is returned and the DNI is unchanged
+
+### Requirement: User data persisted
+Every user attribute SHALL be stored and reconstructed by the users repository, the password only in protected form; stored users with fewer fields SHALL still be read.
+
+#### Scenario: Restart keeps all user data
+- **WHEN** a complete user is saved and the application restarts
+- **THEN** all seven attributes are reconstructed and the original password still verifies
+
+### Requirement: Separate user, application and storage classes
+The user SHALL be represented by its own class that does not manage persistence; the class that starts and runs the application SHALL NOT contain file reading or writing logic; users SHALL be stored and retrieved by a separate class.
+
+#### Scenario: Responsibilities separated
+- **WHEN** the sources are inspected
+- **THEN** the user class performs no I/O, the entry class does not read or write files, and a repository class stores and retrieves users
