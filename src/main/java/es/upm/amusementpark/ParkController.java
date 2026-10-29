@@ -8,12 +8,13 @@ import java.time.format.ResolverStyle;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Central park management. Only one instance exists per execution; it keeps
  * the current system date, the current base ticket price, and centralizes
- * access to the users and groups of the park.
+ * access to the users, groups and tickets of the park.
  */
 public final class ParkController {
 
@@ -26,6 +27,7 @@ public final class ParkController {
     private BigDecimal basePrice;
     private final Map<String, User> users = new LinkedHashMap<>();
     private final Map<String, Group> groups = new LinkedHashMap<>();
+    private final Map<String, Ticket> tickets = new LinkedHashMap<>();
 
     private ParkController() {
         reset();
@@ -45,6 +47,7 @@ public final class ParkController {
         basePrice = DEFAULT_PRICE;
         users.clear();
         groups.clear();
+        tickets.clear();
     }
 
     public LocalDate getCurrentDate() {
@@ -61,8 +64,17 @@ public final class ParkController {
      * @throws IllegalArgumentException if the text is not a valid date in that format
      */
     public void setCurrentDate(String text) {
+        currentDate = parseDate(text);
+    }
+
+    /**
+     * Parses a {@code yyyy-MM-dd} date strictly.
+     *
+     * @throws IllegalArgumentException if the text is not a valid date in that format
+     */
+    static LocalDate parseDate(String text) {
         try {
-            currentDate = LocalDate.parse(text.trim(), DATE_FORMAT);
+            return LocalDate.parse(text.trim(), DATE_FORMAT);
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("invalid date (expected yyyy-MM-dd): " + text, e);
         }
@@ -165,6 +177,80 @@ public final class ParkController {
                     + " has a group ticket for the current date or later");
         }
         groups.remove(group.getIdentifier());
+    }
+
+    // --- tickets ---------------------------------------------------------
+
+    public Ticket findTicket(String identifier) {
+        return tickets.get(identifier);
+    }
+
+    public Collection<Ticket> getTickets() {
+        return Collections.unmodifiableCollection(tickets.values());
+    }
+
+    /** Common check of the identifier space shared by every ticket type. */
+    public boolean isTicketIdentifierUsed(String identifier) {
+        for (Ticket ticket : tickets.values()) {
+            if (ticket.identifiers().contains(identifier)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public IndividualTicket createIndividualTicket(String identifier, String email, String dateText) {
+        String id = requireText(identifier, "ticket identifier");
+        User user = existingUser(email);
+        LocalDate date = parseDate(dateText);
+        requireNotPast(date);
+        IndividualTicket ticket = new IndividualTicket(id, user, date, basePrice);
+        addTicket(ticket);
+        return ticket;
+    }
+
+    public void deleteTicket(String identifier) {
+        String id = requireText(identifier, "ticket identifier");
+        Ticket ticket = tickets.get(id);
+        if (!(ticket instanceof IndividualTicket)) {
+            throw new IllegalArgumentException("ticket not found: " + id);
+        }
+        if (!ticket.isDeletableOn(currentDate)) {
+            throw new IllegalArgumentException("ticket " + id
+                    + " is for the current date or earlier and must be kept");
+        }
+        tickets.remove(id);
+    }
+
+    /** Tickets of a user, obtained by traversing the tickets managed by the park. */
+    public List<Ticket> ticketsOf(User user) {
+        return tickets.values().stream().filter(t -> t.involves(user)).toList();
+    }
+
+    /** Derived state: whether the user has a ticket for the current date or later. */
+    public boolean hasActiveTicket(User user) {
+        for (Ticket ticket : ticketsOf(user)) {
+            if (ticket.isActiveOn(currentDate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void addTicket(Ticket ticket) {
+        for (String id : ticket.identifiers()) {
+            if (isTicketIdentifierUsed(id)) {
+                throw new IllegalArgumentException("ticket identifier already in use: " + id);
+            }
+        }
+        tickets.put(ticket.getIdentifier(), ticket);
+    }
+
+    private void requireNotPast(LocalDate date) {
+        if (date.isBefore(currentDate)) {
+            throw new IllegalArgumentException("date " + date
+                    + " is earlier than the current date " + currentDate);
+        }
     }
 
     /**
