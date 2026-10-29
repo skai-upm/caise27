@@ -93,4 +93,20 @@ class UmlModelTest {
             assertTrue(text.contains(relation), "missing relationship: " + relation);
         }
     }
+
+    @Test
+    void delivery3ElementsIdentifiable() throws IOException {
+        String text = model();
+        for (String element : List.of(
+                "interface AccessTicket", "interface IndividualAccess", "interface GroupAccess",
+                "abstract class Attraction<T extends AccessTicket>",
+                "Attraction <|-- GeneralAttraction", "Attraction <|-- IndividualAttraction",
+                "Attraction <|-- GroupAttraction", "Attraction <|-- SpecialAttraction", "enum AttractionType",
+                "SpeedPass \"0..*\" --> \"1\" IndividualTicket", "SpecialPass \"0..1\" --> \"1\" IndividualTicket",
+                "abstract class InvoiceBuilder", "InvoiceBuilder <|-- UserInvoiceBuilder",
+                "InvoiceBuilder <|-- GroupInvoiceBuilder", "class InvoiceDirector",
+                ": injected", "class ParkController <<singleton>>", "class InvoiceController <<singleton>>")) {
+            assertTrue(text.contains(element), "missing Delivery 3 element: " + element);
+        }
+    }
 }

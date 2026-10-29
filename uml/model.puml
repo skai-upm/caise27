@@ -1,5 +1,5 @@
 @startuml
-title Amusement Park - class model
+title Amusement Park - class model (Delivery 3)
 
 skinparam classAttributeIconSize 0
 hide empty methods
@@ -178,6 +178,8 @@ ParkController ..|> PassLookup : provides
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 Pass --> "1" IndividualTicket : ticket
+SpeedPass "0..*" --> "1" IndividualTicket : any number per ticket
+SpecialPass "0..1" --> "1" IndividualTicket : at most one per ticket
 
 ' --- central management
 ParkController o--> "0..*" User : users
