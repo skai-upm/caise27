@@ -22,11 +22,11 @@ The application SHALL process commands one per line, in order, through a single 
 - **THEN** it processes the commands contained in that file
 
 ### Requirement: HELP command
-The `HELP` command SHALL display the available commands and their basic syntax, including at least `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `HELP` and `EXIT`.
+The `HELP` command SHALL display the available commands and their basic syntax, including at least the Delivery 2 minimum command set exactly as spelled in the scenario below, and SHALL NOT stop processing.
 
 #### Scenario: HELP lists the minimum command set
 - **WHEN** the line `HELP` is processed
-- **THEN** the output contains each of the syntaxes `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `HELP` and `EXIT`
+- **THEN** the output contains each of `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>`, `USER DELETE;<Email>;<Password>`, `USER UPDATE;<Email>;<Password>;<Field>;<NewValue>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `GROUPTICKET CREATE;<identifier>;<group>;<date>`, `GROUPTICKET DELETE;<identifier>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>`, `ATTRACTION ENTER;<attraction>;<ticket>`, `ATTRACTION EXIT;<attraction>;<email>`, `ATTRACTION LIST;<attraction>`, `ATTRACTION STATUS;<attractionIdentifier>`, `HELP` and `EXIT`
 
 #### Scenario: HELP lists the SYSTEM commands
 - **WHEN** the line `HELP` is processed
@@ -87,31 +87,3 @@ Command lines SHALL be split into fields on the `;` character using basic string
 #### Scenario: Surrounding whitespace ignored
 - **WHEN** the line `  HELP  ` is processed
 - **THEN** it is recognised as the HELP command
-
-### Requirement: HELP lists group ticket commands
-The HELP output SHALL include the syntaxes `GROUPTICKET CREATE;<identifier>;<group>;<date>` and `GROUPTICKET DELETE;<identifier>`.
-
-#### Scenario: HELP shows GROUPTICKET commands
-- **WHEN** the line `HELP` is processed
-- **THEN** the output contains `GROUPTICKET CREATE;<identifier>;<group>;<date>` and `GROUPTICKET DELETE;<identifier>`
-
-### Requirement: HELP lists attraction commands
-The HELP output SHALL include the syntaxes `ATTRACTION CREATE;<identifier>;<name>;<capacity>` and `ATTRACTION LIST;<attraction>`.
-
-#### Scenario: HELP shows ATTRACTION commands
-- **WHEN** the line `HELP` is processed
-- **THEN** the output contains `ATTRACTION CREATE;<identifier>;<name>;<capacity>` and `ATTRACTION LIST;<attraction>`
-
-### Requirement: HELP lists attraction entry
-The HELP output SHALL include the syntax `ATTRACTION ENTER;<attraction>;<ticket>`.
-
-#### Scenario: HELP shows ATTRACTION ENTER
-- **WHEN** the line `HELP` is processed
-- **THEN** the output contains `ATTRACTION ENTER;<attraction>;<ticket>`
-
-### Requirement: HELP lists attraction exit and status
-The HELP output SHALL include the syntaxes `ATTRACTION EXIT;<attraction>;<email>` and `ATTRACTION STATUS;<attraction>`.
-
-#### Scenario: HELP shows ATTRACTION EXIT and STATUS
-- **WHEN** the line `HELP` is processed
-- **THEN** the output contains `ATTRACTION EXIT;<attraction>;<email>` and `ATTRACTION STATUS;<attraction>`

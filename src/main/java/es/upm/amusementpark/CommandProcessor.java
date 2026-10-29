@@ -13,9 +13,9 @@ import java.util.List;
 public class CommandProcessor {
 
     static final List<String> COMMAND_SYNTAX = List.of(
-            "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-            "USER DELETE;<email>;<password>",
-            "USER UPDATE;<email>;<password>;<field>;<value>",
+            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+            "USER DELETE;<Email>;<Password>",
+            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
             "SYSTEM DATE;<yyyy-MM-dd>",
             "SYSTEM PRICE;<Price>",
             "GROUP CREATE;<Identifier>;<Name>",
@@ -30,7 +30,7 @@ public class CommandProcessor {
             "ATTRACTION ENTER;<attraction>;<ticket>",
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
-            "ATTRACTION STATUS;<attraction>",
+            "ATTRACTION STATUS;<attractionIdentifier>",
             "HELP",
             "EXIT");
 

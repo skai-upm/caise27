@@ -125,6 +125,6 @@ class ParkGroupAccessTest {
     void helpListsExitAndStatus() throws IOException {
         String out = run("HELP\n");
         assertTrue(out.contains("ATTRACTION EXIT;<attraction>;<email>"));
-        assertTrue(out.contains("ATTRACTION STATUS;<attraction>"));
+        assertTrue(out.contains("ATTRACTION STATUS;<attractionIdentifier>"));
     }
 }

@@ -49,11 +49,28 @@ class CommandProcessorTest {
     void helpListsMinimumCommandSet() {
         assertTrue(processor.execute("HELP"));
         String out = output();
-        assertTrue(out.contains("USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>"));
-        assertTrue(out.contains("USER DELETE;<email>;<password>"));
-        assertTrue(out.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
-        assertTrue(out.contains("HELP"));
-        assertTrue(out.contains("EXIT"));
+        String delivery2Minimum = "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card> "
+                + "USER DELETE;<Email>;<Password> USER UPDATE;<Email>;<Password>;<Field>;<NewValue> "
+                + "SYSTEM DATE;<yyyy-MM-dd> SYSTEM PRICE;<Price> GROUP CREATE;<Identifier>;<Name> "
+                + "GROUP ADD;<Identifier>;<Email> GROUP REMOVE;<Identifier>;<Email> GROUP DELETE;<Identifier> "
+                + "TICKET CREATE;<identifier>;<email>;<date> TICKET DELETE;<identifier> "
+                + "GROUPTICKET CREATE;<identifier>;<group>;<date> GROUPTICKET DELETE;<identifier> "
+                + "ATTRACTION CREATE;<identifier>;<name>;<capacity> ATTRACTION ENTER;<attraction>;<ticket> "
+                + "ATTRACTION EXIT;<attraction>;<email> ATTRACTION LIST;<attraction> "
+                + "ATTRACTION STATUS;<attractionIdentifier> HELP EXIT";
+        // Each syntax of the Delivery 2 minimum set appears on its own line.
+        java.util.List<String> lines = out.lines().map(String::trim).toList();
+        String[] tokens = delivery2Minimum.split(" ");
+        int found = 0;
+        for (int i = 0; i < tokens.length; i++) {
+            String syntax = tokens[i];
+            if (i + 1 < tokens.length && !syntax.equals("HELP") && !syntax.equals("EXIT")) {
+                syntax = syntax + " " + tokens[++i];
+            }
+            assertTrue(lines.contains(syntax), "missing in HELP: " + syntax);
+            found++;
+        }
+        assertEquals(20, found);
     }
 
     @Test
