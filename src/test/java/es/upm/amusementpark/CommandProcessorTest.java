@@ -26,8 +26,10 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() {
         buffer = new ByteArrayOutputStream();
-        service = new UserService(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(service, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        ParkController park = ParkController.getInstance();
+        park.initialize(dir);
+        service = park.getUserService();
+        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     private String output() {
@@ -70,11 +72,46 @@ class CommandProcessorTest {
     void helpListsAllCommands() {
         assertTrue(processor.process("HELP"));
         String out = output();
-        assertTrue(out.contains("USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>"));
-        assertTrue(out.contains("USER DELETE;<email>;<password>"));
-        assertTrue(out.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
+        assertTrue(out.contains("USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>"));
+        assertTrue(out.contains("USER DELETE;<Email>;<Password>"));
+        assertTrue(out.contains("USER UPDATE;<Email>;<Password>;<Field>;<NewValue>"));
         assertTrue(out.contains("HELP"));
         assertTrue(out.contains("EXIT"));
+    }
+
+    @Test
+    void helpListsDeliveryTwoCommands() {
+        processor.process("HELP");
+        String out = output();
+        for (String syntax : new String[] {
+                "SYSTEM DATE;<yyyy-MM-dd>", "SYSTEM PRICE;<Price>",
+                "GROUP CREATE;<Identifier>;<Name>", "GROUP ADD;<Identifier>;<Email>",
+                "GROUP REMOVE;<Identifier>;<Email>", "GROUP DELETE;<Identifier>",
+                "TICKET CREATE;<identifier>;<email>;<date>", "TICKET DELETE;<identifier>",
+                "GROUPTICKET CREATE;<identifier>;<group>;<date>", "GROUPTICKET DELETE;<identifier>",
+                "ATTRACTION CREATE;<identifier>;<name>;<capacity>", "ATTRACTION ENTER;<attraction>;<ticket>",
+                "ATTRACTION EXIT;<attraction>;<email>", "ATTRACTION LIST;<attraction>",
+                "ATTRACTION STATUS;<attractionIdentifier>"}) {
+            assertTrue(out.contains(syntax), syntax);
+        }
+    }
+
+    @Test
+    void systemCommands() {
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process("SYSTEM DATE;2027-02-30");
+        processor.process("SYSTEM PRICE;45.50");
+        processor.process("SYSTEM PRICE;-1");
+        processor.process(ANA);
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("TICKET CREATE;T002;ana@correo.com;2027-04-14");
+        String[] lines = output().trim().split(System.lineSeparator());
+        assertEquals("SYSTEM DATE SET;2027-04-15", lines[0]);
+        assertTrue(lines[1].startsWith("ERROR:"));
+        assertEquals("SYSTEM PRICE SET;45.50", lines[2]);
+        assertTrue(lines[3].startsWith("ERROR:"));
+        assertEquals("TICKET CREATED;PRICE=45.50", lines[5]);
+        assertTrue(lines[6].startsWith("ERROR:"));
     }
 
     @Test

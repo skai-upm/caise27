@@ -43,8 +43,16 @@ public class UserService {
     }
 
     public void delete(String email, String password) {
-        User user = authenticate(email, password);
+        remove(authenticate(email, password));
+    }
+
+    /** Removes an already authenticated user and saves. */
+    public void remove(User user) {
         users.remove(user);
+        repository.save(users);
+    }
+
+    public void save() {
         repository.save(users);
     }
 
@@ -115,7 +123,8 @@ public class UserService {
         return null;
     }
 
-    private User authenticate(String email, String password) {
+    /** Returns the user with that email if the password matches; otherwise throws. */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null) {
             throw new IllegalArgumentException("user not found");

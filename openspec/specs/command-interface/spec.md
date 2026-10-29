@@ -39,11 +39,11 @@ When started with a file path as its first argument, the application SHALL proce
 - **THEN** an error message is printed and the application terminates in a controlled manner
 
 ### Requirement: HELP command
-`HELP` SHALL display the available commands and their basic syntax, covering at least `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `HELP` and `EXIT`.
+`HELP` SHALL display the available commands and their basic syntax, covering at least `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>`, `USER DELETE;<Email>;<Password>`, `USER UPDATE;<Email>;<Password>;<Field>;<NewValue>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `GROUPTICKET CREATE;<identifier>;<group>;<date>`, `GROUPTICKET DELETE;<identifier>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>`, `ATTRACTION ENTER;<attraction>;<ticket>`, `ATTRACTION EXIT;<attraction>;<email>`, `ATTRACTION LIST;<attraction>`, `ATTRACTION STATUS;<attractionIdentifier>`, `HELP` and `EXIT`.
 
 #### Scenario: Help output
 - **WHEN** `HELP` is processed
-- **THEN** each of the five command syntaxes is printed
+- **THEN** each of the twenty command syntaxes is printed
 
 ### Requirement: EXIT command
 `EXIT` SHALL terminate the application in a controlled manner, and no command after it SHALL be executed, in either mode.
@@ -51,3 +51,10 @@ When started with a file path as its first argument, the application SHALL proce
 #### Scenario: Commands after EXIT ignored
 - **WHEN** a command file contains `USER CREATE;...`, `EXIT`, `USER CREATE;...`
 - **THEN** only the first `USER CREATE` is executed
+
+### Requirement: Command-line argument forms
+The application SHALL accept exactly these launch forms: no arguments (interactive), `<file>` (file mode), `--fly` (interactive, temporary persistence), and `--fly <file>` (file mode, temporary persistence). Without `--fly`, argument handling SHALL be unchanged from Delivery 1.
+
+#### Scenario: Fly followed by file
+- **WHEN** the JAR is run with `--fly input_fase2.txt`
+- **THEN** the commands in `input_fase2.txt` are processed using temporary persistence

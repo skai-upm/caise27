@@ -34,7 +34,7 @@ class CommandRunnerTest {
     private String runApp(Path workDir, String[] args, String stdin) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(buffer, true, StandardCharsets.UTF_8), workDir.resolve("users.txt"));
+                new PrintStream(buffer, true, StandardCharsets.UTF_8), workDir);
         return buffer.toString(StandardCharsets.UTF_8);
     }
 
@@ -57,7 +57,7 @@ class CommandRunnerTest {
         assertEquals("USER UPDATED", lines[2]);
         assertEquals("USER UPDATED", lines[3]);
         assertEquals("USER DELETED", lines[4]);
-        assertTrue(fileOutput.contains("USER DELETE;<email>;<password>"));
+        assertTrue(fileOutput.contains("USER DELETE;<Email>;<Password>"));
     }
 
     @Test
@@ -73,7 +73,7 @@ class CommandRunnerTest {
     void missingCommandFileIsReported() {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int code = App.run(new String[] {dir.resolve("nope.txt").toString()}, new ByteArrayInputStream(new byte[0]),
-                new PrintStream(buffer, true, StandardCharsets.UTF_8), dir.resolve("users.txt"));
+                new PrintStream(buffer, true, StandardCharsets.UTF_8), dir);
         assertEquals(1, code);
         assertTrue(buffer.toString(StandardCharsets.UTF_8).startsWith("ERROR:"));
     }
