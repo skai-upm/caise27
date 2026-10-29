@@ -94,3 +94,10 @@ The HELP output SHALL include the syntaxes `GROUPTICKET CREATE;<identifier>;<gro
 #### Scenario: HELP shows GROUPTICKET commands
 - **WHEN** the line `HELP` is processed
 - **THEN** the output contains `GROUPTICKET CREATE;<identifier>;<group>;<date>` and `GROUPTICKET DELETE;<identifier>`
+
+### Requirement: HELP lists attraction commands
+The HELP output SHALL include the syntaxes `ATTRACTION CREATE;<identifier>;<name>;<capacity>` and `ATTRACTION LIST;<attraction>`.
+
+#### Scenario: HELP shows ATTRACTION commands
+- **WHEN** the line `HELP` is processed
+- **THEN** the output contains `ATTRACTION CREATE;<identifier>;<name>;<capacity>` and `ATTRACTION LIST;<attraction>`

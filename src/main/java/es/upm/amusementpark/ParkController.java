@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * Central park management. Only one instance exists per execution; it keeps
  * the current system date, the current base ticket price, and centralizes
- * access to the users, groups and tickets of the park.
+ * access to the users, groups, tickets and attractions of the park.
  */
 public final class ParkController {
 
@@ -31,6 +31,7 @@ public final class ParkController {
     private final Map<String, User> users = new LinkedHashMap<>();
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
+    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
 
     private ParkController() {
         reset();
@@ -51,6 +52,7 @@ public final class ParkController {
         users.clear();
         groups.clear();
         tickets.clear();
+        attractions.clear();
     }
 
     public LocalDate getCurrentDate() {
@@ -183,6 +185,57 @@ public final class ParkController {
             ticket.releaseGroup();
         }
         groups.remove(group.getIdentifier());
+    }
+
+    // --- attractions -----------------------------------------------------
+
+    public Attraction findAttraction(String identifier) {
+        return attractions.get(identifier);
+    }
+
+    public Collection<Attraction> getAttractions() {
+        return Collections.unmodifiableCollection(attractions.values());
+    }
+
+    public Attraction createAttraction(String identifier, String name, String capacityText) {
+        String id = requireText(identifier, "attraction identifier");
+        String attractionName = requireText(name, "attraction name");
+        int capacity = parseCapacity(capacityText);
+        if (attractions.containsKey(id)) {
+            throw new IllegalArgumentException("attraction already exists: " + id);
+        }
+        Attraction attraction = new Attraction(id, attractionName, capacity);
+        attractions.put(id, attraction);
+        return attraction;
+    }
+
+    public Attraction existingAttraction(String identifier) {
+        String id = requireText(identifier, "attraction identifier");
+        Attraction attraction = attractions.get(id);
+        if (attraction == null) {
+            throw new IllegalArgumentException("attraction not found: " + id);
+        }
+        return attraction;
+    }
+
+    private static int parseCapacity(String text) {
+        String value = text == null ? "" : text.trim();
+        boolean digitsOnly = !value.isEmpty();
+        for (int i = 0; i < value.length() && digitsOnly; i++) {
+            digitsOnly = value.charAt(i) >= '0' && value.charAt(i) <= '9';
+        }
+        int capacity = 0;
+        if (digitsOnly) {
+            try {
+                capacity = Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                capacity = 0;
+            }
+        }
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("capacity must be a whole number greater than zero: " + text);
+        }
+        return capacity;
     }
 
     // --- tickets ---------------------------------------------------------

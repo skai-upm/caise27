@@ -25,6 +25,8 @@ public class CommandProcessor {
             "TICKET DELETE;<identifier>",
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
+            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "ATTRACTION LIST;<attraction>",
             "HELP",
             "EXIT");
 
@@ -150,9 +152,30 @@ public class CommandProcessor {
                     out.println("GROUP TICKET DELETED");
                 }
                 return true;
+            case "ATTRACTION CREATE":
+                if (requireArguments(keyword, fields, 3)) {
+                    park.createAttraction(fields[1], fields[2], fields[3]);
+                    out.println("ATTRACTION CREATED");
+                }
+                return true;
+            case "ATTRACTION LIST":
+                if (requireArguments(keyword, fields, 1)) {
+                    listOccupants(park.existingAttraction(fields[1]));
+                }
+                return true;
             default:
                 out.println("Error: unknown command: " + command);
                 return true;
+        }
+    }
+
+    private void listOccupants(Attraction attraction) {
+        if (attraction.getOccupants().isEmpty()) {
+            out.println("NO USERS IN ATTRACTION " + attraction.getIdentifier());
+            return;
+        }
+        for (User user : attraction.getOccupants()) {
+            out.println(user.getEmail());
         }
     }
 
