@@ -19,3 +19,11 @@ buildNumber.properties
 # OpenSpec
 .claude/
 .sddx/
+
+# Amusement Park runtime data
+users.txt
+
+# SDDX/Sonar generated outputs (run records embed the Sonar token)
+experiments/
+.scannerwork/
+sonar_metric_catalog.json
