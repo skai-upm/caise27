@@ -1,4 +1,4 @@
-package es.upm.amusementpark;
+package es.upm.amusementpark.business.model;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -67,7 +67,7 @@ public class GroupTicket extends Ticket {
     }
 
     /** Clears the reference to the purchasing group when that group is deleted. */
-    void releaseGroup() {
+    public void releaseGroup() {
         group = null;
     }
 

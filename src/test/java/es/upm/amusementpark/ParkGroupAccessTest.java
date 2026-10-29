@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.exception.ParkException;
+
+import es.upm.amusementpark.business.control.ParkController;
+import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.presentation.CommandProcessor;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,7 +64,7 @@ class ParkGroupAccessTest {
     void insufficientCapacityNobodyEnters() {
         park.createAttraction("A03", "Mini", "2");
         park.enterAttraction("A03", "T001");
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        ParkException e = assertThrows(ParkException.class,
                 () -> park.enterAttraction("A03", "TG01"));
         assertTrue(e.getMessage().contains("does not have enough capacity"));
         assertEquals(List.of(luis), park.findAttraction("A03").getOccupants());
@@ -67,14 +74,14 @@ class ParkGroupAccessTest {
     void memberAlreadyInsideNobodyEnters() {
         park.createIndividualTicket("T002", "ana@correo.com", "2027-04-15");
         park.enterAttraction("A01", "T002");
-        assertThrows(IllegalArgumentException.class, () -> park.enterAttraction("A01", "TG01"));
+        assertThrows(ParkException.class, () -> park.enterAttraction("A01", "TG01"));
         assertEquals(List.of(ana), park.findAttraction("A01").getOccupants());
     }
 
     @Test
     void groupTicketForAnotherDateRejected() {
         park.setCurrentDate("2027-04-16");
-        assertThrows(IllegalArgumentException.class, () -> park.enterAttraction("A01", "TG01"));
+        assertThrows(ParkException.class, () -> park.enterAttraction("A01", "TG01"));
         assertTrue(park.findAttraction("A01").getOccupants().isEmpty());
     }
 

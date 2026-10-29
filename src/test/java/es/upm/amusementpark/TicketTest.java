@@ -1,5 +1,9 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.User;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;

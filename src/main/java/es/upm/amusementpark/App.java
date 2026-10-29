@@ -1,31 +1,32 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.control.ParkController;
+import es.upm.amusementpark.persistence.DataDirectories;
+import es.upm.amusementpark.persistence.ParkStorage;
+import es.upm.amusementpark.persistence.PersistenceException;
+import es.upm.amusementpark.presentation.CommandProcessor;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
- * Application entry point: {@code [--fly] [commandFile]}. Without a command
- * file, commands are read from standard input. With {@code --fly}, the park
- * data lives in a temporary directory that is deleted at the end.
+ * Application entry point and composition root: {@code [--fly] [commandFile]}.
+ * Without a command file, commands are read from standard input. With
+ * {@code --fly}, the park data lives in a temporary directory that is deleted
+ * at the end.
  */
 public class App {
 
     static final String FLY = "--fly";
-    static final String DATA_DIRECTORY = "data";
-    static final String TEMP_DIRECTORY = "tmp";
-    private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+    static final String DATA_DIRECTORY = DataDirectories.DATA_DIRECTORY;
+    static final String TEMP_DIRECTORY = DataDirectories.TEMP_DIRECTORY;
 
     public static void main(String[] args) {
         run(args, Path.of(""), System.in, System.out);
@@ -36,7 +37,8 @@ public class App {
         String commandFile = fly ? (args.length > 1 ? args[1] : null) : (args.length > 0 ? args[0] : null);
         Path dataDirectory = null;
         try {
-            dataDirectory = fly ? createFlyDirectory(baseDirectory) : baseDirectory.resolve(DATA_DIRECTORY);
+            dataDirectory = fly ? DataDirectories.createTemporary(baseDirectory)
+                    : DataDirectories.permanent(baseDirectory);
             ParkController park = ParkController.getInstance();
             park.reset();
             ParkStorage storage = new ParkStorage(dataDirectory);
@@ -47,11 +49,15 @@ public class App {
             CommandProcessor processor = new CommandProcessor(out);
             processor.setAfterCommand(() -> storage.save(park));
             process(processor, commandFile, in, out);
-        } catch (IOException | UncheckedIOException e) {
+        } catch (PersistenceException e) {
             out.println("Error: could not access park data: " + e.getMessage());
         } finally {
             if (fly && dataDirectory != null) {
-                deleteRecursively(dataDirectory, out);
+                try {
+                    DataDirectories.delete(dataDirectory);
+                } catch (PersistenceException e) {
+                    out.println("Error: " + e.getMessage());
+                }
             }
         }
     }
@@ -69,27 +75,6 @@ public class App {
             } catch (IOException e) {
                 out.println("Error: could not read command file: " + commandFile);
             }
-        }
-    }
-
-    private static Path createFlyDirectory(Path baseDirectory) throws IOException {
-        Path parent = baseDirectory.resolve(TEMP_DIRECTORY);
-        Files.createDirectories(parent);
-        String name = LocalDateTime.now().format(TIMESTAMP);
-        Path directory = parent.resolve(name);
-        for (int suffix = 1; Files.exists(directory); suffix++) {
-            directory = parent.resolve(name + "_" + suffix);
-        }
-        return Files.createDirectory(directory);
-    }
-
-    private static void deleteRecursively(Path directory, PrintStream out) {
-        try (Stream<Path> paths = Files.walk(directory)) {
-            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
-        } catch (IOException e) {
-            out.println("Error: could not delete temporary data: " + directory);
         }
     }
 }

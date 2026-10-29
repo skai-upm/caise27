@@ -1,4 +1,11 @@
-package es.upm.amusementpark;
+package es.upm.amusementpark.persistence;
+
+import es.upm.amusementpark.business.control.ParkController;
+import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.User;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;

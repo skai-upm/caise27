@@ -1,4 +1,15 @@
-package es.upm.amusementpark;
+package es.upm.amusementpark.business.control;
+
+import es.upm.amusementpark.business.exception.DuplicateElementException;
+import es.upm.amusementpark.business.exception.ElementNotFoundException;
+import es.upm.amusementpark.business.exception.InvalidValueException;
+import es.upm.amusementpark.business.exception.OperationNotAllowedException;
+import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,7 +32,7 @@ import java.util.Set;
  */
 public final class ParkController {
 
-    static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
+    public static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
 
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
@@ -46,7 +57,7 @@ public final class ParkController {
     }
 
     /** Restores the start-of-execution state (used by tests). */
-    void reset() {
+    public void reset() {
         currentDate = LocalDate.now();
         basePrice = DEFAULT_PRICE;
         users.clear();
@@ -66,7 +77,7 @@ public final class ParkController {
     /**
      * Sets the current system date from a {@code yyyy-MM-dd} text.
      *
-     * @throws IllegalArgumentException if the text is not a valid date in that format
+     * @throws InvalidValueException if the text is not a valid date in that format
      */
     public void setCurrentDate(String text) {
         currentDate = parseDate(text);
@@ -75,20 +86,20 @@ public final class ParkController {
     /**
      * Parses a {@code yyyy-MM-dd} date strictly.
      *
-     * @throws IllegalArgumentException if the text is not a valid date in that format
+     * @throws InvalidValueException if the text is not a valid date in that format
      */
-    static LocalDate parseDate(String text) {
+    public static LocalDate parseDate(String text) {
         try {
             return LocalDate.parse(text.trim(), DATE_FORMAT);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("invalid date (expected yyyy-MM-dd): " + text, e);
+            throw new InvalidValueException("invalid date (expected yyyy-MM-dd): " + text, e);
         }
     }
 
     /**
      * Sets the current base ticket price.
      *
-     * @throws IllegalArgumentException if the text is not a positive amount with at most two decimals
+     * @throws InvalidValueException if the text is not a positive amount with at most two decimals
      */
     public void setBasePrice(String text) {
         basePrice = parsePrice(text.trim());
@@ -108,15 +119,15 @@ public final class ParkController {
                     decimals++;
                 }
             } else {
-                throw new IllegalArgumentException("invalid price: " + text);
+                throw new InvalidValueException("invalid price: " + text);
             }
         }
         if (digits == 0 || decimals > 2 || text.startsWith(".") || text.endsWith(".")) {
-            throw new IllegalArgumentException("invalid price: " + text);
+            throw new InvalidValueException("invalid price: " + text);
         }
         BigDecimal price = new BigDecimal(text).setScale(2);
         if (price.signum() <= 0) {
-            throw new IllegalArgumentException("price must be positive: " + text);
+            throw new InvalidValueException("price must be positive: " + text);
         }
         return price;
     }
@@ -140,24 +151,24 @@ public final class ParkController {
     // --- reconstruction (used by the persistence layer) ------------------
 
     /** The registered user with that email, or a detached user with the stored data. */
-    User resolveUser(String email, String dni) {
+    public User resolveUser(String email, String dni) {
         User user = users.get(email);
         return user != null ? user : new User(email, dni);
     }
 
-    void restoreGroup(String identifier, String name) {
+    public void restoreGroup(String identifier, String name) {
         createGroup(identifier, name);
     }
 
-    void restoreMember(String groupIdentifier, String email) {
+    public void restoreMember(String groupIdentifier, String email) {
         Group group = existingGroup(groupIdentifier);
         if (!group.addMember(existingUser(email))) {
-            throw new IllegalArgumentException("duplicate member " + email);
+            throw new DuplicateElementException("duplicate member " + email);
         }
     }
 
     /** Adds a stored ticket, keeping identifier uniqueness but not date rules. */
-    void restoreTicket(Ticket ticket) {
+    public void restoreTicket(Ticket ticket) {
         addTicket(ticket);
     }
 
@@ -175,7 +186,7 @@ public final class ParkController {
         String id = requireText(identifier, "group identifier");
         String groupName = requireText(name, "group name");
         if (groups.containsKey(id)) {
-            throw new IllegalArgumentException("group already exists: " + id);
+            throw new DuplicateElementException("group already exists: " + id);
         }
         Group group = new Group(id, groupName);
         groups.put(id, group);
@@ -187,7 +198,7 @@ public final class ParkController {
         User user = existingUser(email);
         requireModifiable(group);
         if (!group.addMember(user)) {
-            throw new IllegalArgumentException("user " + user.getEmail()
+            throw new DuplicateElementException("user " + user.getEmail()
                     + " already belongs to group " + group.getIdentifier());
         }
     }
@@ -198,7 +209,7 @@ public final class ParkController {
         requireModifiable(group);
         User user = users.get(address);
         if (user == null || !group.removeMember(user)) {
-            throw new IllegalArgumentException("user " + address
+            throw new OperationNotAllowedException("user " + address
                     + " does not belong to group " + group.getIdentifier());
         }
     }
@@ -206,7 +217,7 @@ public final class ParkController {
     public void deleteGroup(String identifier) {
         Group group = existingGroup(identifier);
         if (hasActiveGroupTicket(group)) {
-            throw new IllegalArgumentException("group " + group.getIdentifier()
+            throw new OperationNotAllowedException("group " + group.getIdentifier()
                     + " has a group ticket for the current date or later");
         }
         for (GroupTicket ticket : groupTicketsOf(group)) {
@@ -230,7 +241,7 @@ public final class ParkController {
         String attractionName = requireText(name, "attraction name");
         int capacity = parseCapacity(capacityText);
         if (attractions.containsKey(id)) {
-            throw new IllegalArgumentException("attraction already exists: " + id);
+            throw new DuplicateElementException("attraction already exists: " + id);
         }
         Attraction attraction = new Attraction(id, attractionName, capacity);
         attractions.put(id, attraction);
@@ -241,7 +252,7 @@ public final class ParkController {
         String id = requireText(identifier, "attraction identifier");
         Attraction attraction = attractions.get(id);
         if (attraction == null) {
-            throw new IllegalArgumentException("attraction not found: " + id);
+            throw new ElementNotFoundException("attraction not found: " + id);
         }
         return attraction;
     }
@@ -257,18 +268,18 @@ public final class ParkController {
         Attraction attraction = existingAttraction(attractionIdentifier);
         Ticket ticket = existingTopLevelTicket(ticketIdentifier);
         if (!ticket.getDate().equals(currentDate)) {
-            throw new IllegalArgumentException("ticket " + ticket.getIdentifier() + " is valid on "
+            throw new OperationNotAllowedException("ticket " + ticket.getIdentifier() + " is valid on "
                     + ticket.getDate() + ", not on the current date " + currentDate);
         }
         List<User> entrants = ticket.admittedUsers();
         for (User user : entrants) {
             if (attraction.isInside(user)) {
-                throw new IllegalArgumentException("user " + user.getEmail()
+                throw new DuplicateElementException("user " + user.getEmail()
                         + " is already inside attraction " + attraction.getIdentifier());
             }
         }
         if (attraction.getOccupants().size() + entrants.size() > attraction.getCapacity()) {
-            throw new IllegalArgumentException("attraction " + attraction.getIdentifier()
+            throw new OperationNotAllowedException("attraction " + attraction.getIdentifier()
                     + " does not have enough capacity");
         }
         for (User user : entrants) {
@@ -287,7 +298,7 @@ public final class ParkController {
                 return user;
             }
         }
-        throw new IllegalArgumentException("user " + address + " is not inside attraction "
+        throw new OperationNotAllowedException("user " + address + " is not inside attraction "
                 + attraction.getIdentifier());
     }
 
@@ -299,11 +310,11 @@ public final class ParkController {
         }
         for (Ticket candidate : tickets.values()) {
             if (candidate.identifiers().contains(id)) {
-                throw new IllegalArgumentException("ticket " + id + " belongs to group ticket "
+                throw new OperationNotAllowedException("ticket " + id + " belongs to group ticket "
                         + candidate.getIdentifier() + "; use the group ticket");
             }
         }
-        throw new IllegalArgumentException("ticket not found: " + id);
+        throw new ElementNotFoundException("ticket not found: " + id);
     }
 
     private static int parseCapacity(String text) {
@@ -321,7 +332,7 @@ public final class ParkController {
             }
         }
         if (capacity <= 0) {
-            throw new IllegalArgumentException("capacity must be a whole number greater than zero: " + text);
+            throw new InvalidValueException("capacity must be a whole number greater than zero: " + text);
         }
         return capacity;
     }
@@ -363,7 +374,7 @@ public final class ParkController {
         requireNotPast(date);
         Set<User> members = group.getMembers();
         if (members.isEmpty()) {
-            throw new IllegalArgumentException("group " + group.getIdentifier() + " has no members");
+            throw new OperationNotAllowedException("group " + group.getIdentifier() + " has no members");
         }
         BigDecimal price = GroupTicket.discountedPrice(basePrice, members.size());
         List<IndividualTicket> composition = new ArrayList<>();
@@ -379,10 +390,10 @@ public final class ParkController {
     public void deleteGroupTicket(String identifier) {
         String id = requireText(identifier, "ticket identifier");
         if (!(tickets.get(id) instanceof GroupTicket ticket)) {
-            throw new IllegalArgumentException("group ticket not found: " + id);
+            throw new ElementNotFoundException("group ticket not found: " + id);
         }
         if (!ticket.isDeletableOn(currentDate)) {
-            throw new IllegalArgumentException("group ticket " + id
+            throw new OperationNotAllowedException("group ticket " + id
                     + " is for the current date or earlier and must be kept");
         }
         tickets.remove(id);
@@ -408,20 +419,20 @@ public final class ParkController {
         String id = requireText(identifier, "ticket identifier");
         Ticket ticket = tickets.get(id);
         if (ticket instanceof GroupTicket) {
-            throw new IllegalArgumentException("ticket " + id
+            throw new OperationNotAllowedException("ticket " + id
                     + " is a group ticket; use GROUPTICKET DELETE");
         }
         if (ticket == null) {
             for (Ticket candidate : tickets.values()) {
                 if (candidate.identifiers().contains(id)) {
-                    throw new IllegalArgumentException("ticket " + id + " belongs to group ticket "
+                    throw new OperationNotAllowedException("ticket " + id + " belongs to group ticket "
                             + candidate.getIdentifier() + " and cannot be deleted directly");
                 }
             }
-            throw new IllegalArgumentException("ticket not found: " + id);
+            throw new ElementNotFoundException("ticket not found: " + id);
         }
         if (!ticket.isDeletableOn(currentDate)) {
-            throw new IllegalArgumentException("ticket " + id
+            throw new OperationNotAllowedException("ticket " + id
                     + " is for the current date or earlier and must be kept");
         }
         tickets.remove(id);
@@ -446,7 +457,7 @@ public final class ParkController {
         Set<String> seen = new HashSet<>();
         for (String id : ticket.identifiers()) {
             if (isTicketIdentifierUsed(id) || !seen.add(id)) {
-                throw new IllegalArgumentException("ticket identifier already in use: " + id);
+                throw new DuplicateElementException("ticket identifier already in use: " + id);
             }
         }
         tickets.put(ticket.getIdentifier(), ticket);
@@ -454,7 +465,7 @@ public final class ParkController {
 
     private void requireNotPast(LocalDate date) {
         if (date.isBefore(currentDate)) {
-            throw new IllegalArgumentException("date " + date
+            throw new InvalidValueException("date " + date
                     + " is earlier than the current date " + currentDate);
         }
     }
@@ -485,7 +496,7 @@ public final class ParkController {
 
     private void requireModifiable(Group group) {
         if (hasActiveGroupTicket(group)) {
-            throw new IllegalArgumentException("group " + group.getIdentifier()
+            throw new OperationNotAllowedException("group " + group.getIdentifier()
                     + " cannot be modified while it has an active group ticket");
         }
     }
@@ -494,7 +505,7 @@ public final class ParkController {
         String id = requireText(identifier, "group identifier");
         Group group = groups.get(id);
         if (group == null) {
-            throw new IllegalArgumentException("group not found: " + id);
+            throw new ElementNotFoundException("group not found: " + id);
         }
         return group;
     }
@@ -503,7 +514,7 @@ public final class ParkController {
         String address = requireText(email, "email");
         User user = users.get(address);
         if (user == null) {
-            throw new IllegalArgumentException("user not found: " + address);
+            throw new ElementNotFoundException("user not found: " + address);
         }
         return user;
     }
@@ -511,7 +522,7 @@ public final class ParkController {
     private static String requireText(String value, String what) {
         String text = value == null ? "" : value.trim();
         if (text.isEmpty()) {
-            throw new IllegalArgumentException(what + " must not be empty");
+            throw new InvalidValueException(what + " must not be empty");
         }
         return text;
     }

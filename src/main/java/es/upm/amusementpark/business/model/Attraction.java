@@ -1,4 +1,6 @@
-package es.upm.amusementpark;
+package es.upm.amusementpark.business.model;
+
+import es.upm.amusementpark.business.exception.InvalidValueException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +20,7 @@ public class Attraction {
 
     public Attraction(String identifier, String name, int capacity) {
         if (capacity <= 0) {
-            throw new IllegalArgumentException("capacity must be greater than zero");
+            throw new InvalidValueException("capacity must be greater than zero");
         }
         this.identifier = Objects.requireNonNull(identifier);
         this.name = Objects.requireNonNull(name);

@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.exception.ParkException;
+
+import es.upm.amusementpark.business.control.ParkController;
+import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.presentation.CommandProcessor;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -68,8 +75,8 @@ class ParkGroupsTest {
 
     @Test
     void blankIdentifierOrNameRejected() {
-        assertThrows(IllegalArgumentException.class, () -> park.createGroup(" ", "Name"));
-        assertThrows(IllegalArgumentException.class, () -> park.createGroup("G02", ""));
+        assertThrows(ParkException.class, () -> park.createGroup(" ", "Name"));
+        assertThrows(ParkException.class, () -> park.createGroup("G02", ""));
         assertTrue(park.getGroups().isEmpty());
     }
 

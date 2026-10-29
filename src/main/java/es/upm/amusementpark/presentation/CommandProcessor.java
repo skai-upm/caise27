@@ -1,4 +1,11 @@
-package es.upm.amusementpark;
+package es.upm.amusementpark.presentation;
+
+import es.upm.amusementpark.business.exception.ParkException;
+
+import es.upm.amusementpark.business.control.ParkController;
+import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.User;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -84,7 +91,7 @@ public class CommandProcessor {
         String keyword = fields[0].trim();
         try {
             return dispatch(command, keyword, fields);
-        } catch (IllegalArgumentException e) {
+        } catch (ParkException | InvalidCommandException e) {
             out.println("Error: " + e.getMessage());
             return true;
         }
@@ -194,8 +201,7 @@ public class CommandProcessor {
                 }
                 return true;
             default:
-                out.println("Error: unknown command: " + command);
-                return true;
+                throw new InvalidCommandException("unknown command: " + command);
         }
     }
 
@@ -222,20 +228,20 @@ public class CommandProcessor {
         }
     }
 
-    private boolean requireArguments(String keyword, String[] fields, int expected) {
-        if (fields.length == expected + 1) {
-            return true;
+    /** @throws InvalidCommandException unless the command has exactly {@code expected} arguments */
+    private static boolean requireArguments(String keyword, String[] fields, int expected) {
+        if (fields.length != expected + 1) {
+            throw new InvalidCommandException("invalid arguments for " + keyword + " (expected " + expected + ")");
         }
-        out.println("Error: invalid arguments for " + keyword + " (expected " + expected + ")");
-        return false;
+        return true;
     }
 
-    private boolean rejectArguments(String keyword, String[] fields) {
-        if (fields.length == 1) {
-            return false;
+    /** @throws InvalidCommandException if the command has any argument */
+    private static boolean rejectArguments(String keyword, String[] fields) {
+        if (fields.length != 1) {
+            throw new InvalidCommandException("invalid arguments for " + keyword + " (expected no arguments)");
         }
-        out.println("Error: invalid arguments for " + keyword + " (expected no arguments)");
-        return true;
+        return false;
     }
 
     private void printHelp() {

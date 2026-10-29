@@ -4,7 +4,7 @@ title Amusement Park - class model
 skinparam classAttributeIconSize 0
 hide empty methods
 
-package "Domain" {
+package "es.upm.amusementpark.business.model" {
   class User {
     - email : String
     - dni : String
@@ -34,7 +34,7 @@ package "Domain" {
   }
 }
 
-package "Central management" {
+package "es.upm.amusementpark.business.control" {
   class ParkController <<singleton>> {
     - {static} DEFAULT_PRICE : BigDecimal
     - currentDate : LocalDate
@@ -42,10 +42,20 @@ package "Central management" {
   }
 }
 
-package "Persistence" {
+package "es.upm.amusementpark.business.exception" {
+  class ParkException
+  class ElementNotFoundException
+  class DuplicateElementException
+  class InvalidValueException
+  class OperationNotAllowedException
+}
+
+package "es.upm.amusementpark.persistence" {
   abstract class TextFileRepository {
     - file : Path
   }
+  class DataDirectories <<utility>>
+  class PersistenceException
   class UserRepository
   class GroupRepository
   class TicketRepository
@@ -53,10 +63,14 @@ package "Persistence" {
   class ParkStorage
 }
 
-package "Command interface" {
+package "es.upm.amusementpark.presentation" {
   class CommandProcessor {
     - out : PrintStream
   }
+  class InvalidCommandException
+}
+
+package "es.upm.amusementpark" {
   class App
 }
 
@@ -88,9 +102,21 @@ ParkStorage *--> "1" TicketRepository : tickets
 ParkStorage *--> "1" AttractionRepository : attractions
 ParkStorage ..> ParkController : loads / saves
 
+'' --- exceptions
+RuntimeException <|-- ParkException
+ParkException <|-- ElementNotFoundException
+ParkException <|-- DuplicateElementException
+ParkException <|-- InvalidValueException
+ParkException <|-- OperationNotAllowedException
+RuntimeException <|-- PersistenceException
+RuntimeException <|-- InvalidCommandException
+ParkController ..> ParkException : throws
+TextFileRepository ..> PersistenceException : throws
+
 ' --- command interface
 CommandProcessor --> "1" ParkController : park
 App ..> CommandProcessor : creates
 App ..> ParkStorage : configures
+App ..> DataDirectories : selects data directory
 
 @enduml

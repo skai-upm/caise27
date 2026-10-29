@@ -1,4 +1,6 @@
-package es.upm.amusementpark;
+package es.upm.amusementpark.persistence;
+
+import es.upm.amusementpark.business.model.User;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

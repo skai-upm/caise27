@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.exception.ParkException;
+
+import es.upm.amusementpark.business.control.ParkController;
+import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.presentation.CommandProcessor;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,7 +79,7 @@ class ParkAttractionAccessTest {
         park.createAttraction("A03", "Mini", "1");
         park.createIndividualTicket("T002", "pedro@correo.com", "2027-04-15");
         park.enterAttraction("A03", "T001");
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        ParkException e = assertThrows(ParkException.class,
                 () -> park.enterAttraction("A03", "T002"));
         assertTrue(e.getMessage().contains("does not have enough capacity"));
         assertEquals(List.of(ana), park.findAttraction("A03").getOccupants());
@@ -89,7 +96,7 @@ class ParkAttractionAccessTest {
     @Test
     void duplicateEntryRejected() {
         park.enterAttraction("A01", "T001");
-        assertThrows(IllegalArgumentException.class, () -> park.enterAttraction("A01", "T001"));
+        assertThrows(ParkException.class, () -> park.enterAttraction("A01", "T001"));
         assertEquals(1, park.findAttraction("A01").getOccupants().size());
     }
 
@@ -98,7 +105,7 @@ class ParkAttractionAccessTest {
         park.createGroup("G01", "F");
         park.addUserToGroup("G01", "pedro@correo.com");
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        IllegalArgumentException composed = assertThrows(IllegalArgumentException.class,
+        ParkException composed = assertThrows(ParkException.class,
                 () -> park.enterAttraction("A01", "TG01:87654321X"));
         assertTrue(composed.getMessage().contains("use the group ticket"));
         assertTrue(park.findAttraction("A01").getOccupants().isEmpty());

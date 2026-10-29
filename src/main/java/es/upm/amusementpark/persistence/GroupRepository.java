@@ -1,4 +1,10 @@
-package es.upm.amusementpark;
+package es.upm.amusementpark.persistence;
+
+import es.upm.amusementpark.business.exception.ParkException;
+
+import es.upm.amusementpark.business.control.ParkController;
+import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.User;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -40,7 +46,7 @@ public class GroupRepository extends TextFileRepository {
                 } else {
                     skipped.add(line);
                 }
-            } catch (IllegalArgumentException e) {
+            } catch (ParkException e) {
                 skipped.add(line);
             }
         }

@@ -1,5 +1,13 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.exception.ParkException;
+
+import es.upm.amusementpark.business.control.ParkController;
+import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.presentation.CommandProcessor;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -83,7 +91,7 @@ class ParkGroupTicketsTest {
     @Test
     void identifierConflictCreatesNothing() {
         park.createIndividualTicket("TG01:12345678Z", "ana@correo.com", "2027-04-15");
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ParkException.class,
                 () -> park.createGroupTicket("TG01", "G01", "2027-04-15"));
         assertNull(park.findTicket("TG01"));
         assertFalse(park.isTicketIdentifierUsed("TG01:87654321X"));
@@ -93,9 +101,9 @@ class ParkGroupTicketsTest {
     @Test
     void groupTicketIdClashWithIndividualTicket() {
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ParkException.class,
                 () -> park.createIndividualTicket("TG01", "ana@correo.com", "2027-04-15"));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ParkException.class,
                 () -> park.createIndividualTicket("TG01:87654321X", "ana@correo.com", "2027-04-15"));
     }
 

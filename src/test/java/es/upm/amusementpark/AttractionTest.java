@@ -1,5 +1,10 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.exception.ParkException;
+
+import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.User;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,7 +49,7 @@ class AttractionTest {
 
     @Test
     void nonPositiveCapacityRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new Attraction("A01", "X", 0));
+        assertThrows(ParkException.class, () -> new Attraction("A01", "X", 0));
     }
 
     @Test

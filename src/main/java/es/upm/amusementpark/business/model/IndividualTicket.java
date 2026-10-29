@@ -1,4 +1,4 @@
-package es.upm.amusementpark;
+package es.upm.amusementpark.business.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
