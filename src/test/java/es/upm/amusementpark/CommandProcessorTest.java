@@ -9,8 +9,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class CommandProcessorTest {
@@ -18,6 +21,13 @@ class CommandProcessorTest {
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private final CommandProcessor processor =
             new CommandProcessor(new PrintStream(buffer, true, StandardCharsets.UTF_8));
+
+    private final ParkController park = ParkController.getInstance();
+
+    @BeforeEach
+    void resetPark() {
+        park.reset();
+    }
 
     private String output() {
         return buffer.toString(StandardCharsets.UTF_8);
@@ -110,5 +120,43 @@ class CommandProcessorTest {
         run("\n   \nHELP\n");
         assertFalse(output().contains("Error"));
         assertEquals(1, occurrences(output(), "Available commands:"));
+    }
+
+    @Test
+    void helpListsSystemCommands() {
+        processor.execute("HELP");
+        assertTrue(output().contains("SYSTEM DATE;<yyyy-MM-dd>"));
+        assertTrue(output().contains("SYSTEM PRICE;<Price>"));
+    }
+
+    @Test
+    void systemDateSetsCurrentDate() throws IOException {
+        run("SYSTEM DATE;2027-04-15\n");
+        assertTrue(output().contains("SYSTEM DATE UPDATED"));
+        assertEquals(LocalDate.of(2027, 4, 15), park.getCurrentDate());
+        run("SYSTEM DATE;2028-01-01\n");
+        assertEquals(LocalDate.of(2028, 1, 1), park.getCurrentDate());
+    }
+
+    @Test
+    void invalidSystemDateIsRejected() throws IOException {
+        LocalDate before = park.getCurrentDate();
+        run("SYSTEM DATE;2027-02-30\nSYSTEM DATE;15-04-2027\nSYSTEM DATE\nSYSTEM DATE;2027-04-15;x\n");
+        assertEquals(4, occurrences(output(), "Error:"));
+        assertEquals(before, park.getCurrentDate());
+    }
+
+    @Test
+    void systemPriceSetsBasePrice() {
+        processor.execute("SYSTEM PRICE;45.50");
+        assertTrue(output().contains("SYSTEM PRICE UPDATED"));
+        assertEquals(new BigDecimal("45.50"), park.getBasePrice());
+    }
+
+    @Test
+    void invalidSystemPriceIsRejected() throws IOException {
+        run("SYSTEM PRICE;0\nSYSTEM PRICE;-3\nSYSTEM PRICE;abc\nSYSTEM PRICE;45,50\nSYSTEM PRICE;1.234\nSYSTEM PRICE\n");
+        assertEquals(6, occurrences(output(), "Error:"));
+        assertEquals(new BigDecimal("40.00"), park.getBasePrice());
     }
 }

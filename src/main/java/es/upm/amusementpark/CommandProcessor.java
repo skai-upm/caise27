@@ -15,10 +15,13 @@ public class CommandProcessor {
             "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
             "USER DELETE;<email>;<password>",
             "USER UPDATE;<email>;<password>;<field>;<value>",
+            "SYSTEM DATE;<yyyy-MM-dd>",
+            "SYSTEM PRICE;<Price>",
             "HELP",
             "EXIT");
 
     private final PrintStream out;
+    private final ParkController park = ParkController.getInstance();
 
     public CommandProcessor(PrintStream out) {
         this.out = out;
@@ -57,6 +60,15 @@ public class CommandProcessor {
         }
         String[] fields = command.split(";", -1);
         String keyword = fields[0].trim();
+        try {
+            return dispatch(command, keyword, fields);
+        } catch (IllegalArgumentException e) {
+            out.println("Error: " + e.getMessage());
+            return true;
+        }
+    }
+
+    private boolean dispatch(String command, String keyword, String[] fields) {
         switch (keyword) {
             case "HELP":
                 if (rejectArguments(keyword, fields)) {
@@ -70,10 +82,30 @@ public class CommandProcessor {
                 }
                 out.println("Exiting application.");
                 return false;
+            case "SYSTEM DATE":
+                if (requireArguments(keyword, fields, 1)) {
+                    park.setCurrentDate(fields[1]);
+                    out.println("SYSTEM DATE UPDATED: " + park.getCurrentDate());
+                }
+                return true;
+            case "SYSTEM PRICE":
+                if (requireArguments(keyword, fields, 1)) {
+                    park.setBasePrice(fields[1]);
+                    out.println("SYSTEM PRICE UPDATED: " + park.getBasePrice());
+                }
+                return true;
             default:
                 out.println("Error: unknown command: " + command);
                 return true;
         }
+    }
+
+    private boolean requireArguments(String keyword, String[] fields, int expected) {
+        if (fields.length == expected + 1) {
+            return true;
+        }
+        out.println("Error: invalid arguments for " + keyword + " (expected " + expected + ")");
+        return false;
     }
 
     private boolean rejectArguments(String keyword, String[] fields) {
