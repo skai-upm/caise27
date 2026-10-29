@@ -54,4 +54,7 @@ public abstract class Ticket {
 
     /** @return whether this ticket was purchased for (or includes) the given user */
     public abstract boolean involves(User user);
+
+    /** Users that enter an attraction together when this ticket is used. */
+    public abstract List<User> admittedUsers();
 }

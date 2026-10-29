@@ -82,6 +82,15 @@ public class GroupTicket extends Ticket {
     }
 
     @Override
+    public List<User> admittedUsers() {
+        List<User> users = new ArrayList<>();
+        for (IndividualTicket ticket : composition) {
+            users.add(ticket.getUser());
+        }
+        return users;
+    }
+
+    @Override
     public boolean involves(User user) {
         for (IndividualTicket ticket : composition) {
             if (ticket.involves(user)) {

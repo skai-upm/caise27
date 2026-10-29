@@ -218,6 +218,56 @@ public final class ParkController {
         return attraction;
     }
 
+    /**
+     * Lets the users admitted by a ticket enter an attraction. The ticket must
+     * be for the current date and the attraction must have room for all of
+     * them; otherwise nobody enters.
+     *
+     * @return the users who entered
+     */
+    public List<User> enterAttraction(String attractionIdentifier, String ticketIdentifier) {
+        Attraction attraction = existingAttraction(attractionIdentifier);
+        Ticket ticket = existingTopLevelTicket(ticketIdentifier);
+        if (ticket instanceof GroupTicket) {
+            throw new IllegalArgumentException("access with group tickets is not available yet: "
+                    + ticket.getIdentifier());
+        }
+        if (!ticket.getDate().equals(currentDate)) {
+            throw new IllegalArgumentException("ticket " + ticket.getIdentifier() + " is valid on "
+                    + ticket.getDate() + ", not on the current date " + currentDate);
+        }
+        List<User> entrants = ticket.admittedUsers();
+        for (User user : entrants) {
+            if (attraction.isInside(user)) {
+                throw new IllegalArgumentException("user " + user.getEmail()
+                        + " is already inside attraction " + attraction.getIdentifier());
+            }
+        }
+        if (attraction.getOccupants().size() + entrants.size() > attraction.getCapacity()) {
+            throw new IllegalArgumentException("attraction " + attraction.getIdentifier()
+                    + " does not have enough capacity");
+        }
+        for (User user : entrants) {
+            attraction.addOccupant(user);
+        }
+        return entrants;
+    }
+
+    private Ticket existingTopLevelTicket(String identifier) {
+        String id = requireText(identifier, "ticket identifier");
+        Ticket ticket = tickets.get(id);
+        if (ticket != null) {
+            return ticket;
+        }
+        for (Ticket candidate : tickets.values()) {
+            if (candidate.identifiers().contains(id)) {
+                throw new IllegalArgumentException("ticket " + id + " belongs to group ticket "
+                        + candidate.getIdentifier() + "; use the group ticket");
+            }
+        }
+        throw new IllegalArgumentException("ticket not found: " + id);
+    }
+
     private static int parseCapacity(String text) {
         String value = text == null ? "" : text.trim();
         boolean digitsOnly = !value.isEmpty();

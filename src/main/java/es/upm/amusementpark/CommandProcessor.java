@@ -26,6 +26,7 @@ public class CommandProcessor {
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "ATTRACTION ENTER;<attraction>;<ticket>",
             "ATTRACTION LIST;<attraction>",
             "HELP",
             "EXIT");
@@ -156,6 +157,13 @@ public class CommandProcessor {
                 if (requireArguments(keyword, fields, 3)) {
                     park.createAttraction(fields[1], fields[2], fields[3]);
                     out.println("ATTRACTION CREATED");
+                }
+                return true;
+            case "ATTRACTION ENTER":
+                if (requireArguments(keyword, fields, 2)) {
+                    for (User user : park.enterAttraction(fields[1], fields[2])) {
+                        out.println("USER " + user.getEmail() + " ENTERED ATTRACTION " + fields[1].trim());
+                    }
                 }
                 return true;
             case "ATTRACTION LIST":

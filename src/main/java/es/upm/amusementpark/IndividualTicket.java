@@ -2,6 +2,7 @@ package es.upm.amusementpark;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -24,5 +25,10 @@ public class IndividualTicket extends Ticket {
     @Override
     public boolean involves(User other) {
         return user.equals(other);
+    }
+
+    @Override
+    public List<User> admittedUsers() {
+        return List.of(user);
     }
 }
