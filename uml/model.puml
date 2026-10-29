@@ -42,6 +42,26 @@ package "es.upm.amusementpark.business.control" {
   }
 }
 
+package "es.upm.amusementpark.business.invoice" {
+  class Invoice {
+    - title : String
+    - total : BigDecimal
+  }
+  class InvoiceSection {
+    - title : String
+  }
+  class InvoiceLine {
+    - description : String
+    - amount : BigDecimal
+  }
+  abstract class InvoiceBuilder {
+    - title : String
+  }
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
+  class InvoiceDirector
+}
+
 package "es.upm.amusementpark.business.exception" {
   class ParkException
   class ElementNotFoundException
@@ -102,7 +122,18 @@ ParkStorage *--> "1" TicketRepository : tickets
 ParkStorage *--> "1" AttractionRepository : attractions
 ParkStorage ..> ParkController : loads / saves
 
-'' --- exceptions
+''' --- invoices (Builder)
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder *--> "0..*" InvoiceSection : sections
+Invoice *--> "0..*" InvoiceSection : sections
+InvoiceSection *--> "1..*" InvoiceLine : lines
+InvoiceBuilder ..> Invoice : builds
+InvoiceDirector ..> UserInvoiceBuilder : directs
+InvoiceDirector ..> GroupInvoiceBuilder : directs
+ParkController ..> InvoiceDirector : uses
+
+' --- exceptions
 RuntimeException <|-- ParkException
 ParkException <|-- ElementNotFoundException
 ParkException <|-- DuplicateElementException

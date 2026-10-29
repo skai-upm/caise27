@@ -1,6 +1,7 @@
 package es.upm.amusementpark.presentation;
 
 import es.upm.amusementpark.business.exception.ParkException;
+import es.upm.amusementpark.business.invoice.Invoice;
 
 import es.upm.amusementpark.business.control.ParkController;
 import es.upm.amusementpark.business.model.Attraction;
@@ -38,6 +39,8 @@ public class CommandProcessor {
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
             "ATTRACTION STATUS;<attractionIdentifier>",
+            "INVOICE CREATE;USER;<email>",
+            "INVOICE CREATE;GROUP;<groupIdentifier>",
             "HELP",
             "EXIT");
 
@@ -200,8 +203,24 @@ public class CommandProcessor {
                     listOccupants(park.existingAttraction(fields[1]));
                 }
                 return true;
+            case "INVOICE CREATE":
+                if (requireArguments(keyword, fields, 2)) {
+                    out.println(createInvoice(fields[1].trim(), fields[2]).toText());
+                }
+                return true;
             default:
                 throw new InvalidCommandException("unknown command: " + command);
+        }
+    }
+
+    private Invoice createInvoice(String target, String identifier) {
+        switch (target) {
+            case "USER":
+                return park.createUserInvoice(identifier);
+            case "GROUP":
+                return park.createGroupInvoice(identifier);
+            default:
+                throw new InvalidCommandException("invalid invoice target (expected USER or GROUP): " + target);
         }
     }
 

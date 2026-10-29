@@ -4,6 +4,8 @@ import es.upm.amusementpark.business.exception.DuplicateElementException;
 import es.upm.amusementpark.business.exception.ElementNotFoundException;
 import es.upm.amusementpark.business.exception.InvalidValueException;
 import es.upm.amusementpark.business.exception.OperationNotAllowedException;
+import es.upm.amusementpark.business.invoice.Invoice;
+import es.upm.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
@@ -224,6 +226,26 @@ public final class ParkController {
             ticket.releaseGroup();
         }
         groups.remove(group.getIdentifier());
+    }
+
+    // --- invoices --------------------------------------------------------
+
+    /** Invoice of an active user: only tickets purchased directly for that user. */
+    public Invoice createUserInvoice(String email) {
+        User user = existingUser(email);
+        List<IndividualTicket> direct = new ArrayList<>();
+        for (Ticket ticket : tickets.values()) {
+            if (ticket instanceof IndividualTicket individual && individual.getUser().equals(user)) {
+                direct.add(individual);
+            }
+        }
+        return new InvoiceDirector().userInvoice(user, direct);
+    }
+
+    /** Invoice of an existing group: the group tickets it purchased. */
+    public Invoice createGroupInvoice(String groupIdentifier) {
+        Group group = existingGroup(groupIdentifier);
+        return new InvoiceDirector().groupInvoice(group, groupTicketsOf(group));
     }
 
     // --- attractions -----------------------------------------------------
