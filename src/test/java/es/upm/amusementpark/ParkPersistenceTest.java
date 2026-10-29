@@ -1,5 +1,10 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -25,13 +30,13 @@ class ParkPersistenceTest extends ParkTestSupport {
         park.addToGroup("G01", email(3));
         park.createTicket("T001", email(1), "2027-04-15");
         park.createGroupTicket("TG01", "G01", "2027-04-16");
-        park.createAttraction("A01", "Dragon Rojo", "20");
+        park.createAttraction("A01", "Dragon Rojo", "20", "GENERAL");
         park.createTicket("T002", email(2), TODAY.toString());
-        park.enterAttraction("A01", "T002");
+        park.enterAttraction("A01", "T002", false);
 
         reload();
 
-        User u1 = park.getUserService().findByEmail(email(1));
+        User u1 = park.getUserController().findByEmail(email(1));
         Group g = park.getGroup("G01");
         assertEquals("Familia Garcia", g.getName());
         assertEquals(3, g.getMembers().size());
@@ -50,7 +55,7 @@ class ParkPersistenceTest extends ParkTestSupport {
         assertSame(u1, tg.getComposition().get(0).getUser());
         assertTrue(park.isLocked(g));
 
-        Attraction a = park.getAttraction("A01");
+        Attraction<?> a = park.getAttraction("A01");
         assertEquals(20, a.getCapacity());
         assertTrue(a.getOccupants().isEmpty(), "occupants are not persisted");
     }
@@ -68,7 +73,7 @@ class ParkPersistenceTest extends ParkTestSupport {
 
         reload();
 
-        assertNull(park.getUserService().findByEmail(email(1)));
+        assertNull(park.getUserController().findByEmail(email(1)));
         IndividualTicket t = (IndividualTicket) park.findTicket("T001");
         assertNotNull(t);
         assertEquals(dni(1), t.getUser().getDni());
@@ -80,9 +85,11 @@ class ParkPersistenceTest extends ParkTestSupport {
     }
 
     @Test
-    void usersFileFormatUnchanged() throws Exception {
+    void usersFileStoresOnlyHash() throws Exception {
         park.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
-                Files.readAllLines(dir.resolve("users.txt")));
+        String line = Files.readAllLines(dir.resolve("users.txt")).get(0);
+        assertTrue(line.startsWith("Ana;Garcia Lopez;12345678Z;ana@correo.com;$2a$"), line);
+        assertTrue(line.endsWith(";612345678;1234567890123456"), line);
+        assertTrue(!line.contains("Clave1!"), "no plain password stored");
     }
 }

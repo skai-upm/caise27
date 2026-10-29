@@ -1,5 +1,10 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,13 +27,15 @@ class AppFlyTest {
             "EXIT",
             "");
 
+    private static final BCryptPasswordHasher HASHER = new BCryptPasswordHasher(4);
+
     @TempDir
     Path dir;
 
     private String run(String[] args, String stdin) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(buffer, true, StandardCharsets.UTF_8), dir);
+                new PrintStream(buffer, true, StandardCharsets.UTF_8), dir, HASHER);
         return buffer.toString(StandardCharsets.UTF_8);
     }
 

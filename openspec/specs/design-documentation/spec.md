@@ -7,7 +7,7 @@ Keeps a PlantUML class model of the application's design in the repository, cons
 ## Requirements
 
 ### Requirement: PlantUML class model
-The repository SHALL contain `uml/model.puml`, a PlantUML class diagram of the Delivery 2 model. It SHALL show the classes, interfaces and relevant enumerations with their relevant attributes, and inheritance, implementations, associations, compositions, directions and multiplicities, including the ticket hierarchy, the composition between a group ticket and its individual tickets, and the relationships among users, groups, tickets and attractions. Methods and constructors are not required.
+The repository SHALL contain `uml/model.puml`, a PlantUML class diagram of the Delivery 3 model consistent with the code. Beyond the Delivery 2 content (ticket hierarchy, group-ticket composition, users/groups/tickets/attractions relationships, attributes, inheritance, associations, directions, multiplicities), it SHALL show the ticket access interfaces, the generic attraction types, ticket–pass relationships and cardinalities, the invoice Builder abstractions, dependency-injection relationships, and the singleton controllers.
 
 #### Scenario: Model present and consistent
 - **WHEN** `uml/model.puml` is inspected

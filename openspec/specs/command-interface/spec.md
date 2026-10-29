@@ -39,11 +39,11 @@ When started with a file path as its first argument, the application SHALL proce
 - **THEN** an error message is printed and the application terminates in a controlled manner
 
 ### Requirement: HELP command
-`HELP` SHALL display the available commands and their basic syntax, covering at least `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>`, `USER DELETE;<Email>;<Password>`, `USER UPDATE;<Email>;<Password>;<Field>;<NewValue>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `GROUPTICKET CREATE;<identifier>;<group>;<date>`, `GROUPTICKET DELETE;<identifier>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>`, `ATTRACTION ENTER;<attraction>;<ticket>`, `ATTRACTION EXIT;<attraction>;<email>`, `ATTRACTION LIST;<attraction>`, `ATTRACTION STATUS;<attractionIdentifier>`, `HELP` and `EXIT`.
+`HELP` SHALL display the syntax of every command of Deliveries 1, 2 and 3, including at least `ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>`, `ATTRACTION ENTER;<attraction>;<ticket>;SPEED`, `SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>`, `SPEEDPASS DELETE;<speedPassIdentifier>`, `SPECIALPASS CREATE;<identifier>;<individualTicket>`, `SPECIALPASS DELETE;<specialPassIdentifier>`, `INVOICE CREATE;USER;<email>`, `INVOICE CREATE;GROUP;<groupIdentifier>`, `HELP EXTENDED`, and all Delivery 1 and 2 syntaxes.
 
 #### Scenario: Help output
 - **WHEN** `HELP` is processed
-- **THEN** each of the twenty command syntaxes is printed
+- **THEN** the syntax of every Delivery 1, 2 and 3 command is printed
 
 ### Requirement: EXIT command
 `EXIT` SHALL terminate the application in a controlled manner, and no command after it SHALL be executed, in either mode.
@@ -58,3 +58,10 @@ The application SHALL accept exactly these launch forms: no arguments (interacti
 #### Scenario: Fly followed by file
 - **WHEN** the JAR is run with `--fly input_fase2.txt`
 - **THEN** the commands in `input_fase2.txt` are processed using temporary persistence
+
+### Requirement: HELP EXTENDED command
+`HELP EXTENDED` SHALL display every command's syntax with a brief description of its purpose. The help generator SHALL receive the behaviour that builds its output through dependency injection, so that new help formats can be added without changing command reading and execution.
+
+#### Scenario: Extended help output
+- **WHEN** `HELP EXTENDED` is processed
+- **THEN** each command syntax is printed together with a description of its purpose

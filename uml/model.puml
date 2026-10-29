@@ -1,27 +1,55 @@
 @startuml model
-title Amusement Park - Delivery 2 class model
+title Amusement Park - Delivery 3 class model
 
 skinparam classAttributeIconSize 0
 hide empty methods
 
 package es.upm.amusementpark {
+  class App
+  class AppInitializer <<composition root>>
+}
 
+package es.upm.amusementpark.presentation {
+  class CommandRunner
+  class CommandProcessor
+  class CommandCatalog
+  class CommandInfo <<record>> {
+    syntax : String
+    description : String
+  }
+  class HelpGenerator
+  interface HelpFormatter
+  class SyntaxHelpFormatter
+  class ExtendedHelpFormatter
+}
+
+package es.upm.amusementpark.business.controller {
   class ParkController <<singleton>> {
     - {static} INSTANCE : ParkController
     - currentDate : LocalDate
     - price : BigDecimal
   }
+  class UserController <<singleton>> {
+    - {static} INSTANCE : UserController
+  }
+  class PassController <<singleton>> {
+    - {static} INSTANCE : PassController
+  }
+  class InvoiceController <<singleton>> {
+    - {static} INSTANCE : InvoiceController
+  }
+}
 
+package es.upm.amusementpark.business.model {
   class User {
     - firstName : String
     - surnames : String
     - dni : String {readOnly}
     - email : String
-    - password : String
+    - passwordHash : String
     - phone : String
     - card : String
   }
-
   enum UserField {
     NAME
     SURNAME
@@ -30,70 +58,195 @@ package es.upm.amusementpark {
     PHONE
     CARD
   }
-
   class Group {
     - id : String
     - name : String
   }
 
+  interface GeneralAccess
+  interface IndividualAccess
+  interface GroupAccess
+
   abstract class Ticket {
     - id : String
     - date : LocalDate
   }
-
   class IndividualTicket {
     - basePrice : BigDecimal
     - discountPercent : int
   }
+  class GroupTicket
 
-  class GroupTicket {
+  abstract class Pass {
+    - id : String
+    - price : BigDecimal
+    - consumed : boolean
   }
+  class SpeedPass
+  class SpecialPass
 
-  class Attraction {
+  abstract class "Attraction<T extends GeneralAccess>" as Attraction {
     - id : String
     - name : String
     - capacity : int
+    - accessType : Class<T>
   }
-
-  class UserService
-  class UserRepository
-  class GroupRepository
-  class TicketRepository
-  class AttractionRepository
-  class CommandProcessor
-  class CommandRunner
-  class App
+  class "GeneralAttraction" as GeneralAttraction
+  class "IndividualAttraction" as IndividualAttraction
+  class "GroupAttraction" as GroupAttraction
+  class "SpecialAttraction" as SpecialAttraction
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+  class EntryResult <<record>>
 }
 
-' Ticket hierarchy
+package es.upm.amusementpark.business.invoice {
+  abstract class InvoiceBuilder
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
+  class Invoice {
+    - title : String
+    - total : BigDecimal
+  }
+  class InvoiceSection <<record>> {
+    title : String
+  }
+  class InvoiceItem <<record>> {
+    description : String
+    amount : BigDecimal
+  }
+}
+
+package es.upm.amusementpark.business.security {
+  interface PasswordHasher
+  class BCryptPasswordHasher
+}
+
+package es.upm.amusementpark.business.exception {
+  abstract class ParkException
+  class ValidationException
+  class NotFoundException
+  class DuplicateException
+  class OperationNotAllowedException
+  class AuthenticationException
+  class PersistenceException
+}
+
+package es.upm.amusementpark.persistence {
+  interface UserRepository
+  interface GroupRepository
+  interface TicketRepository
+  interface AttractionRepository
+  interface PassRepository
+}
+
+package es.upm.amusementpark.persistence.text {
+  class TextUserRepository
+  class TextGroupRepository
+  class TextTicketRepository
+  class TextAttractionRepository
+  class TextPassRepository
+}
+
+' ---- Ticket hierarchy and access capabilities
+GeneralAccess <|-- IndividualAccess
+GeneralAccess <|-- GroupAccess
+GeneralAccess <|.. Ticket
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
-
-' Composition: a group ticket owns its individual tickets
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
 GroupTicket "1" *--> "1..*" IndividualTicket : composition
 
-' Unidirectional domain associations
+' ---- Passes
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+IndividualTicket "1" *-- "0..*" SpeedPass : speedPasses
+IndividualTicket "1" *-- "0..1" SpecialPass : specialPass
+Pass "*" --> "1" IndividualTicket : ticket
+
+' ---- Generic attractions (bound T shown on each subclass)
+Attraction <|-- GeneralAttraction : <<bind>> T::GeneralAccess
+Attraction <|-- IndividualAttraction : <<bind>> T::IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T::GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T::IndividualAccess
+Attraction ..> AttractionType
+Attraction ..> EntryResult : creates
+Attraction "*" --> "*" User : occupants
+
+' ---- Domain associations (unidirectional)
 IndividualTicket "*" --> "1" User : user
 GroupTicket "*" --> "0..1" Group : group
 Group "*" --> "*" User : members
-Attraction "*" --> "*" User : occupants
+UserController ..> UserField
 
-' Central management
-ParkController "1" --> "1" UserService : userService
+' ---- Controllers (singletons) and injected collaborations
+ParkController "1" --> "1" UserController : <<inject>>
+ParkController --> GroupRepository : <<inject>>
+ParkController --> TicketRepository : <<inject>>
+ParkController --> AttractionRepository : <<inject>>
+ParkController --> PassRepository : <<inject>>
 ParkController "1" --> "*" Group : groups
 ParkController "1" --> "*" Ticket : tickets
 ParkController "1" --> "*" Attraction : attractions
-ParkController --> GroupRepository
-ParkController --> TicketRepository
-ParkController --> AttractionRepository
-UserService "1" --> "*" User : users
-UserService --> UserRepository
-UserService ..> UserField : uses
+UserController --> UserRepository : <<inject>>
+UserController --> PasswordHasher : <<inject>>
+UserController "1" --> "*" User : users
+PassController --> ParkController : <<inject>>
+InvoiceController --> ParkController : <<inject>>
+InvoiceController --> UserController : <<inject>>
 
-' Application layer
-App ..> ParkController : getInstance()
+' ---- Builder pattern (InvoiceController is the director)
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceController ..> UserInvoiceBuilder : directs
+InvoiceController ..> GroupInvoiceBuilder : directs
+InvoiceBuilder ..> Invoice : builds
+Invoice "1" *-- "0..*" InvoiceSection
+InvoiceSection "1" *-- "1..*" InvoiceItem
+
+' ---- Security and persistence implementations
+PasswordHasher <|.. BCryptPasswordHasher
+UserRepository <|.. TextUserRepository
+GroupRepository <|.. TextGroupRepository
+TicketRepository <|.. TextTicketRepository
+AttractionRepository <|.. TextAttractionRepository
+PassRepository <|.. TextPassRepository
+
+' ---- Exceptions
+ParkException <|-- ValidationException
+ParkException <|-- NotFoundException
+ParkException <|-- DuplicateException
+ParkException <|-- OperationNotAllowedException
+ParkException <|-- AuthenticationException
+ParkException <|-- PersistenceException
+
+' ---- Presentation and composition root
+App ..> AppInitializer
 App ..> CommandRunner
+AppInitializer ..> TextUserRepository : creates
+AppInitializer ..> TextGroupRepository : creates
+AppInitializer ..> TextTicketRepository : creates
+AppInitializer ..> TextAttractionRepository : creates
+AppInitializer ..> TextPassRepository : creates
+AppInitializer ..> ParkController : configure()
+AppInitializer ..> UserController : configure()
+AppInitializer ..> PassController : configure()
+AppInitializer ..> InvoiceController : configure()
 CommandRunner --> CommandProcessor
-CommandProcessor --> ParkController
+CommandProcessor --> ParkController : <<inject>>
+CommandProcessor --> PassController : <<inject>>
+CommandProcessor --> InvoiceController : <<inject>>
+CommandProcessor --> "2" HelpGenerator : <<inject>> help, extendedHelp
+HelpGenerator --> HelpFormatter : <<inject>>
+HelpGenerator --> "*" CommandInfo
+CommandCatalog ..> CommandInfo
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+CommandProcessor ..> ParkException : handles
 
 @enduml

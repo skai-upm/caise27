@@ -1,5 +1,10 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,6 +14,8 @@ import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+
+import es.upm.amusementpark.business.validation.ValueParser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -25,7 +32,7 @@ class ParkControllerTest extends ParkTestSupport {
 
     @Test
     void initialDateAndPrice() {
-        park.initialize(dir);
+        AppInitializer.initializeBusiness(dir, HASHER);
         assertEquals(LocalDate.now(ZoneId.systemDefault()), park.getCurrentDate());
         assertEquals(new BigDecimal("40.00"), park.getPrice());
     }
@@ -33,7 +40,7 @@ class ParkControllerTest extends ParkTestSupport {
     @Test
     void priceResetsOnNewExecution() {
         park.setPrice(new BigDecimal("45.50"));
-        park.initialize(dir);
+        reload();
         assertEquals(new BigDecimal("40.00"), park.getPrice());
     }
 
@@ -48,13 +55,13 @@ class ParkControllerTest extends ParkTestSupport {
     @ParameterizedTest
     @ValueSource(strings = {"2027-02-30", "15/04/2027", "2027-4-15", "", "abc"})
     void invalidDates(String value) {
-        assertThrows(IllegalArgumentException.class, () -> ValueParser.parseDate(value));
+        assertThrows(ParkException.class, () -> ValueParser.parseDate(value));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"0", "0.00", "-3", "abc", "1.234", "", ".5", "5.", "1,5", "1e3"})
     void invalidPrices(String value) {
-        assertThrows(IllegalArgumentException.class, () -> ValueParser.parsePrice(value));
+        assertThrows(ParkException.class, () -> ValueParser.parsePrice(value));
     }
 
     @Test

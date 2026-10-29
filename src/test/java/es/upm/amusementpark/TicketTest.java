@@ -1,5 +1,10 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -36,10 +41,10 @@ class TicketTest extends ParkTestSupport {
     void individualTicketRejections() {
         user(1);
         park.createTicket("T001", email(1), "2027-04-15");
-        assertThrows(IllegalArgumentException.class, () -> park.createTicket("T002", email(1), "2027-03-31"));
-        assertThrows(IllegalArgumentException.class, () -> park.createTicket("T003", "nadie@correo.com", "2027-04-15"));
-        assertThrows(IllegalArgumentException.class, () -> park.createTicket("T001", email(1), "2027-04-15"));
-        assertThrows(IllegalArgumentException.class, () -> park.createTicket("T004", email(1), "2027-13-01"));
+        assertThrows(ParkException.class, () -> park.createTicket("T002", email(1), "2027-03-31"));
+        assertThrows(ParkException.class, () -> park.createTicket("T003", "nadie@correo.com", "2027-04-15"));
+        assertThrows(ParkException.class, () -> park.createTicket("T001", email(1), "2027-04-15"));
+        assertThrows(ParkException.class, () -> park.createTicket("T004", email(1), "2027-13-01"));
         assertNull(park.findTicket("T002"));
     }
 
@@ -52,9 +57,9 @@ class TicketTest extends ParkTestSupport {
         assertNull(park.findTicket("T001"));
 
         park.setCurrentDate(LocalDate.of(2027, 4, 15));
-        assertThrows(IllegalArgumentException.class, () -> park.deleteTicket("T002"));
+        assertThrows(ParkException.class, () -> park.deleteTicket("T002"));
         park.setCurrentDate(LocalDate.of(2027, 4, 16));
-        assertThrows(IllegalArgumentException.class, () -> park.deleteTicket("T002"));
+        assertThrows(ParkException.class, () -> park.deleteTicket("T002"));
         assertNotNull(park.findTicket("T002"));
         assertFalse(park.findTicket("T002").isActive(park.getCurrentDate()));
     }
@@ -108,19 +113,19 @@ class TicketTest extends ParkTestSupport {
     @Test
     void groupTicketRejections() {
         park.createGroup("G00", "Empty");
-        assertThrows(IllegalArgumentException.class, () -> park.createGroupTicket("TG00", "G00", "2027-04-15"));
+        assertThrows(ParkException.class, () -> park.createGroupTicket("TG00", "G00", "2027-04-15"));
         groupOf("G01", 1, 2);
-        assertThrows(IllegalArgumentException.class, () -> park.createGroupTicket("TG01", "G99", "2027-04-15"));
-        assertThrows(IllegalArgumentException.class, () -> park.createGroupTicket("TG01", "G01", "2027-03-01"));
+        assertThrows(ParkException.class, () -> park.createGroupTicket("TG01", "G99", "2027-04-15"));
+        assertThrows(ParkException.class, () -> park.createGroupTicket("TG01", "G01", "2027-03-01"));
         park.createTicket("T001", email(1), "2027-04-15");
-        assertThrows(IllegalArgumentException.class, () -> park.createGroupTicket("T001", "G01", "2027-04-15"));
+        assertThrows(ParkException.class, () -> park.createGroupTicket("T001", "G01", "2027-04-15"));
     }
 
     @Test
     void derivedIdConflictCreatesNothing() {
         groupOf("G01", 1, 2);
         park.createTicket("TG01:" + dni(2), email(2), "2027-04-15");
-        assertThrows(IllegalArgumentException.class, () -> park.createGroupTicket("TG01", "G01", "2027-04-15"));
+        assertThrows(ParkException.class, () -> park.createGroupTicket("TG01", "G01", "2027-04-15"));
         assertNull(park.findTicket("TG01"));
         assertNull(park.findTicket("TG01:" + dni(1)));
     }
@@ -129,24 +134,24 @@ class TicketTest extends ParkTestSupport {
     void sharedIdSpaceForIndividualTickets() {
         groupOf("G01", 1, 1);
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        assertThrows(IllegalArgumentException.class, () -> park.createTicket("TG01", email(1), "2027-04-15"));
-        assertThrows(IllegalArgumentException.class, () -> park.createTicket("TG01:" + dni(1), email(1), "2027-04-15"));
+        assertThrows(ParkException.class, () -> park.createTicket("TG01", email(1), "2027-04-15"));
+        assertThrows(ParkException.class, () -> park.createTicket("TG01:" + dni(1), email(1), "2027-04-15"));
     }
 
     @Test
     void groupTicketDeletion() {
         groupOf("G01", 1, 2);
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        assertThrows(IllegalArgumentException.class, () -> park.deleteTicket("TG01:" + dni(1)));
-        assertThrows(IllegalArgumentException.class, () -> park.deleteTicket("TG01"));
+        assertThrows(ParkException.class, () -> park.deleteTicket("TG01:" + dni(1)));
+        assertThrows(ParkException.class, () -> park.deleteTicket("TG01"));
         park.deleteGroupTicket("TG01");
         assertNull(park.findTicket("TG01"));
         assertNull(park.findTicket("TG01:" + dni(1)));
 
         park.createGroupTicket("TG02", "G01", "2027-04-15");
         park.setCurrentDate(LocalDate.of(2027, 4, 15));
-        assertThrows(IllegalArgumentException.class, () -> park.deleteGroupTicket("TG02"));
-        assertThrows(IllegalArgumentException.class, () -> park.deleteGroupTicket("T404"));
+        assertThrows(ParkException.class, () -> park.deleteGroupTicket("TG02"));
+        assertThrows(ParkException.class, () -> park.deleteGroupTicket("T404"));
         assertNotNull(park.findTicket("TG02"));
     }
 
@@ -163,26 +168,26 @@ class TicketTest extends ParkTestSupport {
     void userDeletionRules() {
         user(1);
         park.createTicket("T001", email(1), "2027-04-15");
-        assertThrows(IllegalArgumentException.class, () -> park.deleteUser(email(1), "Clave1!"));
+        assertThrows(ParkException.class, () -> park.deleteUser(email(1), "Clave1!"));
         park.deleteTicket("T001");
         park.deleteUser(email(1), "Clave1!");
-        assertNull(park.getUserService().findByEmail(email(1)));
+        assertNull(park.getUserController().findByEmail(email(1)));
     }
 
     @Test
     void todaysTicketBlocksUserDeletion() {
         user(1);
         park.createTicket("T001", email(1), TODAY.toString());
-        assertThrows(IllegalArgumentException.class, () -> park.deleteUser(email(1), "Clave1!"));
-        assertThrows(IllegalArgumentException.class, () -> park.deleteTicket("T001"));
+        assertThrows(ParkException.class, () -> park.deleteUser(email(1), "Clave1!"));
+        assertThrows(ParkException.class, () -> park.deleteTicket("T001"));
     }
 
     @Test
     void groupCompositionTicketBlocksUserDeletion() {
         groupOf("G01", 1, 2);
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        assertThrows(IllegalArgumentException.class, () -> park.deleteUser(email(1), "Clave1!"));
-        assertNotNull(park.getUserService().findByEmail(email(1)));
+        assertThrows(ParkException.class, () -> park.deleteUser(email(1), "Clave1!"));
+        assertNotNull(park.getUserController().findByEmail(email(1)));
     }
 
     @Test
@@ -196,8 +201,8 @@ class TicketTest extends ParkTestSupport {
         // Moving the system date back makes TG01 active again, so G01 is locked.
         park.setCurrentDate(LocalDate.of(2027, 4, 15));
         assertTrue(park.isLocked(park.getGroup("G01")));
-        assertThrows(IllegalArgumentException.class, () -> park.deleteUser(email(2), "Clave1!"));
-        assertNotNull(park.getUserService().findByEmail(email(2)));
+        assertThrows(ParkException.class, () -> park.deleteUser(email(2), "Clave1!"));
+        assertNotNull(park.getUserController().findByEmail(email(2)));
     }
 
     @Test
@@ -206,7 +211,7 @@ class TicketTest extends ParkTestSupport {
         GroupTicket tg = park.createGroupTicket("TG01", "G01", "2027-04-15");
         IndividualTicket t = park.createTicket("T001", email(1), "2027-04-15");
         park.setCurrentDate(LocalDate.of(2027, 4, 16));
-        User u1 = park.getUserService().findByEmail(email(1));
+        User u1 = park.getUserController().findByEmail(email(1));
         park.deleteUser(email(1), "Clave1!");
         assertFalse(park.getGroup("G01").contains(u1));
         assertEquals(u1, t.getUser());

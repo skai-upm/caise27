@@ -25,8 +25,12 @@ The project SHALL be a Maven project with the standard Maven directory structure
 - **THEN** the application processes the commands contained in `input.txt`
 
 ### Requirement: Standard library only at runtime
-The application SHALL use only the Java standard library at runtime and SHALL NOT use databases, frameworks, external libraries, regular expressions, or encryption mechanisms.
+The application SHALL use only the Java standard library at runtime, except for the BCrypt library `org.mindrot:jbcrypt` used for password protection, which SHALL be packaged inside the executable JAR. It SHALL NOT use databases, frameworks, other external libraries, regular expressions for command parsing or validation, or Java object serialization.
 
 #### Scenario: No runtime dependencies
 - **WHEN** the project's dependency tree is inspected
-- **THEN** it contains no compile- or runtime-scope dependencies (test-scope dependencies are permitted)
+- **THEN** the only compile- or runtime-scope dependency is `org.mindrot:jbcrypt` (test-scope dependencies are permitted)
+
+#### Scenario: Self-contained JAR
+- **WHEN** `java -jar target/amusement-park.jar` is run without any classpath configuration
+- **THEN** password hashing works because the BCrypt classes are inside the JAR

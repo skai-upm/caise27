@@ -43,7 +43,7 @@ A ticket SHALL be active when its date is on or after the current system date, a
 - **THEN** an error is printed and no ticket is created
 
 ### Requirement: Individual ticket deletion
-`TICKET DELETE;<identifier>` SHALL delete an individual ticket only when its date is strictly after the current system date. It SHALL NOT delete tickets that belong to a group ticket's composition, or group tickets.
+`TICKET DELETE;<identifier>` SHALL delete an individual ticket only when its date is strictly after the current system date. It SHALL NOT delete tickets that belong to a group ticket's composition, or group tickets. Deleting a ticket SHALL also delete all its SpeedPasses and its Special Pass, regardless of how they were bought.
 
 #### Scenario: Delete future ticket
 - **WHEN** the system date is 2027-04-01 and `TICKET DELETE;T001` is processed for T001 dated 2027-04-15
@@ -56,6 +56,10 @@ A ticket SHALL be active when its date is on or after the current system date, a
 #### Scenario: Composition ticket protected
 - **WHEN** `TICKET DELETE;TG01:12345678Z` is processed
 - **THEN** an error is printed and the ticket still exists
+
+#### Scenario: Passes deleted with ticket
+- **WHEN** future T001 has SpeedPasses SP01:1 and SP02:1..10 and Special Pass PE01, and `TICKET DELETE;T001` is processed
+- **THEN** T001 and all those passes no longer exist
 
 ### Requirement: Group ticket creation
 `GROUPTICKET CREATE;<identifier>;<group>;<date>` SHALL create, for an existing non-empty group and a date on or after the current system date, a group ticket composed of one individual ticket per current member with identifier `<identifier>:<dni>`, each referencing its user. All identifiers SHALL be checked first; on any conflict nothing SHALL be created. The group ticket SHALL reference its group, and the group SHALL NOT reference its tickets. The composition SHALL NOT change afterwards.
@@ -88,7 +92,7 @@ Each composition ticket's price SHALL be the current base price minus a discount
 - **THEN** the unit prices are 40.00, 36.00, 36.00, 32.00 and 20.00 respectively
 
 ### Requirement: Group ticket deletion
-`GROUPTICKET DELETE;<identifier>` SHALL delete a group ticket and its composition tickets only when its date is strictly after the current system date.
+`GROUPTICKET DELETE;<identifier>` SHALL delete a group ticket and its composition tickets only when its date is strictly after the current system date. It SHALL also delete all passes of those composition tickets, consistently: either everything is deleted or nothing is.
 
 #### Scenario: Delete future group ticket
 - **WHEN** the system date is before TG01's date and `GROUPTICKET DELETE;TG01` is processed
@@ -97,3 +101,7 @@ Each composition ticket's price SHALL be the current base price minus a discount
 #### Scenario: Today's group ticket kept
 - **WHEN** the system date equals TG01's date and `GROUPTICKET DELETE;TG01` is processed
 - **THEN** an error is printed and TG01 still exists
+
+#### Scenario: Composition passes deleted
+- **WHEN** a composition ticket of future TG01 has SpeedPasses and a Special Pass and `GROUPTICKET DELETE;TG01` is processed
+- **THEN** those passes no longer exist

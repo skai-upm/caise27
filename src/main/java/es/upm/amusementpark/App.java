@@ -14,6 +14,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
+import es.upm.amusementpark.business.exception.ParkException;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
+import es.upm.amusementpark.presentation.CommandProcessor;
+import es.upm.amusementpark.presentation.CommandRunner;
+
 /**
  * Application entry point. Supported argument forms:
  * <pre>
@@ -37,6 +43,10 @@ public class App {
      * {@code tmp/} in --fly mode).
      */
     static int run(String[] args, InputStream in, PrintStream out, Path baseDir) {
+        return run(args, in, out, baseDir, new BCryptPasswordHasher());
+    }
+
+    static int run(String[] args, InputStream in, PrintStream out, Path baseDir, PasswordHasher hasher) {
         boolean fly = args.length > 0 && FLY.equals(args[0]);
         int fileIndex = fly ? 1 : 0;
         String commandFile = args.length > fileIndex ? args[fileIndex] : null;
@@ -48,7 +58,7 @@ public class App {
             if (fly) {
                 dataDir = createTemporaryDirectory(tmpRoot);
             }
-            return runWith(dataDir, commandFile, in, out);
+            return runWith(dataDir, commandFile, in, out, hasher);
         } catch (IOException e) {
             out.println("ERROR: cannot create temporary directory: " + e.getMessage());
             return 1;
@@ -62,15 +72,16 @@ public class App {
         }
     }
 
-    private static int runWith(Path dataDir, String commandFile, InputStream in, PrintStream out) {
-        ParkController park = ParkController.getInstance();
+    private static int runWith(Path dataDir, String commandFile, InputStream in, PrintStream out,
+                               PasswordHasher hasher) {
+        CommandProcessor processor;
         try {
-            park.initialize(dataDir);
-        } catch (RuntimeException e) {
+            processor = AppInitializer.initialize(dataDir, hasher, out);
+        } catch (ParkException e) {
             out.println("ERROR: " + e.getMessage());
             return 1;
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(park, out));
+        CommandRunner runner = new CommandRunner(processor);
         if (commandFile == null) {
             try {
                 runner.run(new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8)));

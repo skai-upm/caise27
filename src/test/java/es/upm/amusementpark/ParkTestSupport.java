@@ -1,5 +1,10 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+
 import java.nio.file.Path;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,15 +22,18 @@ abstract class ParkTestSupport {
 
     ParkController park;
 
+    /** Cheap BCrypt work factor so that tests stay fast. */
+    static final BCryptPasswordHasher HASHER = new BCryptPasswordHasher(4);
+
     @BeforeEach
     void initPark() {
+        AppInitializer.initializeBusiness(dir, HASHER);
         park = ParkController.getInstance();
-        park.initialize(dir);
         park.setCurrentDate(TODAY);
     }
 
     void reload() {
-        park.initialize(dir);
+        AppInitializer.initializeBusiness(dir, HASHER);
         park.setCurrentDate(TODAY);
     }
 
@@ -37,7 +45,7 @@ abstract class ParkTestSupport {
     User user(int n) {
         String email = "u" + n + "@correo.com";
         park.createUser("Name" + n, "Surname" + n, dni(n), email, "Clave1!", "600000000", "1234567890123456");
-        return park.getUserService().findByEmail(email);
+        return park.getUserController().findByEmail(email);
     }
 
     static String email(int n) {

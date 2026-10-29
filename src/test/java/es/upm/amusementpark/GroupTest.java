@@ -1,5 +1,10 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -30,12 +35,12 @@ class GroupTest extends ParkTestSupport {
         user(1);
         park.createGroup("G01", "Familia");
         park.addToGroup("G01", email(1));
-        assertThrows(IllegalArgumentException.class, () -> park.createGroup("G01", "Other"));
-        assertThrows(IllegalArgumentException.class, () -> park.createGroup("", "Other"));
-        assertThrows(IllegalArgumentException.class, () -> park.addToGroup("G01", email(1)));
-        assertThrows(IllegalArgumentException.class, () -> park.addToGroup("G01", "nadie@correo.com"));
-        assertThrows(IllegalArgumentException.class, () -> park.addToGroup("G99", email(1)));
-        assertThrows(IllegalArgumentException.class, () -> park.removeFromGroup("G01", "nadie@correo.com"));
+        assertThrows(ParkException.class, () -> park.createGroup("G01", "Other"));
+        assertThrows(ParkException.class, () -> park.createGroup("", "Other"));
+        assertThrows(ParkException.class, () -> park.addToGroup("G01", email(1)));
+        assertThrows(ParkException.class, () -> park.addToGroup("G01", "nadie@correo.com"));
+        assertThrows(ParkException.class, () -> park.addToGroup("G99", email(1)));
+        assertThrows(ParkException.class, () -> park.removeFromGroup("G01", "nadie@correo.com"));
         assertEquals(1, park.getGroup("G01").getMembers().size());
     }
 
@@ -48,13 +53,13 @@ class GroupTest extends ParkTestSupport {
         park.createGroupTicket("TG01", "G01", "2027-04-15");
         Group g = park.getGroup("G01");
         assertTrue(park.isLocked(g));
-        assertThrows(IllegalArgumentException.class, () -> park.addToGroup("G01", email(2)));
-        assertThrows(IllegalArgumentException.class, () -> park.removeFromGroup("G01", email(1)));
-        assertThrows(IllegalArgumentException.class, () -> park.deleteGroup("G01"));
+        assertThrows(ParkException.class, () -> park.addToGroup("G01", email(2)));
+        assertThrows(ParkException.class, () -> park.removeFromGroup("G01", email(1)));
+        assertThrows(ParkException.class, () -> park.deleteGroup("G01"));
 
         park.setCurrentDate(LocalDate.of(2027, 4, 15));
         assertTrue(park.isLocked(g), "ticket for the current day still locks");
-        assertThrows(IllegalArgumentException.class, () -> park.deleteGroup("G01"));
+        assertThrows(ParkException.class, () -> park.deleteGroup("G01"));
 
         park.setCurrentDate(LocalDate.of(2027, 4, 16));
         assertFalse(park.isLocked(g));

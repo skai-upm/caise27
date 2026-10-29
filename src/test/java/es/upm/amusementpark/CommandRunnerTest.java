@@ -1,5 +1,10 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -11,6 +16,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -28,14 +34,24 @@ class CommandRunnerTest {
             "USER CREATE;Luis;Perez;11111111H;luis@correo.com;Clave1!;600000000;1111222233334444",
             "");
 
+    private static final BCryptPasswordHasher HASHER = new BCryptPasswordHasher(4);
+
     @TempDir
     Path dir;
 
     private String runApp(Path workDir, String[] args, String stdin) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(buffer, true, StandardCharsets.UTF_8), workDir);
+                new PrintStream(buffer, true, StandardCharsets.UTF_8), workDir, HASHER);
         return buffer.toString(StandardCharsets.UTF_8);
+    }
+
+    private static List<String> withoutHashes(Path users) throws Exception {
+        return Files.readAllLines(users).stream().map(l -> {
+            String[] f = l.split(";", -1);
+            f[4] = "<hash>";
+            return String.join(";", f);
+        }).toList();
     }
 
     @Test
@@ -49,7 +65,8 @@ class CommandRunnerTest {
         String stdinOutput = runApp(stdinDir, new String[0], SCRIPT);
 
         assertEquals(fileOutput, stdinOutput);
-        assertEquals(Files.readAllLines(fileDir.resolve("users.txt")), Files.readAllLines(stdinDir.resolve("users.txt")));
+        // BCrypt salts differ between runs, so compare the users files without the hash column.
+        assertEquals(withoutHashes(fileDir.resolve("users.txt")), withoutHashes(stdinDir.resolve("users.txt")));
 
         String[] lines = fileOutput.split(System.lineSeparator());
         assertEquals("USER CREATED", lines[0]);
@@ -63,7 +80,8 @@ class CommandRunnerTest {
     @Test
     void commandsAfterExitAreNotExecuted() {
         runApp(dir, new String[0], SCRIPT);
-        UserService service = new UserService(new UserRepository(dir.resolve("users.txt")));
+        AppInitializer.initializeBusiness(dir, HASHER);
+        UserController service = UserController.getInstance();
         assertNull(service.findByEmail("luis@correo.com"));
         assertNotNull(service.findByEmail("ana.nueva@correo.com"));
         assertEquals("699999999", service.findByEmail("ana.nueva@correo.com").getPhone());
@@ -73,7 +91,7 @@ class CommandRunnerTest {
     void missingCommandFileIsReported() {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int code = App.run(new String[] {dir.resolve("nope.txt").toString()}, new ByteArrayInputStream(new byte[0]),
-                new PrintStream(buffer, true, StandardCharsets.UTF_8), dir);
+                new PrintStream(buffer, true, StandardCharsets.UTF_8), dir, HASHER);
         assertEquals(1, code);
         assertTrue(buffer.toString(StandardCharsets.UTF_8).startsWith("ERROR:"));
     }
