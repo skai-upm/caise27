@@ -1,0 +1,96 @@
+@startuml
+title Amusement Park - class model
+
+skinparam classAttributeIconSize 0
+hide empty methods
+
+package "Domain" {
+  class User {
+    - email : String
+    - dni : String
+  }
+
+  class Group {
+    - identifier : String
+    - name : String
+  }
+
+  abstract class Ticket {
+    - identifier : String
+    - date : LocalDate
+    - price : BigDecimal
+  }
+
+  class IndividualTicket {
+  }
+
+  class GroupTicket {
+  }
+
+  class Attraction {
+    - identifier : String
+    - name : String
+    - capacity : int
+  }
+}
+
+package "Central management" {
+  class ParkController <<singleton>> {
+    - {static} DEFAULT_PRICE : BigDecimal
+    - currentDate : LocalDate
+    - basePrice : BigDecimal
+  }
+}
+
+package "Persistence" {
+  abstract class TextFileRepository {
+    - file : Path
+  }
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class AttractionRepository
+  class ParkStorage
+}
+
+package "Command interface" {
+  class CommandProcessor {
+    - out : PrintStream
+  }
+  class App
+}
+
+' --- ticket hierarchy
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' --- relationships among users, groups, tickets and attractions (unidirectional)
+IndividualTicket --> "1" User : user
+GroupTicket *--> "1..*" IndividualTicket : composition
+GroupTicket --> "0..1" Group : group
+Group o--> "0..*" User : members
+Attraction --> "0..*" User : occupants
+
+' --- central management
+ParkController o--> "0..*" User : users
+ParkController o--> "0..*" Group : groups
+ParkController o--> "0..*" Ticket : tickets
+ParkController o--> "0..*" Attraction : attractions
+
+' --- persistence
+TextFileRepository <|-- UserRepository
+TextFileRepository <|-- GroupRepository
+TextFileRepository <|-- TicketRepository
+TextFileRepository <|-- AttractionRepository
+ParkStorage *--> "1" UserRepository : users
+ParkStorage *--> "1" GroupRepository : groups
+ParkStorage *--> "1" TicketRepository : tickets
+ParkStorage *--> "1" AttractionRepository : attractions
+ParkStorage ..> ParkController : loads / saves
+
+' --- command interface
+CommandProcessor --> "1" ParkController : park
+App ..> CommandProcessor : creates
+App ..> ParkStorage : configures
+
+@enduml
