@@ -32,12 +32,17 @@ An individual ticket SHALL have an identifier, a date of use, a reference to its
 - **THEN** `T001` keeps the price 40.00
 
 ### Requirement: Delete individual ticket
-`TICKET DELETE;<id>` SHALL delete a standalone individual ticket only when its date is strictly after the system date. Tickets dated today or earlier, unknown identifiers, and tickets that belong to a group ticket SHALL be rejected.
+`TICKET DELETE;<id>` SHALL delete a standalone individual ticket only when its date is strictly after the system date, together with all its passes. Tickets dated today or earlier, unknown identifiers, and tickets that belong to a group ticket SHALL be rejected without deleting anything.
 
 #### Scenario: Only future tickets can be deleted
 - **GIVEN** system date 2026-10-10 and tickets dated 2026-10-09, 2026-10-10 and 2026-10-11
 - **WHEN** each is submitted to `TICKET DELETE`
 - **THEN** only the ticket dated 2026-10-11 is deleted
+
+#### Scenario: Passes deleted with the ticket
+- **GIVEN** a future ticket with SpeedPasses and a Special Pass
+- **WHEN** it is deleted
+- **THEN** its passes are deleted too
 
 ### Requirement: Ticket persistence and history
 Individual tickets SHALL be stored in a text file with their purchase price and restored at startup. Past tickets SHALL be kept as historical records, including after their user has been deleted, preserving the user's identifying data (name, surname, DNI, email).

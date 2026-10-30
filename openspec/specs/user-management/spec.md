@@ -95,7 +95,7 @@ No two registered users SHALL share a DNI or an email address. Both constraints 
 - **THEN** creation is rejected
 
 ### Requirement: Delete user
-The system SHALL accept `USER DELETE;Correo;Contraseña`. It SHALL locate the user by email, verify the password matches, delete the user and update persistent storage. If the email does not exist or the password is wrong, nothing SHALL be deleted. Deletion SHALL also be rejected while the user has any ticket (individual or within a group ticket) dated on or after the system date. A deleted user SHALL be removed from every group; past tickets SHALL be kept as history.
+The system SHALL accept `USER DELETE;Correo;Contraseña`. It SHALL locate the user by email, verify the password against the stored password hash, delete the user and update persistent storage. If the email does not exist or the password is wrong, nothing SHALL be deleted. Deletion SHALL also be rejected while the user has any ticket (individual or within a group ticket) dated on or after the system date. A deleted user SHALL be removed from every group; past tickets SHALL be kept as history.
 
 #### Scenario: Authenticated deletion
 - **GIVEN** a user `ana@correo.com` with password `Clave1!`
@@ -122,7 +122,7 @@ The system SHALL accept `USER DELETE;Correo;Contraseña`. It SHALL locate the us
 - **THEN** deletion is rejected
 
 ### Requirement: Update user
-The system SHALL accept `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, where `Campo` is one of `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD` (represented by an enum). It SHALL verify current email and password before modifying anything, revalidate the new value with the creation rules, and persist successful changes. `DNI` SHALL NOT be updatable.
+The system SHALL accept `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, where `Campo` is one of `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD` (represented by an enum). It SHALL verify the current email and the password against the stored password hash before modifying anything, revalidate the new value with the creation rules, and persist successful changes; a new password SHALL be stored as a new hash. `DNI` SHALL NOT be updatable.
 
 #### Scenario: Update first name
 - **GIVEN** a user `ana@correo.com` with password `Clave1!`

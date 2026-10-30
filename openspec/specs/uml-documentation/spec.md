@@ -7,7 +7,7 @@ Documents the implemented object-oriented design of the park application as a Pl
 ## Requirements
 
 ### Requirement: PlantUML class diagram of the implementation
-The project SHALL contain `uml/model.puml`, a valid PlantUML class diagram derived from the implemented code, showing the relevant classes, interfaces/abstract classes and enums, inheritance, associations and compositions with their navigability and inferable multiplicities. It SHALL NOT contain elements absent from the code nor reverse navigation that the code lacks.
+The project SHALL contain `uml/model.puml`, a valid PlantUML class diagram derived from the implemented code, showing the relevant packages, classes, interfaces/abstract classes, generic type parameters with their bounds, and enums, inheritance and interface realization, associations and compositions with their navigability and inferable multiplicities. It SHALL NOT contain elements absent from the code nor reverse navigation that the code lacks.
 
 #### Scenario: Diagram renders
 - **WHEN** `uml/model.puml` is processed by PlantUML
@@ -16,6 +16,10 @@ The project SHALL contain `uml/model.puml`, a valid PlantUML class diagram deriv
 #### Scenario: Diagram matches the code
 - **WHEN** the diagram is compared with the source
 - **THEN** every class, relationship, direction and multiplicity shown exists in the code, including the ticket hierarchy and the references among users, groups, tickets and attractions
+
+#### Scenario: Delivery 3 elements shown
+- **WHEN** the diagram is inspected
+- **THEN** it shows the ticket access interfaces, the generic attraction hierarchy with its bounds, the pass classes, the invoice builder and the layered packages
 
 ### Requirement: Diagram presentation rules
 The diagram SHALL NOT show methods or usage relationships, except that a class with no incoming relationship SHALL show its usage. Attributes SHALL be shown without technical labels and only for primitive/enumeration types; references to other objects SHALL be drawn as relationships named after the containing attribute, with the navigability marked at the owning side.
