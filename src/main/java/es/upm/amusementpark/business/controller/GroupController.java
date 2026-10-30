@@ -14,12 +14,12 @@ import java.util.List;
  */
 public class GroupController {
 
+    private static GroupController instance;
+
     private static final String SAVE_ERROR = "ERROR: could not save groups";
 
     private GroupRepository repository;
     private List<Group> groups = new ArrayList<>();
-
-    private static GroupController instance;
 
     private GroupController() {
     }

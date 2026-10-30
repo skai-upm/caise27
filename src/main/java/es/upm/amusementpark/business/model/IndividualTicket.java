@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Ticket for one user, bought on its own or as part of a group ticket. Owns its personal passes.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private static final String SPEED_PASS_PREFIX = "-SP";
 
@@ -24,6 +24,7 @@ public class IndividualTicket extends Ticket {
         this.price = price;
     }
 
+    @Override
     public User getUser() {
         return user;
     }
@@ -31,6 +32,11 @@ public class IndividualTicket extends Ticket {
     @Override
     public List<User> getUsers() {
         return List.of(user);
+    }
+
+    @Override
+    public List<IndividualAccess> getAccessUnits() {
+        return List.of(this);
     }
 
     @Override
@@ -42,6 +48,7 @@ public class IndividualTicket extends Ticket {
         return Collections.unmodifiableList(speedPasses);
     }
 
+    @Override
     public SpecialPass getSpecialPass() {
         return specialPass;
     }
@@ -81,7 +88,7 @@ public class IndividualTicket extends Ticket {
         return new SpecialPass(getId() + "-SPECIAL", SpecialPass.priceFor(this), false);
     }
 
-    /** First SpeedPass not yet consumed, or {@code null}. */
+    @Override
     public SpeedPass findUnusedSpeedPass() {
         for (SpeedPass pass : speedPasses) {
             if (!pass.isConsumed()) {

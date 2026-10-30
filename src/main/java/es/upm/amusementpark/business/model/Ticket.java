@@ -2,12 +2,11 @@ package es.upm.amusementpark.business.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Common abstraction for individual and group tickets.
  */
-public abstract class Ticket {
+public abstract class Ticket implements AccessTicket {
 
     private final String id;
     private final LocalDate date;
@@ -17,16 +16,16 @@ public abstract class Ticket {
         this.date = date;
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }
 
-    /** Users admitted by this ticket. */
-    public abstract List<User> getUsers();
 
     /** Price paid for this ticket at purchase time. */
     public abstract BigDecimal getPrice();
@@ -37,6 +36,7 @@ public abstract class Ticket {
     }
 
     /** A ticket can be used to enter attractions only on its date. */
+    @Override
     public boolean isValidOn(LocalDate today) {
         return date.equals(today);
     }

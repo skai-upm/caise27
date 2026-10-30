@@ -18,10 +18,10 @@ import java.util.function.Supplier;
  */
 public class InvoiceController {
 
+    private static InvoiceController instance;
+
     private TicketController ticketController;
     private Supplier<InvoiceBuilder> builderFactory;
-
-    private static InvoiceController instance;
 
     private InvoiceController() {
     }

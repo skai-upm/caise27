@@ -1,6 +1,7 @@
 package es.upm.amusementpark.persistence;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.GeneralAttraction;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +32,7 @@ public class FileAttractionRepository implements AttractionRepository {
             }
             String[] f = line.split(";", -1);
             try {
-                attractions.add(new Attraction(f[0], f[1], Integer.parseInt(f[2])));
+                attractions.add(new GeneralAttraction(f[0], f[1], Integer.parseInt(f[2])));
             } catch (RuntimeException e) {
                 System.err.println("WARNING: skipping malformed attraction record: " + line);
             }

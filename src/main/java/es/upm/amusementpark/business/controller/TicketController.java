@@ -21,13 +21,13 @@ import java.util.List;
  */
 public class TicketController {
 
+    private static TicketController instance;
+
     private static final String SAVE_ERROR = "ERROR: could not save tickets";
 
     private TicketRepository repository;
     private List<IndividualTicket> tickets = new ArrayList<>();
     private List<GroupTicket> groupTickets = new ArrayList<>();
-
-    private static TicketController instance;
 
     private TicketController() {
     }

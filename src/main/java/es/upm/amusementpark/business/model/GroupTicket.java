@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Ticket bought by a group: composed of one individual ticket per member at purchase time.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private final Group group;
     private final List<IndividualTicket> tickets;
@@ -55,6 +55,7 @@ public class GroupTicket extends Ticket {
         return new BigDecimal("0.50");
     }
 
+    @Override
     public Group getGroup() {
         return group;
     }
@@ -70,6 +71,11 @@ public class GroupTicket extends Ticket {
             users.add(t.getUser());
         }
         return users;
+    }
+
+    @Override
+    public List<IndividualAccess> getAccessUnits() {
+        return new ArrayList<>(tickets);
     }
 
     @Override

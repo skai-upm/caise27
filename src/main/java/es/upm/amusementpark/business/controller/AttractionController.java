@@ -1,7 +1,9 @@
 package es.upm.amusementpark.business.controller;
 
+import es.upm.amusementpark.business.model.AccessDeniedException;
+import es.upm.amusementpark.business.model.AccessTicket;
 import es.upm.amusementpark.business.model.Attraction;
-import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.validation.UserValidator;
 import es.upm.amusementpark.persistence.AttractionRepository;
@@ -12,15 +14,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Attraction operations. Access is handled through the {@link Ticket} abstraction, so individual and group
- * tickets share the same entry and exit logic.
+ * Attraction operations. Access is handled through the {@link AccessTicket} capabilities; each attraction type
+ * decides which kinds of ticket it admits.
  */
 public class AttractionController {
 
+    private static AttractionController instance;
+
     private AttractionRepository repository;
     private List<Attraction> attractions = new ArrayList<>();
-
-    private static AttractionController instance;
 
     private AttractionController() {
     }
@@ -52,7 +54,7 @@ public class AttractionController {
         return null;
     }
 
-    public String create(String id, String name, String capacityText) {
+    public String create(String id, String name, String capacityText, String typeText) {
         if (!UserValidator.isNotBlank(id) || !UserValidator.isNotBlank(name)) {
             return "ERROR: attraction identifier and name must not be empty";
         }
@@ -65,10 +67,14 @@ public class AttractionController {
         if (capacity <= 0) {
             return "ERROR: capacity must be a positive integer";
         }
+        AttractionType type = typeText == null ? AttractionType.GENERAL : AttractionType.parse(typeText);
+        if (type == null) {
+            return "ERROR: attraction type must be GENERAL, INDIVIDUAL, GROUP or SPECIAL";
+        }
         if (findById(id) != null) {
             return "ERROR: attraction " + id + " already exists";
         }
-        Attraction attraction = new Attraction(id, name, capacity);
+        Attraction attraction = type.create(id, name, capacity);
         attractions.add(attraction);
         try {
             repository.save(attractions);
@@ -76,25 +82,19 @@ public class AttractionController {
             attractions.remove(attraction);
             return "ERROR: could not save attractions";
         }
-        return "OK: attraction " + id + " created";
+        return "OK: " + type + " attraction " + id + " created";
     }
 
-    public String enter(Attraction attraction, Ticket ticket, LocalDate today) {
-        if (!ticket.isValidOn(today)) {
-            return "ERROR: ticket " + ticket.getId() + " is not valid today (" + today + ")";
+    public String enter(Attraction attraction, AccessTicket ticket, LocalDate today) {
+        try {
+            attraction.enter(ticket, today);
+        } catch (AccessDeniedException e) {
+            return "ERROR: " + e.getMessage();
         }
-        List<User> users = ticket.getUsers();
-        if (users.size() > attraction.getAvailable()) {
-            return "ERROR: not enough places in " + attraction.getId() + " (" + attraction.getAvailable()
-                    + " available, " + users.size() + " requested)";
-        }
-        if (!attraction.enterAll(users)) {
-            return "ERROR: some users of ticket " + ticket.getId() + " are already in " + attraction.getId();
-        }
-        return "OK: " + users.size() + " user(s) entered " + attraction.getId();
+        return "OK: " + ticket.getUsers().size() + " user(s) entered " + attraction.getId();
     }
 
-    public String exit(Attraction attraction, Ticket ticket) {
+    public String exit(Attraction attraction, AccessTicket ticket) {
         int count = attraction.exitAll(ticket.getUsers());
         if (count == 0) {
             return "ERROR: no user of ticket " + ticket.getId() + " is in " + attraction.getId();
@@ -105,6 +105,7 @@ public class AttractionController {
     public String status(Attraction attraction) {
         StringBuilder sb = new StringBuilder();
         sb.append("Attraction: ").append(attraction.getId()).append(" - ").append(attraction.getName()).append('\n');
+        sb.append("Type: ").append(attraction.getType()).append('\n');
         sb.append("Capacity: ").append(attraction.getCapacity()).append('\n');
         sb.append("Occupancy: ").append(attraction.getPresent().size()).append('\n');
         sb.append("Available: ").append(attraction.getAvailable()).append('\n');

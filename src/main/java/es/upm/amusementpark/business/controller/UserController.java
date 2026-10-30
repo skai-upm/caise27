@@ -16,11 +16,11 @@ import java.util.List;
  */
 public class UserController {
 
+    private static UserController instance;
+
     private UserRepository repository;
     private PasswordHasher passwordHasher;
     private List<User> users = new ArrayList<>();
-
-    private static UserController instance;
 
     private UserController() {
     }

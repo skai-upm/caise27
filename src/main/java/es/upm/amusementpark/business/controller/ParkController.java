@@ -17,11 +17,11 @@ import java.time.ZoneId;
  */
 public class ParkController {
 
+    private static ParkController instance;
+
     static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
 
     private static final String DOES_NOT_EXIST = " does not exist";
-
-    private static ParkController instance;
 
     private LocalDate systemDate;
     private BigDecimal basePrice;
@@ -220,8 +220,8 @@ public class ParkController {
 
     // Attractions
 
-    public String createAttraction(String id, String name, String capacity) {
-        return attractionController.create(id, name, capacity);
+    public String createAttraction(String id, String name, String capacity, String type) {
+        return attractionController.create(id, name, capacity, type);
     }
 
     public String enterAttraction(String attractionId, String ticketId) {
