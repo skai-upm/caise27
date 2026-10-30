@@ -92,6 +92,9 @@ public class CommandProcessor {
             case "ATTRACTION STATUS":
                 run(p, 2, "ATTRACTION STATUS;IdAtraccion", () -> park.attractionStatus(p[1]));
                 return true;
+            case "INVOICE CREATE":
+                run(p, 3, "INVOICE CREATE;USER|GROUP;Correo|IdGrupo", () -> park.createInvoice(p[1], p[2]));
+                return true;
             case "HELP":
                 run(p, 1, "HELP", CommandProcessor::help);
                 return true;
@@ -133,6 +136,8 @@ public class CommandProcessor {
                 "  ATTRACTION ENTER;IdAtraccion;IdTicket",
                 "  ATTRACTION EXIT;IdAtraccion;IdTicket",
                 "  ATTRACTION STATUS;IdAtraccion",
+                "  INVOICE CREATE;USER;Correo",
+                "  INVOICE CREATE;GROUP;IdGrupo",
                 "  HELP",
                 "  EXIT");
     }

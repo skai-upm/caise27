@@ -33,6 +33,7 @@ public class Park {
     private final GroupService groupService;
     private final TicketService ticketService;
     private final AttractionService attractionService;
+    private final InvoiceService invoiceService;
 
     public Park(StorageLocation storage) throws IOException {
         this.systemDate = LocalDate.now(ZoneId.systemDefault());
@@ -43,6 +44,7 @@ public class Park {
                 new TicketRepository(storage.ticketsFile(), storage.groupTicketsFile()),
                 userService.getUsers(), groupService.getGroups());
         this.attractionService = new AttractionService(new AttractionRepository(storage.attractionsFile()));
+        this.invoiceService = new InvoiceService(ticketService);
     }
 
     public LocalDate getSystemDate() {
@@ -241,6 +243,23 @@ public class Park {
             return unknownAttraction(attractionId);
         }
         return attractionService.status(attraction);
+    }
+
+    // Invoices
+
+    public String createInvoice(String recipientType, String identifier) {
+        switch (recipientType.trim()) {
+            case "USER": {
+                User user = userService.findByEmail(identifier);
+                return user == null ? unknownUser(identifier) : invoiceService.userInvoice(user).render();
+            }
+            case "GROUP": {
+                Group group = groupService.findById(identifier);
+                return group == null ? unknownGroup(identifier) : invoiceService.groupInvoice(group).render();
+            }
+            default:
+                return "ERROR: invoice type must be USER or GROUP";
+        }
     }
 
     private static String invalidDate(String text) {
