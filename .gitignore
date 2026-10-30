@@ -26,6 +26,7 @@ groups.txt
 tickets.txt
 grouptickets.txt
 attractions.txt
+passes.txt
 tmp/
 
 # SDDX / Sonar generated outputs (may contain credentials)

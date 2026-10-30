@@ -1,6 +1,6 @@
 # caise27
 
-## Amusement Park (Deliveries 1-2)
+## Amusement Park (Deliveries 1-3)
 
 Java 21 / Maven console application that manages users through text commands.
 
@@ -22,8 +22,9 @@ java -jar target/amusement-park-1.0-SNAPSHOT.jar --fly input.txt    # file mode,
 
 Both modes use the same command processing. Blank lines in files are ignored and `EXIT` stops
 processing immediately. Data is stored in the working directory and reloaded at startup:
-`users.txt`, `groups.txt`, `tickets.txt`, `grouptickets.txt` and `attractions.txt`
-(fields separated by `;`). Users present in attractions are not stored: attractions start empty.
+`users.txt`, `groups.txt`, `tickets.txt`, `grouptickets.txt`, `passes.txt` and `attractions.txt`
+(fields separated by `;`). Passwords are stored as BCrypt hashes. Users present in attractions are not
+stored: attractions start empty.
 
 With `--fly` every file is written to a new `tmp/yyyyMMdd_HHmmss/` directory that is deleted when
 the run ends, so permanent data is never modified.
@@ -47,12 +48,26 @@ TICKET CREATE;IdTicket;Correo;Fecha
 TICKET DELETE;IdTicket
 GROUPTICKET CREATE;IdTicket;IdGrupo;Fecha
 GROUPTICKET DELETE;IdTicket
-ATTRACTION CREATE;IdAtraccion;Nombre;Aforo
-ATTRACTION ENTER;IdAtraccion;IdTicket
+ATTRACTION CREATE;IdAtraccion;Nombre;Aforo[;Tipo]   (Tipo: GENERAL, INDIVIDUAL, GROUP, SPECIAL)
+ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]
 ATTRACTION EXIT;IdAtraccion;IdTicket
 ATTRACTION STATUS;IdAtraccion
+INVOICE CREATE;USER;Correo
+INVOICE CREATE;GROUP;IdGrupo
+SPEEDPASS CREATE;IdTicket;Cantidad   (Cantidad: 1 or 10)
+SPEEDPASS DELETE;IdPase
+SPECIALPASS CREATE;IdTicket
+SPECIALPASS DELETE;IdPase
 HELP
+HELP EXTENDED
 EXIT
 ```
+
+Passes: a SpeedPass costs 20 % of its ticket's price and lets one user enter with `;SPEED`; the Special Pass
+costs the ticket's price, at most one per ticket, and is consumed automatically at SPECIAL attractions.
+GENERAL attractions accept individual and group tickets, INDIVIDUAL only individual tickets, GROUP only group
+tickets and SPECIAL only individual tickets with an unused Special Pass.
+
+Code is organised in `presentation`, `business` and `persistence` packages under `es.upm.amusementpark`.
 
 The class model is documented in [`uml/model.puml`](uml/model.puml).
