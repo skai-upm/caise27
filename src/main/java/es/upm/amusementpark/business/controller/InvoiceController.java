@@ -6,6 +6,7 @@ import es.upm.amusementpark.business.invoice.InvoiceLine;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.User;
 
 import java.util.ArrayList;
@@ -39,7 +40,10 @@ public class InvoiceController {
         this.builderFactory = builderFactory;
     }
 
-    /** Directly bought individual tickets of the user; tickets inside group tickets are not counted. */
+    /**
+     * Directly bought individual tickets of the user (tickets inside group tickets are not counted again) and the
+     * personal passes attached to any of the user's individual tickets, including those inside group tickets.
+     */
     public Invoice userInvoice(User user) {
         List<InvoiceLine> tickets = new ArrayList<>();
         for (IndividualTicket t : ticketController.getTickets()) {
@@ -47,9 +51,19 @@ public class InvoiceController {
                 tickets.add(new InvoiceLine("Ticket " + t.getId() + " (" + t.getDate() + ")", t.getPrice()));
             }
         }
+        List<InvoiceLine> passes = new ArrayList<>();
+        for (IndividualTicket t : ticketController.getAllIndividualTickets()) {
+            if (t.getUser() == user) {
+                for (Pass pass : t.getPasses()) {
+                    passes.add(new InvoiceLine(pass.getKind() + " " + pass.getId() + " (ticket " + t.getId() + ")",
+                            pass.getPrice()));
+                }
+            }
+        }
         InvoiceBuilder builder = builderFactory.get();
         return builder.forRecipient("USER", user.getName() + " " + user.getSurname() + " (" + user.getEmail() + ")")
                 .addSection("Individual tickets", tickets)
+                .addSection("Personal passes", passes)
                 .build();
     }
 

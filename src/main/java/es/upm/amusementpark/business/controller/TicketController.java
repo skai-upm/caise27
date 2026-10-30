@@ -54,6 +54,15 @@ public class TicketController {
         return List.copyOf(tickets);
     }
 
+    /** Standalone individual tickets plus the constituent tickets of every group ticket. */
+    public List<IndividualTicket> getAllIndividualTickets() {
+        List<IndividualTicket> all = new ArrayList<>(tickets);
+        for (GroupTicket gt : groupTickets) {
+            all.addAll(gt.getTickets());
+        }
+        return all;
+    }
+
     public List<GroupTicket> getGroupTickets() {
         return List.copyOf(groupTickets);
     }

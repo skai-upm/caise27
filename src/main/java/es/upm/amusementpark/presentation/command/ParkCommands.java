@@ -70,7 +70,19 @@ public final class ParkCommands {
                 .register(new CommandDefinition("INVOICE CREATE",
                         List.of("INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo"),
                         "Prints the invoice of a user (own tickets and passes) or of a group (group tickets).",
-                        3, 3, p -> park.createInvoice(p[1], p[2])));
+                        3, 3, p -> park.createInvoice(p[1], p[2])))
+                .register(CommandDefinition.of("SPEEDPASS CREATE;IdTicket;Cantidad",
+                        "Buys 1 or 10 SpeedPasses for an individual ticket, each at 20% of the ticket price.",
+                        p -> park.buySpeedPasses(p[1], p[2])))
+                .register(CommandDefinition.of("SPEEDPASS DELETE;IdPase",
+                        "Refunds an unused SpeedPass of a ticket dated after the system date.",
+                        p -> park.refundSpeedPass(p[1])))
+                .register(CommandDefinition.of("SPECIALPASS CREATE;IdTicket",
+                        "Buys the single Special Pass of an individual ticket at the ticket price.",
+                        p -> park.buySpecialPass(p[1])))
+                .register(CommandDefinition.of("SPECIALPASS DELETE;IdPase",
+                        "Refunds an unused Special Pass of a ticket dated after the system date.",
+                        p -> park.refundSpecialPass(p[1])));
     }
 
     public static void registerGeneralCommands(CommandRegistry registry, HelpGenerator help) {

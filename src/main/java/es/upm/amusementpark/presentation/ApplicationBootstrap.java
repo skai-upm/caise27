@@ -4,6 +4,7 @@ import es.upm.amusementpark.business.controller.AttractionController;
 import es.upm.amusementpark.business.controller.GroupController;
 import es.upm.amusementpark.business.controller.InvoiceController;
 import es.upm.amusementpark.business.controller.ParkController;
+import es.upm.amusementpark.business.controller.PassController;
 import es.upm.amusementpark.business.controller.TicketController;
 import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.invoice.TextInvoiceBuilder;
@@ -58,11 +59,14 @@ public final class ApplicationBootstrap {
         AttractionController attractions = AttractionController.getInstance();
         attractions.configure(new FileAttractionRepository(storage.attractionsFile()));
 
+        PassController passes = PassController.getInstance();
+        passes.configure(tickets);
+
         InvoiceController invoices = InvoiceController.getInstance();
         invoices.configure(tickets, TextInvoiceBuilder::new);
 
         ParkController park = ParkController.getInstance();
-        park.configure(users, groups, tickets, attractions, invoices);
+        park.configure(users, groups, tickets, attractions, invoices, passes);
 
         CommandRegistry registry = new CommandRegistry();
         ParkCommands.registerBusinessCommands(registry, park);

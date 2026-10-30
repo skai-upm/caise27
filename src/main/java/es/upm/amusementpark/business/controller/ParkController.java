@@ -30,6 +30,7 @@ public class ParkController {
     private TicketController ticketController;
     private AttractionController attractionController;
     private InvoiceController invoiceController;
+    private PassController passController;
 
     private ParkController() {
     }
@@ -47,7 +48,7 @@ public class ParkController {
      */
     public void configure(UserController userController, GroupController groupController,
             TicketController ticketController, AttractionController attractionController,
-            InvoiceController invoiceController) {
+            InvoiceController invoiceController, PassController passController) {
         this.systemDate = LocalDate.now(ZoneId.systemDefault());
         this.basePrice = DEFAULT_PRICE;
         this.userController = userController;
@@ -55,6 +56,7 @@ public class ParkController {
         this.ticketController = ticketController;
         this.attractionController = attractionController;
         this.invoiceController = invoiceController;
+        this.passController = passController;
     }
 
     public LocalDate getSystemDate() {
@@ -252,6 +254,24 @@ public class ParkController {
             return unknownAttraction(attractionId);
         }
         return attractionController.status(attraction);
+    }
+
+    // Passes
+
+    public String buySpeedPasses(String ticketId, String quantity) {
+        return passController.buySpeedPasses(ticketId, quantity, systemDate);
+    }
+
+    public String buySpecialPass(String ticketId) {
+        return passController.buySpecialPass(ticketId, systemDate);
+    }
+
+    public String refundSpeedPass(String passId) {
+        return passController.refundSpeedPass(passId, systemDate);
+    }
+
+    public String refundSpecialPass(String passId) {
+        return passController.refundSpecialPass(passId, systemDate);
     }
 
     // Invoices
