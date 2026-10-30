@@ -58,7 +58,7 @@ public class FileGroupRepository implements GroupRepository {
             }
             lines.add(g.getId() + ";" + g.getName() + ";" + String.join(",", dnis));
         }
-        Files.write(file, lines, StandardCharsets.UTF_8);
+        TextFiles.write(file, lines);
     }
 
     static User findByDni(List<User> users, String dni) {

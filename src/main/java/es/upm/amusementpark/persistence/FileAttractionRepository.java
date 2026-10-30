@@ -1,7 +1,7 @@
 package es.upm.amusementpark.persistence;
 
 import es.upm.amusementpark.business.model.Attraction;
-import es.upm.amusementpark.business.model.GeneralAttraction;
+import es.upm.amusementpark.business.model.AttractionType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -11,7 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Stores attraction definitions as {@code id;name;capacity}. Users present are never stored.
+ * Stores attraction definitions as {@code id;name;capacity;type} (records without type load as GENERAL).
+ * Users present are never stored.
  */
 public class FileAttractionRepository implements AttractionRepository {
 
@@ -31,8 +32,12 @@ public class FileAttractionRepository implements AttractionRepository {
                 continue;
             }
             String[] f = line.split(";", -1);
+            AttractionType type = f.length == 4 ? AttractionType.parse(f[3]) : AttractionType.GENERAL;
             try {
-                attractions.add(new GeneralAttraction(f[0], f[1], Integer.parseInt(f[2])));
+                if (type == null || f.length < 3 || f.length > 4) {
+                    throw new IllegalArgumentException("invalid record");
+                }
+                attractions.add(type.create(f[0], f[1], Integer.parseInt(f[2])));
             } catch (RuntimeException e) {
                 System.err.println("WARNING: skipping malformed attraction record: " + line);
             }
@@ -43,8 +48,8 @@ public class FileAttractionRepository implements AttractionRepository {
     public void save(List<Attraction> attractions) throws IOException {
         List<String> lines = new ArrayList<>();
         for (Attraction a : attractions) {
-            lines.add(a.getId() + ";" + a.getName() + ";" + a.getCapacity());
+            lines.add(a.getId() + ";" + a.getName() + ";" + a.getCapacity() + ";" + a.getType());
         }
-        Files.write(file, lines, StandardCharsets.UTF_8);
+        TextFiles.write(file, lines);
     }
 }

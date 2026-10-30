@@ -7,6 +7,7 @@ import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.validation.UserValidator;
+import es.upm.amusementpark.persistence.PassRepository;
 import es.upm.amusementpark.persistence.TicketRepository;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ public class TicketController {
     private static final String SAVE_ERROR = "ERROR: could not save tickets";
 
     private TicketRepository repository;
+    private PassRepository passRepository;
     private List<IndividualTicket> tickets = new ArrayList<>();
     private List<GroupTicket> groupTickets = new ArrayList<>();
 
@@ -40,14 +42,19 @@ public class TicketController {
         return instance;
     }
 
-    /** Injects the repository and loads stored tickets, resolving users and groups through their controllers. */
-    public void configure(TicketRepository repository, UserController userController, GroupController groupController)
-            throws IOException {
+    /**
+     * Injects the ticket and pass repositories and loads stored tickets (resolving users and groups through their
+     * controllers) and then their passes.
+     */
+    public void configure(TicketRepository repository, PassRepository passRepository, UserController userController,
+            GroupController groupController) throws IOException {
         List<User> users = userController.getUsers();
         List<Group> groups = groupController.getGroups();
         this.repository = repository;
+        this.passRepository = passRepository;
         this.tickets = new ArrayList<>(repository.loadTickets(users));
         this.groupTickets = new ArrayList<>(repository.loadGroupTickets(users, groups));
+        passRepository.load(getAllIndividualTickets());
     }
 
     public List<IndividualTicket> getTickets() {
@@ -139,12 +146,14 @@ public class TicketController {
             return "ERROR: ticket " + id + " can only be deleted before its date";
         }
         int index = tickets.indexOf(ticket);
+        int passes = ticket.getPasses().size();
         tickets.remove(index);
         if (!persist()) {
             tickets.add(index, ticket);
+            persist();
             return SAVE_ERROR;
         }
-        return "OK: ticket " + id + " deleted";
+        return "OK: ticket " + id + " deleted with its " + passes + " pass(es)";
     }
 
     public String deleteGroup(String id, LocalDate today) {
@@ -161,12 +170,18 @@ public class TicketController {
             return "ERROR: group ticket " + id + " can only be deleted before its date";
         }
         int index = groupTickets.indexOf(ticket);
+        int passes = 0;
+        for (IndividualTicket t : ticket.getTickets()) {
+            passes += t.getPasses().size();
+        }
         groupTickets.remove(index);
         if (!persist()) {
             groupTickets.add(index, ticket);
+            persist();
             return SAVE_ERROR;
         }
-        return "OK: group ticket " + id + " deleted with its " + ticket.getTickets().size() + " tickets";
+        return "OK: group ticket " + id + " deleted with its " + ticket.getTickets().size() + " tickets and " + passes
+                + " pass(es)";
     }
 
     /** True if the user holds any ticket (standalone or in a group ticket) dated on or after {@code today}. */
@@ -207,8 +222,14 @@ public class TicketController {
         return null;
     }
 
-    private boolean persist() {
+    /**
+     * Saves passes first and then tickets and group tickets, so files never reference passes of deleted tickets.
+     *
+     * @return {@code false} if any file could not be written
+     */
+    public boolean persist() {
         try {
+            passRepository.save(getAllIndividualTickets());
             repository.save(tickets, groupTickets);
             return true;
         } catch (IOException e) {

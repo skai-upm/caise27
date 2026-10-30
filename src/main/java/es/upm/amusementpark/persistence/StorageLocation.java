@@ -66,6 +66,10 @@ public class StorageLocation {
         return baseDir.resolve("grouptickets.txt");
     }
 
+    public Path passesFile() {
+        return baseDir.resolve("passes.txt");
+    }
+
     public Path attractionsFile() {
         return baseDir.resolve("attractions.txt");
     }

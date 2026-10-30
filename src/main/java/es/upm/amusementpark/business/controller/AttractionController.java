@@ -23,6 +23,7 @@ public class AttractionController {
     private static AttractionController instance;
 
     private AttractionRepository repository;
+    private TicketController ticketController;
     private List<Attraction> attractions = new ArrayList<>();
 
     private AttractionController() {
@@ -36,9 +37,13 @@ public class AttractionController {
         return instance;
     }
 
-    /** Injects the repository and loads the stored attraction definitions. */
-    public void configure(AttractionRepository repository) throws IOException {
+    /**
+     * Injects the repository and the ticket controller (which stores pass consumption) and loads the stored
+     * attraction definitions.
+     */
+    public void configure(AttractionRepository repository, TicketController ticketController) throws IOException {
         this.repository = repository;
+        this.ticketController = ticketController;
         this.attractions = new ArrayList<>(repository.load());
     }
 
@@ -92,6 +97,11 @@ public class AttractionController {
             consumed = attraction.enter(ticket, speed, today);
         } catch (AccessDeniedException e) {
             return "ERROR: " + e.getMessage();
+        }
+        if (!consumed.isEmpty() && !ticketController.persist()) {
+            attraction.exitAll(ticket.getUsers());
+            consumed.forEach(Pass::restore);
+            return "ERROR: could not save pass consumption; nobody entered";
         }
         StringBuilder sb = new StringBuilder("OK: ").append(ticket.getUsers().size()).append(" user(s) entered ")
                 .append(attraction.getId());

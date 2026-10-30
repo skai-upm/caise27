@@ -75,6 +75,11 @@ public class IndividualTicket extends Ticket implements IndividualAccess {
         speedPasses.add(pass);
     }
 
+    /** Re-inserts a SpeedPass at a position (used to undo a refund that could not be saved). */
+    public void insertSpeedPass(int index, SpeedPass pass) {
+        speedPasses.add(index, pass);
+    }
+
     public boolean removeSpeedPass(SpeedPass pass) {
         return speedPasses.remove(pass);
     }

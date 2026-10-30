@@ -72,7 +72,7 @@ public class FileTicketRepository implements TicketRepository {
         for (IndividualTicket t : tickets) {
             lines.add(format(t));
         }
-        Files.write(ticketsFile, lines, StandardCharsets.UTF_8);
+        TextFiles.write(ticketsFile, lines);
         List<String> groupLines = new ArrayList<>();
         for (GroupTicket gt : groupTickets) {
             groupLines.add(String.join(";", "G", gt.getId(), gt.getGroup().getId(), gt.getGroup().getName(),
@@ -81,7 +81,7 @@ public class FileTicketRepository implements TicketRepository {
                 groupLines.add("T;" + format(t));
             }
         }
-        Files.write(groupTicketsFile, groupLines, StandardCharsets.UTF_8);
+        TextFiles.write(groupTicketsFile, groupLines);
     }
 
     private static void addGroupTicket(List<GroupTicket> result, String[] header, List<IndividualTicket> constituents,

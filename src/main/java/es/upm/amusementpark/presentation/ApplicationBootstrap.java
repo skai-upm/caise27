@@ -12,6 +12,7 @@ import es.upm.amusementpark.business.security.BCryptPasswordHasher;
 import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.FileAttractionRepository;
 import es.upm.amusementpark.persistence.FileGroupRepository;
+import es.upm.amusementpark.persistence.FilePassRepository;
 import es.upm.amusementpark.persistence.FileTicketRepository;
 import es.upm.amusementpark.persistence.FileUserRepository;
 import es.upm.amusementpark.persistence.StorageLocation;
@@ -54,10 +55,11 @@ public final class ApplicationBootstrap {
         groups.configure(new FileGroupRepository(storage.groupsFile()), users);
 
         TicketController tickets = TicketController.getInstance();
-        tickets.configure(new FileTicketRepository(storage.ticketsFile(), storage.groupTicketsFile()), users, groups);
+        tickets.configure(new FileTicketRepository(storage.ticketsFile(), storage.groupTicketsFile()),
+                new FilePassRepository(storage.passesFile()), users, groups);
 
         AttractionController attractions = AttractionController.getInstance();
-        attractions.configure(new FileAttractionRepository(storage.attractionsFile()));
+        attractions.configure(new FileAttractionRepository(storage.attractionsFile()), tickets);
 
         PassController passes = PassController.getInstance();
         passes.configure(tickets);

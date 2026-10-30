@@ -48,6 +48,6 @@ public class FileUserRepository implements UserRepository {
             lines.add(String.join(SEPARATOR, u.getName(), u.getSurname(), u.getDni(), u.getEmail(),
                     u.getPasswordHash(), u.getPhone(), u.getCard()));
         }
-        Files.write(file, lines, StandardCharsets.UTF_8);
+        TextFiles.write(file, lines);
     }
 }

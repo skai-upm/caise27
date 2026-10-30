@@ -26,7 +26,8 @@ class FlyModeTest {
 
     private static final List<String> SESSION = List.of(ParkTestSupport.PEDRO, "SYSTEM DATE;2026-10-01",
             "GROUP CREATE;G01;Familia", "GROUP ADD;G01;pedro@correo.com", "TICKET CREATE;T001;pedro@correo.com;2026-10-15",
-            "GROUPTICKET CREATE;TG01;G01;2026-10-20", "ATTRACTION CREATE;A01;Tornado;20", "HELP", "EXIT");
+            "GROUPTICKET CREATE;TG01;G01;2026-10-20", "ATTRACTION CREATE;A01;Tornado;20", "SPEEDPASS CREATE;T001;10", "SPECIALPASS CREATE;T001",
+            "ATTRACTION CREATE;A02;Castillo;5;SPECIAL", "INVOICE CREATE;USER;pedro@correo.com", "HELP", "EXIT");
 
     @TempDir
     Path dir;
@@ -63,6 +64,7 @@ class FlyModeTest {
         assertFalse(Files.exists(work.resolve("groups.txt")));
         assertFalse(Files.exists(work.resolve("tickets.txt")));
         assertFalse(Files.exists(work.resolve("attractions.txt")));
+        assertFalse(Files.exists(work.resolve("passes.txt")));
         assertTrue(tmpIsEmpty(work));
 
         String normal = runFile(work, List.of("USER DELETE;pedro@correo.com;Otra2#"));

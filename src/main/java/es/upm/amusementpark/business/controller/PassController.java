@@ -17,6 +17,8 @@ import java.util.List;
  */
 public class PassController {
 
+    private static final String SAVE_ERROR = "ERROR: could not save passes";
+
     private static PassController instance;
 
     private TicketController ticketController;
@@ -47,11 +49,17 @@ public class PassController {
             return ineligible(ticketId, today);
         }
         List<String> ids = new ArrayList<>();
+        List<SpeedPass> created = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
         for (int i = 0; i < Integer.parseInt(quantity); i++) {
             SpeedPass pass = ticket.addSpeedPass();
+            created.add(pass);
             ids.add(pass.getId());
             total = total.add(pass.getPrice());
+        }
+        if (!ticketController.persist()) {
+            created.forEach(ticket::removeSpeedPass);
+            return SAVE_ERROR;
         }
         return "OK SPEEDPASS CREATED -> " + Formats.formatPrice(total) + " " + ids;
     }
@@ -66,6 +74,10 @@ public class PassController {
         }
         SpecialPass pass = ticket.createSpecialPass();
         ticket.setSpecialPass(pass);
+        if (!ticketController.persist()) {
+            ticket.setSpecialPass(null);
+            return SAVE_ERROR;
+        }
         return "OK SPECIALPASS CREATED -> " + Formats.formatPrice(pass.getPrice()) + " [" + pass.getId() + "]";
     }
 
@@ -77,7 +89,12 @@ public class PassController {
                     if (error != null) {
                         return error;
                     }
+                    int index = ticket.getSpeedPasses().indexOf(pass);
                     ticket.removeSpeedPass(pass);
+                    if (!ticketController.persist()) {
+                        ticket.insertSpeedPass(index, pass);
+                        return SAVE_ERROR;
+                    }
                     return refunded(pass);
                 }
             }
@@ -94,6 +111,10 @@ public class PassController {
                     return error;
                 }
                 ticket.setSpecialPass(null);
+                if (!ticketController.persist()) {
+                    ticket.setSpecialPass(pass);
+                    return SAVE_ERROR;
+                }
                 return refunded(pass);
             }
         }
