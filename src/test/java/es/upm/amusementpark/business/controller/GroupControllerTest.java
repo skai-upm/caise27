@@ -13,7 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class GroupServiceTest {
+class GroupControllerTest {
 
     @TempDir
     Path dir;
@@ -27,7 +27,7 @@ class GroupServiceTest {
     }
 
     private Group g01() {
-        return s.park().getGroupService().findById("G01");
+        return s.park().getGroupController().findById("G01");
     }
 
     @Test
@@ -61,7 +61,7 @@ class GroupServiceTest {
     void membersAreTheRegisteredUsers() {
         s.run("GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com",
                 "USER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria");
-        assertSame(s.park().getUserService().findByEmail("ana@correo.com"), g01().getMembers().get(0));
+        assertSame(s.park().getUserController().findByEmail("ana@correo.com"), g01().getMembers().get(0));
         assertEquals("Ana Maria", g01().getMembers().get(0).getName());
     }
 
@@ -72,10 +72,10 @@ class GroupServiceTest {
         s.restart();
         Group g = g01();
         assertEquals(2, g.getMembers().size());
-        assertSame(s.park().getUserService().findByEmail("ana@correo.com"), g.getMembers().get(0));
-        assertSame(s.park().getUserService().findByEmail("pedro@correo.com"), g.getMembers().get(1));
-        assertEquals(2, s.park().getUserService().getUsers().size());
-        assertTrue(s.park().getGroupService().findById("G02").getMembers().isEmpty());
+        assertSame(s.park().getUserController().findByEmail("ana@correo.com"), g.getMembers().get(0));
+        assertSame(s.park().getUserController().findByEmail("pedro@correo.com"), g.getMembers().get(1));
+        assertEquals(2, s.park().getUserController().getUsers().size());
+        assertTrue(s.park().getGroupController().findById("G02").getMembers().isEmpty());
     }
 
     @Test

@@ -1,6 +1,7 @@
 package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.persistence.StorageLocation;
+import es.upm.amusementpark.presentation.ApplicationBootstrap;
 import es.upm.amusementpark.presentation.CommandProcessor;
 
 import java.io.ByteArrayOutputStream;
@@ -10,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 /**
- * Runs commands against a {@link Park} stored in a directory and returns their output.
+ * Runs commands against a {@link ParkController} stored in a directory and returns their output.
  */
 public class ParkTestSupport {
 
@@ -19,7 +20,7 @@ public class ParkTestSupport {
 
     private final Path dir;
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    private Park park;
+    private ParkController park;
     private CommandProcessor processor;
 
     ParkTestSupport(Path dir) throws IOException {
@@ -29,11 +30,11 @@ public class ParkTestSupport {
 
     /** Simulates a new execution on the same storage directory. */
     final void restart() throws IOException {
-        park = new Park(new StorageLocation(dir));
-        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = ApplicationBootstrap.start(new StorageLocation(dir), new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        park = ParkController.getInstance();
     }
 
-    Park park() {
+    ParkController park() {
         return park;
     }
 

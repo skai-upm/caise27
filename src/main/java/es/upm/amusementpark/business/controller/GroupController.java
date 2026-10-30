@@ -10,18 +10,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Group operations with persistence. Lock checks are done by {@link Park}, which knows the tickets.
+ * Group operations with persistence. Lock checks are done by {@link ParkController}, which knows the tickets.
  */
-public class GroupService {
+public class GroupController {
 
     private static final String SAVE_ERROR = "ERROR: could not save groups";
 
-    private final GroupRepository repository;
-    private final List<Group> groups;
+    private GroupRepository repository;
+    private List<Group> groups = new ArrayList<>();
 
-    public GroupService(GroupRepository repository, List<User> users) throws IOException {
+    private static GroupController instance;
+
+    private GroupController() {
+    }
+
+    /** Returns the unique instance of this controller. */
+    public static synchronized GroupController getInstance() {
+        if (instance == null) {
+            instance = new GroupController();
+        }
+        return instance;
+    }
+
+    /** Injects the repository and loads the stored groups, resolving members against the user controller. */
+    public void configure(GroupRepository repository, UserController userController) throws IOException {
         this.repository = repository;
-        this.groups = new ArrayList<>(repository.load(users));
+        this.groups = new ArrayList<>(repository.load(userController.getUsers()));
     }
 
     public List<Group> getGroups() {

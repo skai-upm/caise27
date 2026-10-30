@@ -5,13 +5,7 @@ import es.upm.amusementpark.business.model.Formats;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
-import es.upm.amusementpark.persistence.AttractionRepository;
-import es.upm.amusementpark.persistence.GroupRepository;
-import es.upm.amusementpark.persistence.StorageLocation;
-import es.upm.amusementpark.persistence.TicketRepository;
-import es.upm.amusementpark.persistence.UserRepository;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -21,30 +15,46 @@ import java.time.ZoneId;
  * Main controller of the park. Holds the single system date and base ticket price used by every
  * business rule, and coordinates the rules that span users, groups, tickets and attractions.
  */
-public class Park {
+public class ParkController {
 
     static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
 
     private static final String DOES_NOT_EXIST = " does not exist";
 
+    private static ParkController instance;
+
     private LocalDate systemDate;
     private BigDecimal basePrice;
-    private final UserService userService;
-    private final GroupService groupService;
-    private final TicketService ticketService;
-    private final AttractionService attractionService;
-    private final InvoiceService invoiceService;
+    private UserController userController;
+    private GroupController groupController;
+    private TicketController ticketController;
+    private AttractionController attractionController;
+    private InvoiceController invoiceController;
 
-    public Park(StorageLocation storage) throws IOException {
+    private ParkController() {
+    }
+
+    /** Returns the unique instance of the main controller. */
+    public static synchronized ParkController getInstance() {
+        if (instance == null) {
+            instance = new ParkController();
+        }
+        return instance;
+    }
+
+    /**
+     * Injects the collaborating controllers and starts a new execution: system date = today, base price = 40.00.
+     */
+    public void configure(UserController userController, GroupController groupController,
+            TicketController ticketController, AttractionController attractionController,
+            InvoiceController invoiceController) {
         this.systemDate = LocalDate.now(ZoneId.systemDefault());
         this.basePrice = DEFAULT_PRICE;
-        this.userService = new UserService(new UserRepository(storage.usersFile()));
-        this.groupService = new GroupService(new GroupRepository(storage.groupsFile()), userService.getUsers());
-        this.ticketService = new TicketService(
-                new TicketRepository(storage.ticketsFile(), storage.groupTicketsFile()),
-                userService.getUsers(), groupService.getGroups());
-        this.attractionService = new AttractionService(new AttractionRepository(storage.attractionsFile()));
-        this.invoiceService = new InvoiceService(ticketService);
+        this.userController = userController;
+        this.groupController = groupController;
+        this.ticketController = ticketController;
+        this.attractionController = attractionController;
+        this.invoiceController = invoiceController;
     }
 
     public LocalDate getSystemDate() {
@@ -55,22 +65,21 @@ public class Park {
         return basePrice;
     }
 
-    public UserService getUserService() {
-        return userService;
+    public UserController getUserController() {
+        return userController;
     }
 
-    public GroupService getGroupService() {
-        return groupService;
+    public GroupController getGroupController() {
+        return groupController;
     }
 
-    public TicketService getTicketService() {
-        return ticketService;
+    public TicketController getTicketController() {
+        return ticketController;
     }
 
-    public AttractionService getAttractionService() {
-        return attractionService;
+    public AttractionController getAttractionController() {
+        return attractionController;
     }
-
 
     // System settings
 
@@ -112,16 +121,16 @@ public class Park {
     // Users
 
     public String deleteUser(String email, String password) {
-        User user = userService.authenticate(email, password);
+        User user = userController.authenticate(email, password);
         if (user == null) {
             return "ERROR: invalid email or password";
         }
-        if (ticketService.hasActiveTicket(user, systemDate)) {
+        if (ticketController.hasActiveTicket(user, systemDate)) {
             return "ERROR: user " + email + " has tickets dated on or after " + systemDate + " and cannot be deleted";
         }
-        String result = userService.delete(email, password);
+        String result = userController.delete(email, password);
         if (result.startsWith("OK")) {
-            groupService.removeUserFromAll(user);
+            groupController.removeUserFromAll(user);
         }
         return result;
     }
@@ -129,54 +138,54 @@ public class Park {
     // Groups
 
     public String createGroup(String id, String name) {
-        return groupService.create(id, name);
+        return groupController.create(id, name);
     }
 
     public String addToGroup(String groupId, String email) {
-        Group group = groupService.findById(groupId);
+        Group group = groupController.findById(groupId);
         if (group == null) {
             return unknownGroup(groupId);
         }
-        User user = userService.findByEmail(email);
+        User user = userController.findByEmail(email);
         if (user == null) {
             return unknownUser(email);
         }
-        if (ticketService.isGroupLocked(group, systemDate)) {
+        if (ticketController.isGroupLocked(group, systemDate)) {
             return lockedGroup(groupId);
         }
-        return groupService.addMember(group, user);
+        return groupController.addMember(group, user);
     }
 
     public String removeFromGroup(String groupId, String email) {
-        Group group = groupService.findById(groupId);
+        Group group = groupController.findById(groupId);
         if (group == null) {
             return unknownGroup(groupId);
         }
-        User user = userService.findByEmail(email);
+        User user = userController.findByEmail(email);
         if (user == null) {
             return unknownUser(email);
         }
-        if (ticketService.isGroupLocked(group, systemDate)) {
+        if (ticketController.isGroupLocked(group, systemDate)) {
             return lockedGroup(groupId);
         }
-        return groupService.removeMember(group, user);
+        return groupController.removeMember(group, user);
     }
 
     public String deleteGroup(String groupId) {
-        Group group = groupService.findById(groupId);
+        Group group = groupController.findById(groupId);
         if (group == null) {
             return unknownGroup(groupId);
         }
-        if (ticketService.isGroupLocked(group, systemDate)) {
+        if (ticketController.isGroupLocked(group, systemDate)) {
             return lockedGroup(groupId);
         }
-        return groupService.delete(group);
+        return groupController.delete(group);
     }
 
     // Tickets
 
     public String createTicket(String id, String email, String dateText) {
-        User user = userService.findByEmail(email);
+        User user = userController.findByEmail(email);
         if (user == null) {
             return unknownUser(email);
         }
@@ -184,15 +193,15 @@ public class Park {
         if (date == null) {
             return invalidDate(dateText);
         }
-        return ticketService.createIndividual(id, user, date, basePrice, systemDate);
+        return ticketController.createIndividual(id, user, date, basePrice, systemDate);
     }
 
     public String deleteTicket(String id) {
-        return ticketService.deleteIndividual(id, systemDate);
+        return ticketController.deleteIndividual(id, systemDate);
     }
 
     public String createGroupTicket(String id, String groupId, String dateText) {
-        Group group = groupService.findById(groupId);
+        Group group = groupController.findById(groupId);
         if (group == null) {
             return unknownGroup(groupId);
         }
@@ -200,49 +209,49 @@ public class Park {
         if (date == null) {
             return invalidDate(dateText);
         }
-        return ticketService.createGroup(id, group, date, basePrice, systemDate);
+        return ticketController.createGroup(id, group, date, basePrice, systemDate);
     }
 
     public String deleteGroupTicket(String id) {
-        return ticketService.deleteGroup(id, systemDate);
+        return ticketController.deleteGroup(id, systemDate);
     }
 
     // Attractions
 
     public String createAttraction(String id, String name, String capacity) {
-        return attractionService.create(id, name, capacity);
+        return attractionController.create(id, name, capacity);
     }
 
     public String enterAttraction(String attractionId, String ticketId) {
-        Attraction attraction = attractionService.findById(attractionId);
+        Attraction attraction = attractionController.findById(attractionId);
         if (attraction == null) {
             return unknownAttraction(attractionId);
         }
-        Ticket ticket = ticketService.findById(ticketId);
+        Ticket ticket = ticketController.findById(ticketId);
         if (ticket == null) {
             return unknownTicket(ticketId);
         }
-        return attractionService.enter(attraction, ticket, systemDate);
+        return attractionController.enter(attraction, ticket, systemDate);
     }
 
     public String exitAttraction(String attractionId, String ticketId) {
-        Attraction attraction = attractionService.findById(attractionId);
+        Attraction attraction = attractionController.findById(attractionId);
         if (attraction == null) {
             return unknownAttraction(attractionId);
         }
-        Ticket ticket = ticketService.findById(ticketId);
+        Ticket ticket = ticketController.findById(ticketId);
         if (ticket == null) {
             return unknownTicket(ticketId);
         }
-        return attractionService.exit(attraction, ticket);
+        return attractionController.exit(attraction, ticket);
     }
 
     public String attractionStatus(String attractionId) {
-        Attraction attraction = attractionService.findById(attractionId);
+        Attraction attraction = attractionController.findById(attractionId);
         if (attraction == null) {
             return unknownAttraction(attractionId);
         }
-        return attractionService.status(attraction);
+        return attractionController.status(attraction);
     }
 
     // Invoices
@@ -250,12 +259,12 @@ public class Park {
     public String createInvoice(String recipientType, String identifier) {
         switch (recipientType.trim()) {
             case "USER": {
-                User user = userService.findByEmail(identifier);
-                return user == null ? unknownUser(identifier) : invoiceService.userInvoice(user).render();
+                User user = userController.findByEmail(identifier);
+                return user == null ? unknownUser(identifier) : invoiceController.userInvoice(user).render();
             }
             case "GROUP": {
-                Group group = groupService.findById(identifier);
-                return group == null ? unknownGroup(identifier) : invoiceService.groupInvoice(group).render();
+                Group group = groupController.findById(identifier);
+                return group == null ? unknownGroup(identifier) : invoiceController.groupInvoice(group).render();
             }
             default:
                 return "ERROR: invoice type must be USER or GROUP";

@@ -26,7 +26,7 @@ class AttractionTest {
     }
 
     private Attraction attraction(String id) {
-        return s.park().getAttractionService().findById(id);
+        return s.park().getAttractionController().findById(id);
     }
 
     @Test
@@ -45,7 +45,7 @@ class AttractionTest {
         assertTrue(s.run("ATTRACTION CREATE;A02;Rio;abc").startsWith("ERROR"));
         assertTrue(s.run("ATTRACTION CREATE;A02;;5").startsWith("ERROR"));
         assertTrue(s.run("ATTRACTION CREATE;A01;Otra;5").startsWith("ERROR"));
-        assertEquals(1, s.park().getAttractionService().getAttractions().size());
+        assertEquals(1, s.park().getAttractionController().getAttractions().size());
     }
 
     @Test

@@ -1,7 +1,7 @@
 package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.model.User;
-import es.upm.amusementpark.persistence.UserRepository;
+import es.upm.amusementpark.persistence.FileUserRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,18 +15,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class UserServiceTest {
+class UserControllerTest {
 
     @TempDir
     Path dir;
 
     private Path file;
-    private UserService service;
+    private UserController service;
 
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        service = new UserService(new UserRepository(file));
+        service = configured(file);
+    }
+
+    private static UserController configured(Path file) throws IOException {
+        UserController controller = UserController.getInstance();
+        controller.configure(new FileUserRepository(file));
+        return controller;
     }
 
     private String createAna() {
@@ -39,8 +45,8 @@ class UserServiceTest {
                 "9876543210987654");
     }
 
-    private UserService restart() throws IOException {
-        return new UserService(new UserRepository(file));
+    private UserController restart() throws IOException {
+        return configured(file);
     }
 
     @Test
@@ -137,7 +143,7 @@ class UserServiceTest {
     @Test
     void restartRestoresUsersAndUniqueness() throws IOException {
         createAna();
-        UserService restarted = restart();
+        UserController restarted = restart();
         assertEquals(1, restarted.getUsers().size());
         assertTrue(restarted.create("Otro", "X", "12345678Z", "otro@correo.com", "Clave1!", "6", "1234567890123456").startsWith("ERROR"));
     }

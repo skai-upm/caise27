@@ -1,7 +1,7 @@
 package es.upm.amusementpark.presentation;
 
-import es.upm.amusementpark.business.controller.Park;
-import es.upm.amusementpark.business.controller.UserService;
+import es.upm.amusementpark.business.controller.ParkController;
+import es.upm.amusementpark.business.controller.UserController;
 
 import java.io.PrintStream;
 
@@ -10,10 +10,10 @@ import java.io.PrintStream;
  */
 public class CommandProcessor {
 
-    private final Park park;
+    private final ParkController park;
     private final PrintStream out;
 
-    public CommandProcessor(Park park, PrintStream out) {
+    public CommandProcessor(ParkController park, PrintStream out) {
         this.park = park;
         this.out = out;
     }
@@ -35,7 +35,7 @@ public class CommandProcessor {
     private boolean execute(String line) {
         String[] p = line.split(";", -1);
         String operation = p[0].trim();
-        UserService users = park.getUserService();
+        UserController users = park.getUserController();
         switch (operation) {
             case "USER CREATE":
                 run(p, 8, "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",

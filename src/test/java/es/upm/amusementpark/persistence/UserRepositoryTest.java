@@ -20,13 +20,13 @@ class UserRepositoryTest {
 
     @Test
     void missingFileLoadsEmpty() throws IOException {
-        assertTrue(new UserRepository(dir.resolve("users.txt")).load().isEmpty());
+        assertTrue(new FileUserRepository(dir.resolve("users.txt")).load().isEmpty());
     }
 
     @Test
     void saveWritesOneSemicolonSeparatedLinePerUser() throws IOException {
         Path file = dir.resolve("users.txt");
-        new UserRepository(file).save(List.of(
+        new FileUserRepository(file).save(List.of(
                 new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456"),
                 new User("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654")));
         assertEquals(List.of(
@@ -37,7 +37,7 @@ class UserRepositoryTest {
 
     @Test
     void roundTrip() throws IOException {
-        UserRepository repo = new UserRepository(dir.resolve("users.txt"));
+        UserRepository repo = new FileUserRepository(dir.resolve("users.txt"));
         repo.save(List.of(new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456")));
         List<User> loaded = repo.load();
@@ -56,6 +56,6 @@ class UserRepositoryTest {
     void malformedAndBlankLinesAreSkipped() throws IOException {
         Path file = dir.resolve("users.txt");
         Files.write(file, List.of("bad;line", "", "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"));
-        assertEquals(1, new UserRepository(file).load().size());
+        assertEquals(1, new FileUserRepository(file).load().size());
     }
 }

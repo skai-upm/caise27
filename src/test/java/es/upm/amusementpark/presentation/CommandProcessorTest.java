@@ -1,7 +1,6 @@
 package es.upm.amusementpark.presentation;
 
-import es.upm.amusementpark.business.controller.Park;
-import es.upm.amusementpark.business.controller.UserService;
+import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.persistence.StorageLocation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,15 +25,14 @@ class CommandProcessorTest {
     Path dir;
 
     private ByteArrayOutputStream buffer;
-    private UserService service;
+    private UserController service;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws IOException {
         buffer = new ByteArrayOutputStream();
-        Park park = new Park(new StorageLocation(dir));
-        service = park.getUserService();
-        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = ApplicationBootstrap.start(new StorageLocation(dir), new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        service = UserController.getInstance();
     }
 
     private String output() {

@@ -19,15 +19,32 @@ import java.util.List;
  * Individual and group ticket operations with persistence. Ticket identifiers share one namespace that
  * includes the constituent tickets of group tickets.
  */
-public class TicketService {
+public class TicketController {
 
     private static final String SAVE_ERROR = "ERROR: could not save tickets";
 
-    private final TicketRepository repository;
-    private final List<IndividualTicket> tickets;
-    private final List<GroupTicket> groupTickets;
+    private TicketRepository repository;
+    private List<IndividualTicket> tickets = new ArrayList<>();
+    private List<GroupTicket> groupTickets = new ArrayList<>();
 
-    public TicketService(TicketRepository repository, List<User> users, List<Group> groups) throws IOException {
+    private static TicketController instance;
+
+    private TicketController() {
+    }
+
+    /** Returns the unique instance of this controller. */
+    public static synchronized TicketController getInstance() {
+        if (instance == null) {
+            instance = new TicketController();
+        }
+        return instance;
+    }
+
+    /** Injects the repository and loads stored tickets, resolving users and groups through their controllers. */
+    public void configure(TicketRepository repository, UserController userController, GroupController groupController)
+            throws IOException {
+        List<User> users = userController.getUsers();
+        List<Group> groups = groupController.getGroups();
         this.repository = repository;
         this.tickets = new ArrayList<>(repository.loadTickets(users));
         this.groupTickets = new ArrayList<>(repository.loadGroupTickets(users, groups));

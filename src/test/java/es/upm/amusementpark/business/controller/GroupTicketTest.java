@@ -34,8 +34,8 @@ class GroupTicketTest {
         s.run("SYSTEM DATE;2026-10-01");
     }
 
-    private TicketService tickets() {
-        return s.park().getTicketService();
+    private TicketController tickets() {
+        return s.park().getTicketController();
     }
 
     @ParameterizedTest
@@ -60,7 +60,7 @@ class GroupTicketTest {
         s.createGroup("G01", 3, 1);
         s.run("GROUPTICKET CREATE;TG01;G01;2026-10-15");
         GroupTicket gt = (GroupTicket) tickets().findById("TG01");
-        Group group = s.park().getGroupService().findById("G01");
+        Group group = s.park().getGroupController().findById("G01");
         assertSame(group, gt.getGroup());
         assertEquals(List.of("TG01-1", "TG01-2", "TG01-3"),
                 gt.getTickets().stream().map(Ticket::getId).toList());
@@ -130,11 +130,11 @@ class GroupTicketTest {
         s.run("GROUPTICKET CREATE;TG01;G01;2026-10-15");
         s.restart();
         GroupTicket gt = (GroupTicket) tickets().findById("TG01");
-        assertSame(s.park().getGroupService().findById("G01"), gt.getGroup());
+        assertSame(s.park().getGroupController().findById("G01"), gt.getGroup());
         assertEquals(new BigDecimal("108.00"), gt.getPrice());
         assertEquals("2026-10-15", gt.getDate().toString());
         assertEquals(3, gt.getTickets().size());
-        assertSame(s.park().getUserService().findByEmail("user2@correo.com"), gt.getTickets().get(1).getUser());
+        assertSame(s.park().getUserController().findByEmail("user2@correo.com"), gt.getTickets().get(1).getUser());
     }
 
     @Test
@@ -146,6 +146,6 @@ class GroupTicketTest {
         GroupTicket gt = (GroupTicket) tickets().findById("TG01");
         assertEquals("G01", gt.getGroup().getId());
         assertEquals("user1@correo.com", gt.getTickets().get(0).getUser().getEmail());
-        assertNull(s.park().getGroupService().findById("G01"));
+        assertNull(s.park().getGroupController().findById("G01"));
     }
 }

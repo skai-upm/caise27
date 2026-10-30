@@ -15,12 +15,26 @@ import java.util.List;
  * Attraction operations. Access is handled through the {@link Ticket} abstraction, so individual and group
  * tickets share the same entry and exit logic.
  */
-public class AttractionService {
+public class AttractionController {
 
-    private final AttractionRepository repository;
-    private final List<Attraction> attractions;
+    private AttractionRepository repository;
+    private List<Attraction> attractions = new ArrayList<>();
 
-    public AttractionService(AttractionRepository repository) throws IOException {
+    private static AttractionController instance;
+
+    private AttractionController() {
+    }
+
+    /** Returns the unique instance of this controller. */
+    public static synchronized AttractionController getInstance() {
+        if (instance == null) {
+            instance = new AttractionController();
+        }
+        return instance;
+    }
+
+    /** Injects the repository and loads the stored attraction definitions. */
+    public void configure(AttractionRepository repository) throws IOException {
         this.repository = repository;
         this.attractions = new ArrayList<>(repository.load());
     }

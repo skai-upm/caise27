@@ -1,6 +1,5 @@
 package es.upm.amusementpark.presentation;
 
-import es.upm.amusementpark.business.controller.Park;
 import es.upm.amusementpark.persistence.StorageLocation;
 
 import java.io.BufferedReader;
@@ -57,14 +56,13 @@ public class App {
     }
 
     private static void runWithStorage(StorageLocation storage, String commandFile, PrintStream out) {
-        Park park;
+        CommandProcessor processor;
         try {
-            park = new Park(storage);
+            processor = ApplicationBootstrap.start(storage, out);
         } catch (IOException e) {
             out.println("ERROR: could not load data from " + storage.getBaseDir() + ": " + e.getMessage());
             return;
         }
-        CommandProcessor processor = new CommandProcessor(park, out);
         if (commandFile == null) {
             runCommands(new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)), processor, out);
         } else {

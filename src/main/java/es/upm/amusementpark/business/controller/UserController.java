@@ -13,12 +13,26 @@ import java.util.List;
  * User operations: creation, deletion and update with validation, uniqueness and persistence.
  * Every method returns a message starting with "OK:" or "ERROR:"; failed operations leave state unchanged.
  */
-public class UserService {
+public class UserController {
 
-    private final UserRepository repository;
-    private final List<User> users;
+    private UserRepository repository;
+    private List<User> users = new ArrayList<>();
 
-    public UserService(UserRepository repository) throws IOException {
+    private static UserController instance;
+
+    private UserController() {
+    }
+
+    /** Returns the unique instance of this controller. */
+    public static synchronized UserController getInstance() {
+        if (instance == null) {
+            instance = new UserController();
+        }
+        return instance;
+    }
+
+    /** Injects the repository and loads the stored users. Called at application startup. */
+    public void configure(UserRepository repository) throws IOException {
         this.repository = repository;
         this.users = new ArrayList<>(repository.load());
     }

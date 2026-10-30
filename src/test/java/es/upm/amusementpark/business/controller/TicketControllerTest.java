@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class TicketServiceTest {
+class TicketControllerTest {
 
     @TempDir
     Path dir;
@@ -31,14 +31,14 @@ class TicketServiceTest {
     }
 
     private Ticket ticket(String id) {
-        return s.park().getTicketService().findById(id);
+        return s.park().getTicketController().findById(id);
     }
 
     @Test
     void createReturnsExactText() {
         assertEquals("OK TICKET CREATED -> 40.00", s.run("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
         IndividualTicket t = (IndividualTicket) ticket("T001");
-        assertSame(s.park().getUserService().findByEmail("ana@correo.com"), t.getUser());
+        assertSame(s.park().getUserController().findByEmail("ana@correo.com"), t.getUser());
         assertEquals("2026-10-15", t.getDate().toString());
     }
 
@@ -62,7 +62,7 @@ class TicketServiceTest {
         assertTrue(s.run("TICKET CREATE;T003;ana@correo.com;2026-15-10").startsWith("ERROR"));
         assertTrue(s.run("TICKET CREATE;T004;ana@correo.com;2026-09-30").startsWith("ERROR"));
         assertTrue(s.run("TICKET CREATE;;ana@correo.com;2026-10-15").startsWith("ERROR"));
-        assertEquals(1, s.park().getTicketService().getTickets().size());
+        assertEquals(1, s.park().getTicketController().getTickets().size());
     }
 
     @Test
@@ -83,7 +83,7 @@ class TicketServiceTest {
         s.run("TICKET CREATE;T001;ana@correo.com;2026-10-15");
         s.restart();
         IndividualTicket t = (IndividualTicket) ticket("T001");
-        assertSame(s.park().getUserService().findByEmail("ana@correo.com"), t.getUser());
+        assertSame(s.park().getUserController().findByEmail("ana@correo.com"), t.getUser());
         assertEquals(new BigDecimal("40.00"), t.getPrice());
     }
 
@@ -93,7 +93,7 @@ class TicketServiceTest {
         assertTrue(s.run("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
         s.run("SYSTEM DATE;2026-10-15");
         assertTrue(s.run("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
-        assertNotNull(s.park().getUserService().findByEmail("ana@correo.com"));
+        assertNotNull(s.park().getUserController().findByEmail("ana@correo.com"));
         assertNotNull(ticket("T001"));
     }
 
@@ -101,12 +101,12 @@ class TicketServiceTest {
     void historicalTicketDoesNotBlockDeletionAndIsKept() throws IOException {
         s.run("TICKET CREATE;T001;ana@correo.com;2026-10-15", "SYSTEM DATE;2026-10-16");
         assertTrue(s.run("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
-        assertNull(s.park().getUserService().findByEmail("ana@correo.com"));
+        assertNull(s.park().getUserController().findByEmail("ana@correo.com"));
         assertNotNull(ticket("T001"));
         s.restart();
         IndividualTicket t = (IndividualTicket) ticket("T001");
         assertEquals("12345678Z", t.getUser().getDni());
         assertEquals("ana@correo.com", t.getUser().getEmail());
-        assertNull(s.park().getUserService().findByEmail("ana@correo.com"));
+        assertNull(s.park().getUserController().findByEmail("ana@correo.com"));
     }
 }
