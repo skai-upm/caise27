@@ -7,7 +7,7 @@ Lets the application receive text commands interactively from standard input or 
 ## Requirements
 
 ### Requirement: Interactive mode
-When launched without arguments, the application SHALL read commands from standard input, one command per line, processing each before reading the next, until `EXIT` is processed or the input ends.
+When launched without a command-file argument (no arguments, or only `--fly`), the application SHALL read commands from standard input, one command per line, processing each before reading the next, until `EXIT` is processed or the input ends.
 
 #### Scenario: Interactive session
 - **GIVEN** the application is launched without arguments
@@ -18,13 +18,21 @@ When launched without arguments, the application SHALL read commands from standa
 - **WHEN** standard input ends without `EXIT`
 - **THEN** the application terminates normally
 
+#### Scenario: Interactive fly session
+- **WHEN** the application is launched with only `--fly`
+- **THEN** commands are read from standard input
+
 ### Requirement: File mode
-When launched with at least one argument, the application SHALL treat the first argument as the path of a text file, read it line by line, and process each non-blank line as a command in file order. Blank lines SHALL be ignored.
+When launched with a command-file argument, the application SHALL treat the first argument other than `--fly` as the path of a text file, read it line by line, and process each non-blank line as a command in file order. Blank lines SHALL be ignored.
 
 #### Scenario: Ordered processing with blank lines
 - **GIVEN** a file with valid commands interleaved with blank lines
 - **WHEN** the application runs in file mode
 - **THEN** non-blank commands are executed in file order and blank lines cause no errors
+
+#### Scenario: File with fly flag
+- **WHEN** the application is launched with `--fly input_fase2.txt`
+- **THEN** `input_fase2.txt` is processed as the command file
 
 ### Requirement: Shared command processing
 Interactive and file modes SHALL use the same command interpretation and execution logic; no command SHALL have separate implementations per mode. The same command SHALL yield the same observable result in both modes.
@@ -49,11 +57,11 @@ If the file argument does not exist, cannot be opened or cannot be read, the app
 - **THEN** an error message naming the file is printed and no stack trace is shown
 
 ### Requirement: HELP command
-`HELP` SHALL display the available commands with their basic syntax, including at least `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta`, `USER DELETE;Correo;Contraseña`, `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, `HELP` and `EXIT`, consistent with the operations actually implemented.
+`HELP` SHALL display the available commands with their basic syntax, consistent with the operations actually implemented, including at least `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta`, `USER DELETE;Correo;Contraseña`, `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, `SYSTEM DATE;yyyy-MM-dd`, `SYSTEM PRICE;Precio`, `GROUP CREATE;IdGrupo;Nombre`, `GROUP ADD;IdGrupo;Correo`, `GROUP REMOVE;IdGrupo;Correo`, `GROUP DELETE;IdGrupo`, `TICKET CREATE;IdTicket;Correo;Fecha`, `TICKET DELETE;IdTicket`, `GROUPTICKET CREATE;IdTicket;IdGrupo;Fecha`, `GROUPTICKET DELETE;IdTicket`, `ATTRACTION CREATE;IdAtraccion;Nombre;Aforo`, `ATTRACTION ENTER;IdAtraccion;IdTicket`, `ATTRACTION EXIT;IdAtraccion;IdTicket`, `ATTRACTION STATUS;IdAtraccion`, `HELP` and `EXIT`.
 
 #### Scenario: Help lists current commands
 - **WHEN** `HELP` is executed
-- **THEN** the five commands and their syntax are displayed
+- **THEN** every command listed above is displayed with its syntax
 
 ### Requirement: EXIT command
 `EXIT` SHALL terminate interactive execution in a controlled manner and SHALL stop file processing immediately, so that no command after `EXIT` is executed.

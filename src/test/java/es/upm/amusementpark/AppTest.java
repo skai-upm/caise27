@@ -27,20 +27,23 @@ class AppTest {
     @TempDir
     Path dir;
 
+    /** Each users file lives in its own work directory; the work directory is its parent. */
     private String runWithFile(Path users, List<String> commands) throws IOException {
+        Files.createDirectories(users.getParent());
         Path input = dir.resolve("input_" + System.nanoTime() + ".txt");
         Files.write(input, commands, StandardCharsets.UTF_8);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        App.run(new String[] {input.toString()}, users, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        App.run(new String[] {input.toString()}, users.getParent(), new PrintStream(buffer, true, StandardCharsets.UTF_8));
         return buffer.toString(StandardCharsets.UTF_8);
     }
 
-    private String runWithStdin(Path users, List<String> commands) {
+    private String runWithStdin(Path users, List<String> commands) throws IOException {
+        Files.createDirectories(users.getParent());
         InputStream original = System.in;
         try {
             System.setIn(new ByteArrayInputStream((String.join("\n", commands) + "\n").getBytes(StandardCharsets.UTF_8)));
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            App.run(new String[0], users, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+            App.run(new String[0], users.getParent(), new PrintStream(buffer, true, StandardCharsets.UTF_8));
             return buffer.toString(StandardCharsets.UTF_8);
         } finally {
             System.setIn(original);
@@ -71,7 +74,7 @@ class AppTest {
     void nonexistentFileIsReportedInControlledManner() {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         Path missing = dir.resolve("does_not_exist.txt");
-        App.run(new String[] {missing.toString()}, dir.resolve("users.txt"),
+        App.run(new String[] {missing.toString()}, dir,
                 new PrintStream(buffer, true, StandardCharsets.UTF_8));
         String out = buffer.toString(StandardCharsets.UTF_8);
         assertTrue(out.contains("ERROR: cannot open command file"));
@@ -82,7 +85,7 @@ class AppTest {
     @Test
     void directoryAsFileIsReportedInControlledManner() {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        App.run(new String[] {dir.toString()}, dir.resolve("users.txt"),
+        App.run(new String[] {dir.toString()}, dir,
                 new PrintStream(buffer, true, StandardCharsets.UTF_8));
         assertTrue(buffer.toString(StandardCharsets.UTF_8).contains("ERROR"));
     }
@@ -95,7 +98,7 @@ class AppTest {
         assertTrue(out.contains("Available commands"));
         assertEquals(1, Files.readAllLines(users).size());
 
-        Path users2 = dir.resolve("users2.txt");
+        Path users2 = dir.resolve("second/users.txt");
         runWithStdin(users2, List.of(CREATE_ANA));
         assertEquals(1, Files.readAllLines(users2).size());
     }
@@ -104,8 +107,8 @@ class AppTest {
     void sameResultInBothModes() throws IOException {
         List<String> commands = List.of(CREATE_ANA, CREATE_PEDRO, "USER CREATE;Bad", "USER DELETE;pedro@correo.com;Otra2#",
                 "USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com", "HELP", "EXIT");
-        Path usersFile = dir.resolve("usersFile.txt");
-        Path usersStdin = dir.resolve("usersStdin.txt");
+        Path usersFile = dir.resolve("fileMode/users.txt");
+        Path usersStdin = dir.resolve("stdinMode/users.txt");
         String fileOut = runWithFile(usersFile, commands);
         String stdinOut = runWithStdin(usersStdin, commands);
         assertEquals(fileOut, stdinOut);

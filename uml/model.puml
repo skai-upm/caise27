@@ -1,0 +1,126 @@
+@startuml model
+' Class model of the Amusement Park application (package es.upm.amusementpark),
+' derived from the implemented code. Methods and usages are omitted except for
+' classes without incoming relationships. Object references are drawn as
+' associations named after the field; the cross marks the side that does not
+' hold the attribute (navigation goes from the owner to the referenced class).
+hide empty members
+skinparam classAttributeIconSize 0
+
+package es.upm.amusementpark {
+
+  class App
+  class CommandProcessor
+  class StorageLocation {
+    baseDir : Path
+    temporary : boolean
+  }
+
+  class Park {
+    systemDate : LocalDate
+    basePrice : BigDecimal
+  }
+
+  class UserService
+  class GroupService
+  class TicketService
+  class AttractionService
+
+  class UserRepository {
+    file : Path
+  }
+  class GroupRepository {
+    file : Path
+  }
+  class TicketRepository {
+    ticketsFile : Path
+    groupTicketsFile : Path
+  }
+  class AttractionRepository {
+    file : Path
+  }
+
+  class UserValidator
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class User {
+    name : String
+    surname : String
+    dni : String
+    email : String
+    password : String
+    phone : String
+    card : String
+  }
+
+  class Group {
+    id : String
+    name : String
+  }
+
+  abstract class Ticket {
+    id : String
+    date : LocalDate
+  }
+
+  class IndividualTicket {
+    price : BigDecimal
+  }
+
+  class GroupTicket {
+    price : BigDecimal
+  }
+
+  class Attraction {
+    id : String
+    name : String
+    capacity : int
+  }
+}
+
+' Inheritance
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' Navigable associations (owner x--> referenced : field)
+CommandProcessor "0..*" x--> "1" Park : park
+Park "1" x--> "1" UserService : userService
+Park "1" x--> "1" GroupService : groupService
+Park "1" x--> "1" TicketService : ticketService
+Park "1" x--> "1" AttractionService : attractionService
+
+UserService "1" x--> "1" UserRepository : repository
+UserService "1" x--> "0..*" User : users
+GroupService "1" x--> "1" GroupRepository : repository
+GroupService "1" x--> "0..*" Group : groups
+TicketService "1" x--> "1" TicketRepository : repository
+TicketService "1" x--> "0..*" IndividualTicket : tickets
+TicketService "1" x--> "0..*" GroupTicket : groupTickets
+AttractionService "1" x--> "1" AttractionRepository : repository
+AttractionService "1" x--> "0..*" Attraction : attractions
+
+Group "0..*" x--> "0..*" User : members
+IndividualTicket "0..*" x--> "1" User : user
+GroupTicket "0..*" o--> "1" Group : group
+GroupTicket "1" *--> "1..*" IndividualTicket : tickets
+Attraction "0..*" x--> "0..*" User : present
+
+' Usages of classes without incoming relationships
+App ..> CommandProcessor
+App ..> Park
+App ..> StorageLocation
+Park ..> StorageLocation
+UserService ..> UserField
+UserService ..> UserValidator
+GroupService ..> UserValidator
+TicketService ..> UserValidator
+AttractionService ..> UserValidator
+
+@enduml

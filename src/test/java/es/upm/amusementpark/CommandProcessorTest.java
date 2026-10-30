@@ -28,8 +28,9 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() throws IOException {
         buffer = new ByteArrayOutputStream();
-        service = new UserService(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(service, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        Park park = new Park(new StorageLocation(dir));
+        service = park.getUserService();
+        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     private String output() {
@@ -70,6 +71,14 @@ class CommandProcessorTest {
         assertTrue(help.contains("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta"));
         assertTrue(help.contains("USER DELETE;Correo;Contraseña"));
         assertTrue(help.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
+        for (String command : new String[] {"SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Precio",
+            "GROUP CREATE;IdGrupo;Nombre", "GROUP ADD;IdGrupo;Correo", "GROUP REMOVE;IdGrupo;Correo",
+            "GROUP DELETE;IdGrupo", "TICKET CREATE;IdTicket;Correo;Fecha", "TICKET DELETE;IdTicket",
+            "GROUPTICKET CREATE;IdTicket;IdGrupo;Fecha", "GROUPTICKET DELETE;IdTicket",
+            "ATTRACTION CREATE;IdAtraccion;Nombre;Aforo", "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION EXIT;IdAtraccion;IdTicket", "ATTRACTION STATUS;IdAtraccion"}) {
+            assertTrue(help.contains(command), command);
+        }
         assertTrue(help.contains("HELP"));
         assertTrue(help.contains("EXIT"));
     }

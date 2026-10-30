@@ -22,6 +22,11 @@ buildNumber.properties
 
 # Application data
 users.txt
+groups.txt
+tickets.txt
+grouptickets.txt
+attractions.txt
+tmp/
 
 # SDDX / Sonar generated outputs (may contain credentials)
 experiments/
