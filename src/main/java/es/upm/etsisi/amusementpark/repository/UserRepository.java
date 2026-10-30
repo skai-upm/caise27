@@ -27,6 +27,13 @@ public class UserRepository {
         return users.stream().filter(u -> u.getDni().equals(dni)).findFirst();
     }
 
+    /**
+     * Whether this exact user object is a registered (not deleted) user.
+     */
+    public boolean isRegistered(User user) {
+        return users.contains(user);
+    }
+
     public List<User> findAll() {
         return List.copyOf(users);
     }

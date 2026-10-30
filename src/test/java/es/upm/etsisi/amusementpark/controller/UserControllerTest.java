@@ -1,43 +1,23 @@
 package es.upm.etsisi.amusementpark.controller;
 
+import es.upm.etsisi.amusementpark.ParkFixture;
 import es.upm.etsisi.amusementpark.model.User;
-import es.upm.etsisi.amusementpark.repository.UserFileStore;
-import es.upm.etsisi.amusementpark.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.nio.file.Path;
-
 import static org.junit.jupiter.api.Assertions.*;
 
-class UserControllerTest {
-
-    @TempDir
-    Path dir;
-
-    private Path file;
-    private UserRepository repository;
-    private UserController controller;
-
-    @BeforeEach
-    void setUp() {
-        file = dir.resolve("users.txt");
-        repository = new UserRepository(new UserFileStore(file));
-        controller = new UserController(repository);
-        controller.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
-        controller.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
-    }
+class UserControllerTest extends ParkFixture {
 
     private User reloaded(String email) {
-        return new UserRepository(new UserFileStore(file)).findByEmail(email).orElseThrow();
+        restart();
+        return park.users().findByEmail(email).orElseThrow();
     }
 
     @Test
     void createStoresUser() {
-        assertEquals(2, repository.findAll().size());
+        assertEquals(2, park.users().findAll().size());
         assertEquals("Ana", reloaded("ana@correo.com").getFirstName());
     }
 
@@ -51,38 +31,88 @@ class UserControllerTest {
             "11111111H|ana@correo.com|Clave1!|1234567890123456|Email already registered"})
     void createRejectsInvalidOrDuplicateData(String dni, String email, String password, String card, String message) {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> controller.create("Luis", "Perez", dni, email, password, "600000000", card));
+                () -> users.create("Luis", "Perez", dni, email, password, "600000000", card));
         assertEquals(message, e.getMessage());
-        assertEquals(2, repository.findAll().size());
+        assertEquals(2, park.users().findAll().size());
     }
 
     @Test
     void deleteWithCorrectPassword() {
-        controller.delete("pedro@correo.com", "Otra2#");
-        assertTrue(repository.findByEmail("pedro@correo.com").isEmpty());
-        assertTrue(new UserRepository(new UserFileStore(file)).findByEmail("pedro@correo.com").isEmpty());
+        users.delete("pedro@correo.com", "Otra2#");
+        assertTrue(park.users().findByEmail("pedro@correo.com").isEmpty());
+        restart();
+        assertTrue(park.users().findByEmail("pedro@correo.com").isEmpty());
     }
 
     @Test
     void deleteWithWrongPasswordKeepsUser() {
-        assertThrows(IllegalArgumentException.class, () -> controller.delete("pedro@correo.com", "Wrong1!"));
-        assertTrue(repository.findByEmail("pedro@correo.com").isPresent());
+        assertThrows(IllegalArgumentException.class, () -> users.delete("pedro@correo.com", "Wrong1!"));
+        assertTrue(park.users().findByEmail("pedro@correo.com").isPresent());
     }
 
     @Test
     void deleteUnknownUser() {
-        assertThrows(IllegalArgumentException.class, () -> controller.delete("nobody@correo.com", "Clave1!"));
-        assertEquals(2, repository.findAll().size());
+        assertThrows(IllegalArgumentException.class, () -> users.delete("nobody@correo.com", "Clave1!"));
+        assertEquals(2, park.users().findAll().size());
+    }
+
+    @Test
+    void deleteRejectedWithActiveIndividualTicket() {
+        new TicketController(park).createTicket("T001", "pedro@correo.com", TODAY.toString());
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> users.delete("pedro@correo.com", "Otra2#"));
+        assertEquals("User has active tickets", e.getMessage());
+        assertTrue(park.users().findByEmail("pedro@correo.com").isPresent());
+    }
+
+    @Test
+    void deleteRejectedWithActiveGroupTicketAndLockedGroup() {
+        GroupController groups = new GroupController(park);
+        groups.create("G01", "Familia");
+        groups.addUser("G01", "pedro@correo.com");
+        new TicketController(park).createGroupTicket("TG01", "G01", TODAY.plusDays(1).toString());
+        assertThrows(IllegalArgumentException.class, () -> users.delete("pedro@correo.com", "Otra2#"));
+        assertTrue(park.users().findByEmail("pedro@correo.com").isPresent());
+    }
+
+    @Test
+    void deleteRejectedWhenInLockedGroupWithoutOwnTicket() {
+        GroupController groups = new GroupController(park);
+        groups.create("G01", "Familia");
+        groups.addUser("G01", "ana@correo.com");
+        new TicketController(park).createGroupTicket("TG01", "G01", TODAY.toString());
+        // Pedro is a member not covered by the ticket; commands cannot reach this state, the model can.
+        park.groups().findById("G01").orElseThrow().add(pedro);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> users.delete("pedro@correo.com", "Otra2#"));
+        assertEquals("User belongs to locked group G01", e.getMessage());
+        assertTrue(park.users().findByEmail("pedro@correo.com").isPresent());
+    }
+
+    @Test
+    void deleteRemovesUserFromGroupsAndKeepsHistory() {
+        GroupController groups = new GroupController(park);
+        groups.create("G01", "Familia");
+        groups.addUser("G01", "pedro@correo.com");
+        groups.addUser("G01", "ana@correo.com");
+        new TicketController(park).createGroupTicket("TG01", "G01", TODAY.toString());
+        park.setDate(TODAY.plusDays(1).toString());
+
+        users.delete("pedro@correo.com", "Otra2#");
+
+        assertEquals(1, park.groups().findById("G01").orElseThrow().getMembers().size());
+        assertEquals(2, park.tickets().findById("TG01").orElseThrow().getHolders().size());
     }
 
     @Test
     void updateEachFieldAndPersist() {
-        controller.update("ana@correo.com", "Clave1!", "NAME", "Ana Maria");
-        controller.update("ana@correo.com", "Clave1!", "SURNAME", "Garcia");
-        controller.update("ana@correo.com", "Clave1!", "PHONE", "699999999");
-        controller.update("ana@correo.com", "Clave1!", "CARD", "9999888877776666");
-        controller.update("ana@correo.com", "Clave1!", "PASSWORD", "Nueva2#");
-        controller.update("ana@correo.com", "Nueva2#", "EMAIL", "ana.nueva@correo.com");
+        users.update("ana@correo.com", "Clave1!", "NAME", "Ana Maria");
+        users.update("ana@correo.com", "Clave1!", "SURNAME", "Garcia");
+        users.update("ana@correo.com", "Clave1!", "PHONE", "699999999");
+        users.update("ana@correo.com", "Clave1!", "CARD", "9999888877776666");
+        users.update("ana@correo.com", "Clave1!", "PASSWORD", "Nueva2#");
+        users.update("ana@correo.com", "Nueva2#", "EMAIL", "ana.nueva@correo.com");
 
         User u = reloaded("ana.nueva@correo.com");
         assertEquals("Ana Maria", u.getFirstName());
@@ -95,7 +125,7 @@ class UserControllerTest {
 
     @Test
     void updateEmailToOwnEmailIsAllowed() {
-        assertDoesNotThrow(() -> controller.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo.com"));
+        assertDoesNotThrow(() -> users.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo.com"));
     }
 
     @ParameterizedTest
@@ -108,7 +138,7 @@ class UserControllerTest {
             "AGE|30|Field cannot be modified: AGE"})
     void updateRejectsInvalidChanges(String field, String value, String message) {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> controller.update("ana@correo.com", "Clave1!", field, value));
+                () -> users.update("ana@correo.com", "Clave1!", field, value));
         assertEquals(message, e.getMessage());
         User u = reloaded("ana@correo.com");
         assertEquals("12345678Z", u.getDni());
@@ -119,9 +149,9 @@ class UserControllerTest {
     @Test
     void updateRequiresCredentials() {
         assertThrows(IllegalArgumentException.class,
-                () -> controller.update("ana@correo.com", "Wrong1!", "PHONE", "600000000"));
+                () -> users.update("ana@correo.com", "Wrong1!", "PHONE", "600000000"));
         assertThrows(IllegalArgumentException.class,
-                () -> controller.update("nobody@correo.com", "Clave1!", "PHONE", "600000000"));
+                () -> users.update("nobody@correo.com", "Clave1!", "PHONE", "600000000"));
         assertEquals("612345678", reloaded("ana@correo.com").getPhone());
     }
 }

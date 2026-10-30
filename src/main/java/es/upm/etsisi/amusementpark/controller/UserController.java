@@ -1,23 +1,27 @@
 package es.upm.etsisi.amusementpark.controller;
 
+import es.upm.etsisi.amusementpark.model.Group;
 import es.upm.etsisi.amusementpark.model.User;
 import es.upm.etsisi.amusementpark.model.UserField;
 import es.upm.etsisi.amusementpark.repository.UserRepository;
 import es.upm.etsisi.amusementpark.validation.UserValidator;
+
+import java.util.List;
 
 /**
  * User management operations. Rule violations are reported as IllegalArgumentException.
  */
 public class UserController {
 
-    private final UserRepository repository;
+    private final ParkController park;
 
-    public UserController(UserRepository repository) {
-        this.repository = repository;
+    public UserController(ParkController park) {
+        this.park = park;
     }
 
     public User create(String firstName, String surnames, String dni, String email,
                        String password, String phone, String cardNumber) {
+        UserRepository repository = park.users();
         requireValid(UserValidator.isValidDni(dni), "Invalid DNI");
         requireValid(UserValidator.isValidEmail(email), "Invalid email");
         requireValid(UserValidator.isValidPassword(password), "Invalid password");
@@ -32,7 +36,17 @@ public class UserController {
 
     public void delete(String email, String password) {
         User user = authenticate(email, password);
-        repository.remove(user);
+        requireValid(!park.tickets().hasActiveTicketFor(user, park.today()),
+                "User has active tickets");
+        List<Group> groups = park.groups().findByMember(user);
+        for (Group group : groups) {
+            requireValid(!park.tickets().hasActiveGroupTicket(group, park.today()),
+                    "User belongs to locked group " + group.getId());
+        }
+        groups.forEach(g -> g.remove(user));
+        park.users().remove(user);
+        park.groups().save();
+        park.tickets().save();
     }
 
     public void update(String email, String password, String fieldName, String newValue) {
@@ -45,7 +59,7 @@ public class UserController {
             case SURNAME -> user.setSurnames(newValue);
             case EMAIL -> {
                 requireValid(UserValidator.isValidEmail(newValue), "Invalid email");
-                repository.findByEmail(newValue)
+                park.users().findByEmail(newValue)
                         .filter(other -> other != user)
                         .ifPresent(other -> {
                             throw new IllegalArgumentException("Email already registered");
@@ -62,17 +76,18 @@ public class UserController {
                 user.setCardNumber(newValue);
             }
         }
-        repository.update(user);
+        park.users().update(user);
+        park.tickets().save();
     }
 
     private User authenticate(String email, String password) {
-        User user = repository.findByEmail(email)
+        User user = park.users().findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         requireValid(user.checkPassword(password), "Incorrect password");
         return user;
     }
 
-    private static void requireValid(boolean condition, String message) {
+    static void requireValid(boolean condition, String message) {
         if (!condition) {
             throw new IllegalArgumentException(message);
         }

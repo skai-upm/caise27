@@ -37,7 +37,7 @@ Each user SHALL hold first name, surname(s), DNI, email address, password, telep
 - **THEN** an error is printed and no user is created
 
 ### Requirement: Delete user
-`USER DELETE;Email;Password` SHALL locate the user by email, verify the user exists, verify the password, delete the user, update persistent data and print `USER DELETED`. An unknown email or incorrect password SHALL leave the user in place and print an error.
+`USER DELETE;Email;Password` SHALL locate the user by email, verify the user exists, verify the password, delete the user, update persistent data and print `USER DELETED`. An unknown email or incorrect password SHALL leave the user in place and print an error. Deletion SHALL also be rejected while the user has an active ticket (individual or inside a group ticket) or belongs to a group locked by an active group ticket; otherwise the user SHALL be removed from all groups.
 
 #### Scenario: Successful deletion
 - **WHEN** `USER DELETE;pedro@correo.com;Otra2#` is processed and that user exists with that password
@@ -50,6 +50,18 @@ Each user SHALL hold first name, surname(s), DNI, email address, password, telep
 #### Scenario: Unknown email
 - **WHEN** `USER DELETE` is processed with an email of no existing user
 - **THEN** an error is printed and no user changes
+
+#### Scenario: Active ticket blocks deletion
+- **WHEN** the user has an individual ticket, or a ticket inside a group ticket, dated today or later
+- **THEN** an error is printed and the user still exists
+
+#### Scenario: Locked group blocks deletion
+- **WHEN** the user belongs to a group that has an active group ticket
+- **THEN** an error is printed and the user still exists
+
+#### Scenario: Removal from groups
+- **WHEN** the user has only historical tickets and belongs to unlocked groups
+- **THEN** the user is deleted and no longer a member of those groups, and historical tickets are kept
 
 ### Requirement: Update user
 `USER UPDATE;Email;Password;Field;NewValue` SHALL, after verifying the current email and password, set one field among `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD` to the new value, persist the change and print `USER UPDATED`. New values SHALL satisfy the creation validation rules; a new email SHALL NOT be used by another user. `DNI` and any other field name SHALL be rejected.

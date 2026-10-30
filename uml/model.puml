@@ -1,0 +1,93 @@
+@startuml model
+' Amusement Park - Delivery 2 class model (package es.upm.etsisi.amusementpark)
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package model {
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - cardNumber : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    - id : String {readOnly}
+    - name : String {readOnly}
+  }
+
+  abstract class Ticket {
+    - id : String {readOnly}
+    - date : LocalDate {readOnly}
+  }
+
+  class IndividualTicket {
+    - basePrice : BigDecimal
+    - discountPercent : int
+  }
+
+  class GroupTicket
+
+  class Attraction {
+    - id : String {readOnly}
+    - name : String {readOnly}
+    - capacity : int {readOnly}
+  }
+}
+
+package controller {
+  class ParkController <<Singleton>> {
+    - {static} INSTANCE : ParkController
+    - today : LocalDate
+    - basePrice : BigDecimal
+  }
+  class UserController
+  class GroupController
+  class TicketController
+  class AttractionController
+}
+
+package repository {
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class AttractionRepository
+}
+
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+IndividualTicket "*" --> "1" User : user
+GroupTicket "1" *--> "1..*" IndividualTicket : composition
+GroupTicket "*" --> "0..1" Group : group
+Group "*" --> "*" User : members
+Attraction "*" --> "*" User : occupants
+
+ParkController "1" --> "1" UserRepository : users
+ParkController "1" --> "1" GroupRepository : groups
+ParkController "1" --> "1" TicketRepository : tickets
+ParkController "1" --> "1" AttractionRepository : attractions
+
+UserRepository "1" o--> "*" User
+GroupRepository "1" o--> "*" Group
+TicketRepository "1" o--> "*" Ticket
+AttractionRepository "1" o--> "*" Attraction
+
+UserController --> ParkController
+GroupController --> ParkController
+TicketController --> ParkController
+AttractionController --> ParkController
+UserController ..> UserField
+@enduml

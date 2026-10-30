@@ -1,8 +1,6 @@
 package es.upm.etsisi.amusementpark.cli;
 
-import es.upm.etsisi.amusementpark.controller.UserController;
-import es.upm.etsisi.amusementpark.repository.UserFileStore;
-import es.upm.etsisi.amusementpark.repository.UserRepository;
+import es.upm.etsisi.amusementpark.controller.ParkController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -23,9 +21,10 @@ class CommandRunnerTest {
 
     @Test
     void processesInOrderSkipsBlankLinesAndStopsAtExit() throws IOException {
-        UserRepository repository = new UserRepository(new UserFileStore(dir.resolve("users.txt")));
+        ParkController park = ParkController.getInstance();
+        park.initialize(dir);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        CommandRunner runner = new CommandRunner(new CommandProcessor(new UserController(repository),
+        CommandRunner runner = new CommandRunner(new CommandProcessor(park,
                 new PrintStream(buffer, true, StandardCharsets.UTF_8)));
 
         String input = String.join("\n",
@@ -37,8 +36,8 @@ class CommandRunnerTest {
                 "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
         runner.run(new BufferedReader(new StringReader(input)));
 
-        assertEquals(1, repository.findAll().size());
-        assertEquals("699999999", repository.findByEmail("ana@correo.com").orElseThrow().getPhone());
+        assertEquals(1, park.users().findAll().size());
+        assertEquals("699999999", park.users().findByEmail("ana@correo.com").orElseThrow().getPhone());
         assertFalse(buffer.toString(StandardCharsets.UTF_8).contains("ERROR"));
     }
 }

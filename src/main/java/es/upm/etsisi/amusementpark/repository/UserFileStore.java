@@ -2,12 +2,6 @@ package es.upm.etsisi.amusementpark.repository;
 
 import es.upm.etsisi.amusementpark.model.User;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,50 +11,32 @@ import java.util.List;
  */
 public class UserFileStore {
 
-    private static final String SEPARATOR = ";";
     private static final int FIELD_COUNT = 7;
 
-    private final Path file;
+    private final LineFile file;
 
     public UserFileStore(Path file) {
-        this.file = file;
+        this.file = new LineFile(file);
     }
 
     public List<User> load() {
         List<User> users = new ArrayList<>();
-        if (!Files.exists(file)) {
-            return users;
-        }
-        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            String line;
-            int lineNumber = 0;
-            while ((line = reader.readLine()) != null) {
-                lineNumber++;
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] f = line.split(SEPARATOR, -1);
-                if (f.length != FIELD_COUNT) {
-                    System.err.println("WARNING: skipping malformed line " + lineNumber + " in " + file);
-                    continue;
-                }
-                users.add(new User(f[0], f[1], f[2], f[3], f[4], f[5], f[6]));
+        for (String[] f : file.readRecords()) {
+            if (f.length != FIELD_COUNT) {
+                file.warnMalformed(f);
+                continue;
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot read users file " + file, e);
+            users.add(new User(f[0], f[1], f[2], f[3], f[4], f[5], f[6]));
         }
         return users;
     }
 
     public void save(List<User> users) {
-        try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            for (User u : users) {
-                writer.write(String.join(SEPARATOR, u.getFirstName(), u.getSurnames(), u.getDni(),
-                        u.getEmail(), u.getPassword(), u.getPhone(), u.getCardNumber()));
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot write users file " + file, e);
+        List<String> lines = new ArrayList<>();
+        for (User u : users) {
+            lines.add(LineFile.join(u.getFirstName(), u.getSurnames(), u.getDni(),
+                    u.getEmail(), u.getPassword(), u.getPhone(), u.getCardNumber()));
         }
+        file.writeLines(lines);
     }
 }
