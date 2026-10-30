@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,7 +29,7 @@ class UserTest {
         assertEquals("Garcia Lopez", user.getSurnames());
         assertEquals("12345678Z", user.getDni());
         assertEquals("ana@correo.com", user.getEmail());
-        assertEquals("Clave1!", user.getPassword());
+        assertEquals("Clave1!", user.getPasswordHash());
         assertEquals("612345678", user.getPhone());
         assertEquals("1234567890123456", user.getCard());
     }
@@ -33,13 +40,13 @@ class UserTest {
         user.setFirstName("Ana Maria");
         user.setSurnames("Garcia");
         user.setEmail("ana.nueva@correo.com");
-        user.setPassword("Nueva2#");
+        user.setPasswordHash("Nueva2#");
         user.setPhone("699999999");
         user.setCard("9999888877776666");
         assertEquals("Ana Maria", user.getFirstName());
         assertEquals("Garcia", user.getSurnames());
         assertEquals("ana.nueva@correo.com", user.getEmail());
-        assertTrue(user.checkPassword("Nueva2#"));
+        assertEquals("Nueva2#", user.getPasswordHash());
         assertEquals("699999999", user.getPhone());
         assertEquals("9999888877776666", user.getCard());
         assertEquals("12345678Z", user.getDni());
@@ -59,8 +66,4 @@ class UserTest {
         assertEquals(6, UserField.values().length);
     }
 
-    @Test
-    void checkPasswordRejectsWrongPassword() {
-        assertFalse(ana().checkPassword("Otra2#"));
-    }
 }

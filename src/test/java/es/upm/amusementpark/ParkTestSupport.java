@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
@@ -14,22 +21,29 @@ abstract class ParkTestSupport {
     @TempDir
     Path dir;
 
+    static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
+
+    CommandProcessor processor;
     Park park;
-    UserService users;
-    GroupService groups;
-    TicketService tickets;
-    AttractionService attractions;
-    SystemService system;
+    UserController users;
+    GroupController groups;
+    TicketController tickets;
+    AttractionController attractions;
+    SystemController system;
+    PassController passes;
+    InvoiceController invoices;
 
     @BeforeEach
     void openPark() {
+        processor = ApplicationInitializer.initialize(dir, HASHER);
         park = Park.getInstance();
-        park.open(dir);
-        users = new UserService();
-        groups = new GroupService();
-        tickets = new TicketService();
-        attractions = new AttractionService();
-        system = new SystemService();
+        users = UserController.getInstance();
+        groups = GroupController.getInstance();
+        tickets = TicketController.getInstance();
+        attractions = AttractionController.getInstance();
+        system = SystemController.getInstance();
+        passes = PassController.getInstance();
+        invoices = InvoiceController.getInstance();
         system.setDate("2027-04-10");
     }
 
@@ -61,6 +75,6 @@ abstract class ParkTestSupport {
      * Reloads the whole park from disk, as a new execution would.
      */
     void restart() {
-        park.open(dir);
+        processor = ApplicationInitializer.initialize(dir, HASHER);
     }
 }

@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,7 +25,7 @@ class UserRepositoryTest {
 
     @Test
     void missingFileMeansNoUsers() {
-        UserRepository repository = new UserRepository(dir.resolve("users.txt"));
+        FileUserRepository repository = new FileUserRepository(dir.resolve("users.txt"));
         repository.load();
         assertTrue(repository.findAll().isEmpty());
     }
@@ -26,7 +33,7 @@ class UserRepositoryTest {
     @Test
     void writesOneLinePerUserInSourceFormat() throws IOException {
         Path file = dir.resolve("users.txt");
-        UserRepository repository = new UserRepository(file);
+        FileUserRepository repository = new FileUserRepository(file);
         repository.add(new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456"));
         repository.add(new User("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
@@ -40,11 +47,11 @@ class UserRepositoryTest {
     @Test
     void roundTripsUsersBetweenInstances() {
         Path file = dir.resolve("users.txt");
-        UserRepository first = new UserRepository(file);
+        FileUserRepository first = new FileUserRepository(file);
         first.add(new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456"));
 
-        UserRepository second = new UserRepository(file);
+        FileUserRepository second = new FileUserRepository(file);
         second.load();
         User ana = second.findByDni("12345678Z");
         assertEquals("ana@correo.com", ana.getEmail());
@@ -55,13 +62,13 @@ class UserRepositoryTest {
     @Test
     void removalIsPersisted() {
         Path file = dir.resolve("users.txt");
-        UserRepository repository = new UserRepository(file);
+        FileUserRepository repository = new FileUserRepository(file);
         User ana = new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         repository.add(ana);
         repository.remove(ana);
 
-        UserRepository reloaded = new UserRepository(file);
+        FileUserRepository reloaded = new FileUserRepository(file);
         reloaded.load();
         assertNull(reloaded.findByEmail("ana@correo.com"));
     }
@@ -71,7 +78,7 @@ class UserRepositoryTest {
         Path file = dir.resolve("users.txt");
         Files.writeString(file, "broken;line\n\nAna;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;"
                 + "1234567890123456\n");
-        UserRepository repository = new UserRepository(file);
+        FileUserRepository repository = new FileUserRepository(file);
         repository.load();
         assertEquals(1, repository.findAll().size());
     }

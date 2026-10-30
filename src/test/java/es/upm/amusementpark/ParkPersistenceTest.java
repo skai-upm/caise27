@@ -1,6 +1,14 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -85,5 +93,38 @@ class ParkPersistenceTest extends ParkTestSupport {
         User holder = ((IndividualTicket) park.getTickets().findById("T001")).getUser();
         assertEquals(email(1), holder.getEmail());
         assertNotSame(park.getUsers().findByDni(newcomer.getDni()), holder);
+    }
+
+    @Test
+    void passesAndAttractionTypesSurviveRestart() {
+        attractions.create("A04", "Pasaje del Terror", "15", "SPECIAL");
+        user(1);
+        tickets.createIndividual("T001", email(1), "2027-04-10");
+        passes.buySpecialPass("PE01", "T001");
+        passes.buySpeedPasses("SP01", "T001", "1");
+        passes.buySpeedPasses("SP02", "T001", "1");
+        attractions.enter("A04", "T001");
+        attractions.exit("A04", email(1));
+        attractions.create("A01", "Dragon Rojo", "20");
+        attractions.enter("A01", "T001", true);
+
+        restart();
+
+        assertEquals(AttractionType.SPECIAL, park.getAttractions().findById("A04").getType());
+        assertEquals(AttractionType.GENERAL, park.getAttractions().findById("A01").getType());
+        Pass special = park.getPasses().findById("PE01");
+        assertTrue(special instanceof SpecialPass && special.isConsumed());
+        assertSame(park.getTickets().findById("T001"), special.getTicket());
+        assertEquals(new BigDecimal("40.00"), special.getPrice());
+        assertTrue(park.getPasses().findById("SP01:1").isConsumed());
+        assertFalse(park.getPasses().findById("SP02:1").isConsumed());
+        assertEquals(new BigDecimal("8.00"), park.getPasses().findById("SP02:1").getPrice());
+    }
+
+    @Test
+    void deliveryTwoAttractionLineIsGeneral() throws java.io.IOException {
+        java.nio.file.Files.writeString(dir.resolve("attractions.txt"), "A01;Dragon Rojo;20\n");
+        restart();
+        assertEquals(AttractionType.GENERAL, park.getAttractions().findById("A01").getType());
     }
 }

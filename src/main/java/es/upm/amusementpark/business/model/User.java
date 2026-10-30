@@ -1,0 +1,83 @@
+package es.upm.amusementpark.business.model;
+
+/**
+ * A park user. The DNI is fixed at creation time and cannot be changed. Users hold no references to their
+ * tickets, groups or attractions.
+ */
+public class User {
+
+    private String firstName;
+    private String surnames;
+    private final String dni;
+    private String email;
+    private String passwordHash;
+    private String phone;
+    private String card;
+
+    public User(String firstName, String surnames, String dni, String email,
+                String passwordHash, String phone,
+                String card) {
+        this.firstName = firstName;
+        this.surnames = surnames;
+        this.dni = dni;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.phone = phone;
+        this.card = card;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getSurnames() {
+        return surnames;
+    }
+
+    public void setSurnames(String surnames) {
+        this.surnames = surnames;
+    }
+
+    public String getDni() {
+        return dni;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    /**
+     * The protected (hashed) password; the original password is never kept.
+     */
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getCard() {
+        return card;
+    }
+
+    public void setCard(String card) {
+        this.card = card;
+    }
+}

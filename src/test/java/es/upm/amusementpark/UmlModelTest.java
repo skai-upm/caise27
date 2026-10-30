@@ -12,12 +12,15 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Checks that uml/model.puml matches the code: declared types exist with the right kind, inheritance arrows match
- * superclasses and named associations match fields.
+ * Checks that uml/model.puml matches the code: declared types exist with the right kind, inheritance and
+ * implementation arrows hold, and named associations are fields of their owner (or its superclass).
  */
 class UmlModelTest {
 
-    private static final String PACKAGE = "es.upm.amusementpark.";
+    private static final List<String> PACKAGES = List.of("es.upm.amusementpark.", "es.upm.amusementpark.presentation.",
+            "es.upm.amusementpark.business.controller.", "es.upm.amusementpark.business.model.",
+            "es.upm.amusementpark.business.invoice.", "es.upm.amusementpark.business.security.",
+            "es.upm.amusementpark.persistence.", "es.upm.amusementpark.persistence.file.");
 
     private final List<String> lines = Files.readAllLines(Path.of("uml/model.puml")).stream().map(String::trim)
             .toList();
@@ -26,7 +29,15 @@ class UmlModelTest {
     }
 
     private static Class<?> type(String name) throws ClassNotFoundException {
-        return Class.forName(PACKAGE + name);
+        String simple = name.contains("<") ? name.substring(0, name.indexOf('<')) : name;
+        for (String pkg : PACKAGES) {
+            try {
+                return Class.forName(pkg + simple);
+            } catch (ClassNotFoundException e) {
+                // try the next package
+            }
+        }
+        throw new ClassNotFoundException(simple);
     }
 
     @Test
@@ -38,24 +49,34 @@ class UmlModelTest {
                 assertTrue(Modifier.isAbstract(type(words[2]).getModifiers()), words[2]);
                 checked++;
             } else if (line.startsWith("class ")) {
-                assertFalse(Modifier.isAbstract(type(words[1]).getModifiers()), words[1]);
+                Class<?> type = type(words[1]);
+                assertFalse(Modifier.isAbstract(type.getModifiers()) || type.isInterface(), words[1]);
+                checked++;
+            } else if (line.startsWith("interface ")) {
+                assertTrue(type(words[1]).isInterface(), words[1]);
                 checked++;
             } else if (line.startsWith("enum ")) {
                 assertTrue(type(words[1]).isEnum(), words[1]);
                 checked++;
             }
         }
-        assertEquals(12, checked);
+        assertEquals(53, checked);
     }
 
     @Test
-    void inheritanceMatchesCode() throws ClassNotFoundException {
+    void inheritanceAndImplementationsMatchCode() throws ClassNotFoundException {
+        int checked = 0;
         for (String line : lines) {
-            if (line.contains(" <|-- ")) {
-                String[] words = line.split(" ");
-                assertEquals(type(words[0]), type(words[2]).getSuperclass(), line);
+            String[] words = line.split(" ");
+            if (line.contains(" <|-- ") || line.contains(" <|.. ")) {
+                Class<?> parent = type(words[0]);
+                Class<?> child = type(words[2]);
+                assertTrue(parent.isAssignableFrom(child), line);
+                assertEquals(line.contains(" <|.. "), parent.isInterface() && !child.isInterface(), line);
+                checked++;
             }
         }
+        assertEquals(25, checked);
     }
 
     @Test
@@ -63,12 +84,16 @@ class UmlModelTest {
         int checked = 0;
         for (String line : lines) {
             if ((line.contains(" --> ") || line.contains(" *-- ")) && line.contains(" : ")) {
-                String owner = line.substring(0, line.indexOf(' '));
+                Class<?> owner = type(line.substring(0, line.indexOf(' ')));
                 String field = line.substring(line.lastIndexOf(" : ") + 3).trim();
-                type(owner).getDeclaredField(field);
+                boolean found = false;
+                for (Class<?> c = owner; c != null && !found; c = c.getSuperclass()) {
+                    found = List.of(c.getDeclaredFields()).stream().anyMatch(f -> f.getName().equals(field));
+                }
+                assertTrue(found, line);
                 checked++;
             }
         }
-        assertEquals(13, checked);
+        assertEquals(35, checked);
     }
 }

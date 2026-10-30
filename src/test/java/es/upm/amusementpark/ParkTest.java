@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,7 +45,7 @@ class ParkTest extends ParkTestSupport {
     @ValueSource(strings = {"2027-02-30", "15/04/2027", "2027-4-15", "tomorrow", "2027-04-15x"})
     void invalidDatesRejected(String text) {
         LocalDate before = park.getDate();
-        assertThrows(IllegalArgumentException.class, () -> system.setDate(text));
+        assertThrows(ParkException.class, () -> system.setDate(text));
         assertEquals(before, park.getDate());
     }
 
@@ -52,7 +59,7 @@ class ParkTest extends ParkTestSupport {
     @ParameterizedTest
     @ValueSource(strings = {"0", "0.00", "-5", "abc", "4.555", "4.", ".5", "1e3", "+5", "4,50"})
     void invalidPricesRejected(String text) {
-        assertThrows(IllegalArgumentException.class, () -> system.setPrice(text));
+        assertThrows(ParkException.class, () -> system.setPrice(text));
         assertEquals(new BigDecimal("40.00"), park.getPrice());
     }
 }

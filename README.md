@@ -3,7 +3,7 @@
 ## Amusement Park
 
 Command-line application (Java 21, Maven) that manages an amusement park: users, groups, individual and group
-tickets, and attractions.
+tickets, SpeedPasses and Special Passes, typed attractions and invoices.
 
 ### Build
 
@@ -11,7 +11,8 @@ tickets, and attractions.
 mvn package
 ```
 
-This runs the tests and produces `target/amusement-park.jar`.
+This runs the tests and produces `target/amusement-park.jar` (it bundles jBCrypt, the only runtime dependency, used to
+protect passwords).
 
 ### Run
 
@@ -54,13 +55,24 @@ TICKET DELETE;<identifier>
 GROUPTICKET CREATE;<identifier>;<group>;<date>
 GROUPTICKET DELETE;<identifier>
 ATTRACTION CREATE;<identifier>;<name>;<capacity>
+ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>   type: GENERAL, INDIVIDUAL, GROUP, SPECIAL
 ATTRACTION ENTER;<attraction>;<ticket>
+ATTRACTION ENTER;<attraction>;<ticket>;SPEED
 ATTRACTION EXIT;<attraction>;<email>
 ATTRACTION LIST;<attraction>
 ATTRACTION STATUS;<attractionIdentifier>
+SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>   quantity: 1 or 10
+SPEEDPASS DELETE;<speedPassIdentifier>
+SPECIALPASS CREATE;<identifier>;<individualTicket>
+SPECIALPASS DELETE;<specialPassIdentifier>
+INVOICE CREATE;USER;<email>
+INVOICE CREATE;GROUP;<groupIdentifier>
 HELP
+HELP EXTENDED
 EXIT
 ```
+
+`HELP EXTENDED` shows a description of every command.
 
 Rejected commands print a line starting with `ERROR:` and the application keeps running.
 
@@ -68,12 +80,22 @@ Rejected commands print a line starting with `ERROR:` and the application keeps 
 - Group tickets get a discount per member: fewer than 3 → 0%, 3-5 → 10%, 6-10 → 20%, more than 10 → 50%.
 - Tickets and group tickets can only be deleted when dated strictly after the current date.
 - Groups with an active group ticket (dated today or later) cannot be modified or deleted.
+- A SpeedPass costs 20% of its ticket's price, a Special Pass the same as the ticket (at most one per ticket).
+  Unconsumed passes of future tickets can be refunded; deleting a ticket also deletes its passes.
+- GENERAL attractions accept any ticket, INDIVIDUAL only individual tickets, GROUP only group tickets, and SPECIAL
+  only individual tickets with an unconsumed Special Pass (consumed automatically on entry, no SPEED).
 
 ### Data
 
-Data is stored in the working directory: `users.txt` (`FirstName;Surnames;DNI;Email;Password;Phone;Card`),
-`groups.txt`, `tickets.txt` and `attractions.txt`. Attraction occupants are not stored.
+Data is stored in the working directory: `users.txt` (`FirstName;Surnames;DNI;Email;BCryptHash;Phone;Card`),
+`groups.txt`, `tickets.txt`, `attractions.txt` and `passes.txt`. Attraction occupants are not stored. Users files
+from earlier versions with plain-text passwords are not migrated.
 
 ### Design
+
+Code is layered in packages under `es.upm.amusementpark`: `presentation` (command processing, help), `business`
+(model, Singleton controllers, invoices with the Builder pattern, exceptions, password security) and `persistence`
+(repository interfaces and their text-file implementations). `ApplicationInitializer` creates the repositories for
+the data directory (normal or `--fly`) and injects them into the controllers.
 
 The class model is documented in [`uml/model.puml`](uml/model.puml) (PlantUML).

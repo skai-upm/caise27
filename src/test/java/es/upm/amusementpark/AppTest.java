@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,6 +29,8 @@ class AppTest {
             "GROUP ADD;G01;ana@correo.com",
             "ATTRACTION CREATE;A01;Dragon Rojo;20",
             "TICKET CREATE;T001;ana@correo.com;2099-01-01",
+            "SPEEDPASS CREATE;SP01;T001;10",
+            "ATTRACTION CREATE;A02;Terror;5;SPECIAL",
             "EXIT", "");
 
     @TempDir
@@ -35,7 +44,7 @@ class AppTest {
     }
 
     private void assertNoDataFiles() {
-        for (String name : new String[] {"users.txt", "groups.txt", "tickets.txt", "attractions.txt"}) {
+        for (String name : new String[] {"users.txt", "groups.txt", "tickets.txt", "attractions.txt", "passes.txt"}) {
             assertFalse(Files.exists(dir.resolve(name)), name);
         }
         assertFalse(Files.exists(dir.resolve("tmp")));

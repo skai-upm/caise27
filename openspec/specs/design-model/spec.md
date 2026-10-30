@@ -7,7 +7,7 @@ Defines the PlantUML class model that documents the implemented Delivery 2 domai
 ## Requirements
 
 ### Requirement: PlantUML class model
-The repository SHALL contain `uml/model.puml`, a PlantUML class diagram of the model with relevant attributes, classes, interfaces, enumerations, inheritance, interface implementations, associations, compositions, directions and multiplicities, including the ticket hierarchy, group ticket composition and the user/group/ticket/attraction relationships.
+The repository SHALL contain `uml/model.puml`, a PlantUML class diagram of the final model with relevant attributes, classes, interfaces, enumerations, inheritance, interface implementations, associations, compositions, directions and multiplicities, including the ticket hierarchy and access interfaces, group ticket composition, the generic attraction types, passes and their cardinalities, the invoice builder classes, the Singleton controllers and the injected dependencies.
 
 #### Scenario: Diagram matches the code
 - **WHEN** `uml/model.puml` is compared with the model classes in the source code

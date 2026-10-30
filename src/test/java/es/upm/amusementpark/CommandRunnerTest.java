@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -38,8 +45,8 @@ class CommandRunnerTest {
         return bytes.toString(StandardCharsets.UTF_8);
     }
 
-    private UserRepository storedUsers() {
-        UserRepository repository = new UserRepository(dir.resolve("users.txt"));
+    private FileUserRepository storedUsers() {
+        FileUserRepository repository = new FileUserRepository(dir.resolve("users.txt"));
         repository.load();
         return repository;
     }

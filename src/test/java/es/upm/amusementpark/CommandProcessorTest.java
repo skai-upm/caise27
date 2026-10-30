@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,14 +29,13 @@ class CommandProcessorTest {
     @TempDir
     Path dir;
 
-    private UserRepository repository;
+    private es.upm.amusementpark.persistence.UserRepository repository;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() {
-        Park.getInstance().open(dir);
+        processor = ApplicationInitializer.initialize(dir, ParkTestSupport.HASHER);
         repository = Park.getInstance().getUsers();
-        processor = new CommandProcessor();
     }
 
     @Test
@@ -80,9 +87,32 @@ class CommandProcessorTest {
                 "GROUPTICKET CREATE;<identifier>;<group>;<date>", "GROUPTICKET DELETE;<identifier>",
                 "ATTRACTION CREATE;<identifier>;<name>;<capacity>", "ATTRACTION ENTER;<attraction>;<ticket>",
                 "ATTRACTION EXIT;<attraction>;<email>", "ATTRACTION LIST;<attraction>",
-                "ATTRACTION STATUS;<attractionIdentifier>", "HELP", "EXIT"}) {
+                "ATTRACTION STATUS;<attractionIdentifier>", "HELP", "EXIT",
+                "ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
+                "ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
+                "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>",
+                "SPEEDPASS DELETE;<speedPassIdentifier>", "SPECIALPASS CREATE;<identifier>;<individualTicket>",
+                "SPECIALPASS DELETE;<specialPassIdentifier>", "INVOICE CREATE;USER;<email>",
+                "INVOICE CREATE;GROUP;<groupIdentifier>", "HELP EXTENDED"}) {
             assertTrue(help.contains(syntax), syntax);
         }
+    }
+
+    @Test
+    void extendedHelpDescribesEveryCommand() {
+        String help = processor.process("HELP EXTENDED").output();
+        for (CommandHelp command : CommandCatalog.commands()) {
+            assertTrue(help.contains(command.syntax() + System.lineSeparator() + "    " + command.description()),
+                    command.syntax());
+        }
+        assertTrue(processor.process("HELP EXTENDED;x").output().startsWith("ERROR:"));
+    }
+
+    @Test
+    void helpGeneratorUsesInjectedFormatter() {
+        HelpGenerator generator = new HelpGenerator(List.of(new CommandHelp("A;<b>", "does a")),
+                commands -> "custom " + commands.size());
+        assertEquals("custom 1", generator.generate());
     }
 
     @Test

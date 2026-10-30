@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,13 +16,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class ParkCommandsTest extends ParkTestSupport {
-
-    private CommandProcessor processor;
-
-    @BeforeEach
-    void createProcessor() {
-        processor = new CommandProcessor();
-    }
 
     private String run(String line) {
         return processor.process(line).output();
@@ -49,7 +49,7 @@ class ParkCommandsTest extends ParkTestSupport {
         assertTrue(run("ATTRACTION ENTER;A01;TG02").startsWith("ERROR:"));
         assertEquals("EXITED ATTRACTION A01: " + email(1), run("ATTRACTION EXIT;A01;" + email(1)));
         assertTrue(run("ATTRACTION ENTER;A01;TG02").startsWith("ENTERED ATTRACTION A01: " + email(1) + ", "));
-        assertEquals(String.join(System.lineSeparator(), "ATTRACTION: A01", "NAME: Dragon Rojo", "CAPACITY: 20",
+        assertEquals(String.join(System.lineSeparator(), "ATTRACTION: A01", "NAME: Dragon Rojo", "TYPE: GENERAL", "CAPACITY: 20",
                 "USERS INSIDE: 6", "AVAILABLE PLACES: 14",
                 "OCCUPANTS: " + String.join(", ", email(1), email(2), email(3), email(4), email(5), email(6))),
                 run("ATTRACTION STATUS;A01"));

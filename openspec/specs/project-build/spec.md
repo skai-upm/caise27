@@ -25,8 +25,8 @@ The build SHALL produce an executable JAR at `target/amusement-park.jar` whose m
 - **THEN** the application processes the commands contained in `input.txt`
 
 ### Requirement: Standard library only at runtime
-The application SHALL use only the Java standard library at runtime; it SHALL NOT use databases, frameworks, external libraries, regular expressions or encryption mechanisms.
+The application SHALL use only the Java standard library at runtime plus the jBCrypt library (`org.mindrot:jbcrypt:0.4`) for password protection, which the executable JAR SHALL bundle; it SHALL NOT use databases, frameworks, other external libraries or regular expressions.
 
 #### Scenario: Packaged JAR has no third-party runtime dependencies
 - **WHEN** the project's runtime dependencies are inspected
-- **THEN** no compile- or runtime-scoped dependency other than the JDK is declared
+- **THEN** the only compile- or runtime-scoped dependency is `org.mindrot:jbcrypt`, and `java -jar target/amusement-park.jar` runs without extra classpath configuration

@@ -1,5 +1,12 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.controller.*;
+import es.upm.amusementpark.business.exception.*;
+import es.upm.amusementpark.business.model.*;
+import es.upm.amusementpark.business.security.*;
+import es.upm.amusementpark.persistence.file.*;
+import es.upm.amusementpark.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,7 +22,7 @@ class UserDeletionTest extends ParkTestSupport {
     void activeIndividualTicketBlocksDeletion() {
         user(1);
         tickets.createIndividual("T001", email(1), "2027-04-10");
-        assertThrows(IllegalArgumentException.class, () -> users.delete(email(1), "Clave1!"));
+        assertThrows(ParkException.class, () -> users.delete(email(1), "Clave1!"));
         assertNotNull(park.getUsers().findByEmail(email(1)));
     }
 
@@ -23,7 +30,7 @@ class UserDeletionTest extends ParkTestSupport {
     void futureTicketCanBeDeletedFirst() {
         user(1);
         tickets.createIndividual("T001", email(1), "2027-04-20");
-        assertThrows(IllegalArgumentException.class, () -> users.delete(email(1), "Clave1!"));
+        assertThrows(ParkException.class, () -> users.delete(email(1), "Clave1!"));
         tickets.deleteIndividual("T001");
         users.delete(email(1), "Clave1!");
         assertNull(park.getUsers().findByEmail(email(1)));
@@ -34,7 +41,7 @@ class UserDeletionTest extends ParkTestSupport {
         groupWith("G01", 2);
         tickets.createGroup("TG01", "G01", "2027-04-10");
         system.setDate("2027-04-10");
-        assertThrows(IllegalArgumentException.class, () -> users.delete(email(1), "Clave1!"));
+        assertThrows(ParkException.class, () -> users.delete(email(1), "Clave1!"));
     }
 
     @Test
@@ -47,7 +54,7 @@ class UserDeletionTest extends ParkTestSupport {
         system.setDate("2027-04-10");
         // G01 is locked again by TG01, which user 2 does not hold
         assertEquals(0, park.getTickets().ticketsOf(park.getUsers().findByEmail(email(2))).size());
-        assertThrows(IllegalArgumentException.class, () -> users.delete(email(2), "Clave1!"));
+        assertThrows(ParkException.class, () -> users.delete(email(2), "Clave1!"));
         assertNotNull(park.getUsers().findByEmail(email(2)));
     }
 
