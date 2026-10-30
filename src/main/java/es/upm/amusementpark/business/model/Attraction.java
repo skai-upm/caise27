@@ -25,11 +25,13 @@ public abstract class Attraction {
     public abstract AttractionType getType();
 
     /**
-     * Admits all users of the ticket or none.
+     * Admits all users of the ticket or none, consuming the passes the entry requires ({@code speed} requests the
+     * use of SpeedPasses).
      *
+     * @return the passes consumed by the entry
      * @throws AccessDeniedException if any access condition fails; nothing changes in that case
      */
-    public abstract void enter(AccessTicket ticket, LocalDate today) throws AccessDeniedException;
+    public abstract List<Pass> enter(AccessTicket ticket, boolean speed, LocalDate today) throws AccessDeniedException;
 
     public String getId() {
         return id;

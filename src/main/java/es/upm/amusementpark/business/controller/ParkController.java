@@ -224,7 +224,12 @@ public class ParkController {
         return attractionController.create(id, name, capacity, type);
     }
 
-    public String enterAttraction(String attractionId, String ticketId) {
+    /** Enters with a ticket; {@code option} is {@code null} or {@code SPEED}. */
+    public String enterAttraction(String attractionId, String ticketId, String option) {
+        boolean speed = option != null;
+        if (speed && !option.trim().equals("SPEED")) {
+            return "ERROR: the only entry option is SPEED";
+        }
         Attraction attraction = attractionController.findById(attractionId);
         if (attraction == null) {
             return unknownAttraction(attractionId);
@@ -233,7 +238,7 @@ public class ParkController {
         if (ticket == null) {
             return unknownTicket(ticketId);
         }
-        return attractionController.enter(attraction, ticket, systemDate);
+        return attractionController.enter(attraction, ticket, speed, systemDate);
     }
 
     public String exitAttraction(String attractionId, String ticketId) {

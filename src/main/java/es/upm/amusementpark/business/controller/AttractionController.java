@@ -4,6 +4,7 @@ import es.upm.amusementpark.business.model.AccessDeniedException;
 import es.upm.amusementpark.business.model.AccessTicket;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.validation.UserValidator;
 import es.upm.amusementpark.persistence.AttractionRepository;
@@ -85,13 +86,19 @@ public class AttractionController {
         return "OK: " + type + " attraction " + id + " created";
     }
 
-    public String enter(Attraction attraction, AccessTicket ticket, LocalDate today) {
+    public String enter(Attraction attraction, AccessTicket ticket, boolean speed, LocalDate today) {
+        List<Pass> consumed;
         try {
-            attraction.enter(ticket, today);
+            consumed = attraction.enter(ticket, speed, today);
         } catch (AccessDeniedException e) {
             return "ERROR: " + e.getMessage();
         }
-        return "OK: " + ticket.getUsers().size() + " user(s) entered " + attraction.getId();
+        StringBuilder sb = new StringBuilder("OK: ").append(ticket.getUsers().size()).append(" user(s) entered ")
+                .append(attraction.getId());
+        for (Pass pass : consumed) {
+            sb.append("; consumed ").append(pass.getKind()).append(' ').append(pass.getId());
+        }
+        return sb.toString();
     }
 
     public String exit(Attraction attraction, AccessTicket ticket) {

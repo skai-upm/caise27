@@ -58,9 +58,10 @@ public final class ParkCommands {
                 .register(new CommandDefinition("ATTRACTION CREATE", List.of("ATTRACTION CREATE;IdAtraccion;Nombre;Aforo[;Tipo]"),
                         "Creates an attraction with a maximum capacity; Tipo is GENERAL (default), INDIVIDUAL, GROUP or SPECIAL.",
                         4, 5, p -> park.createAttraction(p[1], p[2], p[3], p.length == 5 ? p[4] : null)))
-                .register(CommandDefinition.of("ATTRACTION ENTER;IdAtraccion;IdTicket",
-                        "Admits the users of a ticket valid today if there is room for all of them.",
-                        p -> park.enterAttraction(p[1], p[2])))
+                .register(new CommandDefinition("ATTRACTION ENTER", List.of("ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]"),
+                        "Admits all users of a ticket valid today if the attraction accepts it and has room; SPEED uses "
+                                + "one SpeedPass per user; SPECIAL attractions consume the ticket's Special Pass.",
+                        3, 4, p -> park.enterAttraction(p[1], p[2], p.length == 4 ? p[3] : null)))
                 .register(CommandDefinition.of("ATTRACTION EXIT;IdAtraccion;IdTicket",
                         "Lets the users of a ticket leave the attraction.",
                         p -> park.exitAttraction(p[1], p[2])))

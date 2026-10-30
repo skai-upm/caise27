@@ -1,6 +1,8 @@
 package es.upm.amusementpark.business.model;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -24,18 +26,37 @@ public abstract class TypedAttraction<T extends AccessTicket> extends Attraction
     }
 
     @Override
-    public final void enter(AccessTicket ticket, LocalDate today) throws AccessDeniedException {
+    public final List<Pass> enter(AccessTicket ticket, boolean speed, LocalDate today) throws AccessDeniedException {
         T typed = accept(ticket).orElseThrow(() -> new AccessDeniedException(
                 getType() + " attraction " + getId() + " does not accept ticket " + ticket.getId()));
-        enterWith(typed, today);
+        if (!typed.isValidOn(today)) {
+            throw new AccessDeniedException("ticket " + typed.getId() + " is not valid today (" + today + ")");
+        }
+        checkRoomFor(typed);
+        List<Pass> passes = requiredPasses(typed, speed);
+        admit(typed.getUsers());
+        for (Pass pass : passes) {
+            pass.consume();
+        }
+        return passes;
     }
 
-    /** Template for typed entry: validity, room, then admission. Subclasses may add requirements. */
-    protected void enterWith(T ticket, LocalDate today) throws AccessDeniedException {
-        if (!ticket.isValidOn(today)) {
-            throw new AccessDeniedException("ticket " + ticket.getId() + " is not valid today (" + today + ")");
+    /**
+     * Passes that the entry consumes, checked before any change. By default no pass is needed, and SPEED entry
+     * needs one unused SpeedPass for every individual ticket admitted.
+     */
+    protected List<Pass> requiredPasses(T ticket, boolean speed) throws AccessDeniedException {
+        List<Pass> passes = new ArrayList<>();
+        if (!speed) {
+            return passes;
         }
-        checkRoomFor(ticket);
-        admit(ticket.getUsers());
+        for (IndividualAccess unit : ticket.getAccessUnits()) {
+            SpeedPass pass = unit.findUnusedSpeedPass();
+            if (pass == null) {
+                throw new AccessDeniedException("ticket " + unit.getId() + " has no unused SpeedPass");
+            }
+            passes.add(pass);
+        }
+        return passes;
     }
 }
