@@ -25,6 +25,7 @@ users.txt
 groups.txt
 tickets.txt
 attractions.txt
+passes.txt
 tmp/
 
 # SDDX run results (contain Sonar credentials in recorded commands)

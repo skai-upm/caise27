@@ -1,23 +1,19 @@
 package es.upm.etsisi.amusementpark;
 
-import es.upm.etsisi.amusementpark.cli.CommandProcessor;
-import es.upm.etsisi.amusementpark.cli.CommandRunner;
-import es.upm.etsisi.amusementpark.controller.ParkController;
+import es.upm.etsisi.amusementpark.persistence.DataDirectory;
+import es.upm.etsisi.amusementpark.persistence.PersistenceException;
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.presentation.CommandRunner;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.stream.Stream;
 
 /**
  * Application entry point.
@@ -31,7 +27,6 @@ public class App {
 
     static final String FLY = "--fly";
     static final String TMP_DIR = "tmp";
-    private static final DateTimeFormatter FLY_DIR_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     public static void main(String[] args) {
         System.exit(run(args, Path.of(""), System.in, System.out));
@@ -44,19 +39,17 @@ public class App {
         try {
             Path dataDir = workDir;
             if (fly) {
-                flyDir = createFlyDirectory(workDir.resolve(TMP_DIR));
+                flyDir = DataDirectory.createTemporary(workDir.resolve(TMP_DIR));
                 dataDir = flyDir;
             }
-            ParkController park = ParkController.getInstance();
-            park.initialize(dataDir);
-            CommandRunner runner = new CommandRunner(new CommandProcessor(park, out));
+            CommandRunner runner = new CommandRunner(ApplicationInitializer.initialize(dataDir, out));
             return rest.length == 0 ? runInteractive(runner, in, out) : runFile(runner, Path.of(rest[0]), out);
-        } catch (IOException | UncheckedIOException e) {
+        } catch (IOException | PersistenceException e) {
             out.println("ERROR: " + e.getMessage());
             return 1;
         } finally {
             if (flyDir != null) {
-                deleteFlyDirectory(flyDir, out);
+                deleteQuietly(flyDir, out);
             }
         }
     }
@@ -78,28 +71,11 @@ public class App {
         return 0;
     }
 
-    static Path createFlyDirectory(Path tmpRoot) throws IOException {
-        String stamp = LocalDateTime.now().format(FLY_DIR_FORMAT);
-        Path dir = tmpRoot.resolve(stamp);
-        for (int n = 1; Files.exists(dir); n++) {
-            dir = tmpRoot.resolve(stamp + "_" + n);
-        }
-        return Files.createDirectories(dir);
-    }
-
-    private static void deleteFlyDirectory(Path dir, PrintStream out) {
-        try (Stream<Path> paths = Files.walk(dir)) {
-            for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) {
-                Files.delete(p);
-            }
-            Path parent = dir.getParent();
-            try (Stream<Path> siblings = Files.list(parent)) {
-                if (siblings.findAny().isEmpty()) {
-                    Files.delete(parent);
-                }
-            }
-        } catch (IOException e) {
-            out.println("ERROR: Could not delete temporary directory " + dir + ": " + e.getMessage());
+    private static void deleteQuietly(Path dir, PrintStream out) {
+        try {
+            DataDirectory.deleteTemporary(dir);
+        } catch (PersistenceException e) {
+            out.println("ERROR: " + e.getMessage());
         }
     }
 }

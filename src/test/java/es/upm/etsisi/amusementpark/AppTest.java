@@ -1,7 +1,9 @@
 package es.upm.etsisi.amusementpark;
 
-import es.upm.etsisi.amusementpark.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.persistence.DataDirectory;
 import org.junit.jupiter.api.Test;
+import org.mindrot.jbcrypt.BCrypt;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
@@ -68,8 +70,7 @@ class AppTest {
         assertEquals(2, output.split("USER UPDATED", -1).length - 1);
         assertTrue(output.contains("USER DELETED"));
         assertTrue(output.contains("USER DELETE;<Email>;<Password>"));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456"),
-                Files.readAllLines(work.resolve("users.txt")));
+        assertStoredAna(work);
     }
 
     @Test
@@ -79,8 +80,7 @@ class AppTest {
 
         assertEquals(0, App.run(new String[0], work, in, out));
 
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456"),
-                Files.readAllLines(work.resolve("users.txt")));
+        assertStoredAna(work);
     }
 
     @Test
@@ -155,11 +155,43 @@ class AppTest {
     @Test
     void flyDirectoryIsTimestampedAndUnique() throws IOException {
         Path root = dir.resolve(App.TMP_DIR);
-        Path first = App.createFlyDirectory(root);
-        Path second = App.createFlyDirectory(root);
+        Path first = DataDirectory.createTemporary(root);
+        Path second = DataDirectory.createTemporary(root);
         assertNotEquals(first, second);
         assertEquals(15, first.getFileName().toString().length());
         assertTrue(Files.isDirectory(second));
+    }
+
+    @Test
+    void flyModeCoversPassesAndTypedAttractions() throws IOException {
+        Path work = Files.createDirectory(dir.resolve("work"));
+        List<String> lines = new java.util.ArrayList<>(PARK);
+        lines.addAll(List.of(
+                "SPEEDPASS CREATE;SP01;T001;10",
+                "SPECIALPASS CREATE;PE01;T001",
+                "ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL",
+                "ATTRACTION ENTER;A04;T001",
+                "INVOICE CREATE;USER;ana@correo.com",
+                "EXIT",
+                "USER CREATE;Luis;Perez;11111111H;luis@correo.com;Clave1!;600000000;1111222233334444"));
+
+        assertEquals(0, App.run(new String[]{App.FLY, commands("d3.txt", lines).toString()}, work, noInput, out));
+
+        String output = output();
+        assertTrue(output.contains("SPECIALPASS CONSUMED: PE01"));
+        assertTrue(output.contains("TOTAL: 160.00 EUR"));
+        assertFalse(output.contains("luis@correo.com"));
+        assertEquals(List.of(), listNames(work));
+    }
+
+    private static void assertStoredAna(Path work) throws IOException {
+        List<String> lines = Files.readAllLines(work.resolve("users.txt"));
+        assertEquals(1, lines.size());
+        String[] f = lines.get(0).split(";", -1);
+        assertEquals(List.of("Ana", "Garcia Lopez", "12345678Z", "ana.nueva@correo.com", "699999999", "1234567890123456"),
+                List.of(f[0], f[1], f[2], f[3], f[5], f[6]));
+        assertFalse(lines.get(0).contains("Clave1!"));
+        assertTrue(BCrypt.checkpw("Clave1!", f[4]));
     }
 
     private static List<String> listNames(Path directory) throws IOException {
