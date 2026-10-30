@@ -12,6 +12,12 @@ import es.upm.amusementpark.persistence.FileGroupRepository;
 import es.upm.amusementpark.persistence.FileTicketRepository;
 import es.upm.amusementpark.persistence.FileUserRepository;
 import es.upm.amusementpark.persistence.StorageLocation;
+import es.upm.amusementpark.presentation.command.CommandRegistry;
+import es.upm.amusementpark.presentation.command.ParkCommands;
+import es.upm.amusementpark.presentation.help.ConciseHelpFormatter;
+import es.upm.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.amusementpark.presentation.help.HelpFormatter;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -26,6 +32,12 @@ public final class ApplicationBootstrap {
     }
 
     public static CommandProcessor start(StorageLocation storage, PrintStream out) throws IOException {
+        return start(storage, out, new ConciseHelpFormatter(), new ExtendedHelpFormatter());
+    }
+
+    /** Starts the application with the given help formatters injected into the help generator. */
+    public static CommandProcessor start(StorageLocation storage, PrintStream out, HelpFormatter conciseHelp,
+            HelpFormatter extendedHelp) throws IOException {
         UserController users = UserController.getInstance();
         users.configure(new FileUserRepository(storage.usersFile()));
 
@@ -44,6 +56,9 @@ public final class ApplicationBootstrap {
         ParkController park = ParkController.getInstance();
         park.configure(users, groups, tickets, attractions, invoices);
 
-        return new CommandProcessor(park, out);
+        CommandRegistry registry = new CommandRegistry();
+        ParkCommands.registerBusinessCommands(registry, park);
+        ParkCommands.registerGeneralCommands(registry, new HelpGenerator(registry, conciseHelp, extendedHelp));
+        return new CommandProcessor(registry, out);
     }
 }
