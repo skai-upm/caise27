@@ -19,3 +19,11 @@ buildNumber.properties
 # OpenSpec
 .claude/
 .sddx/
+
+# Application data
+users.txt
+
+# SDDX / Sonar generated outputs (may contain credentials)
+experiments/
+.scannerwork/
+sonar_metric_catalog.json
