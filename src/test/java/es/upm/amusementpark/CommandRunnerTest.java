@@ -34,8 +34,7 @@ class CommandRunnerTest {
     private String run(String[] args, String stdin) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(bytes, true, StandardCharsets.UTF_8);
-        App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)), out,
-                dir.resolve("users.txt"));
+        App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)), out, dir);
         return bytes.toString(StandardCharsets.UTF_8);
     }
 
@@ -80,7 +79,7 @@ class CommandRunnerTest {
     void missingCommandFileIsReportedInAControlledWay() {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         int status = App.run(new String[] {dir.resolve("nope.txt").toString()}, new ByteArrayInputStream(new byte[0]),
-                new PrintStream(bytes, true, StandardCharsets.UTF_8), dir.resolve("users.txt"));
+                new PrintStream(bytes, true, StandardCharsets.UTF_8), dir);
         assertEquals(1, status);
         assertTrue(bytes.toString(StandardCharsets.UTF_8).startsWith("ERROR: cannot read command file"));
     }

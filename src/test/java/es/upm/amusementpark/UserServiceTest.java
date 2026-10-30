@@ -23,9 +23,9 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         file = dir.resolve("users.txt");
-        repository = new UserRepository(file);
-        repository.load();
-        service = new UserService(repository);
+        Park.getInstance().open(dir);
+        repository = Park.getInstance().getUsers();
+        service = new UserService();
         service.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
     }

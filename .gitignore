@@ -22,3 +22,9 @@ buildNumber.properties
 
 # Amusement Park runtime data
 users.txt
+
+# Amusement Park Delivery 2 data and --fly temporary directories
+groups.txt
+tickets.txt
+attractions.txt
+tmp/

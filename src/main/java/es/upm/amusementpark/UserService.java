@@ -1,16 +1,14 @@
 package es.upm.amusementpark;
 
+import java.util.List;
+
 /**
  * Business rules for user operations. Every rejection is reported with an IllegalArgumentException
  * whose message explains the reason; nothing is changed in that case.
  */
 public class UserService {
 
-    private final UserRepository repository;
-
-    public UserService(UserRepository repository) {
-        this.repository = repository;
-    }
+    private final Park park = Park.getInstance();
 
     public User create(String firstName, String surnames, String dni, String email, String password, String phone,
                        String card) {
@@ -27,6 +25,7 @@ public class UserService {
         if (!UserValidator.isValidCard(card)) {
             throw new IllegalArgumentException("invalid card number (must be exactly 16 digits)");
         }
+        UserRepository repository = park.getUsers();
         if (repository.findByDni(dni) != null) {
             throw new IllegalArgumentException("a user with DNI " + dni + " already exists");
         }
@@ -38,9 +37,30 @@ public class UserService {
         return user;
     }
 
+    /**
+     * Deletes a user who holds no active ticket and belongs to no locked group. The user is removed from their
+     * groups; historical tickets are kept and still refer to the former user.
+     */
     public void delete(String email, String password) {
         User user = authenticate(email, password);
-        repository.remove(user);
+        for (IndividualTicket ticket : park.getTickets().ticketsOf(user)) {
+            if (ticket.isActiveOn(park.getDate())) {
+                throw new IllegalArgumentException("user " + email + " has active ticket " + ticket.getId());
+            }
+        }
+        List<Group> groups = park.getGroups().groupsOf(user);
+        for (Group group : groups) {
+            if (park.isLocked(group)) {
+                throw new IllegalArgumentException("user " + email + " belongs to group " + group.getId()
+                        + ", which is locked by an active group ticket");
+            }
+        }
+        for (Group group : groups) {
+            group.removeMember(user);
+        }
+        park.getGroups().save();
+        park.getUsers().remove(user);
+        park.getTickets().save();
     }
 
     public void update(String email, String password, UserField field, String newValue) {
@@ -52,7 +72,7 @@ public class UserService {
                 if (!UserValidator.isValidEmail(newValue)) {
                     throw new IllegalArgumentException("invalid email " + newValue);
                 }
-                User other = repository.findByEmail(newValue);
+                User other = park.getUsers().findByEmail(newValue);
                 if (other != null && other != user) {
                     throw new IllegalArgumentException("a user with email " + newValue + " already exists");
                 }
@@ -73,11 +93,11 @@ public class UserService {
                 user.setCard(newValue);
             }
         }
-        repository.update(user);
+        park.getUsers().update(user);
     }
 
     private User authenticate(String email, String password) {
-        User user = repository.findByEmail(email);
+        User user = park.getUsers().findByEmail(email);
         if (user == null) {
             throw new IllegalArgumentException("no user with email " + email);
         }

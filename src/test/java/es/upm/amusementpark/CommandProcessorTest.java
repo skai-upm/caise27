@@ -26,8 +26,9 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() {
-        repository = new UserRepository(dir.resolve("users.txt"));
-        processor = new CommandProcessor(new UserService(repository));
+        Park.getInstance().open(dir);
+        repository = Park.getInstance().getUsers();
+        processor = new CommandProcessor();
     }
 
     @Test
@@ -70,11 +71,18 @@ class CommandProcessorTest {
         CommandProcessor.Result result = processor.process("HELP");
         assertFalse(result.exit());
         String help = result.output();
-        assertTrue(help.contains("USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>"));
-        assertTrue(help.contains("USER DELETE;<email>;<password>"));
-        assertTrue(help.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
-        assertTrue(help.contains("HELP"));
-        assertTrue(help.contains("EXIT"));
+        for (String syntax : new String[] {
+                "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+                "USER DELETE;<Email>;<Password>", "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
+                "SYSTEM DATE;<yyyy-MM-dd>", "SYSTEM PRICE;<Price>", "GROUP CREATE;<Identifier>;<Name>",
+                "GROUP ADD;<Identifier>;<Email>", "GROUP REMOVE;<Identifier>;<Email>", "GROUP DELETE;<Identifier>",
+                "TICKET CREATE;<identifier>;<email>;<date>", "TICKET DELETE;<identifier>",
+                "GROUPTICKET CREATE;<identifier>;<group>;<date>", "GROUPTICKET DELETE;<identifier>",
+                "ATTRACTION CREATE;<identifier>;<name>;<capacity>", "ATTRACTION ENTER;<attraction>;<ticket>",
+                "ATTRACTION EXIT;<attraction>;<email>", "ATTRACTION LIST;<attraction>",
+                "ATTRACTION STATUS;<attractionIdentifier>", "HELP", "EXIT"}) {
+            assertTrue(help.contains(syntax), syntax);
+        }
     }
 
     @Test

@@ -1,0 +1,88 @@
+@startuml model
+title Amusement Park - Delivery 2 class model
+hide methods
+skinparam classAttributeIconSize 0
+
+package es.upm.amusementpark {
+
+  class Park <<singleton>> {
+    - {static} instance : Park
+    - date : LocalDate
+    - price : BigDecimal
+  }
+
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    - id : String
+    - name : String
+  }
+
+  abstract class Ticket {
+    - id : String
+    - date : LocalDate
+  }
+
+  class IndividualTicket {
+    - basePrice : BigDecimal
+    - discountPercent : int
+  }
+
+  class GroupTicket {
+  }
+
+  class Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+  }
+
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class AttractionRepository
+}
+
+Park --> "1" UserRepository : users
+Park --> "1" GroupRepository : groups
+Park --> "1" TicketRepository : tickets
+Park --> "1" AttractionRepository : attractions
+
+UserRepository --> "0..*" User : users
+GroupRepository --> "0..*" Group : groups
+TicketRepository --> "0..*" Ticket : tickets
+AttractionRepository --> "0..*" Attraction : attractions
+
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+IndividualTicket --> "1" User : user
+GroupTicket *-- "1..*" IndividualTicket : composition
+GroupTicket --> "0..1" Group : group
+Group --> "0..*" User : members
+Attraction --> "0..*" User : occupants
+
+UserField ..> User : modifiable fields of
+
+note right of GroupTicket
+  price = sum of composition prices
+  composition ids: <groupTicketId>:<dni>
+end note
+@enduml

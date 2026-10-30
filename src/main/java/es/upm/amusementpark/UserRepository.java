@@ -93,6 +93,13 @@ public class UserRepository {
         return null;
     }
 
+    /**
+     * Whether the given user object is a currently registered user.
+     */
+    public boolean contains(User user) {
+        return users.contains(user);
+    }
+
     public void add(User user) {
         users.add(user);
         save();
