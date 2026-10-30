@@ -9,16 +9,16 @@ public class User {
     private String surname;
     private final String dni;
     private String email;
-    private String password;
+    private String passwordHash;
     private String phone;
     private String card;
 
-    public User(String name, String surname, String dni, String email, String password, String phone, String card) {
+    public User(String name, String surname, String dni, String email, String passwordHash, String phone, String card) {
         this.name = name;
         this.surname = surname;
         this.dni = dni;
         this.email = email;
-        this.password = password;
+        this.passwordHash = passwordHash;
         this.phone = phone;
         this.card = card;
     }
@@ -51,12 +51,13 @@ public class User {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    /** Stored password: a BCrypt hash (or a plaintext value written by earlier deliveries). */
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public String getPhone() {

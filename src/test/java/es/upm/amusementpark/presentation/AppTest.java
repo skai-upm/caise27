@@ -58,7 +58,8 @@ class AppTest {
         assertFalse(out.contains("ERROR"));
         List<String> lines = Files.readAllLines(users);
         assertEquals(2, lines.size());
-        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456", lines.get(0));
+        assertTrue(lines.get(0).startsWith("Ana;Garcia Lopez;12345678Z;ana@correo.com;$2a$"));
+        assertTrue(lines.get(0).endsWith(";699999999;1234567890123456"));
     }
 
     @Test
@@ -103,6 +104,11 @@ class AppTest {
         assertEquals(1, Files.readAllLines(users2).size());
     }
 
+    /** Stored lines with the (salted, hence different) password hash field masked. */
+    private static List<String> withoutHashes(Path users) throws IOException {
+        return Files.readAllLines(users).stream().map(l -> l.replaceFirst("^((?:[^;]*;){4})[^;]*", "$1#")).toList();
+    }
+
     @Test
     void sameResultInBothModes() throws IOException {
         List<String> commands = List.of(CREATE_ANA, CREATE_PEDRO, "USER CREATE;Bad", "USER DELETE;pedro@correo.com;Otra2#",
@@ -112,7 +118,7 @@ class AppTest {
         String fileOut = runWithFile(usersFile, commands);
         String stdinOut = runWithStdin(usersStdin, commands);
         assertEquals(fileOut, stdinOut);
-        assertEquals(Files.readAllLines(usersFile), Files.readAllLines(usersStdin));
+        assertEquals(withoutHashes(usersFile), withoutHashes(usersStdin));
     }
 
     @Test

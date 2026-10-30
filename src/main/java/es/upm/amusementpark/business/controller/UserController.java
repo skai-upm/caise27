@@ -2,6 +2,7 @@ package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
+import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.business.validation.UserValidator;
 import es.upm.amusementpark.persistence.UserRepository;
 
@@ -16,6 +17,7 @@ import java.util.List;
 public class UserController {
 
     private UserRepository repository;
+    private PasswordHasher passwordHasher;
     private List<User> users = new ArrayList<>();
 
     private static UserController instance;
@@ -31,9 +33,10 @@ public class UserController {
         return instance;
     }
 
-    /** Injects the repository and loads the stored users. Called at application startup. */
-    public void configure(UserRepository repository) throws IOException {
+    /** Injects the repository and the password hasher and loads the stored users. Called at startup. */
+    public void configure(UserRepository repository, PasswordHasher passwordHasher) throws IOException {
         this.repository = repository;
+        this.passwordHasher = passwordHasher;
         this.users = new ArrayList<>(repository.load());
     }
 
@@ -70,7 +73,7 @@ public class UserController {
         if (findByEmail(email) != null) {
             return "ERROR: a user with email " + email + " already exists";
         }
-        User user = new User(name, surname, dni, email, password, phone, card);
+        User user = new User(name, surname, dni, email, passwordHasher.hash(password), phone, card);
         users.add(user);
         if (!persist()) {
             users.remove(user);
@@ -108,7 +111,8 @@ public class UserController {
         if (error != null) {
             return error;
         }
-        String oldValue = apply(user, field, newValue);
+        String stored = field == UserField.PASSWORD ? passwordHasher.hash(newValue) : newValue;
+        String oldValue = apply(user, field, stored);
         if (!persist()) {
             apply(user, field, oldValue);
             return "ERROR: could not save users";
@@ -155,8 +159,8 @@ public class UserController {
                 user.setEmail(value);
                 break;
             case PASSWORD:
-                old = user.getPassword();
-                user.setPassword(value);
+                old = user.getPasswordHash();
+                user.setPasswordHash(value);
                 break;
             case PHONE:
                 old = user.getPhone();
@@ -175,7 +179,7 @@ public class UserController {
     /** Returns the user with that email and password, or {@code null}. */
     public User authenticate(String email, String password) {
         User user = findByEmail(email);
-        if (user == null || !user.getPassword().equals(password)) {
+        if (user == null || !passwordHasher.matches(password, user.getPasswordHash())) {
             return null;
         }
         return user;

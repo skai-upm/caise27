@@ -37,7 +37,7 @@ class UserTest {
         assertEquals("Garcia Lopez", u.getSurname());
         assertEquals("12345678Z", u.getDni());
         assertEquals("ana@correo.com", u.getEmail());
-        assertEquals("Clave1!", u.getPassword());
+        assertEquals("Clave1!", u.getPasswordHash());
         assertEquals("699999999", u.getPhone());
         assertEquals("1234567890123456", u.getCard());
     }

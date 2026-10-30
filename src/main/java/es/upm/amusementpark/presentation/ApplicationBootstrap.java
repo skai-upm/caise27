@@ -7,6 +7,8 @@ import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.controller.TicketController;
 import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.invoice.TextInvoiceBuilder;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.FileAttractionRepository;
 import es.upm.amusementpark.persistence.FileGroupRepository;
 import es.upm.amusementpark.persistence.FileTicketRepository;
@@ -32,14 +34,20 @@ public final class ApplicationBootstrap {
     }
 
     public static CommandProcessor start(StorageLocation storage, PrintStream out) throws IOException {
-        return start(storage, out, new ConciseHelpFormatter(), new ExtendedHelpFormatter());
+        return start(storage, out, new BCryptPasswordHasher(), new ConciseHelpFormatter(), new ExtendedHelpFormatter());
     }
 
     /** Starts the application with the given help formatters injected into the help generator. */
     public static CommandProcessor start(StorageLocation storage, PrintStream out, HelpFormatter conciseHelp,
             HelpFormatter extendedHelp) throws IOException {
+        return start(storage, out, new BCryptPasswordHasher(), conciseHelp, extendedHelp);
+    }
+
+    /** Starts the application injecting the given password hasher and help formatters. */
+    public static CommandProcessor start(StorageLocation storage, PrintStream out, PasswordHasher passwordHasher,
+            HelpFormatter conciseHelp, HelpFormatter extendedHelp) throws IOException {
         UserController users = UserController.getInstance();
-        users.configure(new FileUserRepository(storage.usersFile()));
+        users.configure(new FileUserRepository(storage.usersFile()), passwordHasher);
 
         GroupController groups = GroupController.getInstance();
         groups.configure(new FileGroupRepository(storage.groupsFile()), users);

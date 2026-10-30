@@ -31,7 +31,7 @@ class UserControllerTest {
 
     private static UserController configured(Path file) throws IOException {
         UserController controller = UserController.getInstance();
-        controller.configure(new FileUserRepository(file));
+        controller.configure(new FileUserRepository(file), ParkTestSupport.HASHER);
         return controller;
     }
 
@@ -52,8 +52,10 @@ class UserControllerTest {
     @Test
     void validCreateIsPersisted() throws IOException {
         assertTrue(createAna().startsWith("OK"));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
-                Files.readAllLines(file));
+        List<String> lines = Files.readAllLines(file);
+        assertEquals(1, lines.size());
+        assertTrue(lines.get(0).startsWith("Ana;Garcia Lopez;12345678Z;ana@correo.com;$2a$"));
+        assertTrue(lines.get(0).endsWith(";612345678;1234567890123456"));
     }
 
     @Test
@@ -105,7 +107,7 @@ class UserControllerTest {
         assertEquals("Garcia", u.getSurname());
         assertEquals("699999999", u.getPhone());
         assertEquals("ana.nueva@correo.com", u.getEmail());
-        assertEquals("Nueva2#", u.getPassword());
+        assertTrue(ParkTestSupport.HASHER.matches("Nueva2#", u.getPasswordHash()));
         assertEquals("9999888877776666", u.getCard());
         assertEquals("12345678Z", u.getDni());
     }
@@ -135,7 +137,7 @@ class UserControllerTest {
         assertTrue(service.update("ana@correo.com", "Clave1!", "DNI", "87654321X").startsWith("ERROR"));
         assertTrue(service.update("ana@correo.com", "Clave1!", "COLOR", "red").startsWith("ERROR"));
         User u = restart().getUsers().get(0);
-        assertEquals("Clave1!", u.getPassword());
+        assertTrue(ParkTestSupport.HASHER.matches("Clave1!", u.getPasswordHash()));
         assertEquals("1234567890123456", u.getCard());
         assertEquals("12345678Z", u.getDni());
     }
