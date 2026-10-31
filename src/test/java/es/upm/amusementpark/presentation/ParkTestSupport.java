@@ -42,7 +42,7 @@ abstract class ParkTestSupport {
     void restart() throws IOException {
         ApplicationContext.stop();
         park = ApplicationContext.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
-        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = ApplicationContext.commandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     /** Executes one command and returns what it printed, without the trailing line break. */

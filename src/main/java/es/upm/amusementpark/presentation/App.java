@@ -69,7 +69,7 @@ public class App {
             return 1;
         }
         try {
-            return readCommands(args, in, err, new CommandProcessor(park, out));
+            return readCommands(args, in, err, ApplicationContext.commandProcessor(park, out));
         } finally {
             ApplicationContext.stop();
         }

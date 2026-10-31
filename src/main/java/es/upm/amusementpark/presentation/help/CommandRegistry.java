@@ -1,0 +1,58 @@
+package es.upm.amusementpark.presentation.help;
+
+import java.util.List;
+
+/** The commands supported by the application, in the order help lists them. */
+public final class CommandRegistry {
+
+    private final List<CommandInfo> commands;
+
+    public CommandRegistry(List<CommandInfo> commands) {
+        this.commands = List.copyOf(commands);
+    }
+
+    public List<CommandInfo> getCommands() {
+        return commands;
+    }
+
+    /** Registry of every command the command processor executes. */
+    public static CommandRegistry standard() {
+        return new CommandRegistry(List.of(
+                new CommandInfo("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+                        "Registers a user after validating DNI, email, password and card; DNI and email must be unique."),
+                new CommandInfo("USER DELETE;Correo;Contraseña",
+                        "Deletes an authenticated user that holds no ticket dated today or later."),
+                new CommandInfo("USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+                        "Changes NAME, SURNAME, EMAIL, PASSWORD, PHONE or CARD of an authenticated user."),
+                new CommandInfo("SYSTEM DATE;yyyy-MM-dd",
+                        "Sets the simulated current date used by every date rule."),
+                new CommandInfo("SYSTEM PRICE;Precio",
+                        "Sets the base individual ticket price for new purchases."),
+                new CommandInfo("GROUP CREATE;IdGrupo;Nombre", "Creates an empty group."),
+                new CommandInfo("GROUP ADD;IdGrupo;Correo", "Adds a registered user to a group that is not locked."),
+                new CommandInfo("GROUP REMOVE;IdGrupo;Correo", "Removes a member from a group that is not locked."),
+                new CommandInfo("GROUP DELETE;IdGrupo", "Deletes a group that is not locked; its users are kept."),
+                new CommandInfo("TICKET CREATE;IdTicket;Correo;yyyy-MM-dd",
+                        "Buys an individual ticket for a user at the current base price."),
+                new CommandInfo("TICKET DELETE;IdTicket",
+                        "Refunds an individual ticket dated after the system date."),
+                new CommandInfo("GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd",
+                        "Buys one ticket per group member with a discount by group size."),
+                new CommandInfo("GROUPTICKET DELETE;IdTicket",
+                        "Refunds a group ticket dated after the system date together with its member tickets."),
+                new CommandInfo("ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad", "Creates an attraction."),
+                new CommandInfo("ATTRACTION ENTER;IdAtraccion;IdTicket",
+                        "Admits the users of a ticket valid today if there is room for all of them."),
+                new CommandInfo("ATTRACTION EXIT;IdAtraccion;IdTicket",
+                        "Lets the users of the ticket present in the attraction leave."),
+                new CommandInfo("ATTRACTION STATUS;IdAtraccion",
+                        "Shows capacity, occupancy, available places and users present."),
+                new CommandInfo("INVOICE CREATE;USER;Correo",
+                        "Shows the invoice of a user's directly bought tickets."),
+                new CommandInfo("INVOICE CREATE;GROUP;IdGrupo",
+                        "Shows the invoice of a group's group tickets."),
+                new CommandInfo("HELP", "Lists the syntax of every command."),
+                new CommandInfo("HELP EXTENDED", "Lists the syntax and a description of every command."),
+                new CommandInfo("EXIT", "Ends the execution.")));
+    }
+}

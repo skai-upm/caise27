@@ -70,13 +70,21 @@ class SystemSettingsTest extends ParkTestSupport {
     }
 
     @Test
+    void extendedHelpAddsDescriptions() {
+        String help = run("HELP EXTENDED");
+        assertTrue(help.contains("INVOICE CREATE;USER;Correo"));
+        assertTrue(help.contains("Sets the simulated current date used by every date rule."));
+        assertTrue(error(run("HELP EXTENDED;x")));
+    }
+
+    @Test
     void helpListsEveryCommand() {
         String help = run("HELP");
         for (String command : new String[] {"USER CREATE;", "USER DELETE;", "USER UPDATE;",
                 "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;", "GROUP CREATE;", "GROUP ADD;", "GROUP REMOVE;",
                 "GROUP DELETE;", "TICKET CREATE;", "TICKET DELETE;", "GROUPTICKET CREATE;",
                 "GROUPTICKET DELETE;", "ATTRACTION CREATE;", "ATTRACTION ENTER;", "ATTRACTION EXIT;",
-                "ATTRACTION STATUS;", "HELP", "EXIT"}) {
+                "ATTRACTION STATUS;", "INVOICE CREATE;USER;", "INVOICE CREATE;GROUP;", "HELP", "HELP EXTENDED", "EXIT"}) {
             assertTrue(help.contains(command), command);
         }
     }

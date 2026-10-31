@@ -38,7 +38,7 @@ class CommandProcessorTest {
         buffer = new ByteArrayOutputStream();
         ParkController park = ApplicationContext.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
         manager = park.getUsers();
-        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = ApplicationContext.commandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     @AfterEach

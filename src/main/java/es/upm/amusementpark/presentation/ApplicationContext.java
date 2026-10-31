@@ -12,8 +12,13 @@ import es.upm.amusementpark.persistence.FileGroupRepository;
 import es.upm.amusementpark.persistence.FileTicketRepository;
 import es.upm.amusementpark.persistence.FileUserRepository;
 import es.upm.amusementpark.persistence.StoragePaths;
+import es.upm.amusementpark.presentation.help.CommandRegistry;
+import es.upm.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
+import es.upm.amusementpark.presentation.help.SyntaxHelpFormatter;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.time.LocalDate;
 
 /**
@@ -41,6 +46,14 @@ public final class ApplicationContext {
             stop();
             throw e;
         }
+    }
+
+    /** Creates the command processor with its help generators and output format behaviors injected. */
+    public static CommandProcessor commandProcessor(ParkController park, PrintStream out) {
+        CommandRegistry registry = CommandRegistry.standard();
+        return new CommandProcessor(park, out,
+                new HelpGenerator(registry, new SyntaxHelpFormatter()),
+                new HelpGenerator(registry, new ExtendedHelpFormatter()));
     }
 
     /** Ends the execution's controller instances. */
