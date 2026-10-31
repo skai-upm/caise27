@@ -11,6 +11,7 @@ import es.upm.amusementpark.business.repository.TicketRepository;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -116,9 +117,11 @@ public class FileTicketRepository implements TicketRepository {
                     groupTicket.getPrice().toPlainString(), groupTicket.getGroup().getId(),
                     groupTicket.getGroup().getName()});
         }
-        TextFileStore.writeRecords(paths.tickets(), ticketRecords);
-        TextFileStore.writeRecords(paths.groupTickets(), groupRecords);
-        TextFileStore.writeRecords(paths.passes(), passRecords);
+        Map<Path, List<String[]>> files = new LinkedHashMap<>();
+        files.put(paths.passes(), passRecords);
+        files.put(paths.tickets(), ticketRecords);
+        files.put(paths.groupTickets(), groupRecords);
+        TextFileStore.writeAll(files);
     }
 
     private static void addTicket(IndividualTicket ticket, String owner, List<String[]> tickets,

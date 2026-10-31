@@ -78,6 +78,21 @@ class FlyModeTest {
     }
 
     @Test
+    void flyIsolatesDelivery3Data() throws IOException {
+        String script = String.join("\n", "SYSTEM DATE;2026-10-01", ParkTestSupport.ANA,
+                "TICKET CREATE;T001;ana@correo.com;2026-10-01", "SPEEDPASS CREATE;T001;10",
+                "SPECIALPASS CREATE;T001", "ATTRACTION CREATE;SPE;Especial;5;SPECIAL",
+                "ATTRACTION ENTER;SPE;T001", "EXIT") + "\n";
+        assertEquals(0, run(dir, script, App.FLY));
+        assertTrue(output().contains("OK SPEEDPASS CREATED -> 80.00"));
+        assertTrue(output().contains("consumed: Special Pass T001-SPECIAL"));
+        assertFalse(Files.exists(dir.resolve("passes.txt")));
+        assertFalse(Files.exists(dir.resolve("tickets.txt")));
+        assertFalse(Files.exists(dir.resolve("attractions.txt")));
+        assertEquals(0, runDirectories());
+    }
+
+    @Test
     void flyStartsFromEmptyStorage() {
         run(dir, ParkTestSupport.ANA + "\n");
         run(dir, ParkTestSupport.ANA + "\n", App.FLY);
