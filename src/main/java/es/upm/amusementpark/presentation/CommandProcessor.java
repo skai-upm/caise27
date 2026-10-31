@@ -214,9 +214,20 @@ public class CommandProcessor {
                 ok("attraction " + p[1] + CREATED);
             }
             case "ATTRACTION ENTER" -> {
-                checkParameters(operation, p, 2);
-                park.enterAttraction(p[1], p[2]);
-                ok(TICKET + p[2] + " entered attraction " + p[1]);
+                boolean speed = p.length == 4;
+                if (speed) {
+                    if (!p[3].equals("SPEED")) {
+                        throw new IllegalArgumentException("the only ATTRACTION ENTER option is SPEED");
+                    }
+                } else {
+                    checkParameters(operation, p, 2);
+                }
+                List<String> consumed = new ArrayList<>();
+                for (Pass pass : park.enterAttraction(p[1], p[2], speed)) {
+                    consumed.add(pass.getKind() + " " + pass.getId());
+                }
+                ok(TICKET + p[2] + " entered attraction " + p[1]
+                        + (consumed.isEmpty() ? "" : " (consumed: " + String.join(", ", consumed) + ")"));
             }
             case "ATTRACTION EXIT" -> {
                 checkParameters(operation, p, 2);

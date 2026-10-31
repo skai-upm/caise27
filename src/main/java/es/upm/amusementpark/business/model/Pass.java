@@ -31,6 +31,11 @@ public abstract class Pass {
         consumed = true;
     }
 
+    /** Undoes {@link #consume()} when the entry that used the pass could not be saved. */
+    public void release() {
+        consumed = false;
+    }
+
     /** Short name of the pass kind, as shown to users. */
     public abstract String getKind();
 }

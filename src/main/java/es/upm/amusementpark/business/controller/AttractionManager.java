@@ -2,6 +2,7 @@ package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.repository.AttractionRepository;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
@@ -85,9 +86,9 @@ public class AttractionManager {
         return attraction;
     }
 
-    /** Admits every user of the ticket, or nobody; the attraction applies its type rules. */
-    public void enter(Attraction<?> attraction, Ticket ticket, LocalDate today) {
-        attraction.enter(ticket, today);
+    /** Admits every user of the ticket, or nobody; returns the passes consumed by the entry. */
+    public List<Pass> enter(Attraction<?> attraction, Ticket ticket, LocalDate today, boolean speed) {
+        return attraction.enter(ticket, today, speed);
     }
 
     /** Lets the present users of the ticket leave; the ticket date is not checked. */

@@ -232,6 +232,11 @@ public class TicketManager {
         }
     }
 
+    /** Persists pass consumption after an attraction entry. */
+    public void savePassStates() throws IOException {
+        save();
+    }
+
     /** Finds a pass by id among every individual ticket, or returns {@code null}. */
     public OwnedPass findPass(String passId) {
         for (IndividualTicket ticket : individualTicketsIncludingConstituents()) {

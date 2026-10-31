@@ -2,11 +2,14 @@ package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.invoice.InvoiceService;
+import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
+import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
 import static es.upm.amusementpark.business.rules.Checks.require;
@@ -171,8 +174,25 @@ public class ParkController {
         attractions.create(id, name, capacity, type);
     }
 
-    public void enterAttraction(String attractionId, String ticketId) {
-        attractions.enter(attractions.get(attractionId), tickets.get(ticketId), systemDate);
+    /**
+     * Lets a ticket enter an attraction, optionally with SpeedPasses, and
+     * returns the passes consumed. If their new state cannot be saved the
+     * entry is undone.
+     */
+    public List<Pass> enterAttraction(String attractionId, String ticketId, boolean speed) throws IOException {
+        Attraction<?> attraction = attractions.get(attractionId);
+        Ticket ticket = tickets.get(ticketId);
+        List<Pass> consumed = attractions.enter(attraction, ticket, systemDate, speed);
+        if (!consumed.isEmpty()) {
+            try {
+                tickets.savePassStates();
+            } catch (IOException e) {
+                ticket.getHolders().forEach(attraction::leave);
+                consumed.forEach(Pass::release);
+                throw e;
+            }
+        }
+        return consumed;
     }
 
     public int exitAttraction(String attractionId, String ticketId) {

@@ -42,8 +42,9 @@ public final class CommandRegistry {
                         "Refunds a group ticket dated after the system date together with its member tickets."),
                 new CommandInfo("ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;Tipo]",
                         "Creates an attraction of type GENERAL (default), INDIVIDUAL, GROUP or SPECIAL."),
-                new CommandInfo("ATTRACTION ENTER;IdAtraccion;IdTicket",
-                        "Admits the users of a ticket valid today if there is room for all of them."),
+                new CommandInfo("ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]",
+                        "Admits the users of a ticket valid today if there is room for all of them; SPEED uses one "
+                                + "SpeedPass per user and SPECIAL attractions use the ticket's Special Pass."),
                 new CommandInfo("ATTRACTION EXIT;IdAtraccion;IdTicket",
                         "Lets the users of the ticket present in the attraction leave."),
                 new CommandInfo("ATTRACTION STATUS;IdAtraccion",

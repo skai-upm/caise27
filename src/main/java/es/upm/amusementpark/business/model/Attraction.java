@@ -63,9 +63,12 @@ public abstract class Attraction<T extends AccessTicket> {
 
     /**
      * Admits every user of the ticket, or nobody: the ticket kind, its date,
-     * the users already present and the capacity are all checked first.
+     * the users already present, the capacity and the passes required are all
+     * checked before anything changes. Returns the passes consumed.
+     *
+     * @param speed whether the SpeedPass fast lane is requested
      */
-    public void enter(AccessTicket ticket, LocalDate today) {
+    public List<Pass> enter(AccessTicket ticket, LocalDate today, boolean speed) {
         require(admits(ticket), getType() + " attraction " + id + " does not admit ticket " + ticket.getId());
         T typed = admitted.cast(ticket);
         require(typed.isValidOn(today), "ticket " + typed.getId() + " is not valid on " + today);
@@ -78,7 +81,26 @@ public abstract class Attraction<T extends AccessTicket> {
         }
         require(users.size() <= getAvailablePlaces(), "not enough places in " + id
                 + " (" + getAvailablePlaces() + " available, " + users.size() + " requested)");
+        List<Pass> passes = passesToConsume(typed, speed);
         visitors.addAll(users);
+        passes.forEach(Pass::consume);
+        return passes;
+    }
+
+    /**
+     * Passes the entry will consume; rejects the entry if one is missing.
+     * By default SPEED needs one unused SpeedPass for every admitted ticket.
+     */
+    protected List<Pass> passesToConsume(T ticket, boolean speed) {
+        List<Pass> passes = new ArrayList<>();
+        if (speed) {
+            for (IndividualTicket access : ticket.getAccessTickets()) {
+                SpeedPass pass = access.findUnusedSpeedPass();
+                require(pass != null, "ticket " + access.getId() + " has no unused SpeedPass");
+                passes.add(pass);
+            }
+        }
+        return passes;
     }
 
     public void leave(User user) {
