@@ -47,7 +47,7 @@ While a group has any group ticket dated on or after the system date, `GROUP ADD
 - **THEN** `GROUP ADD`, `GROUP REMOVE` and `GROUP DELETE` on `G01` are accepted again
 
 ### Requirement: GROUPTICKET DELETE command
-`GROUPTICKET DELETE;<id>` SHALL delete the group ticket and all its constituent tickets only when its date is strictly later than the system date; otherwise, or for an unknown identifier, it SHALL be rejected leaving every ticket unchanged.
+`GROUPTICKET DELETE;<id>` SHALL delete, only when its date is strictly later than the system date, the passes of every constituent ticket, then the constituent tickets, then the group ticket, as one operation; otherwise, or for an unknown identifier, it SHALL be rejected leaving every ticket and pass unchanged. A failure while saving SHALL leave neither memory nor files partially deleted.
 
 #### Scenario: All-or-nothing deletion
 - **WHEN** future group ticket `TG01` with two constituents is deleted
@@ -56,6 +56,10 @@ While a group has any group ticket dated on or after the system date, `GROUP ADD
 #### Scenario: Current group ticket not deleted
 - **WHEN** `TG01` is dated on the system date and `GROUPTICKET DELETE;TG01` is executed
 - **THEN** an error is reported and `TG01` and its constituents remain
+
+#### Scenario: Constituent passes removed
+- **WHEN** constituents of future `TG01` hold SpeedPasses and `GROUPTICKET DELETE;TG01` succeeds
+- **THEN** after a restart no pass of `TG01-1` or `TG01-2` exists
 
 ### Requirement: Group ticket persistence
 Group tickets SHALL be persisted after every change and restored at startup with their identifier, date, price, group and constituent tickets linked to the restored users. A historical group ticket SHALL be kept even if its group is later deleted, retaining the group identifier and name.
