@@ -9,7 +9,7 @@ import java.util.List;
  * users a ticket admits are expressed here so that callers can handle every
  * ticket type uniformly.
  */
-public abstract class Ticket {
+public abstract class Ticket implements AccessTicket {
 
     private final String id;
     private final LocalDate date;
@@ -21,6 +21,7 @@ public abstract class Ticket {
         this.price = price;
     }
 
+    @Override
     public String getId() {
         return id;
     }
@@ -42,6 +43,7 @@ public abstract class Ticket {
     }
 
     /** Usable to enter an attraction on the given date. */
+    @Override
     public boolean isValidOn(LocalDate today) {
         return date.equals(today);
     }

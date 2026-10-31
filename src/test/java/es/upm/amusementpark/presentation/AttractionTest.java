@@ -29,7 +29,7 @@ class AttractionTest extends ParkTestSupport {
         run("GROUPTICKET CREATE;TG01;G01;2026-10-01");
     }
 
-    private Attraction a01() {
+    private Attraction<?> a01() {
         return park.getAttractions().find("A01");
     }
 

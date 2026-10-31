@@ -8,6 +8,7 @@ import es.upm.amusementpark.business.invoice.InvoiceSection;
 import es.upm.amusementpark.business.model.Pass;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
@@ -204,8 +205,12 @@ public class CommandProcessor {
     private void attraction(String operation, String[] p) throws IOException {
         switch (operation) {
             case "ATTRACTION CREATE" -> {
-                checkParameters(operation, p, 3);
-                park.createAttraction(p[1], p[2], p[3]);
+                if (p.length == 5) {
+                    park.createAttraction(p[1], p[2], p[3], p[4]);
+                } else {
+                    checkParameters(operation, p, 3);
+                    park.createAttraction(p[1], p[2], p[3], AttractionType.GENERAL.name());
+                }
                 ok("attraction " + p[1] + CREATED);
             }
             case "ATTRACTION ENTER" -> {
@@ -272,13 +277,13 @@ public class CommandProcessor {
         return String.join(System.lineSeparator(), lines);
     }
 
-    static String status(Attraction attraction) {
+    static String status(Attraction<?> attraction) {
         List<String> present = new ArrayList<>();
         for (User user : attraction.getVisitors()) {
             present.add(user.getName() + " " + user.getSurname() + " <" + user.getEmail() + ">");
         }
         return String.join(System.lineSeparator(),
-                "Attraction: " + attraction.getId() + " - " + attraction.getName(),
+                "Attraction: " + attraction.getId() + " - " + attraction.getName() + " (" + attraction.getType() + ")",
                 "Capacity: " + attraction.getCapacity(),
                 "Users present: " + attraction.getVisitors().size(),
                 "Available places: " + attraction.getAvailablePlaces(),

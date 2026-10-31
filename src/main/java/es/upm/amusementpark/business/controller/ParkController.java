@@ -167,8 +167,8 @@ public class ParkController {
         tickets.deleteGroup(id, systemDate);
     }
 
-    public void createAttraction(String id, String name, String capacity) throws IOException {
-        attractions.create(id, name, capacity);
+    public void createAttraction(String id, String name, String capacity, String type) throws IOException {
+        attractions.create(id, name, capacity, type);
     }
 
     public void enterAttraction(String attractionId, String ticketId) {

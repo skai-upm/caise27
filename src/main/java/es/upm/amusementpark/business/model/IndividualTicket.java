@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 /** A ticket for a single user. It owns the personal passes bought for it. */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final User user;
     private final List<SpeedPass> speedPasses = new ArrayList<>();
@@ -19,6 +19,7 @@ public class IndividualTicket extends Ticket {
         this.user = user;
     }
 
+    @Override
     public User getUser() {
         return user;
     }
@@ -26,6 +27,11 @@ public class IndividualTicket extends Ticket {
     @Override
     public List<User> getHolders() {
         return List.of(user);
+    }
+
+    @Override
+    public List<IndividualTicket> getAccessTickets() {
+        return List.of(this);
     }
 
     public List<SpeedPass> getSpeedPasses() {
@@ -50,6 +56,7 @@ public class IndividualTicket extends Ticket {
         return null;
     }
 
+    @Override
     public SpecialPass getSpecialPass() {
         return specialPass;
     }

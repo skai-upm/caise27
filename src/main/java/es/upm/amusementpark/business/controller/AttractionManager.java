@@ -1,6 +1,7 @@
 package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.repository.AttractionRepository;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
@@ -39,19 +40,19 @@ public class AttractionManager {
     }
 
     private final AttractionRepository repository;
-    private final List<Attraction> attractions;
+    private final List<Attraction<?>> attractions;
 
     private AttractionManager(AttractionRepository repository) throws IOException {
         this.repository = repository;
         this.attractions = repository.loadAll();
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         return Collections.unmodifiableList(attractions);
     }
 
-    public Attraction find(String id) {
-        for (Attraction attraction : attractions) {
+    public Attraction<?> find(String id) {
+        for (Attraction<?> attraction : attractions) {
             if (attraction.getId().equals(id)) {
                 return attraction;
             }
@@ -60,18 +61,20 @@ public class AttractionManager {
     }
 
     /** Returns the attraction with that id or rejects the operation. */
-    public Attraction get(String id) {
-        Attraction attraction = find(id);
+    public Attraction<?> get(String id) {
+        Attraction<?> attraction = find(id);
         require(attraction != null, "attraction " + id + " does not exist");
         return attraction;
     }
 
-    public Attraction create(String id, String name, String capacity) throws IOException {
+    public Attraction<?> create(String id, String name, String capacity, String type) throws IOException {
         require(UserValidator.isNotBlank(id), "attraction id must not be empty");
         require(UserValidator.isNotBlank(name), "attraction name must not be empty");
         require(find(id) == null, "attraction " + id + " already exists");
         int places = parseCapacity(capacity);
-        Attraction attraction = new Attraction(id, name, places);
+        AttractionType attractionType = AttractionType.fromName(type);
+        require(attractionType != null, "attraction type must be GENERAL, INDIVIDUAL, GROUP or SPECIAL");
+        Attraction<?> attraction = attractionType.create(id, name, places);
         attractions.add(attraction);
         try {
             repository.saveAll(attractions);
@@ -82,20 +85,13 @@ public class AttractionManager {
         return attraction;
     }
 
-    /** Admits every user of the ticket, or nobody. */
-    public void enter(Attraction attraction, Ticket ticket, LocalDate today) {
-        require(ticket.isValidOn(today), "ticket " + ticket.getId() + " is not valid on " + today);
-        List<User> users = ticket.getHolders();
-        for (User user : users) {
-            require(!attraction.isPresent(user), "user " + user.getEmail() + " is already in " + attraction.getId());
-        }
-        require(users.size() <= attraction.getAvailablePlaces(), "not enough places in " + attraction.getId()
-                + " (" + attraction.getAvailablePlaces() + " available, " + users.size() + " requested)");
-        attraction.enter(users);
+    /** Admits every user of the ticket, or nobody; the attraction applies its type rules. */
+    public void enter(Attraction<?> attraction, Ticket ticket, LocalDate today) {
+        attraction.enter(ticket, today);
     }
 
     /** Lets the present users of the ticket leave; the ticket date is not checked. */
-    public int exit(Attraction attraction, Ticket ticket) {
+    public int exit(Attraction<?> attraction, Ticket ticket) {
         List<User> present = new ArrayList<>();
         for (User user : ticket.getHolders()) {
             if (attraction.isPresent(user)) {
@@ -111,7 +107,7 @@ public class AttractionManager {
 
     /** Removes a deleted user from every attraction. */
     public void removeFromAll(User user) {
-        for (Attraction attraction : attractions) {
+        for (Attraction<?> attraction : attractions) {
             attraction.leave(user);
         }
     }

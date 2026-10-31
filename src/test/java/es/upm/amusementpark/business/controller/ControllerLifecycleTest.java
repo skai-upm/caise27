@@ -72,12 +72,12 @@ class ControllerLifecycleTest {
 
     static class EmptyAttractionRepository implements AttractionRepository {
         @Override
-        public List<Attraction> loadAll() {
+        public List<Attraction<?>> loadAll() {
             return new ArrayList<>();
         }
 
         @Override
-        public void saveAll(Collection<Attraction> attractions) {
+        public void saveAll(Collection<Attraction<?>> attractions) {
             // nothing stored
         }
     }
