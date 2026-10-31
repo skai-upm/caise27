@@ -63,13 +63,19 @@ public class App {
                                StoragePaths paths) {
         ParkController park;
         try {
-            park = new ParkController(paths, LocalDate.now(ZoneId.systemDefault()));
+            park = ApplicationContext.start(paths, LocalDate.now(ZoneId.systemDefault()));
         } catch (IOException e) {
             err.println("ERROR: cannot load data from " + paths.directory() + ": " + e.getMessage());
             return 1;
         }
-        CommandProcessor processor = new CommandProcessor(park, out);
+        try {
+            return readCommands(args, in, err, new CommandProcessor(park, out));
+        } finally {
+            ApplicationContext.stop();
+        }
+    }
 
+    private static int readCommands(String[] args, InputStream in, PrintStream err, CommandProcessor processor) {
         if (args.length == 0) {
             return execute(new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8)),
                     processor, err, "standard input");

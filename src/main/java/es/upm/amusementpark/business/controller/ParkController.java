@@ -2,17 +2,10 @@ package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.invoice.InvoiceService;
-import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
-
-import es.upm.amusementpark.persistence.AttractionRepository;
 import es.upm.amusementpark.business.model.Group;
-import es.upm.amusementpark.persistence.GroupRepository;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
-import es.upm.amusementpark.persistence.StoragePaths;
-import es.upm.amusementpark.persistence.TicketRepository;
 import es.upm.amusementpark.business.model.User;
-import es.upm.amusementpark.persistence.UserRepository;
 
 import static es.upm.amusementpark.business.rules.Checks.require;
 
@@ -31,6 +24,8 @@ import java.time.format.ResolverStyle;
  */
 public class ParkController {
 
+    private static final SingletonSlot<ParkController> INSTANCE = new SingletonSlot<>("ParkController");
+
     static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
 
     private static final DateTimeFormatter DATE_FORMAT =
@@ -40,16 +35,38 @@ public class ParkController {
     private final GroupManager groups;
     private final TicketManager tickets;
     private final AttractionManager attractions;
-    private final InvoiceService invoices = new InvoiceService(StandardInvoiceBuilder::new);
+    private final InvoiceService invoices;
     private LocalDate systemDate;
     private BigDecimal basePrice = DEFAULT_PRICE;
 
-    public ParkController(StoragePaths paths, LocalDate startDate) throws IOException {
+    private ParkController(UserManager users, GroupManager groups, TicketManager tickets,
+                           AttractionManager attractions, InvoiceService invoices, LocalDate startDate) {
+        this.users = users;
+        this.groups = groups;
+        this.tickets = tickets;
+        this.attractions = attractions;
+        this.invoices = invoices;
         this.systemDate = startDate;
-        this.users = new UserManager(new UserRepository(paths.users()));
-        this.groups = new GroupManager(new GroupRepository(paths.groups()), users);
-        this.tickets = new TicketManager(new TicketRepository(paths), users::findByDni, groups::find);
-        this.attractions = new AttractionManager(new AttractionRepository(paths.attractions()));
+    }
+
+    /**
+     * Creates the single park controller for this execution. Its collaborating
+     * controllers and services are created at startup and injected here.
+     */
+    public static ParkController initialize(UserManager users, GroupManager groups, TicketManager tickets,
+                                            AttractionManager attractions, InvoiceService invoices,
+                                            LocalDate startDate) throws IOException {
+        return INSTANCE.initialize(() -> new ParkController(users, groups, tickets, attractions, invoices, startDate));
+    }
+
+    /** Returns the instance created by {@link #initialize}. */
+    public static ParkController getInstance() {
+        return INSTANCE.get();
+    }
+
+    /** Discards the instance at the end of an execution. */
+    public static void reset() {
+        INSTANCE.reset();
     }
 
     public UserManager getUsers() {

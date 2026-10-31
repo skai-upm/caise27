@@ -1,5 +1,7 @@
 package es.upm.amusementpark.persistence;
 
+import es.upm.amusementpark.business.repository.GroupRepository;
+
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.User;
 
@@ -14,17 +16,18 @@ import java.util.function.Function;
  * Stores groups as {@code id;name;dni1,dni2,...}. Members are written by DNI
  * and resolved back to the registered users when loading.
  */
-public class GroupRepository {
+public class FileGroupRepository implements GroupRepository {
 
     private static final int FIELD_COUNT = 3;
     private static final String MEMBER_SEPARATOR = ",";
 
     private final Path file;
 
-    public GroupRepository(Path file) {
+    public FileGroupRepository(Path file) {
         this.file = file;
     }
 
+    @Override
     public List<Group> loadAll(Function<String, User> userByDni) throws IOException {
         List<Group> groups = new ArrayList<>();
         for (String[] fields : TextFileStore.readRecords(file, FIELD_COUNT)) {
@@ -44,6 +47,7 @@ public class GroupRepository {
         return groups;
     }
 
+    @Override
     public void saveAll(Collection<Group> groups) throws IOException {
         List<String[]> records = new ArrayList<>();
         for (Group group : groups) {

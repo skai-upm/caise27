@@ -43,7 +43,8 @@ class SystemSettingsTest extends ParkTestSupport {
 
     @Test
     void appStartsWithTodaysDate() throws IOException {
-        ParkController fresh = new ParkController(new StoragePaths(dir), LocalDate.now());
+        ApplicationContext.stop();
+        ParkController fresh = ApplicationContext.start(new StoragePaths(dir), LocalDate.now());
         assertEquals(LocalDate.now(), fresh.getSystemDate());
     }
 

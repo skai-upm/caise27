@@ -1,5 +1,7 @@
 package es.upm.amusementpark.persistence;
 
+import es.upm.amusementpark.business.repository.TicketRepository;
+
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
@@ -24,21 +26,18 @@ import java.util.function.Function;
  * The holder's email and name are kept so that historical tickets survive the
  * deletion of their user; a deleted group is likewise rebuilt from its id and name.
  */
-public class TicketRepository {
+public class FileTicketRepository implements TicketRepository {
 
     private static final int TICKET_FIELDS = 8;
     private static final int GROUP_TICKET_FIELDS = 5;
 
     private final StoragePaths paths;
 
-    public TicketRepository(StoragePaths paths) {
+    public FileTicketRepository(StoragePaths paths) {
         this.paths = paths;
     }
 
-    /** Tickets loaded from storage. */
-    public record Tickets(List<IndividualTicket> individual, List<GroupTicket> group) {
-    }
-
+    @Override
     public Tickets loadAll(Function<String, User> userByDni, Function<String, Group> groupById)
             throws IOException {
         List<IndividualTicket> individual = new ArrayList<>();
@@ -68,6 +67,7 @@ public class TicketRepository {
         return new Tickets(individual, group);
     }
 
+    @Override
     public void saveAll(List<IndividualTicket> individual, List<GroupTicket> group) throws IOException {
         List<String[]> ticketRecords = new ArrayList<>();
         List<String[]> groupRecords = new ArrayList<>();

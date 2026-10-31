@@ -2,7 +2,7 @@ package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
-import es.upm.amusementpark.persistence.UserRepository;
+import es.upm.amusementpark.persistence.FileUserRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -30,7 +31,12 @@ class UserManagerTest {
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        manager = new UserManager(new UserRepository(file));
+        manager = UserManager.initialize(new FileUserRepository(file));
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserManager.reset();
     }
 
     private void createAna() throws IOException {
@@ -165,7 +171,8 @@ class UserManagerTest {
         createPedro();
         manager.delete("pedro@correo.com", "Otra2#");
 
-        UserManager restarted = new UserManager(new UserRepository(file));
+        UserManager.reset();
+        UserManager restarted = UserManager.initialize(new FileUserRepository(file));
 
         assertEquals(1, restarted.getUsers().size());
         User ana = restarted.findByEmail("ana@correo.com");
@@ -179,7 +186,8 @@ class UserManagerTest {
     void rollsBackWhenSavingFails() throws IOException {
         Path notADirectory = dir.resolve("blocked");
         Files.writeString(notADirectory, "");
-        UserManager failing = new UserManager(new UserRepository(notADirectory.resolve("users.txt")));
+        UserManager.reset();
+        UserManager failing = UserManager.initialize(new FileUserRepository(notADirectory.resolve("users.txt")));
 
         assertThrows(IOException.class, () -> failing.create("Ana", "Garcia Lopez", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456"));

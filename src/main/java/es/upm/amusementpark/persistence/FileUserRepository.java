@@ -1,5 +1,7 @@
 package es.upm.amusementpark.persistence;
 
+import es.upm.amusementpark.business.repository.UserRepository;
+
 import es.upm.amusementpark.business.model.User;
 
 import java.io.IOException;
@@ -12,13 +14,13 @@ import java.util.List;
  * Stores users in a text file, one user per line, with attributes separated
  * by {@code ;} in the order: name, surname, DNI, email, password, phone, card.
  */
-public class UserRepository {
+public class FileUserRepository implements UserRepository {
 
     private static final int FIELD_COUNT = 7;
 
     private final Path file;
 
-    public UserRepository(Path file) {
+    public FileUserRepository(Path file) {
         this.file = file;
     }
 
@@ -30,6 +32,7 @@ public class UserRepository {
      * Loads every stored user. A missing file means there are no users yet.
      * Blank lines are ignored and malformed lines are skipped with a warning.
      */
+    @Override
     public List<User> loadAll() throws IOException {
         List<User> users = new ArrayList<>();
         for (String[] fields : TextFileStore.readRecords(file, FIELD_COUNT)) {
@@ -40,6 +43,7 @@ public class UserRepository {
     }
 
     /** Replaces the file content with the given users. */
+    @Override
     public void saveAll(Collection<User> users) throws IOException {
         List<String[]> records = new ArrayList<>();
         for (User user : users) {

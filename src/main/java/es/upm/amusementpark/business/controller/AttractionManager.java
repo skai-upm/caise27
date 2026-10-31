@@ -1,7 +1,7 @@
 package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.model.Attraction;
-import es.upm.amusementpark.persistence.AttractionRepository;
+import es.upm.amusementpark.business.repository.AttractionRepository;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.rules.UserValidator;
@@ -21,10 +21,27 @@ import java.util.List;
  */
 public class AttractionManager {
 
+    private static final SingletonSlot<AttractionManager> INSTANCE = new SingletonSlot<>("AttractionManager");
+
+    /** Creates the single instance for this execution with its injected dependencies. */
+    public static AttractionManager initialize(AttractionRepository repository) throws IOException {
+        return INSTANCE.initialize(() -> new AttractionManager(repository));
+    }
+
+    /** Returns the instance created by {@link #initialize}. */
+    public static AttractionManager getInstance() {
+        return INSTANCE.get();
+    }
+
+    /** Discards the instance at the end of an execution. */
+    public static void reset() {
+        INSTANCE.reset();
+    }
+
     private final AttractionRepository repository;
     private final List<Attraction> attractions;
 
-    public AttractionManager(AttractionRepository repository) throws IOException {
+    private AttractionManager(AttractionRepository repository) throws IOException {
         this.repository = repository;
         this.attractions = repository.loadAll();
     }

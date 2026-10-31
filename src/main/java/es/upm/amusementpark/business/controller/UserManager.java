@@ -2,7 +2,7 @@ package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
-import es.upm.amusementpark.persistence.UserRepository;
+import es.upm.amusementpark.business.repository.UserRepository;
 import es.upm.amusementpark.business.rules.UserValidator;
 
 import java.io.IOException;
@@ -21,10 +21,27 @@ import java.util.List;
  */
 public class UserManager {
 
+    private static final SingletonSlot<UserManager> INSTANCE = new SingletonSlot<>("UserManager");
+
+    /** Creates the single instance for this execution with its injected dependencies. */
+    public static UserManager initialize(UserRepository repository) throws IOException {
+        return INSTANCE.initialize(() -> new UserManager(repository));
+    }
+
+    /** Returns the instance created by {@link #initialize}. */
+    public static UserManager getInstance() {
+        return INSTANCE.get();
+    }
+
+    /** Discards the instance at the end of an execution. */
+    public static void reset() {
+        INSTANCE.reset();
+    }
+
     private final UserRepository repository;
     private final List<User> users;
 
-    public UserManager(UserRepository repository) throws IOException {
+    private UserManager(UserRepository repository) throws IOException {
         this.repository = repository;
         this.users = repository.loadAll();
     }

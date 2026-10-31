@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,9 +36,14 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() throws IOException {
         buffer = new ByteArrayOutputStream();
-        ParkController park = new ParkController(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        ParkController park = ApplicationContext.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
         manager = park.getUsers();
         processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+    }
+
+    @AfterEach
+    void tearDown() {
+        ApplicationContext.stop();
     }
 
     private String output() {

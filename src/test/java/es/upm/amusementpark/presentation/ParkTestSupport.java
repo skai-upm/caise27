@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -32,9 +33,15 @@ abstract class ParkTestSupport {
         run("SYSTEM DATE;2026-10-01");
     }
 
+    @AfterEach
+    void stopPark() {
+        ApplicationContext.stop();
+    }
+
     /** Builds a fresh controller over the same data directory, as a new execution would. */
     void restart() throws IOException {
-        park = new ParkController(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        ApplicationContext.stop();
+        park = ApplicationContext.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
         processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 

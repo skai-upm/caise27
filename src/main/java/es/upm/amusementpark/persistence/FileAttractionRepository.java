@@ -1,5 +1,7 @@
 package es.upm.amusementpark.persistence;
 
+import es.upm.amusementpark.business.repository.AttractionRepository;
+
 import es.upm.amusementpark.business.model.Attraction;
 
 import java.io.IOException;
@@ -12,16 +14,17 @@ import java.util.List;
  * Stores attraction definitions as {@code id;name;capacity}. Users present are
  * runtime state and are never stored, so attractions always start empty.
  */
-public class AttractionRepository {
+public class FileAttractionRepository implements AttractionRepository {
 
     private static final int FIELD_COUNT = 3;
 
     private final Path file;
 
-    public AttractionRepository(Path file) {
+    public FileAttractionRepository(Path file) {
         this.file = file;
     }
 
+    @Override
     public List<Attraction> loadAll() throws IOException {
         List<Attraction> attractions = new ArrayList<>();
         for (String[] fields : TextFileStore.readRecords(file, FIELD_COUNT)) {
@@ -34,6 +37,7 @@ public class AttractionRepository {
         return attractions;
     }
 
+    @Override
     public void saveAll(Collection<Attraction> attractions) throws IOException {
         List<String[]> records = new ArrayList<>();
         for (Attraction attraction : attractions) {

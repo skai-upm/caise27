@@ -13,20 +13,20 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class UserRepositoryTest {
+class FileUserRepositoryTest {
 
     @TempDir
     Path dir;
 
     @Test
     void missingFileMeansNoUsers() throws IOException {
-        assertTrue(new UserRepository(dir.resolve("users.txt")).loadAll().isEmpty());
+        assertTrue(new FileUserRepository(dir.resolve("users.txt")).loadAll().isEmpty());
     }
 
     @Test
     void writesOneSemicolonSeparatedLinePerUser() throws IOException {
         Path file = dir.resolve("users.txt");
-        new UserRepository(file).saveAll(List.of(
+        new FileUserRepository(file).saveAll(List.of(
                 new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456"),
                 new User("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654")));
 
@@ -38,7 +38,7 @@ class UserRepositoryTest {
 
     @Test
     void roundTripRestoresAllAttributes() throws IOException {
-        UserRepository repository = new UserRepository(dir.resolve("users.txt"));
+        FileUserRepository repository = new FileUserRepository(dir.resolve("users.txt"));
         repository.saveAll(List.of(new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com",
                 "Clave1!", "612345678", "1234567890123456")));
 
@@ -61,7 +61,7 @@ class UserRepositoryTest {
         Files.writeString(file, "\nbroken;line\n"
                 + "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456\n");
 
-        List<User> loaded = new UserRepository(file).loadAll();
+        List<User> loaded = new FileUserRepository(file).loadAll();
 
         assertEquals(1, loaded.size());
         assertEquals("12345678Z", loaded.get(0).getDni());

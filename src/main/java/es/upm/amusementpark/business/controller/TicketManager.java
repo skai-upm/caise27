@@ -4,7 +4,7 @@ import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
-import es.upm.amusementpark.persistence.TicketRepository;
+import es.upm.amusementpark.business.repository.TicketRepository;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.rules.UserValidator;
 
@@ -26,13 +26,30 @@ import java.util.function.Function;
  */
 public class TicketManager {
 
+    private static final SingletonSlot<TicketManager> INSTANCE = new SingletonSlot<>("TicketManager");
+
+    /** Creates the single instance for this execution with its injected dependencies. */
+    public static TicketManager initialize(TicketRepository repository, UserManager users, GroupManager groups) throws IOException {
+        return INSTANCE.initialize(() -> new TicketManager(repository, users::findByDni, groups::find));
+    }
+
+    /** Returns the instance created by {@link #initialize}. */
+    public static TicketManager getInstance() {
+        return INSTANCE.get();
+    }
+
+    /** Discards the instance at the end of an execution. */
+    public static void reset() {
+        INSTANCE.reset();
+    }
+
     private static final int PRICE_SCALE = 2;
 
     private final TicketRepository repository;
     private final List<IndividualTicket> individualTickets;
     private final List<GroupTicket> groupTickets;
 
-    public TicketManager(TicketRepository repository, Function<String, User> userByDni,
+    private TicketManager(TicketRepository repository, Function<String, User> userByDni,
                          Function<String, Group> groupById) throws IOException {
         this.repository = repository;
         TicketRepository.Tickets loaded = repository.loadAll(userByDni, groupById);

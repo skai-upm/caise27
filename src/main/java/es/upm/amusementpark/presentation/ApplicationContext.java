@@ -1,0 +1,54 @@
+package es.upm.amusementpark.presentation;
+
+import es.upm.amusementpark.business.controller.AttractionManager;
+import es.upm.amusementpark.business.controller.GroupManager;
+import es.upm.amusementpark.business.controller.ParkController;
+import es.upm.amusementpark.business.controller.TicketManager;
+import es.upm.amusementpark.business.controller.UserManager;
+import es.upm.amusementpark.business.invoice.InvoiceService;
+import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
+import es.upm.amusementpark.persistence.FileAttractionRepository;
+import es.upm.amusementpark.persistence.FileGroupRepository;
+import es.upm.amusementpark.persistence.FileTicketRepository;
+import es.upm.amusementpark.persistence.FileUserRepository;
+import es.upm.amusementpark.persistence.StoragePaths;
+
+import java.io.IOException;
+import java.time.LocalDate;
+
+/**
+ * Composition root: creates the repositories for the chosen storage
+ * location, initialises the single controller instances of an execution and
+ * injects their dependencies. Normal and {@code --fly} runs differ only in
+ * the {@link StoragePaths} given here.
+ */
+public final class ApplicationContext {
+
+    private ApplicationContext() {
+    }
+
+    /** Wires and initialises every controller for one execution. */
+    public static ParkController start(StoragePaths paths, LocalDate today) throws IOException {
+        try {
+            UserManager users = UserManager.initialize(new FileUserRepository(paths.users()));
+            GroupManager groups = GroupManager.initialize(new FileGroupRepository(paths.groups()), users);
+            TicketManager tickets = TicketManager.initialize(new FileTicketRepository(paths), users, groups);
+            AttractionManager attractions =
+                    AttractionManager.initialize(new FileAttractionRepository(paths.attractions()));
+            return ParkController.initialize(users, groups, tickets, attractions,
+                    new InvoiceService(StandardInvoiceBuilder::new), today);
+        } catch (IOException | RuntimeException e) {
+            stop();
+            throw e;
+        }
+    }
+
+    /** Ends the execution's controller instances. */
+    public static void stop() {
+        ParkController.reset();
+        AttractionManager.reset();
+        TicketManager.reset();
+        GroupManager.reset();
+        UserManager.reset();
+    }
+}

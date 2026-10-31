@@ -1,7 +1,7 @@
 package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.model.Group;
-import es.upm.amusementpark.persistence.GroupRepository;
+import es.upm.amusementpark.business.repository.GroupRepository;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.rules.UserValidator;
 
@@ -18,10 +18,27 @@ import java.util.List;
  */
 public class GroupManager {
 
+    private static final SingletonSlot<GroupManager> INSTANCE = new SingletonSlot<>("GroupManager");
+
+    /** Creates the single instance for this execution with its injected dependencies. */
+    public static GroupManager initialize(GroupRepository repository, UserManager users) throws IOException {
+        return INSTANCE.initialize(() -> new GroupManager(repository, users));
+    }
+
+    /** Returns the instance created by {@link #initialize}. */
+    public static GroupManager getInstance() {
+        return INSTANCE.get();
+    }
+
+    /** Discards the instance at the end of an execution. */
+    public static void reset() {
+        INSTANCE.reset();
+    }
+
     private final GroupRepository repository;
     private final List<Group> groups;
 
-    public GroupManager(GroupRepository repository, UserManager users) throws IOException {
+    private GroupManager(GroupRepository repository, UserManager users) throws IOException {
         this.repository = repository;
         this.groups = repository.loadAll(users::findByDni);
     }
