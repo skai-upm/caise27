@@ -84,7 +84,7 @@ class SystemSettingsTest extends ParkTestSupport {
                 "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;", "GROUP CREATE;", "GROUP ADD;", "GROUP REMOVE;",
                 "GROUP DELETE;", "TICKET CREATE;", "TICKET DELETE;", "GROUPTICKET CREATE;",
                 "GROUPTICKET DELETE;", "ATTRACTION CREATE;", "ATTRACTION ENTER;", "ATTRACTION EXIT;",
-                "ATTRACTION STATUS;", "INVOICE CREATE;USER;", "INVOICE CREATE;GROUP;", "HELP", "HELP EXTENDED", "EXIT"}) {
+                "ATTRACTION STATUS;", "SPEEDPASS CREATE;", "SPEEDPASS DELETE;", "SPECIALPASS CREATE;", "SPECIALPASS DELETE;", "INVOICE CREATE;USER;", "INVOICE CREATE;GROUP;", "HELP", "HELP EXTENDED", "EXIT"}) {
             assertTrue(help.contains(command), command);
         }
     }

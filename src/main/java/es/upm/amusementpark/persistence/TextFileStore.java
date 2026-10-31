@@ -26,6 +26,15 @@ public final class TextFileStore {
      * skipped with a warning.
      */
     public static List<String[]> readRecords(Path file, int fieldCount) throws IOException {
+        return readRecords(file, fieldCount, fieldCount);
+    }
+
+    /**
+     * Like {@link #readRecords(Path, int)} but accepting lines with between
+     * {@code minFields} and {@code maxFields} fields, so files written by an
+     * earlier delivery without newer optional columns still load.
+     */
+    public static List<String[]> readRecords(Path file, int minFields, int maxFields) throws IOException {
         List<String[]> records = new ArrayList<>();
         if (!Files.exists(file)) {
             return records;
@@ -39,7 +48,7 @@ public final class TextFileStore {
                     continue;
                 }
                 String[] fields = line.split(SEPARATOR, -1);
-                if (fields.length != fieldCount) {
+                if (fields.length < minFields || fields.length > maxFields) {
                     System.err.println("WARNING: skipping malformed line " + lineNumber + " in " + file);
                     continue;
                 }

@@ -3,6 +3,7 @@ package es.upm.amusementpark.business.invoice;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.User;
 
 import java.util.ArrayList;
@@ -25,18 +26,27 @@ public class InvoiceService {
     }
 
     /**
-     * Invoice for the tickets bought directly for the user. Constituents of
-     * group tickets are not passed here, so they are never counted twice.
+     * Invoice for the tickets bought directly for the user and the personal
+     * passes of every ticket the user holds. Constituents of group tickets are
+     * only used for their passes, so they are never counted twice.
      */
-    public Invoice userInvoice(User user, List<IndividualTicket> directTickets) {
+    public Invoice userInvoice(User user, List<IndividualTicket> directTickets, List<IndividualTicket> heldTickets) {
         List<InvoiceLine> ticketLines = new ArrayList<>();
         for (IndividualTicket ticket : directTickets) {
             ticketLines.add(new InvoiceLine("Ticket " + ticket.getId() + " (" + ticket.getDate() + ")",
                     ticket.getPrice()));
         }
+        List<InvoiceLine> passLines = new ArrayList<>();
+        for (IndividualTicket ticket : heldTickets) {
+            for (Pass pass : ticket.getPasses()) {
+                passLines.add(new InvoiceLine(pass.getKind() + " " + pass.getId() + " (ticket " + ticket.getId() + ")",
+                        pass.getPrice()));
+            }
+        }
         return builders.get()
                 .recipient(USER, user.getEmail(), user.getName() + " " + user.getSurname())
                 .section("Individual tickets", ticketLines)
+                .section("Personal passes", passLines)
                 .build();
     }
 

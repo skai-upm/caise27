@@ -24,6 +24,10 @@ public record StoragePaths(Path directory) {
         return directory.resolve("grouptickets.txt");
     }
 
+    public Path passes() {
+        return directory.resolve("passes.txt");
+    }
+
     public Path attractions() {
         return directory.resolve("attractions.txt");
     }

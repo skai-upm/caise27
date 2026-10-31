@@ -5,6 +5,8 @@ import es.upm.amusementpark.business.invoice.InvoiceService;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.User;
 
 import static es.upm.amusementpark.business.rules.Checks.require;
@@ -16,6 +18,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.List;
 
 /**
  * Main controller of the park. It holds the single system date and the base
@@ -176,12 +179,28 @@ public class ParkController {
         return attractions.exit(attractions.get(attractionId), tickets.get(ticketId));
     }
 
+    public List<SpeedPass> buySpeedPasses(String ticketId, String quantity) throws IOException {
+        return tickets.buySpeedPasses(ticketId, quantity, systemDate);
+    }
+
+    public SpecialPass buySpecialPass(String ticketId) throws IOException {
+        return tickets.buySpecialPass(ticketId, systemDate);
+    }
+
+    public void deleteSpeedPass(String passId) throws IOException {
+        tickets.deleteSpeedPass(passId, systemDate);
+    }
+
+    public void deleteSpecialPass(String passId) throws IOException {
+        tickets.deleteSpecialPass(passId, systemDate);
+    }
+
     /** Builds an invoice for {@code USER;<email>} or {@code GROUP;<groupId>}. */
     public Invoice createInvoice(String recipientType, String id) {
         switch (recipientType) {
             case "USER" -> {
                 User user = registeredUser(id);
-                return invoices.userInvoice(user, tickets.directTicketsOf(user));
+                return invoices.userInvoice(user, tickets.directTicketsOf(user), tickets.ticketsHeldBy(user));
             }
             case "GROUP" -> {
                 Group group = groups.get(id);

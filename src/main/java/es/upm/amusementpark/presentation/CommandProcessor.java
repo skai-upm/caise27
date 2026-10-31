@@ -5,6 +5,7 @@ import es.upm.amusementpark.presentation.help.HelpGenerator;
 import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.invoice.InvoiceLine;
 import es.upm.amusementpark.business.invoice.InvoiceSection;
+import es.upm.amusementpark.business.model.Pass;
 
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.controller.ParkController;
@@ -14,6 +15,7 @@ import es.upm.amusementpark.business.model.UserField;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,6 +92,8 @@ public class CommandProcessor {
             groupTicket(operation, parts);
         } else if (operation.startsWith("ATTRACTION ")) {
             attraction(operation, parts);
+        } else if (operation.startsWith("SPEEDPASS ") || operation.startsWith("SPECIALPASS ")) {
+            pass(operation, parts);
         } else if (operation.equals("INVOICE CREATE")) {
             checkParameters(operation, parts, 2);
             out.println(format(park.createInvoice(parts[1], parts[2])));
@@ -224,6 +228,34 @@ public class CommandProcessor {
 
     private void ok(String message) {
         out.println("OK: " + message);
+    }
+
+    private void pass(String operation, String[] p) throws IOException {
+        switch (operation) {
+            case "SPEEDPASS CREATE" -> {
+                checkParameters(operation, p, 2);
+                BigDecimal total = BigDecimal.ZERO;
+                for (Pass pass : park.buySpeedPasses(p[1], p[2])) {
+                    total = total.add(pass.getPrice());
+                }
+                out.println("OK SPEEDPASS CREATED -> " + total.toPlainString());
+            }
+            case "SPECIALPASS CREATE" -> {
+                checkParameters(operation, p, 1);
+                out.println("OK SPECIALPASS CREATED -> " + park.buySpecialPass(p[1]).getPrice().toPlainString());
+            }
+            case "SPEEDPASS DELETE" -> {
+                checkParameters(operation, p, 1);
+                park.deleteSpeedPass(p[1]);
+                ok("pass " + p[1] + DELETED);
+            }
+            case "SPECIALPASS DELETE" -> {
+                checkParameters(operation, p, 1);
+                park.deleteSpecialPass(p[1]);
+                ok("pass " + p[1] + DELETED);
+            }
+            default -> throw unknown(operation);
+        }
     }
 
     static String format(Invoice invoice) {

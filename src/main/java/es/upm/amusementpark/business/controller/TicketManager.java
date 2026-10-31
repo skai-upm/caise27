@@ -3,6 +3,9 @@ package es.upm.amusementpark.business.controller;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.repository.TicketRepository;
 import es.upm.amusementpark.business.model.User;
@@ -154,6 +157,135 @@ public class TicketManager {
             groupTickets.add(index, (GroupTicket) ticket);
             throw e;
         }
+    }
+
+    /** Pass and the individual ticket that owns it. */
+    public record OwnedPass(IndividualTicket ticket, Pass pass) {
+    }
+
+    private static final BigDecimal SPEED_PASS_RATE = new BigDecimal("0.20");
+    private static final String SPEED_SUFFIX = "-SPEED";
+
+    /** Buys 1 or 10 SpeedPasses for an individual ticket, each at 20% of the ticket's price. */
+    public List<SpeedPass> buySpeedPasses(String ticketId, String quantity, LocalDate today) throws IOException {
+        IndividualTicket ticket = passHolder(ticketId, today);
+        require(quantity.equals("1") || quantity.equals("10"), "SpeedPass quantity must be 1 or 10");
+        int count = Integer.parseInt(quantity);
+        BigDecimal price = scaled(ticket.getPrice().multiply(SPEED_PASS_RATE));
+        int next = nextSpeedPassNumber(ticket);
+        List<SpeedPass> bought = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            SpeedPass pass = new SpeedPass(ticket.getId() + SPEED_SUFFIX + (next + i), price, false);
+            ticket.addSpeedPass(pass);
+            bought.add(pass);
+        }
+        try {
+            save();
+        } catch (IOException e) {
+            bought.forEach(ticket::removeSpeedPass);
+            throw e;
+        }
+        return bought;
+    }
+
+    /** Buys the only Special Pass a ticket may ever have, at the ticket's price. */
+    public SpecialPass buySpecialPass(String ticketId, LocalDate today) throws IOException {
+        IndividualTicket ticket = passHolder(ticketId, today);
+        require(!ticket.isSpecialPassIssued(), "ticket " + ticketId + " already had a Special Pass");
+        SpecialPass pass = new SpecialPass(ticket.getId() + "-SPECIAL", ticket.getPrice(), false);
+        ticket.setSpecialPass(pass);
+        try {
+            save();
+        } catch (IOException e) {
+            ticket.removeSpecialPass();
+            throw e;
+        }
+        return pass;
+    }
+
+    /** Refunds an unused SpeedPass whose ticket is dated strictly after {@code today}. */
+    public void deleteSpeedPass(String passId, LocalDate today) throws IOException {
+        OwnedPass owned = refundablePass(passId, today);
+        require(owned.pass() instanceof SpeedPass, "pass " + passId + " is not a SpeedPass");
+        SpeedPass pass = (SpeedPass) owned.pass();
+        List<SpeedPass> before = List.copyOf(owned.ticket().getSpeedPasses());
+        owned.ticket().removeSpeedPass(pass);
+        try {
+            save();
+        } catch (IOException e) {
+            before.forEach(owned.ticket()::removeSpeedPass);
+            before.forEach(owned.ticket()::addSpeedPass);
+            throw e;
+        }
+    }
+
+    /** Refunds an unused Special Pass whose ticket is dated strictly after {@code today}. */
+    public void deleteSpecialPass(String passId, LocalDate today) throws IOException {
+        OwnedPass owned = refundablePass(passId, today);
+        require(owned.pass() instanceof SpecialPass, "pass " + passId + " is not a Special Pass");
+        owned.ticket().removeSpecialPass();
+        try {
+            save();
+        } catch (IOException e) {
+            owned.ticket().setSpecialPass((SpecialPass) owned.pass());
+            throw e;
+        }
+    }
+
+    /** Finds a pass by id among every individual ticket, or returns {@code null}. */
+    public OwnedPass findPass(String passId) {
+        for (IndividualTicket ticket : individualTicketsIncludingConstituents()) {
+            for (Pass pass : ticket.getPasses()) {
+                if (pass.getId().equals(passId)) {
+                    return new OwnedPass(ticket, pass);
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Every individual ticket of the user: stand-alone ones and group constituents. */
+    public List<IndividualTicket> ticketsHeldBy(User user) {
+        List<IndividualTicket> result = new ArrayList<>();
+        for (IndividualTicket ticket : individualTicketsIncludingConstituents()) {
+            if (ticket.getUser() == user) {
+                result.add(ticket);
+            }
+        }
+        return result;
+    }
+
+    private IndividualTicket passHolder(String ticketId, LocalDate today) {
+        Ticket ticket = get(ticketId);
+        require(ticket instanceof IndividualTicket, "passes can only be bought for individual tickets");
+        require(ticket.isActiveOn(today), "ticket " + ticketId + " is dated before the system date " + today);
+        return (IndividualTicket) ticket;
+    }
+
+    private OwnedPass refundablePass(String passId, LocalDate today) {
+        OwnedPass owned = findPass(passId);
+        require(owned != null, "pass " + passId + " does not exist");
+        require(!owned.pass().isConsumed(), "pass " + passId + " has already been used");
+        require(owned.ticket().isRefundableOn(today),
+                "ticket " + owned.ticket().getId() + " is not dated after the system date " + today);
+        return owned;
+    }
+
+    private static int nextSpeedPassNumber(IndividualTicket ticket) {
+        int highest = 0;
+        String prefix = ticket.getId() + SPEED_SUFFIX;
+        for (SpeedPass pass : ticket.getSpeedPasses()) {
+            highest = Math.max(highest, Integer.parseInt(pass.getId().substring(prefix.length())));
+        }
+        return highest + 1;
+    }
+
+    private List<IndividualTicket> individualTicketsIncludingConstituents() {
+        List<IndividualTicket> all = new ArrayList<>(individualTickets);
+        for (GroupTicket groupTicket : groupTickets) {
+            all.addAll(groupTicket.getTickets());
+        }
+        return all;
     }
 
     /** Stand-alone individual tickets bought for the user (group constituents excluded). */
