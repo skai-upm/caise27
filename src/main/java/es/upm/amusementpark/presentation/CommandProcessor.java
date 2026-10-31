@@ -1,5 +1,9 @@
 package es.upm.amusementpark.presentation;
 
+import es.upm.amusementpark.business.invoice.Invoice;
+import es.upm.amusementpark.business.invoice.InvoiceLine;
+import es.upm.amusementpark.business.invoice.InvoiceSection;
+
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.model.Ticket;
@@ -38,6 +42,8 @@ public class CommandProcessor {
             "  ATTRACTION ENTER;IdAtraccion;IdTicket",
             "  ATTRACTION EXIT;IdAtraccion;IdTicket",
             "  ATTRACTION STATUS;IdAtraccion",
+            "  INVOICE CREATE;USER;Correo",
+            "  INVOICE CREATE;GROUP;IdGrupo",
             "  HELP",
             "  EXIT");
 
@@ -99,6 +105,9 @@ public class CommandProcessor {
             groupTicket(operation, parts);
         } else if (operation.startsWith("ATTRACTION ")) {
             attraction(operation, parts);
+        } else if (operation.equals("INVOICE CREATE")) {
+            checkParameters(operation, parts, 2);
+            out.println(format(park.createInvoice(parts[1], parts[2])));
         } else {
             throw unknown(operation);
         }
@@ -230,6 +239,20 @@ public class CommandProcessor {
 
     private void ok(String message) {
         out.println("OK: " + message);
+    }
+
+    static String format(Invoice invoice) {
+        List<String> lines = new ArrayList<>();
+        lines.add("INVOICE " + invoice.getRecipientType() + " " + invoice.getRecipientId()
+                + " - " + invoice.getRecipientName());
+        for (InvoiceSection section : invoice.getSections()) {
+            lines.add(section.title() + ":");
+            for (InvoiceLine line : section.lines()) {
+                lines.add("  " + line.description() + " " + line.amount().toPlainString());
+            }
+        }
+        lines.add("TOTAL: " + invoice.getTotal().toPlainString());
+        return String.join(System.lineSeparator(), lines);
     }
 
     static String status(Attraction attraction) {

@@ -1,5 +1,9 @@
 package es.upm.amusementpark.business.controller;
 
+import es.upm.amusementpark.business.invoice.Invoice;
+import es.upm.amusementpark.business.invoice.InvoiceService;
+import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
+
 import es.upm.amusementpark.persistence.AttractionRepository;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.persistence.GroupRepository;
@@ -36,6 +40,7 @@ public class ParkController {
     private final GroupManager groups;
     private final TicketManager tickets;
     private final AttractionManager attractions;
+    private final InvoiceService invoices = new InvoiceService(StandardInvoiceBuilder::new);
     private LocalDate systemDate;
     private BigDecimal basePrice = DEFAULT_PRICE;
 
@@ -152,6 +157,21 @@ public class ParkController {
 
     public int exitAttraction(String attractionId, String ticketId) {
         return attractions.exit(attractions.get(attractionId), tickets.get(ticketId));
+    }
+
+    /** Builds an invoice for {@code USER;<email>} or {@code GROUP;<groupId>}. */
+    public Invoice createInvoice(String recipientType, String id) {
+        switch (recipientType) {
+            case "USER" -> {
+                User user = registeredUser(id);
+                return invoices.userInvoice(user, tickets.directTicketsOf(user));
+            }
+            case "GROUP" -> {
+                Group group = groups.get(id);
+                return invoices.groupInvoice(group, tickets.groupTicketsOf(group));
+            }
+            default -> throw new IllegalArgumentException("invoice recipient must be USER or GROUP");
+        }
     }
 
     private User registeredUser(String email) {

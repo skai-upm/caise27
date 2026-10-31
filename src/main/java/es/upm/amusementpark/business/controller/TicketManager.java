@@ -139,6 +139,28 @@ public class TicketManager {
         }
     }
 
+    /** Stand-alone individual tickets bought for the user (group constituents excluded). */
+    public List<IndividualTicket> directTicketsOf(User user) {
+        List<IndividualTicket> result = new ArrayList<>();
+        for (IndividualTicket ticket : individualTickets) {
+            if (ticket.getUser() == user) {
+                result.add(ticket);
+            }
+        }
+        return result;
+    }
+
+    /** Group tickets bought by the group. */
+    public List<GroupTicket> groupTicketsOf(Group group) {
+        List<GroupTicket> result = new ArrayList<>();
+        for (GroupTicket ticket : groupTickets) {
+            if (ticket.getGroup() == group) {
+                result.add(ticket);
+            }
+        }
+        return result;
+    }
+
     /** Whether the user holds any ticket dated on or after {@code today}. */
     public boolean hasActiveTicket(User user, LocalDate today) {
         for (Ticket ticket : allTickets()) {
