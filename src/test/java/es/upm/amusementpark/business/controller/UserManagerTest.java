@@ -2,9 +2,12 @@ package es.upm.amusementpark.business.controller;
 
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.FileUserRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -22,6 +25,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 class UserManagerTest {
 
+    private static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
+
     @TempDir
     Path dir;
 
@@ -31,7 +36,7 @@ class UserManagerTest {
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        manager = UserManager.initialize(new FileUserRepository(file));
+        manager = UserManager.initialize(new FileUserRepository(file), HASHER);
     }
 
     @AfterEach
@@ -56,7 +61,15 @@ class UserManagerTest {
         createAna();
 
         assertNotNull(manager.findByEmail("ana@correo.com"));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"), fileLines());
+        List<String> lines = fileLines();
+        assertEquals(1, lines.size());
+        String[] fields = lines.get(0).split(";");
+        assertEquals("Ana;Garcia Lopez;12345678Z;ana@correo.com",
+                String.join(";", fields[0], fields[1], fields[2], fields[3]));
+        assertTrue(BCryptPasswordHasher.isHash(fields[4]));
+        assertTrue(HASHER.matches("Clave1!", fields[4]));
+        assertFalse(lines.get(0).contains("Clave1!"));
+        assertEquals("612345678;1234567890123456", fields[5] + ";" + fields[6]);
     }
 
     @Test
@@ -110,8 +123,12 @@ class UserManagerTest {
         manager.update("ana.nueva@correo.com", "Nueva2#", UserField.PHONE, "699999999");
         manager.update("ana.nueva@correo.com", "Nueva2#", UserField.SURNAME, "Garcia");
 
-        assertEquals(List.of("Ana Maria;Garcia;12345678Z;ana.nueva@correo.com;Nueva2#;699999999;9999888877776666"),
-                fileLines());
+        String[] fields = fileLines().get(0).split(";");
+        assertEquals("Ana Maria;Garcia;12345678Z;ana.nueva@correo.com",
+                String.join(";", fields[0], fields[1], fields[2], fields[3]));
+        assertTrue(HASHER.matches("Nueva2#", fields[4]));
+        assertFalse(HASHER.matches("Clave1!", fields[4]));
+        assertEquals("699999999;9999888877776666", fields[5] + ";" + fields[6]);
     }
 
     @Test
@@ -159,7 +176,7 @@ class UserManagerTest {
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.NAME, " "));
 
         User ana = manager.findByEmail("ana@correo.com");
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(HASHER.matches("Clave1!", ana.getPassword()));
         assertEquals("1234567890123456", ana.getCard());
         assertEquals(before, fileLines());
     }
@@ -172,7 +189,7 @@ class UserManagerTest {
         manager.delete("pedro@correo.com", "Otra2#");
 
         UserManager.reset();
-        UserManager restarted = UserManager.initialize(new FileUserRepository(file));
+        UserManager restarted = UserManager.initialize(new FileUserRepository(file), HASHER);
 
         assertEquals(1, restarted.getUsers().size());
         User ana = restarted.findByEmail("ana@correo.com");
@@ -187,7 +204,7 @@ class UserManagerTest {
         Path notADirectory = dir.resolve("blocked");
         Files.writeString(notADirectory, "");
         UserManager.reset();
-        UserManager failing = UserManager.initialize(new FileUserRepository(notADirectory.resolve("users.txt")));
+        UserManager failing = UserManager.initialize(new FileUserRepository(notADirectory.resolve("users.txt")), HASHER);
 
         assertThrows(IOException.class, () -> failing.create("Ana", "Garcia Lopez", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456"));

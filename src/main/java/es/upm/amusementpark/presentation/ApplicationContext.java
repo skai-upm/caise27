@@ -7,6 +7,8 @@ import es.upm.amusementpark.business.controller.TicketManager;
 import es.upm.amusementpark.business.controller.UserManager;
 import es.upm.amusementpark.business.invoice.InvoiceService;
 import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.FileAttractionRepository;
 import es.upm.amusementpark.persistence.FileGroupRepository;
 import es.upm.amusementpark.persistence.FileTicketRepository;
@@ -32,10 +34,15 @@ public final class ApplicationContext {
     private ApplicationContext() {
     }
 
-    /** Wires and initialises every controller for one execution. */
+    /** Wires and initialises every controller for one execution with BCrypt password protection. */
     public static ParkController start(StoragePaths paths, LocalDate today) throws IOException {
+        return start(paths, today, new BCryptPasswordHasher());
+    }
+
+    /** Wires and initialises every controller for one execution with the given password protection. */
+    public static ParkController start(StoragePaths paths, LocalDate today, PasswordHasher hasher) throws IOException {
         try {
-            UserManager users = UserManager.initialize(new FileUserRepository(paths.users()));
+            UserManager users = UserManager.initialize(new FileUserRepository(paths.users()), hasher);
             GroupManager groups = GroupManager.initialize(new FileGroupRepository(paths.groups()), users);
             TicketManager tickets = TicketManager.initialize(new FileTicketRepository(paths), users, groups);
             AttractionManager attractions =

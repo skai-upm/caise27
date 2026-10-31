@@ -1,5 +1,7 @@
 package es.upm.amusementpark.presentation;
 
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+
 import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.persistence.StoragePaths;
 
@@ -41,7 +43,7 @@ abstract class ParkTestSupport {
     /** Builds a fresh controller over the same data directory, as a new execution would. */
     void restart() throws IOException {
         ApplicationContext.stop();
-        park = ApplicationContext.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        park = ApplicationContext.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1), new BCryptPasswordHasher(4));
         processor = ApplicationContext.commandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 

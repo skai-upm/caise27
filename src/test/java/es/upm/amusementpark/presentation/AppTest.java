@@ -1,5 +1,7 @@
 package es.upm.amusementpark.presentation;
 
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +39,31 @@ class AppTest {
                 new PrintStream(err, true, StandardCharsets.UTF_8), usersFile.getParent());
     }
 
+    /** Stored user lines with the salted password hash replaced by a check of the expected password. */
+    private static List<String> withoutPasswords(List<String> stored) {
+        return stored.stream().map(line -> {
+            String[] f = line.split(";");
+            assertTrue(BCryptPasswordHasher.isHash(f[4]));
+            f[4] = "<hash>";
+            return String.join(";", f);
+        }).toList();
+    }
+
+    /** Compares a stored user line with the expected one, checking the password against its BCrypt hash. */
+    private static void assertStoredUser(String expected, List<String> stored) {
+        assertEquals(1, stored.size());
+        String[] want = expected.split(";");
+        String[] got = stored.get(0).split(";");
+        assertEquals(want.length, got.length);
+        for (int i = 0; i < want.length; i++) {
+            if (i == 4) {
+                assertTrue(new BCryptPasswordHasher().matches(want[i], got[i]));
+            } else {
+                assertEquals(want[i], got[i]);
+            }
+        }
+    }
+
     private static String lines(String... lines) {
         return String.join("\n", lines) + "\n";
     }
@@ -52,7 +79,7 @@ class AppTest {
         String output = out.toString(StandardCharsets.UTF_8);
         assertTrue(output.contains("USER DELETE;Correo;Contraseña"));
         assertTrue(output.contains("Bye."));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456"),
+        assertStoredUser("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
                 Files.readAllLines(data));
     }
 
@@ -131,7 +158,7 @@ class AppTest {
         run(new String[] {commands.toString()}, "", fileData);
 
         assertEquals(interactiveOutput, out.toString(StandardCharsets.UTF_8));
-        assertEquals(Files.readAllLines(interactiveData), Files.readAllLines(fileData));
+        assertEquals(withoutPasswords(Files.readAllLines(interactiveData)), withoutPasswords(Files.readAllLines(fileData)));
     }
 
     @Test
@@ -144,7 +171,7 @@ class AppTest {
 
         String output = out.toString(StandardCharsets.UTF_8);
         assertTrue(output.startsWith("ERROR:"));
-        assertEquals(List.of("Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
+        assertStoredUser("Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
                 Files.readAllLines(data));
     }
 }

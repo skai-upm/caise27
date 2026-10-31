@@ -4,6 +4,7 @@ import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.repository.UserRepository;
 import es.upm.amusementpark.business.rules.UserValidator;
+import es.upm.amusementpark.business.security.PasswordHasher;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,8 +25,8 @@ public class UserManager {
     private static final SingletonSlot<UserManager> INSTANCE = new SingletonSlot<>("UserManager");
 
     /** Creates the single instance for this execution with its injected dependencies. */
-    public static UserManager initialize(UserRepository repository) throws IOException {
-        return INSTANCE.initialize(() -> new UserManager(repository));
+    public static UserManager initialize(UserRepository repository, PasswordHasher hasher) throws IOException {
+        return INSTANCE.initialize(() -> new UserManager(repository, hasher));
     }
 
     /** Returns the instance created by {@link #initialize}. */
@@ -39,10 +40,12 @@ public class UserManager {
     }
 
     private final UserRepository repository;
+    private final PasswordHasher hasher;
     private final List<User> users;
 
-    private UserManager(UserRepository repository) throws IOException {
+    private UserManager(UserRepository repository, PasswordHasher hasher) throws IOException {
         this.repository = repository;
+        this.hasher = hasher;
         this.users = repository.loadAll();
     }
 
@@ -81,7 +84,7 @@ public class UserManager {
         require(findByDni(dni) == null, "a user with that DNI already exists");
         require(findByEmail(email) == null, "a user with that email already exists");
 
-        User user = new User(name, surname, dni, email, password, phone, card);
+        User user = new User(name, surname, dni, email, hasher.hash(password), phone, card);
         users.add(user);
         try {
             repository.saveAll(users);
@@ -112,7 +115,8 @@ public class UserManager {
             throws IOException {
         User user = authenticate(email, password);
         validateNewValue(user, field, newValue);
-        String previous = set(user, field, newValue);
+        String stored = field == UserField.PASSWORD ? hasher.hash(newValue) : newValue;
+        String previous = set(user, field, stored);
         try {
             repository.saveAll(users);
         } catch (IOException e) {
@@ -124,7 +128,7 @@ public class UserManager {
     /** Returns the user with that email and password, or rejects the credentials. */
     public User authenticate(String email, String password) {
         User user = findByEmail(email);
-        require(user != null && user.getPassword().equals(password), "invalid email or password");
+        require(user != null && hasher.matches(password, user.getPassword()), "invalid email or password");
         return user;
     }
 

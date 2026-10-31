@@ -16,6 +16,7 @@ import es.upm.amusementpark.business.repository.AttractionRepository;
 import es.upm.amusementpark.business.repository.GroupRepository;
 import es.upm.amusementpark.business.repository.TicketRepository;
 import es.upm.amusementpark.business.repository.UserRepository;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -84,7 +85,7 @@ class ControllerLifecycleTest {
     private final InMemoryUserRepository userRepository = new InMemoryUserRepository();
 
     private ParkController start() throws IOException {
-        UserManager users = UserManager.initialize(userRepository);
+        UserManager users = UserManager.initialize(userRepository, new BCryptPasswordHasher(4));
         GroupManager groups = GroupManager.initialize(new EmptyGroupRepository(), users);
         TicketManager tickets = TicketManager.initialize(new EmptyTicketRepository(), users, groups);
         AttractionManager attractions = AttractionManager.initialize(new EmptyAttractionRepository());
@@ -115,7 +116,7 @@ class ControllerLifecycleTest {
     @Test
     void secondInitialisationIsRejected() throws IOException {
         start();
-        assertThrows(IllegalStateException.class, () -> UserManager.initialize(new InMemoryUserRepository()));
+        assertThrows(IllegalStateException.class, () -> UserManager.initialize(new InMemoryUserRepository(), new BCryptPasswordHasher(4)));
         assertThrows(IllegalStateException.class, this::start);
     }
 
