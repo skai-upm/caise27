@@ -71,7 +71,11 @@ public class UserManager {
     }
 
     public void delete(String email, String password) throws IOException {
-        User user = authenticate(email, password);
+        remove(authenticate(email, password));
+    }
+
+    /** Removes an already authenticated user and persists the change. */
+    public void remove(User user) throws IOException {
         int index = users.indexOf(user);
         users.remove(index);
         try {
@@ -95,7 +99,8 @@ public class UserManager {
         }
     }
 
-    private User authenticate(String email, String password) {
+    /** Returns the user with that email and password, or rejects the credentials. */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         require(user != null && user.getPassword().equals(password), "invalid email or password");
         return user;

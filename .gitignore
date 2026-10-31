@@ -22,3 +22,10 @@ buildNumber.properties
 
 # Runtime user data
 users.txt
+groups.txt
+tickets.txt
+grouptickets.txt
+attractions.txt
+
+# --fly temporary storage
+tmp/

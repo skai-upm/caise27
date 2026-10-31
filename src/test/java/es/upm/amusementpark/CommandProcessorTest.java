@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,8 +31,9 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() throws IOException {
         buffer = new ByteArrayOutputStream();
-        manager = new UserManager(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        ParkController park = new ParkController(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        manager = park.getUsers();
+        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     private String output() {

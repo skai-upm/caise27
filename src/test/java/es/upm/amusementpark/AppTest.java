@@ -30,10 +30,11 @@ class AppTest {
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
     private final ByteArrayOutputStream err = new ByteArrayOutputStream();
 
-    private int run(String[] args, String stdin, Path dataFile) {
+    /** Runs the app with its data directory set to the parent of {@code usersFile}. */
+    private int run(String[] args, String stdin, Path usersFile) {
         InputStream in = new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8));
         return App.run(args, in, new PrintStream(out, true, StandardCharsets.UTF_8),
-                new PrintStream(err, true, StandardCharsets.UTF_8), dataFile);
+                new PrintStream(err, true, StandardCharsets.UTF_8), usersFile.getParent());
     }
 
     private static String lines(String... lines) {
@@ -119,12 +120,12 @@ class AppTest {
                 "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
                 "USER DELETE;pedro@correo.com;Otra2#", "HELP", "EXIT");
 
-        Path interactiveData = dir.resolve("interactive.txt");
+        Path interactiveData = dir.resolve("interactive").resolve("users.txt");
         run(new String[0], script, interactiveData);
         String interactiveOutput = out.toString(StandardCharsets.UTF_8);
 
         out.reset();
-        Path fileData = dir.resolve("file.txt");
+        Path fileData = dir.resolve("file").resolve("users.txt");
         Path commands = dir.resolve("commands.txt");
         Files.writeString(commands, script);
         run(new String[] {commands.toString()}, "", fileData);
