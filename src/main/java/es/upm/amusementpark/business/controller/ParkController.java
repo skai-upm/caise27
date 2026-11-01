@@ -10,7 +10,9 @@ import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Invoice;
 import es.upm.amusementpark.business.model.OperationException;
+import es.upm.amusementpark.business.model.SimpleInvoiceBuilder;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.repository.AttractionRepository;
@@ -30,6 +32,7 @@ public class ParkController {
     private final GroupController groups;
     private final TicketController tickets;
     private final AttractionController attractions;
+    private final InvoiceController invoices;
     private LocalDate systemDate;
     private BigDecimal basePrice = DEFAULT_PRICE;
 
@@ -46,6 +49,7 @@ public class ParkController {
         this.groups = new GroupController(groupRepository, users::findByDni);
         this.tickets = new TicketController(ticketRepository, users::findByDni, groups::find);
         this.attractions = new AttractionController(attractionRepository);
+        this.invoices = new InvoiceController(tickets, SimpleInvoiceBuilder::new);
         this.systemDate = startDate;
     }
 
@@ -191,6 +195,20 @@ public class ParkController {
 
     public Attraction attractionStatus(String attractionId) throws OperationException {
         return attractions.require(attractionId);
+    }
+
+    // --- invoices
+
+    /**
+     * Builds the invoice of a user ({@code USER}, identified by email) or a group
+     * ({@code GROUP}, identified by group id).
+     */
+    public Invoice invoice(String kind, String id) throws OperationException {
+        return switch (kind) {
+            case "USER" -> invoices.forUser(requireUser(id));
+            case "GROUP" -> invoices.forGroup(groups.require(id));
+            default -> throw new OperationException("Unknown invoice recipient type (USER or GROUP): " + kind);
+        };
     }
 
     // --- helpers

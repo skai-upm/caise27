@@ -37,6 +37,8 @@ public class CommandProcessor {
             "  ATTRACTION ENTER;IdAtraccion;IdTicket",
             "  ATTRACTION EXIT;IdAtraccion;IdTicket",
             "  ATTRACTION STATUS;IdAtraccion",
+            "  INVOICE CREATE;USER;Correo",
+            "  INVOICE CREATE;GROUP;IdGrupo",
             "  HELP",
             "  EXIT");
 
@@ -160,6 +162,10 @@ public class CommandProcessor {
                 case "ATTRACTION STATUS" -> {
                     requireParams(operation, p, 1);
                     out.println(status(park.attractionStatus(p[0])));
+                }
+                case "INVOICE CREATE" -> {
+                    requireParams(operation, p, 2);
+                    out.println(park.invoice(p[0], p[1]).render());
                 }
                 case "HELP" -> {
                     requireParams(operation, p, 0);

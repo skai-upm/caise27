@@ -125,6 +125,20 @@ public class CommandProcessorTest {
     }
 
     @Test
+    public void invoiceCommand() {
+        processor.process(CREATE_ANA);
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("INVOICE CREATE;USER;ana@correo.com");
+        processor.process("INVOICE CREATE;CLIENT;x");
+        processor.process("INVOICE CREATE;USER");
+        String out = output();
+        assertTrue(out.contains("INVOICE USER ana@correo.com - Ana Garcia Lopez"));
+        assertTrue(out.contains("TOTAL: 40.00"));
+        assertTrue(out.contains("Error: Unknown invoice recipient type"));
+        assertTrue(out.contains("Error: INVOICE CREATE expects 2 parameter(s)"));
+    }
+
+    @Test
     public void exitReturnsFalse() {
         assertFalse(processor.process("EXIT"));
     }
