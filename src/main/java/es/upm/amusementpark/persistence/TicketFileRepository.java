@@ -139,7 +139,7 @@ public class TicketFileRepository implements TicketRepository {
                 addPassLines(lines, it);
             }
         }
-        Files.write(file, lines, StandardCharsets.UTF_8);
+        TextFiles.writeAtomically(file, lines);
     }
 
     private static String individualFields(IndividualTicket t) {

@@ -136,6 +136,28 @@ public class AppTest {
     }
 
     @Test
+    public void flyIsolatesDeliveryThreeData() throws IOException {
+        runApp(new String[0], input(List.of(COMMANDS.get(0), "SYSTEM DATE;2026-10-01",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15", "ATTRACTION CREATE;A01;Casa;5;SPECIAL", "EXIT")),
+                dir);
+        String users = Files.readString(dir.resolve("users.txt"));
+        String tickets = Files.readString(dir.resolve("tickets.txt"));
+        String attractions = Files.readString(dir.resolve("attractions.txt"));
+
+        String out = runApp(new String[] {"--fly"}, input(List.of(COMMANDS.get(0), "SYSTEM DATE;2026-10-01",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15", "SPEEDPASS CREATE;T001;10",
+                "SPECIALPASS CREATE;T001", "ATTRACTION CREATE;A02;Rio;5;GROUP",
+                "USER UPDATE;ana@correo.com;Clave1!;PASSWORD;Nueva2#", "EXIT")), dir);
+
+        assertTrue(out.contains("OK SPEEDPASS CREATED -> 80.00"));
+        assertTrue(out.contains("OK SPECIALPASS CREATED -> 40.00"));
+        assertEquals(users, Files.readString(dir.resolve("users.txt")));
+        assertEquals(tickets, Files.readString(dir.resolve("tickets.txt")));
+        assertEquals(attractions, Files.readString(dir.resolve("attractions.txt")));
+        assertTrue(isEmptyDir(dir.resolve("tmp")));
+    }
+
+    @Test
     public void flyAndNormalRepliesAreIdentical() throws IOException {
         Path normalDir = Files.createDirectory(dir.resolve("normal"));
         Path flyDir = Files.createDirectory(dir.resolve("fly"));

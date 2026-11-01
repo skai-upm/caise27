@@ -55,6 +55,6 @@ public class UserFileRepository implements UserRepository {
             lines.add(String.join(SEPARATOR, u.getName(), u.getSurname(), u.getDni(),
                     u.getEmail(), u.getPassword(), u.getPhone(), u.getCard()));
         }
-        Files.write(file, lines, StandardCharsets.UTF_8);
+        TextFiles.writeAtomically(file, lines);
     }
 }

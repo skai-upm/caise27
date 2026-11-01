@@ -5,7 +5,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
@@ -155,9 +157,29 @@ public class TicketController {
             throw new OperationException("Ticket " + ticket.getId() + " dated " + ticket.getDate()
                     + " can no longer be deleted; only tickets after " + today + " can");
         }
+        // Cascade: first the passes of every individual ticket involved, then those tickets
+        // (owned by the group ticket, if any), then the ticket itself; persisted in one write.
+        List<IndividualTicket> owned = ticket instanceof GroupTicket gt
+                ? gt.getTickets() : List.of((IndividualTicket) ticket);
+        Map<IndividualTicket, List<SpeedPass>> speedPasses = new HashMap<>();
+        Map<IndividualTicket, SpecialPass> specialPasses = new HashMap<>();
+        for (IndividualTicket t : owned) {
+            speedPasses.put(t, t.getSpeedPasses());
+            specialPasses.put(t, t.getSpecialPass());
+            t.getSpeedPasses().forEach(t::removeSpeedPass);
+            t.removeSpecialPass();
+        }
         int index = tickets.indexOf(ticket);
         tickets.remove(index);
-        save(() -> tickets.add(index, ticket));
+        save(() -> {
+            tickets.add(index, ticket);
+            for (IndividualTicket t : owned) {
+                speedPasses.get(t).forEach(t::addSpeedPass);
+                if (specialPasses.get(t) != null) {
+                    t.setSpecialPass(specialPasses.get(t));
+                }
+            }
+        });
     }
 
     /**

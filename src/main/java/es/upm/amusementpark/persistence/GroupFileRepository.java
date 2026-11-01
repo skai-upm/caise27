@@ -66,6 +66,6 @@ public class GroupFileRepository implements GroupRepository {
             }
             lines.add(g.getId() + ";" + g.getName() + ";" + String.join(",", dnis));
         }
-        Files.write(file, lines, StandardCharsets.UTF_8);
+        TextFiles.writeAtomically(file, lines);
     }
 }

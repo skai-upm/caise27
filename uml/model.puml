@@ -1,45 +1,52 @@
 @startuml model
-' Class model of the Amusement Park application, derived from src/main/java/es/upm/amusementpark.
+' Class model of the Amusement Park application (Delivery 3), derived from src/main/java/es/upm/amusementpark.
 ' Conventions: no methods; only value-typed fields (primitives, String, dates, amounts, paths, enums)
 ' appear as attributes; fields referencing project classes are drawn as relationships named after the field,
 ' with a cross on the non-navigable end. Usage (dashed) arrows only for classes without incoming relationships.
+' Generic bindings are shown as labels on the inheritance arrows.
 
 hide empty methods
 hide empty members
 skinparam classAttributeIconSize 0
 
-package es.upm.amusementpark {
-
+package es.upm.amusementpark.presentation {
   class App
+  class AppBootstrap
   class CommandProcessor {
     out : PrintStream
   }
-  class ParkController {
+  class HelpGenerator
+  interface HelpFormatter
+  class ConciseHelpFormatter
+  class ExtendedHelpFormatter
+  class CommandRegistry
+  class CommandInfo <<record>> {
+    syntax : String
+    description : String
+  }
+}
+
+package es.upm.amusementpark.business.controller {
+  class ParkController <<Singleton>> {
     systemDate : LocalDate
     basePrice : BigDecimal
   }
-  class StoragePaths {
-    directory : Path
-  }
+  class UserController <<Singleton>>
+  class GroupController <<Singleton>>
+  class TicketController <<Singleton>>
+  class AttractionController <<Singleton>>
+  class InvoiceController <<Singleton>>
+  interface PasswordHasher
+}
 
-  class UserManager
-  class GroupManager
-  class TicketManager
-  class AttractionManager
+package es.upm.amusementpark.business.repository {
+  interface UserRepository
+  interface GroupRepository
+  interface TicketRepository
+  interface AttractionRepository
+}
 
-  class UserStorage {
-    file : Path
-  }
-  class GroupStorage {
-    file : Path
-  }
-  class TicketStorage {
-    file : Path
-  }
-  class AttractionStorage {
-    file : Path
-  }
-
+package es.upm.amusementpark.business.model {
   class User {
     name : String
     surname : String
@@ -62,53 +69,174 @@ package es.upm.amusementpark {
     id : String
     name : String
   }
+
   abstract class Ticket {
     id : String
     date : LocalDate
     price : BigDecimal
   }
-  class IndividualTicket
+  class IndividualTicket {
+    specialPassAcquired : boolean
+  }
   class GroupTicket
-  class Attraction {
+
+  interface AttractionAccess
+  interface IndividualAccess
+  interface GroupAccess
+
+  abstract class Pass {
+    id : String
+    price : BigDecimal
+    consumed : boolean
+  }
+  class SpeedPass
+  class SpecialPass
+
+  abstract class "Attraction<T extends AttractionAccess>" as Attraction {
     id : String
     name : String
     capacity : int
+    accessType : Class<T>
+  }
+  class GeneralAttraction
+  class IndividualAttraction
+  class GroupAttraction
+  class SpecialAttraction
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+
+  interface InvoiceBuilder
+  class SimpleInvoiceBuilder {
+    recipient : String
+    titles : List<String>
+  }
+  class Invoice {
+    recipient : String
+    total : BigDecimal
+  }
+  class InvoiceSection <<record>> {
+    title : String
+  }
+  class InvoiceLine <<record>> {
+    description : String
+    amount : BigDecimal
   }
   class OperationException
 }
 
-' --- inheritance
+package es.upm.amusementpark.persistence {
+  class StoragePaths {
+    directory : Path
+  }
+  class UserFileRepository {
+    file : Path
+  }
+  class GroupFileRepository {
+    file : Path
+  }
+  class TicketFileRepository {
+    file : Path
+  }
+  class AttractionFileRepository {
+    file : Path
+  }
+  class BCryptPasswordHasher {
+    logRounds : int
+  }
+  class TextFiles
+}
+
+' --- inheritance, implementation and generic bindings
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+AttractionAccess <|-- IndividualAccess
+AttractionAccess <|-- GroupAccess
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Attraction <|-- GeneralAttraction : <<bind>> T -> AttractionAccess
+Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T -> GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualAccess
+InvoiceBuilder <|.. SimpleInvoiceBuilder
+HelpFormatter <|.. ConciseHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+PasswordHasher <|.. BCryptPasswordHasher
+UserRepository <|.. UserFileRepository
+GroupRepository <|.. GroupFileRepository
+TicketRepository <|.. TicketFileRepository
+AttractionRepository <|.. AttractionFileRepository
 
-' --- associations (navigable towards the referenced class)
+' --- presentation
 CommandProcessor x--> "1" ParkController : park
-ParkController x--> "1" UserManager : users
-ParkController x--> "1" GroupManager : groups
-ParkController x--> "1" TicketManager : tickets
-ParkController x--> "1" AttractionManager : attractions
+CommandProcessor x--> "1" HelpGenerator : help
+HelpGenerator x--> "0..*" CommandInfo : commands
+HelpGenerator x--> "0..*" HelpFormatter : formatters
 
-UserManager x--> "1" UserStorage : storage
-UserManager x--> "0..*" User : users
-GroupManager x--> "1" GroupStorage : storage
-GroupManager x--> "0..*" Group : groups
-TicketManager x--> "1" TicketStorage : storage
-TicketManager x--> "0..*" Ticket : tickets
-AttractionManager x--> "1" AttractionStorage : storage
-AttractionManager x--> "0..*" Attraction : attractions
+' --- controllers (each Singleton keeps its own instance)
+ParkController x--> "0..1" ParkController : instance
+UserController x--> "0..1" UserController : instance
+GroupController x--> "0..1" GroupController : instance
+TicketController x--> "0..1" TicketController : instance
+AttractionController x--> "0..1" AttractionController : instance
+InvoiceController x--> "0..1" InvoiceController : instance
 
+ParkController x--> "1" UserController : users
+ParkController x--> "1" GroupController : groups
+ParkController x--> "1" TicketController : tickets
+ParkController x--> "1" AttractionController : attractions
+ParkController x--> "1" InvoiceController : invoices
+InvoiceController x--> "1" TicketController : tickets
+
+UserController x--> "1" UserRepository : repository
+UserController x--> "1" PasswordHasher : hasher
+UserController x--> "0..*" User : users
+GroupController x--> "1" GroupRepository : repository
+GroupController x--> "0..*" Group : groups
+TicketController x--> "1" TicketRepository : repository
+TicketController x--> "0..*" Ticket : tickets
+AttractionController x--> "1" AttractionRepository : repository
+AttractionController x--> "0..*" Attraction : attractions
+
+' --- domain
 Group x--> "0..*" User : members
 IndividualTicket x--> "1" User : user
+IndividualTicket "1" *--> "0..*" SpeedPass : speedPasses
+IndividualTicket "1" *--> "0..1" SpecialPass : specialPass
 GroupTicket o--> "1" Group : group
 GroupTicket "1" *--> "1..*" IndividualTicket : tickets
 Attraction x--> "0..*" User : present
+Invoice "1" *--> "0..*" InvoiceSection : sections
+InvoiceSection "1" *--> "0..*" InvoiceLine : lines
+SimpleInvoiceBuilder x--> "0..*" InvoiceLine : lines
 
 ' --- usage, only for classes that have no incoming relationship otherwise
-App ..> CommandProcessor
+App ..> AppBootstrap
 App ..> StoragePaths
-ParkController ..> StoragePaths
-UserManager ..> UserValidator
-UserManager ..> UserField
+AppBootstrap ..> CommandRegistry
+AppBootstrap ..> ConciseHelpFormatter
+AppBootstrap ..> ExtendedHelpFormatter
+AppBootstrap ..> UserFileRepository
+AppBootstrap ..> GroupFileRepository
+AppBootstrap ..> TicketFileRepository
+AppBootstrap ..> AttractionFileRepository
+AppBootstrap ..> BCryptPasswordHasher
+AppBootstrap ..> SimpleInvoiceBuilder
+InvoiceController ..> InvoiceBuilder : builders
+SimpleInvoiceBuilder ..> Invoice
+UserController ..> UserValidator
+UserController ..> UserField
+ParkController ..> AttractionType
+AttractionType ..> GeneralAttraction
+AttractionType ..> IndividualAttraction
+AttractionType ..> GroupAttraction
+AttractionType ..> SpecialAttraction
+UserFileRepository ..> TextFiles
 CommandProcessor ..> OperationException
 
 @enduml

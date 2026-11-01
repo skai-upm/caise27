@@ -8,12 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.amusementpark.business.model.Attraction;
-import es.upm.amusementpark.business.model.GeneralAttraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.repository.AttractionRepository;
 
 /**
- * Saves attraction definitions ({@code id;name;capacity}) to a text file and loads
- * them back. Users present in attractions are never stored.
+ * Saves attraction definitions ({@code id;name;capacity;type}) to a text file and loads
+ * them back; lines without a type (written before attraction types existed) load as
+ * GENERAL. Users present in attractions are never stored.
  */
 public class AttractionFileRepository implements AttractionRepository {
 
@@ -31,11 +32,15 @@ public class AttractionFileRepository implements AttractionRepository {
         }
         for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
             String[] f = line.split(";", -1);
-            if (f.length != 3) {
+            if (f.length != 3 && f.length != 4) {
+                continue;
+            }
+            AttractionType type = f.length == 3 ? AttractionType.GENERAL : AttractionType.fromName(f[3]);
+            if (type == null) {
                 continue;
             }
             try {
-                attractions.add(new GeneralAttraction(f[0], f[1], Integer.parseInt(f[2])));
+                attractions.add(type.create(f[0], f[1], Integer.parseInt(f[2])));
             } catch (NumberFormatException e) {
                 // skip malformed line
             }
@@ -47,8 +52,8 @@ public class AttractionFileRepository implements AttractionRepository {
     public void save(List<Attraction<?>> attractions) throws IOException {
         List<String> lines = new ArrayList<>();
         for (Attraction<?> a : attractions) {
-            lines.add(a.getId() + ";" + a.getName() + ";" + a.getCapacity());
+            lines.add(a.getId() + ";" + a.getName() + ";" + a.getCapacity() + ";" + a.getType());
         }
-        Files.write(file, lines, StandardCharsets.UTF_8);
+        TextFiles.writeAtomically(file, lines);
     }
 }
