@@ -132,6 +132,23 @@ public class CommandProcessorTest {
     }
 
     @Test
+    public void passCommands() {
+        processor.process(CREATE_ANA);
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("SPEEDPASS CREATE;T001;10");
+        processor.process("SPEEDPASS CREATE;T001;3");
+        processor.process("SPECIALPASS CREATE;T001");
+        processor.process("SPEEDPASS DELETE;T001-SP10");
+        processor.process("SPECIALPASS DELETE;T001-SPECIAL");
+        String out = output();
+        assertTrue(out.contains("OK SPEEDPASS CREATED -> 80.00 [T001-SP1, T001-SP2,"));
+        assertTrue(out.contains("Error: SpeedPasses are sold in quantities of 1 or 10, not 3"));
+        assertTrue(out.contains("OK SPECIALPASS CREATED -> 40.00 [T001-SPECIAL]"));
+        assertTrue(out.contains("SpeedPass refunded: T001-SP10"));
+        assertTrue(out.contains("Special Pass refunded: T001-SPECIAL"));
+    }
+
+    @Test
     public void invoiceCommand() {
         processor.process(CREATE_ANA);
         processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");

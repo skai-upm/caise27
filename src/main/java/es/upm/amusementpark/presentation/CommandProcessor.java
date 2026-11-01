@@ -3,12 +3,15 @@ package es.upm.amusementpark.presentation;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.OperationException;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
@@ -140,6 +143,33 @@ public class CommandProcessor {
                 case "ATTRACTION STATUS" -> {
                     requireParams(operation, p, 1);
                     out.println(status(park.attractionStatus(p[0])));
+                }
+                case "SPEEDPASS CREATE" -> {
+                    requireParams(operation, p, 2);
+                    List<SpeedPass> passes = park.buySpeedPasses(p[0], p[1]);
+                    BigDecimal total = BigDecimal.ZERO;
+                    List<String> ids = new ArrayList<>();
+                    for (SpeedPass pass : passes) {
+                        total = total.add(pass.getPrice());
+                        ids.add(pass.getId());
+                    }
+                    out.println("OK SPEEDPASS CREATED -> " + total.toPlainString() + " " + ids);
+                }
+                case "SPEEDPASS DELETE" -> {
+                    requireParams(operation, p, 1);
+                    park.refundSpeedPass(p[0]);
+                    out.println("SpeedPass refunded: " + p[0]);
+                }
+                case "SPECIALPASS CREATE" -> {
+                    requireParams(operation, p, 1);
+                    SpecialPass pass = park.buySpecialPass(p[0]);
+                    out.println("OK SPECIALPASS CREATED -> " + pass.getPrice().toPlainString()
+                            + " [" + pass.getId() + "]");
+                }
+                case "SPECIALPASS DELETE" -> {
+                    requireParams(operation, p, 1);
+                    park.refundSpecialPass(p[0]);
+                    out.println("Special Pass refunded: " + p[0]);
                 }
                 case "INVOICE CREATE" -> {
                     requireParams(operation, p, 2);

@@ -11,6 +11,9 @@ import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.OperationException;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.repository.TicketRepository;
@@ -47,6 +50,8 @@ public class TicketController {
     public static synchronized void reset() {
         instance = null;
     }
+
+    static final BigDecimal SPEED_PASS_RATE = new BigDecimal("0.20");
 
     private final TicketRepository repository;
     private final List<Ticket> tickets;
@@ -182,6 +187,118 @@ public class TicketController {
             }
         }
         return false;
+    }
+
+    /**
+     * Every individual ticket: bought directly or owned by a group ticket.
+     */
+    public List<IndividualTicket> getIndividualTickets() {
+        List<IndividualTicket> result = new ArrayList<>();
+        for (Ticket t : tickets) {
+            if (t instanceof IndividualTicket it) {
+                result.add(it);
+            } else if (t instanceof GroupTicket gt) {
+                result.addAll(gt.getTickets());
+            }
+        }
+        return result;
+    }
+
+    // --- personal passes
+
+    public List<SpeedPass> buySpeedPasses(String ticketId, int quantity, LocalDate today) throws OperationException {
+        if (quantity != 1 && quantity != 10) {
+            throw new OperationException("SpeedPasses are sold in quantities of 1 or 10, not " + quantity);
+        }
+        IndividualTicket ticket = requirePassTicket(ticketId, today);
+        BigDecimal price = ticket.getPrice().multiply(SPEED_PASS_RATE).setScale(2, RoundingMode.HALF_UP);
+        int next = nextSpeedPassNumber(ticket);
+        List<SpeedPass> bought = new ArrayList<>();
+        for (int i = 0; i < quantity; i++) {
+            SpeedPass pass = new SpeedPass(ticket.getId() + "-SP" + (next + i), price, false);
+            ticket.addSpeedPass(pass);
+            bought.add(pass);
+        }
+        save(() -> bought.forEach(ticket::removeSpeedPass));
+        return bought;
+    }
+
+    public SpecialPass buySpecialPass(String ticketId, LocalDate today) throws OperationException {
+        IndividualTicket ticket = requirePassTicket(ticketId, today);
+        if (ticket.hasAcquiredSpecialPass()) {
+            throw new OperationException("Ticket " + ticketId + " already acquired its Special Pass");
+        }
+        SpecialPass pass = new SpecialPass(ticket.getId() + "-SPECIAL", ticket.getPrice(), false);
+        ticket.setSpecialPass(pass);
+        save(ticket::undoSpecialPassPurchase);
+        return pass;
+    }
+
+    public void refundSpeedPass(String passId, LocalDate today) throws OperationException {
+        for (IndividualTicket ticket : getIndividualTickets()) {
+            for (SpeedPass pass : ticket.getSpeedPasses()) {
+                if (pass.getId().equals(passId)) {
+                    requireRefundable(ticket, pass, today);
+                    ticket.removeSpeedPass(pass);
+                    save(() -> ticket.addSpeedPass(pass));
+                    return;
+                }
+            }
+        }
+        throw new OperationException("Unknown SpeedPass: " + passId);
+    }
+
+    public void refundSpecialPass(String passId, LocalDate today) throws OperationException {
+        for (IndividualTicket ticket : getIndividualTickets()) {
+            SpecialPass pass = ticket.getSpecialPass();
+            if (pass != null && pass.getId().equals(passId)) {
+                requireRefundable(ticket, pass, today);
+                ticket.removeSpecialPass();
+                save(() -> ticket.setSpecialPass(pass));
+                return;
+            }
+        }
+        throw new OperationException("Unknown Special Pass: " + passId);
+    }
+
+    private IndividualTicket requirePassTicket(String ticketId, LocalDate today) throws OperationException {
+        Ticket ticket = find(ticketId);
+        if (ticket == null) {
+            throw new OperationException("Unknown ticket: " + ticketId);
+        }
+        if (!(ticket instanceof IndividualTicket individual)) {
+            throw new OperationException("Passes are attached to individual tickets; " + ticketId
+                    + " is a group ticket");
+        }
+        if (!individual.isActiveOn(today)) {
+            throw new OperationException("Ticket " + ticketId + " dated " + individual.getDate()
+                    + " is before the current date " + today);
+        }
+        return individual;
+    }
+
+    private static void requireRefundable(IndividualTicket ticket, Pass pass, LocalDate today)
+            throws OperationException {
+        if (pass.isConsumed()) {
+            throw new OperationException("Pass " + pass.getId() + " has been used and cannot be refunded");
+        }
+        if (!ticket.isRefundableOn(today)) {
+            throw new OperationException("Pass " + pass.getId() + " belongs to ticket " + ticket.getId() + " dated "
+                    + ticket.getDate() + "; only passes of tickets after " + today + " can be refunded");
+        }
+    }
+
+    private static int nextSpeedPassNumber(IndividualTicket ticket) {
+        String prefix = ticket.getId() + "-SP";
+        int max = 0;
+        for (SpeedPass pass : ticket.getSpeedPasses()) {
+            try {
+                max = Math.max(max, Integer.parseInt(pass.getId().substring(prefix.length())));
+            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                // identifier not generated by this scheme; ignore
+            }
+        }
+        return max + 1;
     }
 
     /**

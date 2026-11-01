@@ -7,6 +7,7 @@ import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Invoice;
 import es.upm.amusementpark.business.model.InvoiceBuilder;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
@@ -52,8 +53,9 @@ public class InvoiceController {
     }
 
     /**
-     * Invoice with the individual tickets bought directly for the user. Tickets owned
-     * by group tickets are not individual purchases and are not listed.
+     * Invoice with the individual tickets bought directly for the user and the personal
+     * passes of all the user's tickets. Tickets owned by group tickets are not individual
+     * purchases and are not listed, but their passes are.
      */
     public Invoice forUser(User user) {
         InvoiceBuilder builder = builders.get()
@@ -62,6 +64,16 @@ public class InvoiceController {
         for (Ticket t : tickets.getTickets()) {
             if (t instanceof IndividualTicket it && it.getUser().getDni().equals(user.getDni())) {
                 builder.item(it.getId() + " (" + it.getDate() + ")", it.getPrice());
+            }
+        }
+        builder.section("Personal passes");
+        for (IndividualTicket it : tickets.getIndividualTickets()) {
+            if (!it.getUser().getDni().equals(user.getDni())) {
+                continue;
+            }
+            for (Pass pass : it.getPasses()) {
+                builder.item(pass.getId() + " " + pass.getKind() + " for " + it.getId()
+                        + (pass.isConsumed() ? " (used)" : ""), pass.getPrice());
             }
         }
         return builder.build();

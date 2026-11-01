@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Group;
@@ -11,6 +12,8 @@ import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Invoice;
 import es.upm.amusementpark.business.model.OperationException;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
@@ -184,6 +187,30 @@ public class ParkController {
 
     public void deleteGroupTicket(String id) throws OperationException {
         tickets.deleteGroup(id, systemDate);
+    }
+
+    // --- personal passes
+
+    public List<SpeedPass> buySpeedPasses(String ticketId, String quantityText) throws OperationException {
+        int quantity;
+        try {
+            quantity = Integer.parseInt(quantityText);
+        } catch (NumberFormatException e) {
+            throw new OperationException("Invalid SpeedPass quantity: " + quantityText);
+        }
+        return tickets.buySpeedPasses(ticketId, quantity, systemDate);
+    }
+
+    public SpecialPass buySpecialPass(String ticketId) throws OperationException {
+        return tickets.buySpecialPass(ticketId, systemDate);
+    }
+
+    public void refundSpeedPass(String passId) throws OperationException {
+        tickets.refundSpeedPass(passId, systemDate);
+    }
+
+    public void refundSpecialPass(String passId) throws OperationException {
+        tickets.refundSpecialPass(passId, systemDate);
     }
 
     // --- attractions
