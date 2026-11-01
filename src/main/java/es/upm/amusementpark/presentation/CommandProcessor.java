@@ -18,35 +18,13 @@ import es.upm.amusementpark.business.model.User;
  */
 public class CommandProcessor {
 
-    static final String HELP_TEXT = String.join(System.lineSeparator(),
-            "Available commands:",
-            "  USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "  USER DELETE;Correo;Contraseña",
-            "  USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
-            "  SYSTEM DATE;yyyy-MM-dd",
-            "  SYSTEM PRICE;Precio",
-            "  GROUP CREATE;IdGrupo;Nombre",
-            "  GROUP ADD;IdGrupo;Correo",
-            "  GROUP REMOVE;IdGrupo;Correo",
-            "  GROUP DELETE;IdGrupo",
-            "  TICKET CREATE;IdTicket;Correo;yyyy-MM-dd",
-            "  TICKET DELETE;IdTicket",
-            "  GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd",
-            "  GROUPTICKET DELETE;IdTicket",
-            "  ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad",
-            "  ATTRACTION ENTER;IdAtraccion;IdTicket",
-            "  ATTRACTION EXIT;IdAtraccion;IdTicket",
-            "  ATTRACTION STATUS;IdAtraccion",
-            "  INVOICE CREATE;USER;Correo",
-            "  INVOICE CREATE;GROUP;IdGrupo",
-            "  HELP",
-            "  EXIT");
-
     private final ParkController park;
+    private final HelpGenerator help;
     private final PrintStream out;
 
-    public CommandProcessor(ParkController park, PrintStream out) {
+    public CommandProcessor(ParkController park, HelpGenerator help, PrintStream out) {
         this.park = park;
+        this.help = help;
         this.out = out;
     }
 
@@ -169,7 +147,11 @@ public class CommandProcessor {
                 }
                 case "HELP" -> {
                     requireParams(operation, p, 0);
-                    out.println(HELP_TEXT);
+                    out.println(help.generate(""));
+                }
+                case "HELP EXTENDED" -> {
+                    requireParams(operation, p, 0);
+                    out.println(help.generate("EXTENDED"));
                 }
                 case "EXIT" -> {
                     requireParams(operation, p, 0);

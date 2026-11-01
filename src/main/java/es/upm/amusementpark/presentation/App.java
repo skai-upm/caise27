@@ -77,7 +77,7 @@ public class App {
             return;
         }
         try {
-            process(new CommandProcessor(park, out), commandFile, in, out);
+            process(new CommandProcessor(park, AppBootstrap.help(), out), commandFile, in, out);
         } finally {
             AppBootstrap.shutdown();
         }

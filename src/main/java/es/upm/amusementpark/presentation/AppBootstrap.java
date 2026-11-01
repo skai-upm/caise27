@@ -2,6 +2,7 @@ package es.upm.amusementpark.presentation;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Map;
 
 import es.upm.amusementpark.business.controller.AttractionController;
 import es.upm.amusementpark.business.controller.GroupController;
@@ -44,6 +45,15 @@ public final class AppBootstrap {
             shutdown();
             throw e;
         }
+    }
+
+    /**
+     * Help generation with the formatter used for each HELP mode.
+     */
+    public static HelpGenerator help() {
+        return new HelpGenerator(CommandRegistry.commands(), Map.of(
+                "", new ConciseHelpFormatter(),
+                "EXTENDED", new ExtendedHelpFormatter()));
     }
 
     public static void shutdown() {

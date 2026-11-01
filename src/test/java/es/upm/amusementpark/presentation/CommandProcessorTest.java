@@ -44,7 +44,7 @@ public class CommandProcessorTest {
         park = AppBootstrap.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
         manager = park.getUsers();
         buffer = new ByteArrayOutputStream();
-        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = new CommandProcessor(park, AppBootstrap.help(), new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     @AfterEach
