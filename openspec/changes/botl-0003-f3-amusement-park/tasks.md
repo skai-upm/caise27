@@ -19,7 +19,7 @@ Milestones follow the source order. Each group ends with `mvn test` passing and 
 
 ## 4. F3-C04 Extended help
 
-- [ ] 4.1 Add `CommandCatalog`, `HelpGenerator` with injected `HelpFormatter` (concise, extended) and `HELP EXTENDED`; verify with tests that both list every registered command, extended shows descriptions, and a custom formatter is honoured; commit `[F3-C04] Add extended help generation.`
+- [x] 4.1 Add `CommandCatalog`, `HelpGenerator` with injected `HelpFormatter` (concise, extended) and `HELP EXTENDED`; verify with tests that both list every registered command, extended shows descriptions, and a custom formatter is honoured; commit `[F3-C04] Add extended help generation.`
 
 ## 5. F3-C05 BCrypt passwords
 

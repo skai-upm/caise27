@@ -17,6 +17,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import es.upm.amusementpark.business.controller.UserController;
+import es.upm.amusementpark.presentation.help.CommandCatalog;
+import es.upm.amusementpark.presentation.help.CommandInfo;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.persistence.StorageConfig;
 
@@ -148,6 +150,25 @@ class CommandProcessorTest {
                 "HELP",
                 "EXIT")) {
             assertTrue(result.output().contains(syntax), syntax);
+        }
+    }
+
+    @Test
+    void extendedHelpShowsEveryRegisteredCommandWithDescription() {
+        String text = processor.execute("HELP EXTENDED").output();
+        for (CommandInfo command : CommandCatalog.COMMANDS) {
+            assertTrue(text.contains(command.syntax()), command.syntax());
+            assertTrue(text.contains(command.description()), command.description());
+        }
+        assertTrue(processor.execute("HELP").output().contains("HELP EXTENDED"));
+    }
+
+    @Test
+    void everyRegisteredCommandIsDispatched() {
+        for (CommandInfo command : CommandCatalog.COMMANDS) {
+            String keyword = command.syntax().split(";")[0];
+            String output = processor.execute(keyword).output();
+            assertFalse(output.contains("unknown command"), keyword + " -> " + output);
         }
     }
 

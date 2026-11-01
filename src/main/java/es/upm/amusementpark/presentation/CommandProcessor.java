@@ -23,6 +23,7 @@ import es.upm.amusementpark.business.invoice.InvoiceSection;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.UserField;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
 
 /**
  * Interprets and executes text commands. Commands are split on ';' into the
@@ -34,29 +35,6 @@ public class CommandProcessor {
     private static final String SEPARATOR = ";";
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
-    private static final String HELP_TEXT = String.join(System.lineSeparator(),
-            "Available commands:",
-            "  USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "  USER DELETE;Correo;Contraseña",
-            "  USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
-            "  SYSTEM DATE;yyyy-MM-dd",
-            "  SYSTEM PRICE;Precio",
-            "  GROUP CREATE;IdGrupo;Nombre",
-            "  GROUP ADD;IdGrupo;Correo",
-            "  GROUP REMOVE;IdGrupo;Correo",
-            "  GROUP DELETE;IdGrupo",
-            "  TICKET CREATE;IdTicket;Correo;yyyy-MM-dd",
-            "  TICKET DELETE;IdTicket",
-            "  GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd",
-            "  GROUPTICKET DELETE;IdTicket",
-            "  ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad",
-            "  ATTRACTION ENTER;IdAtraccion;IdTicket",
-            "  ATTRACTION EXIT;IdAtraccion;IdTicket",
-            "  ATTRACTION STATUS;IdAtraccion",
-            "  INVOICE CREATE;USER;Correo",
-            "  INVOICE CREATE;GROUP;IdGrupo",
-            "  HELP",
-            "  EXIT");
 
     private static final String USER = "user";
     private static final String GROUP = "group";
@@ -67,13 +45,17 @@ public class CommandProcessor {
     private final UserController users;
     private final ParkController park;
     private final InvoiceController invoices;
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
 
     public CommandProcessor(SystemController system, UserController users, ParkController park,
-                            InvoiceController invoices) {
+                            InvoiceController invoices, HelpGenerator help, HelpGenerator extendedHelp) {
         this.system = system;
         this.users = users;
         this.park = park;
         this.invoices = invoices;
+        this.help = help;
+        this.extendedHelp = extendedHelp;
     }
 
     /**
@@ -120,7 +102,8 @@ public class CommandProcessor {
                 case "ATTRACTION EXIT" -> CommandResult.message(exitAttraction(parts));
                 case "ATTRACTION STATUS" -> CommandResult.message(attractionStatus(parts));
                 case "INVOICE CREATE" -> CommandResult.message(createInvoice(parts));
-                case "HELP" -> CommandResult.message(HELP_TEXT);
+                case "HELP" -> CommandResult.message(help.generate());
+                case "HELP EXTENDED" -> CommandResult.message(extendedHelp.generate());
                 case "EXIT" -> new CommandResult("OK: exiting", true);
                 default -> CommandResult.message(
                         "ERROR: unknown command '" + parts[0] + "'. Type HELP to list the commands");

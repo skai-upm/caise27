@@ -13,6 +13,10 @@ import es.upm.amusementpark.persistence.FileGroupRepository;
 import es.upm.amusementpark.persistence.FileTicketRepository;
 import es.upm.amusementpark.persistence.FileUserRepository;
 import es.upm.amusementpark.persistence.StorageConfig;
+import es.upm.amusementpark.presentation.help.CommandCatalog;
+import es.upm.amusementpark.presentation.help.ConciseHelpFormatter;
+import es.upm.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
 
 /**
  * Composition root of one execution: creates the repositories for the chosen
@@ -31,8 +35,10 @@ public record ApplicationContext(SystemController system, UserController users, 
                     new FileTicketRepository(storage.tickets()),
                     new FileAttractionRepository(storage.attractions()));
             InvoiceController invoices = InvoiceController.initialize(users, park, StandardInvoiceBuilder::new);
+            HelpGenerator help = new HelpGenerator(CommandCatalog.COMMANDS, new ConciseHelpFormatter());
+            HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.COMMANDS, new ExtendedHelpFormatter());
             return new ApplicationContext(system, users, park, invoices,
-                    new CommandProcessor(system, users, park, invoices));
+                    new CommandProcessor(system, users, park, invoices, help, extendedHelp));
         } catch (IOException | RuntimeException e) {
             stop();
             throw e;
