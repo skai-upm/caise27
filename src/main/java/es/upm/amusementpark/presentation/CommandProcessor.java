@@ -9,10 +9,16 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.amusementpark.business.OperationException;
+import es.upm.amusementpark.business.controller.InvoiceController;
 import es.upm.amusementpark.business.controller.Park;
+import es.upm.amusementpark.business.invoice.Invoice;
+import es.upm.amusementpark.business.invoice.InvoiceLine;
+import es.upm.amusementpark.business.invoice.InvoiceSection;
+import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.UserField;
@@ -46,6 +52,8 @@ public class CommandProcessor {
             "  ATTRACTION ENTER;IdAtraccion;IdTicket",
             "  ATTRACTION EXIT;IdAtraccion;IdTicket",
             "  ATTRACTION STATUS;IdAtraccion",
+            "  INVOICE CREATE;USER;Correo",
+            "  INVOICE CREATE;GROUP;IdGrupo",
             "  HELP",
             "  EXIT");
 
@@ -55,9 +63,11 @@ public class CommandProcessor {
     private static final String DELETED = "deleted";
 
     private final Park park;
+    private final InvoiceController invoices;
 
     public CommandProcessor(Park park) {
         this.park = park;
+        this.invoices = new InvoiceController(park, StandardInvoiceBuilder::new);
     }
 
     /**
@@ -103,6 +113,7 @@ public class CommandProcessor {
                 case "ATTRACTION ENTER" -> CommandResult.message(enterAttraction(parts));
                 case "ATTRACTION EXIT" -> CommandResult.message(exitAttraction(parts));
                 case "ATTRACTION STATUS" -> CommandResult.message(attractionStatus(parts));
+                case "INVOICE CREATE" -> CommandResult.message(createInvoice(parts));
                 case "HELP" -> CommandResult.message(HELP_TEXT);
                 case "EXIT" -> new CommandResult("OK: exiting", true);
                 default -> CommandResult.message(
@@ -235,6 +246,25 @@ public class CommandProcessor {
                 "Users present: " + attraction.getVisitors().size(),
                 "Available places: " + attraction.getAvailablePlaces(),
                 "Present: " + (visitors.isEmpty() ? "none" : String.join(", ", visitors)));
+    }
+
+    private String createInvoice(String[] parts) {
+        requireParameters(parts, 2, "INVOICE CREATE;USER;Correo | INVOICE CREATE;GROUP;IdGrupo");
+        Invoice invoice = switch (parts[1]) {
+            case "USER" -> invoices.userInvoice(parts[2]);
+            case "GROUP" -> invoices.groupInvoice(parts[2]);
+            default -> throw new OperationException("invoice recipient must be USER or GROUP");
+        };
+        List<String> lines = new ArrayList<>();
+        lines.add("INVOICE - " + invoice.getRecipient());
+        for (InvoiceSection section : invoice.getSections()) {
+            lines.add(section.title() + ":");
+            for (InvoiceLine line : section.lines()) {
+                lines.add("  " + line.description() + " " + formatPrice(line.amount()));
+            }
+        }
+        lines.add("TOTAL: " + formatPrice(invoice.getTotal()));
+        return String.join(System.lineSeparator(), lines);
     }
 
     private static String ok(String subject, String id, String outcome) {

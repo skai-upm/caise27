@@ -9,8 +9,8 @@ Milestones follow the source order. Each group ends with `mvn test` passing and 
 
 ## 2. F3-C02 Invoices with Builder
 
-- [ ] 2.1 Add `Invoice`, `InvoiceLine`, `InvoiceSection`, `InvoiceBuilder` and `StandardInvoiceBuilder` (empty sections skipped, total computed); verify with unit tests
-- [ ] 2.2 Add `INVOICE CREATE;USER;<correo>` / `INVOICE CREATE;GROUP;<id>` (direct tickets for users, group tickets for groups, no constituents) with text formatting; verify with command tests including unknown recipients and zero totals, then commit `[F3-C02] Add invoice generation with builder.`
+- [x] 2.1 Add `Invoice`, `InvoiceLine`, `InvoiceSection`, `InvoiceBuilder` and `StandardInvoiceBuilder` (empty sections skipped, total computed); verify with unit tests
+- [x] 2.2 Add `INVOICE CREATE;USER;<correo>` / `INVOICE CREATE;GROUP;<id>` (direct tickets for users, group tickets for groups, no constituents) with text formatting; verify with command tests including unknown recipients and zero totals, then commit `[F3-C02] Add invoice generation with builder.`
 
 ## 3. F3-C03 Singleton controllers and DI
 
