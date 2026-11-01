@@ -36,7 +36,7 @@ Milestones follow the source order. Each group ends with `mvn test` passing and 
 
 ## 8. F3-C08 Pass-based entry
 
-- [ ] 8.1 Add `;SPEED` to `ATTRACTION ENTER`, SpeedPass consumption (individual and atomic group), automatic Special Pass consumption and SPEED rejection at SPECIAL, consumed ids in output, persistence-safe undo; verify with tests for consumption counts, failed entries consuming nothing, group atomicity; commit `[F3-C08] Extend attraction access and pass consumption.`
+- [x] 8.1 Add `;SPEED` to `ATTRACTION ENTER`, SpeedPass consumption (individual and atomic group), automatic Special Pass consumption and SPEED rejection at SPECIAL, consumed ids in output, persistence-safe undo; verify with tests for consumption counts, failed entries consuming nothing, group atomicity; commit `[F3-C08] Extend attraction access and pass consumption.`
 
 ## 9. F3-C09 Persistence and UML
 

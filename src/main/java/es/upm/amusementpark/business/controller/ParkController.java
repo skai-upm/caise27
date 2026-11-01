@@ -448,16 +448,23 @@ public final class ParkController {
         save(() -> attractionRepository.save(attractions), () -> attractions.remove(attraction));
     }
 
-    /** Admits the users of a ticket valid for the system date; returns how many entered. */
-    public int enterAttraction(String attractionId, String ticketId) {
+    /**
+     * Admits the users of a ticket valid for the system date, optionally using
+     * SpeedPasses; consumed passes are persisted, and the entry is undone if
+     * that fails.
+     */
+    public AttractionEntry enterAttraction(String attractionId, String ticketId, boolean speed) {
         Attraction<?> attraction = existingAttraction(attractionId);
         Admission admission = existingAdmission(ticketId);
         if (!admission.getDate().equals(system.getCurrentDate())) {
             throw new OperationException("ticket " + ticketId + " is valid for " + admission.getDate()
                     + ", not for the system date " + system.getCurrentDate());
         }
-        attraction.admit(admission);
-        return admission.getUsers().size();
+        List<Pass> consumed = attraction.admit(admission, speed);
+        if (!consumed.isEmpty()) {
+            save(() -> ticketRepository.save(tickets), () -> attraction.cancelEntry(admission, consumed));
+        }
+        return new AttractionEntry(admission.getUsers().size(), consumed);
     }
 
     /** Lets the present users of a ticket leave, without checking the date; returns how many left. */

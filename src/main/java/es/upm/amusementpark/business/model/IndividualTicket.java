@@ -46,6 +46,21 @@ public class IndividualTicket extends Ticket implements IndividualAdmission {
         return passes;
     }
 
+    @Override
+    public SpeedPass findUnusedSpeedPass() {
+        for (SpeedPass pass : speedPasses) {
+            if (!pass.isConsumed()) {
+                return pass;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public SpecialPass findUnusedSpecialPass() {
+        return specialPass != null && !specialPass.isConsumed() ? specialPass : null;
+    }
+
     /** Whether a Special Pass was ever issued for this ticket, even if later consumed or refunded. */
     public boolean isSpecialPassIssued() {
         return specialPassIssued;

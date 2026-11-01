@@ -36,9 +36,10 @@ public final class CommandCatalog {
             new CommandInfo("ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;Tipo]",
                     "Creates an attraction with a maximum capacity; Tipo is GENERAL (default), INDIVIDUAL, GROUP"
                             + " or SPECIAL."),
-            new CommandInfo("ATTRACTION ENTER;IdAtraccion;IdTicket",
+            new CommandInfo("ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]",
                     "Lets the users of a ticket valid today enter, all or none, within capacity and if the"
-                            + " attraction type admits the ticket kind."),
+                            + " attraction type admits the ticket kind; SPEED uses one SpeedPass per user, and"
+                            + " SPECIAL attractions use the ticket's Special Pass."),
             new CommandInfo("ATTRACTION EXIT;IdAtraccion;IdTicket",
                     "Lets the users of a ticket leave the attraction, freeing their places."),
             new CommandInfo("ATTRACTION STATUS;IdAtraccion",

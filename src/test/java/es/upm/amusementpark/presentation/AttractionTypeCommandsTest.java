@@ -47,7 +47,7 @@ class AttractionTypeCommandsTest extends ParkTestSupport {
     }
 
     @ParameterizedTest
-    @CsvSource({"GENERAL, true, true", "INDIVIDUAL, true, false", "GROUP, false, true", "SPECIAL, true, false"})
+    @CsvSource({"GENERAL, true, true", "INDIVIDUAL, true, false", "GROUP, false, true", "SPECIAL, false, false"})
     void typeDecidesAdmittedTicketKinds(String type, boolean individualEnters, boolean groupEnters) {
         ok("ATTRACTION CREATE;A01;Tornado;20;" + type);
         assertEquals(individualEnters, run("ATTRACTION ENTER;A01;T001").startsWith("OK"));

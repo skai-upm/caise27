@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.amusementpark.business.OperationException;
+import es.upm.amusementpark.business.controller.AttractionEntry;
 import es.upm.amusementpark.business.controller.InvoiceController;
 import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.controller.SystemController;
@@ -222,9 +223,18 @@ public class CommandProcessor {
     }
 
     private String enterAttraction(String[] parts) {
-        requireParameters(parts, 2, "ATTRACTION ENTER;IdAtraccion;IdTicket");
-        int entered = park.enterAttraction(parts[1], parts[2]);
-        return "OK: " + entered + " user(s) entered attraction " + parts[1];
+        String syntax = "ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]";
+        requireParameters(parts, parts.length == 4 ? 3 : 2, syntax);
+        if (parts.length == 4 && !"SPEED".equals(parts[3])) {
+            throw new OperationException("the only entry option is SPEED. Usage: " + syntax);
+        }
+        AttractionEntry entry = park.enterAttraction(parts[1], parts[2], parts.length == 4);
+        String result = "OK: " + entry.entered() + " user(s) entered attraction " + parts[1];
+        if (!entry.consumedPasses().isEmpty()) {
+            result += " (consumed: " + String.join(", ",
+                    entry.consumedPasses().stream().map(pass -> pass.getKind() + " " + pass.getId()).toList()) + ")";
+        }
+        return result;
     }
 
     private String exitAttraction(String[] parts) {

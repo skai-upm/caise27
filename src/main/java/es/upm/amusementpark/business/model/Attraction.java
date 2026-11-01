@@ -56,17 +56,21 @@ public abstract class Attraction<T extends Admission> {
         return admitted.isInstance(admission);
     }
 
-    /** Checks the admission kind and lets it {@link #enter}. */
-    public void admit(Admission admission) {
+    /** Checks the admission kind and lets it {@link #enter}; returns the passes consumed. */
+    public List<Pass> admit(Admission admission, boolean speed) {
         if (!admits(admission)) {
             throw new OperationException(getType() + " attraction " + id + " does not admit "
                     + (admission instanceof GroupAdmission ? "group" : "individual") + " tickets");
         }
-        enter(admitted.cast(admission));
+        return enter(admitted.cast(admission), speed);
     }
 
-    /** Admits every user of the admission, or nobody if any of them cannot enter. */
-    public void enter(T admission) {
+    /**
+     * Admits every user of the admission, or nobody: capacity, presence and the
+     * required passes are all checked before anything changes. On success the
+     * required passes are consumed and returned.
+     */
+    public List<Pass> enter(T admission, boolean speed) {
         List<User> entering = admission.getUsers();
         for (User user : entering) {
             if (visitors.contains(user)) {
@@ -77,7 +81,34 @@ public abstract class Attraction<T extends Admission> {
             throw new OperationException("attraction " + id + " has " + getAvailablePlaces()
                     + " available places but the ticket admits " + entering.size());
         }
+        List<Pass> passes = passesRequired(admission, speed);
         visitors.addAll(entering);
+        passes.forEach(Pass::consume);
+        return passes;
+    }
+
+    /**
+     * Passes that must be consumed for this entry. With {@code speed}, every
+     * individual admission needs an unused SpeedPass; otherwise none is needed.
+     */
+    protected List<Pass> passesRequired(T admission, boolean speed) {
+        List<Pass> passes = new ArrayList<>();
+        if (speed) {
+            for (IndividualAdmission individual : admission.getIndividualAdmissions()) {
+                SpeedPass pass = individual.findUnusedSpeedPass();
+                if (pass == null) {
+                    throw new OperationException("ticket " + individual.getId() + " has no unused SpeedPass");
+                }
+                passes.add(pass);
+            }
+        }
+        return passes;
+    }
+
+    /** Undoes an entry whose result could not be saved. */
+    public void cancelEntry(Admission admission, List<Pass> consumed) {
+        visitors.removeAll(admission.getUsers());
+        consumed.forEach(Pass::restore);
     }
 
     /** Removes the admission's users who are present and returns how many left. */
