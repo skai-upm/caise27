@@ -1,0 +1,115 @@
+@startuml model
+' Class model of the Amusement Park application (Delivery 2), derived from the code in
+' src/main/java/es/upm/amusementpark. Conventions:
+' - methods are hidden; attributes are only primitive, enumeration and value types;
+' - references to modelled classes are relationships named after the holding field,
+'   with a cross on the holder's side and an arrow towards the referenced class;
+' - dashed <<use>> dependencies are shown only for classes without incoming relationships.
+
+skinparam classAttributeIconSize 0
+hide methods
+hide empty members
+
+package es.upm.amusementpark {
+
+  class App
+  class CommandProcessor
+  class CommandResult <<record>> {
+    output : String
+    exit : boolean
+  }
+  class Park {
+    currentDate : LocalDate
+    basePrice : BigDecimal
+  }
+  class StorageConfig <<record>> {
+    directory : Path
+  }
+  class OperationException
+
+  class User {
+    name : String
+    surname : String
+    dni : String
+    email : String
+    password : String
+    phone : String
+    card : String
+  }
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+  class UserValidator
+  class UserManager
+
+  class Group {
+    id : String
+    name : String
+  }
+
+  abstract class Ticket {
+    id : String
+    date : LocalDate
+    price : BigDecimal
+  }
+  class IndividualTicket
+  class GroupTicket
+
+  class Attraction {
+    id : String
+    name : String
+    capacity : int
+  }
+
+  class UserRepository {
+    file : Path
+  }
+  class GroupRepository {
+    file : Path
+  }
+  class TicketRepository {
+    file : Path
+  }
+  class AttractionRepository {
+    file : Path
+  }
+}
+
+' inheritance
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' associations, aggregation and composition (field names)
+CommandProcessor x--> "1" Park : park
+Park x--> "1" UserManager : userManager
+Park x--> "1" GroupRepository : groupRepository
+Park x--> "1" TicketRepository : ticketRepository
+Park x--> "1" AttractionRepository : attractionRepository
+Park x--> "0..*" Group : groups
+Park x--> "0..*" Ticket : tickets
+Park x--> "0..*" Attraction : attractions
+UserManager x--> "1" UserRepository : repository
+UserManager x--> "0..*" User : users
+Group x--> "0..*" User : members
+IndividualTicket x--> "1" User : user
+GroupTicket "0..*" o--> "1" Group : group
+GroupTicket "1" *--> "1..*" IndividualTicket : tickets
+Attraction x--> "0..*" User : visitors
+
+' usage of classes that have no incoming relationship
+App ..> CommandProcessor : <<use>>
+App ..> Park : <<use>>
+App ..> StorageConfig : <<use>>
+CommandProcessor ..> CommandResult : <<use>>
+Park ..> StorageConfig : <<use>>
+Park ..> OperationException : <<use>>
+UserManager ..> UserValidator : <<use>>
+UserManager ..> UserField : <<use>>
+User ..> UserField : <<use>>
+
+@enduml

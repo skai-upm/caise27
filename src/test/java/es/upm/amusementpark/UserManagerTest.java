@@ -52,15 +52,15 @@ class UserManagerTest {
 
     @Test
     void rejectsInvalidDataWithoutStoring() {
-        assertThrows(UserOperationException.class, () -> manager.create("Ana", "Garcia", "12345678A",
+        assertThrows(OperationException.class, () -> manager.create("Ana", "Garcia", "12345678A",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456"));
-        assertThrows(UserOperationException.class, () -> manager.create("Ana", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> manager.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.es", "Clave1!", "612345678", "1234567890123456"));
-        assertThrows(UserOperationException.class, () -> manager.create("Ana", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> manager.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.com", "clave1!", "612345678", "1234567890123456"));
-        assertThrows(UserOperationException.class, () -> manager.create("Ana", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> manager.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "1234 5678 9012 3456"));
-        assertThrows(UserOperationException.class, () -> manager.create(" ", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> manager.create(" ", "Garcia", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456"));
         assertTrue(manager.getUsers().isEmpty());
         assertTrue(Files.notExists(file));
@@ -69,9 +69,9 @@ class UserManagerTest {
     @Test
     void rejectsDuplicateDniOrEmail() {
         createAna();
-        assertThrows(UserOperationException.class, () -> manager.create("Otro", "X", "12345678Z",
+        assertThrows(OperationException.class, () -> manager.create("Otro", "X", "12345678Z",
                 "otro@correo.com", "Clave1!", "600000000", "1234567890123456"));
-        assertThrows(UserOperationException.class, () -> manager.create("Otro", "X", "87654321X",
+        assertThrows(OperationException.class, () -> manager.create("Otro", "X", "87654321X",
                 "ana@correo.com", "Clave1!", "600000000", "1234567890123456"));
         assertEquals(1, manager.getUsers().size());
     }
@@ -79,7 +79,7 @@ class UserManagerTest {
     @Test
     void deletesWithCorrectCredentialsAndPersists() throws IOException {
         createAna();
-        manager.delete("ana@correo.com", "Clave1!");
+        manager.remove(manager.authenticate("ana@correo.com", "Clave1!"));
         assertTrue(manager.getUsers().isEmpty());
         assertTrue(restart().getUsers().isEmpty());
     }
@@ -88,8 +88,8 @@ class UserManagerTest {
     void deleteWithWrongCredentialsChangesNothing() throws IOException {
         createAna();
         List<String> before = Files.readAllLines(file);
-        assertThrows(UserOperationException.class, () -> manager.delete("ana@correo.com", "Wrong1!"));
-        assertThrows(UserOperationException.class, () -> manager.delete("nadie@correo.com", "Clave1!"));
+        assertThrows(OperationException.class, () -> manager.authenticate("ana@correo.com", "Wrong1!"));
+        assertThrows(OperationException.class, () -> manager.authenticate("nadie@correo.com", "Clave1!"));
         assertEquals(1, manager.getUsers().size());
         assertEquals(before, Files.readAllLines(file));
     }
@@ -117,9 +117,9 @@ class UserManagerTest {
     @Test
     void updateWithWrongCredentialsChangesNothing() {
         createAna();
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Wrong1!", UserField.NAME, "X"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("nadie@correo.com", "Clave1!", UserField.NAME, "X"));
         assertEquals("Ana", manager.findByEmail("ana@correo.com").getName());
     }
@@ -128,7 +128,7 @@ class UserManagerTest {
     void rejectsEmailOwnedByAnotherUser() {
         createAna();
         createPedro();
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("pedro@correo.com", "Otra2#", UserField.EMAIL, "ana@correo.com"));
         assertNotNull(manager.findByEmail("pedro@correo.com"));
     }
@@ -144,11 +144,11 @@ class UserManagerTest {
     void invalidNewValuesLeaveStateIntact() throws IOException {
         createAna();
         List<String> before = Files.readAllLines(file);
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "clave1!"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.CARD, "123"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo"));
         User user = manager.findByEmail("ana@correo.com");
         assertEquals("Clave1!", user.getPassword());
@@ -160,7 +160,7 @@ class UserManagerTest {
     void failedSaveRevertsInMemoryChange() throws IOException {
         Path unwritable = tempDir.resolve("missing-dir").resolve("users.txt");
         UserManager blocked = new UserManager(new UserRepository(unwritable));
-        assertThrows(UserOperationException.class, () -> blocked.create("Ana", "Garcia", "12345678Z",
+        assertThrows(OperationException.class, () -> blocked.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456"));
         assertTrue(blocked.getUsers().isEmpty());
         assertNull(blocked.findByEmail("ana@correo.com"));

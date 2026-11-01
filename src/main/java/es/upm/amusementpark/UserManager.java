@@ -50,31 +50,31 @@ public class UserManager {
         requireValid(UserField.PASSWORD, password);
         requireValid(UserField.CARD, card);
         if (!UserValidator.isValidDni(dni)) {
-            throw new UserOperationException("invalid DNI: " + dni);
+            throw new OperationException("invalid DNI: " + dni);
         }
         if (findByDni(dni) != null) {
-            throw new UserOperationException("a user with DNI " + dni + " already exists");
+            throw new OperationException("a user with DNI " + dni + " already exists");
         }
         if (findByEmail(email) != null) {
-            throw new UserOperationException("a user with email " + email + " already exists");
+            throw new OperationException("a user with email " + email + " already exists");
         }
         User user = new User(name, surname, dni, email, password, phone, card);
         users.add(user);
         try {
             persist();
-        } catch (UserOperationException e) {
+        } catch (OperationException e) {
             users.remove(user);
             throw e;
         }
     }
 
-    public void delete(String email, String password) {
-        User user = authenticate(email, password);
+    /** Removes an already authenticated user and persists the change. */
+    public void remove(User user) {
         int index = users.indexOf(user);
         users.remove(index);
         try {
             persist();
-        } catch (UserOperationException e) {
+        } catch (OperationException e) {
             users.add(index, user);
             throw e;
         }
@@ -86,23 +86,24 @@ public class UserManager {
         if (field == UserField.EMAIL) {
             User owner = findByEmail(newValue);
             if (owner != null && owner != user) {
-                throw new UserOperationException("a user with email " + newValue + " already exists");
+                throw new OperationException("a user with email " + newValue + " already exists");
             }
         }
         String oldValue = user.get(field);
         user.set(field, newValue);
         try {
             persist();
-        } catch (UserOperationException e) {
+        } catch (OperationException e) {
             user.set(field, oldValue);
             throw e;
         }
     }
 
-    private User authenticate(String email, String password) {
+    /** Returns the user with that email if the password matches; otherwise rejects the request. */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null || !user.getPassword().equals(password)) {
-            throw new UserOperationException("incorrect email or password");
+            throw new OperationException("incorrect email or password");
         }
         return user;
     }
@@ -115,13 +116,13 @@ public class UserManager {
             case CARD -> UserValidator.isValidCard(value);
         };
         if (!valid) {
-            throw new UserOperationException("invalid " + field.name().toLowerCase());
+            throw new OperationException("invalid " + field.name().toLowerCase());
         }
     }
 
     private static void requireNotEmpty(String value, String label) {
         if (!UserValidator.isNotEmpty(value)) {
-            throw new UserOperationException(label + " must not be empty");
+            throw new OperationException(label + " must not be empty");
         }
     }
 
@@ -129,7 +130,7 @@ public class UserManager {
         try {
             repository.save(users);
         } catch (IOException e) {
-            throw new UserOperationException("could not save users: " + e.getMessage());
+            throw new OperationException("could not save users: " + e.getMessage());
         }
     }
 }

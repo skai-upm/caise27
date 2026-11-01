@@ -13,6 +13,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,8 +32,9 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        manager = new UserManager(new UserRepository(tempDir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        Park park = new Park(new StorageConfig(tempDir));
+        manager = park.getUserManager();
+        processor = new CommandProcessor(park);
     }
 
     @Test
@@ -114,11 +116,28 @@ class CommandProcessorTest {
     void helpListsEveryCommandSyntax() {
         CommandResult result = processor.execute("HELP");
         assertFalse(result.exit());
-        assertTrue(result.output().contains("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta"));
-        assertTrue(result.output().contains("USER DELETE;Correo;Contraseña"));
-        assertTrue(result.output().contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
-        assertTrue(result.output().contains("HELP"));
-        assertTrue(result.output().contains("EXIT"));
+        for (String syntax : List.of(
+                "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+                "USER DELETE;Correo;Contraseña",
+                "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+                "SYSTEM DATE;yyyy-MM-dd",
+                "SYSTEM PRICE;Precio",
+                "GROUP CREATE;IdGrupo;Nombre",
+                "GROUP ADD;IdGrupo;Correo",
+                "GROUP REMOVE;IdGrupo;Correo",
+                "GROUP DELETE;IdGrupo",
+                "TICKET CREATE;IdTicket;Correo;yyyy-MM-dd",
+                "TICKET DELETE;IdTicket",
+                "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd",
+                "GROUPTICKET DELETE;IdTicket",
+                "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad",
+                "ATTRACTION ENTER;IdAtraccion;IdTicket",
+                "ATTRACTION EXIT;IdAtraccion;IdTicket",
+                "ATTRACTION STATUS;IdAtraccion",
+                "HELP",
+                "EXIT")) {
+            assertTrue(result.output().contains(syntax), syntax);
+        }
     }
 
     @Test

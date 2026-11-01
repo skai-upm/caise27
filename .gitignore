@@ -19,3 +19,10 @@ buildNumber.properties
 # OpenSpec
 .claude/
 .sddx/
+
+# Amusement park runtime data
+users.txt
+groups.txt
+tickets.txt
+attractions.txt
+tmp/
