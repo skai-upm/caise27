@@ -13,6 +13,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,15 +29,17 @@ public class CommandProcessorTest {
     @TempDir
     Path dir;
 
+    private ParkController park;
     private UserManager manager;
     private ByteArrayOutputStream buffer;
     private CommandProcessor processor;
 
     @BeforeEach
     public void setUp() throws IOException {
-        manager = new UserManager(new UserStorage(dir.resolve("users.txt")));
+        park = new ParkController(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        manager = park.getUsers();
         buffer = new ByteArrayOutputStream();
-        processor = new CommandProcessor(manager, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     private String output() {
@@ -62,6 +65,59 @@ public class CommandProcessorTest {
         assertTrue(out.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
         assertTrue(out.contains("HELP"));
         assertTrue(out.contains("EXIT"));
+    }
+
+    @Test
+    public void helpListsEveryF2Command() {
+        processor.process("HELP");
+        String out = output();
+        for (String syntax : new String[] {"SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Precio",
+            "GROUP CREATE;IdGrupo;Nombre", "GROUP ADD;IdGrupo;Correo", "GROUP REMOVE;IdGrupo;Correo",
+            "GROUP DELETE;IdGrupo", "TICKET CREATE;IdTicket;Correo;yyyy-MM-dd", "TICKET DELETE;IdTicket",
+            "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;IdTicket",
+            "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad", "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION EXIT;IdAtraccion;IdTicket", "ATTRACTION STATUS;IdAtraccion"}) {
+            assertTrue(out.contains(syntax), syntax);
+        }
+    }
+
+    @Test
+    public void f2CommandsProduceSpecifiedReplies() throws IOException {
+        String script = String.join("\n",
+                CREATE_ANA, CREATE_PEDRO,
+                "USER CREATE;Luis;Ruiz;11111111H;luis@correo.com;Clave1!;600000000;1234567890123456",
+                "USER CREATE;Marta;Sanz;22222222J;marta@correo.com;Clave1!;600000000;1234567890123456",
+                "SYSTEM DATE;2026-10-15",
+                "SYSTEM DATE;2026-13-01",
+                "SYSTEM PRICE;40.00",
+                "GROUP CREATE;G01;Familia Garcia",
+                "GROUP ADD;G01;pedro@correo.com",
+                "GROUP ADD;G01;luis@correo.com",
+                "GROUP ADD;G01;marta@correo.com",
+                "GROUP REMOVE;G01;marta@correo.com",
+                "GROUP ADD;G01;marta@correo.com",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15",
+                "GROUPTICKET CREATE;TG01;G01;2026-10-15",
+                "GROUP DELETE;G01",
+                "ATTRACTION CREATE;A01;Tornado;20",
+                "ATTRACTION ENTER;A01;T001",
+                "ATTRACTION ENTER;A01;TG01",
+                "ATTRACTION STATUS;A01",
+                "ATTRACTION EXIT;A01;T001",
+                "ATTRACTION STATUS;A01",
+                "TICKET DELETE;T001",
+                "GROUPTICKET DELETE;TG01");
+        processor.run(new BufferedReader(new StringReader(script)));
+        String out = output();
+        assertTrue(out.contains("OK TICKET CREATED -> 40.00"));
+        assertTrue(out.contains("OK GROUP TICKET CREATED -> 108.00"));
+        assertTrue(out.contains("Error: Invalid date (expected yyyy-MM-dd): 2026-13-01"));
+        assertTrue(out.contains("Error: Group G01 is locked"));
+        assertTrue(out.contains("Users present: 4" + System.lineSeparator() + "Available places: 16"));
+        assertTrue(out.contains("Users present: 3" + System.lineSeparator() + "Available places: 17"));
+        assertTrue(out.contains("ana@correo.com (Ana Garcia Lopez)"));
+        assertTrue(out.contains("Error: Ticket T001 dated 2026-10-15 can no longer be deleted"));
+        assertTrue(out.contains("Error: Ticket TG01 dated 2026-10-15 can no longer be deleted"));
     }
 
     @Test

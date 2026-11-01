@@ -14,7 +14,7 @@ Each command line SHALL be split on `;` using `String.split` and basic `String` 
 - **THEN** it is interpreted as operation `USER DELETE` with parameters `ana@correo.com` and `Clave1!`
 
 ### Requirement: Interactive mode
-When launched without arguments, the application SHALL read one command per line from standard input and process each, continuing until `EXIT` is processed or standard input ends.
+When launched without a command-file argument (with no arguments, or with only the `--fly` flag), the application SHALL read one command per line from standard input and process each, continuing until `EXIT` is processed or standard input ends.
 
 #### Scenario: Commands read until EXIT
 - **GIVEN** the application was started without arguments
@@ -26,13 +26,22 @@ When launched without arguments, the application SHALL read one command per line
 - **WHEN** standard input ends without `EXIT`
 - **THEN** the application terminates normally
 
+#### Scenario: Interactive with --fly
+- **GIVEN** the application was started with only `--fly`
+- **WHEN** commands are entered on standard input
+- **THEN** they are processed interactively
+
 ### Requirement: File mode
-When launched with an argument, the application SHALL treat the first argument as the path of a command file, read it line by line, and process each nonblank line as a command in file order. Blank lines SHALL be ignored.
+When launched with a command-file argument, the application SHALL treat the first argument other than `--fly` as the path of a command file, read it line by line, and process each nonblank line as a command in file order. Blank lines SHALL be ignored.
 
 #### Scenario: Ordered file processing with blank lines
 - **GIVEN** a file containing valid commands interleaved with blank lines
 - **WHEN** the application runs with that file as first argument
 - **THEN** the nonblank commands are executed in file order and the blank lines cause no error
+
+#### Scenario: File with --fly
+- **WHEN** the application is started with `--fly input_fase2.txt`
+- **THEN** `input_fase2.txt` is processed as the command file
 
 ### Requirement: Shared processing across modes
 Interactive and file modes SHALL use the same command interpretation and execution logic, so the same command yields the same result whichever way it is supplied.
@@ -58,11 +67,11 @@ If the command file does not exist, cannot be opened or cannot be read, the appl
 - **THEN** an error message naming the problem is shown and the application ends without a stack trace
 
 ### Requirement: HELP command
-`HELP` SHALL display the available commands with their basic syntax, at least: `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta`, `USER DELETE;Correo;Contraseña`, `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, `HELP` and `EXIT`, consistent with the implemented operations.
+`HELP` SHALL display every available command with its basic syntax, consistent with the implemented operations: `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta`, `USER DELETE;Correo;Contraseña`, `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, `SYSTEM DATE;yyyy-MM-dd`, `SYSTEM PRICE;Precio`, `GROUP CREATE;IdGrupo;Nombre`, `GROUP ADD;IdGrupo;Correo`, `GROUP REMOVE;IdGrupo;Correo`, `GROUP DELETE;IdGrupo`, `TICKET CREATE;IdTicket;Correo;yyyy-MM-dd`, `TICKET DELETE;IdTicket`, `GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd`, `GROUPTICKET DELETE;IdTicket`, `ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad`, `ATTRACTION ENTER;IdAtraccion;IdTicket`, `ATTRACTION EXIT;IdAtraccion;IdTicket`, `ATTRACTION STATUS;IdAtraccion`, `HELP` and `EXIT`.
 
 #### Scenario: Help lists current commands
 - **WHEN** `HELP` is executed
-- **THEN** the five commands and their basic syntax are shown
+- **THEN** every listed command and its basic syntax is shown, including the F1 user commands, `HELP` and `EXIT`
 
 ### Requirement: EXIT command
 `EXIT` SHALL end interactive execution in a controlled manner and SHALL stop file processing immediately so that no later command in the file is executed.

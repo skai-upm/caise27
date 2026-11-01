@@ -31,7 +31,7 @@ public class UserManager {
         return null;
     }
 
-    private User findByDni(String dni) {
+    public User findByDni(String dni) {
         for (User u : users) {
             if (u.getDni().equals(dni)) {
                 return u;
@@ -41,31 +41,31 @@ public class UserManager {
     }
 
     public void create(String name, String surname, String dni, String email,
-                       String password, String phone, String card) throws UserOperationException {
+                       String password, String phone, String card) throws OperationException {
         if (name.isEmpty()) {
-            throw new UserOperationException("Name must not be empty");
+            throw new OperationException("Name must not be empty");
         }
         if (surname.isEmpty()) {
-            throw new UserOperationException("Surname must not be empty");
+            throw new OperationException("Surname must not be empty");
         }
         if (!UserValidator.isValidDni(dni)) {
-            throw new UserOperationException("Invalid DNI: " + dni);
+            throw new OperationException("Invalid DNI: " + dni);
         }
         if (!UserValidator.isValidEmail(email)) {
-            throw new UserOperationException("Invalid email: " + email);
+            throw new OperationException("Invalid email: " + email);
         }
         if (!UserValidator.isValidPassword(password)) {
-            throw new UserOperationException(
+            throw new OperationException(
                     "Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol");
         }
         if (!UserValidator.isValidCard(card)) {
-            throw new UserOperationException("Invalid card number: it must have exactly 16 digits");
+            throw new OperationException("Invalid card number: it must have exactly 16 digits");
         }
         if (findByDni(dni) != null) {
-            throw new UserOperationException("A user with DNI " + dni + " already exists");
+            throw new OperationException("A user with DNI " + dni + " already exists");
         }
         if (findByEmail(email) != null) {
-            throw new UserOperationException("A user with email " + email + " already exists");
+            throw new OperationException("A user with email " + email + " already exists");
         }
         User user = new User(name, surname, dni, email, password, phone, card);
         users.add(user);
@@ -73,28 +73,34 @@ public class UserManager {
             storage.save(users);
         } catch (IOException e) {
             users.remove(user);
-            throw new UserOperationException("Could not save users: " + e.getMessage());
+            throw new OperationException("Could not save users: " + e.getMessage());
         }
     }
 
-    public void delete(String email, String password) throws UserOperationException {
-        User user = authenticate(email, password);
+    /**
+     * Removes an already authenticated user. Business rules that may forbid the
+     * deletion are checked by the caller.
+     */
+    public void delete(User user) throws OperationException {
         int index = users.indexOf(user);
+        if (index < 0) {
+            throw new OperationException("User is not registered: " + user.getEmail());
+        }
         users.remove(index);
         try {
             storage.save(users);
         } catch (IOException e) {
             users.add(index, user);
-            throw new UserOperationException("Could not save users: " + e.getMessage());
+            throw new OperationException("Could not save users: " + e.getMessage());
         }
     }
 
     public void update(String email, String password, String fieldName, String newValue)
-            throws UserOperationException {
+            throws OperationException {
         User user = authenticate(email, password);
         UserField field = UserField.fromName(fieldName);
         if (field == null) {
-            throw new UserOperationException("Field cannot be updated: " + fieldName);
+            throw new OperationException("Field cannot be updated: " + fieldName);
         }
         validateNewValue(user, field, newValue);
         String oldValue = getValue(user, field);
@@ -103,46 +109,46 @@ public class UserManager {
             storage.save(users);
         } catch (IOException e) {
             setValue(user, field, oldValue);
-            throw new UserOperationException("Could not save users: " + e.getMessage());
+            throw new OperationException("Could not save users: " + e.getMessage());
         }
     }
 
-    private User authenticate(String email, String password) throws UserOperationException {
+    public User authenticate(String email, String password) throws OperationException {
         User user = findByEmail(email);
         if (user == null || !user.getPassword().equals(password)) {
-            throw new UserOperationException("Incorrect email or password");
+            throw new OperationException("Incorrect email or password");
         }
         return user;
     }
 
-    private void validateNewValue(User user, UserField field, String value) throws UserOperationException {
+    private void validateNewValue(User user, UserField field, String value) throws OperationException {
         switch (field) {
             case PHONE -> {
                 // stored as given
             }
             case NAME, SURNAME -> {
                 if (value.isEmpty()) {
-                    throw new UserOperationException(field + " must not be empty");
+                    throw new OperationException(field + " must not be empty");
                 }
             }
             case EMAIL -> {
                 if (!UserValidator.isValidEmail(value)) {
-                    throw new UserOperationException("Invalid email: " + value);
+                    throw new OperationException("Invalid email: " + value);
                 }
                 User other = findByEmail(value);
                 if (other != null && other != user) {
-                    throw new UserOperationException("A user with email " + value + " already exists");
+                    throw new OperationException("A user with email " + value + " already exists");
                 }
             }
             case PASSWORD -> {
                 if (!UserValidator.isValidPassword(value)) {
-                    throw new UserOperationException(
+                    throw new OperationException(
                             "Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol");
                 }
             }
             case CARD -> {
                 if (!UserValidator.isValidCard(value)) {
-                    throw new UserOperationException("Invalid card number: it must have exactly 16 digits");
+                    throw new OperationException("Invalid card number: it must have exactly 16 digits");
                 }
             }
         }

@@ -1,0 +1,114 @@
+@startuml model
+' Class model of the Amusement Park application, derived from src/main/java/es/upm/amusementpark.
+' Conventions: no methods; only value-typed fields (primitives, String, dates, amounts, paths, enums)
+' appear as attributes; fields referencing project classes are drawn as relationships named after the field,
+' with a cross on the non-navigable end. Usage (dashed) arrows only for classes without incoming relationships.
+
+hide empty methods
+hide empty members
+skinparam classAttributeIconSize 0
+
+package es.upm.amusementpark {
+
+  class App
+  class CommandProcessor {
+    out : PrintStream
+  }
+  class ParkController {
+    systemDate : LocalDate
+    basePrice : BigDecimal
+  }
+  class StoragePaths {
+    directory : Path
+  }
+
+  class UserManager
+  class GroupManager
+  class TicketManager
+  class AttractionManager
+
+  class UserStorage {
+    file : Path
+  }
+  class GroupStorage {
+    file : Path
+  }
+  class TicketStorage {
+    file : Path
+  }
+  class AttractionStorage {
+    file : Path
+  }
+
+  class User {
+    name : String
+    surname : String
+    dni : String
+    email : String
+    password : String
+    phone : String
+    card : String
+  }
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+  class UserValidator
+  class Group {
+    id : String
+    name : String
+  }
+  abstract class Ticket {
+    id : String
+    date : LocalDate
+    price : BigDecimal
+  }
+  class IndividualTicket
+  class GroupTicket
+  class Attraction {
+    id : String
+    name : String
+    capacity : int
+  }
+  class OperationException
+}
+
+' --- inheritance
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' --- associations (navigable towards the referenced class)
+CommandProcessor x--> "1" ParkController : park
+ParkController x--> "1" UserManager : users
+ParkController x--> "1" GroupManager : groups
+ParkController x--> "1" TicketManager : tickets
+ParkController x--> "1" AttractionManager : attractions
+
+UserManager x--> "1" UserStorage : storage
+UserManager x--> "0..*" User : users
+GroupManager x--> "1" GroupStorage : storage
+GroupManager x--> "0..*" Group : groups
+TicketManager x--> "1" TicketStorage : storage
+TicketManager x--> "0..*" Ticket : tickets
+AttractionManager x--> "1" AttractionStorage : storage
+AttractionManager x--> "0..*" Attraction : attractions
+
+Group x--> "0..*" User : members
+IndividualTicket x--> "1" User : user
+GroupTicket o--> "1" Group : group
+GroupTicket "1" *--> "1..*" IndividualTicket : tickets
+Attraction x--> "0..*" User : present
+
+' --- usage, only for classes that have no incoming relationship otherwise
+App ..> CommandProcessor
+App ..> StoragePaths
+ParkController ..> StoragePaths
+UserManager ..> UserValidator
+UserManager ..> UserField
+CommandProcessor ..> OperationException
+
+@enduml
