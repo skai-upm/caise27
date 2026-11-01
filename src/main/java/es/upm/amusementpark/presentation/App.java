@@ -8,8 +8,8 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDate;
 
+import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.persistence.StoragePaths;
 
 /**
@@ -68,15 +68,22 @@ public class App {
     }
 
     private static void execute(StoragePaths paths, String commandFile, InputStream in, PrintStream out) {
-        CommandProcessor processor;
+        ParkController park;
         try {
-            processor = new CommandProcessor(AppBootstrap.create(paths, LocalDate.now()), out);
+            park = AppBootstrap.start(paths);
         } catch (IOException e) {
             out.println("Error: could not load data from " + paths.getDirectory().toAbsolutePath() + ": "
                     + e.getMessage());
             return;
         }
+        try {
+            process(new CommandProcessor(park, out), commandFile, in, out);
+        } finally {
+            AppBootstrap.shutdown();
+        }
+    }
 
+    private static void process(CommandProcessor processor, String commandFile, InputStream in, PrintStream out) {
         if (commandFile == null) {
             try {
                 processor.run(new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8)));

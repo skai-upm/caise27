@@ -16,10 +16,37 @@ import es.upm.amusementpark.business.model.User;
  */
 public class InvoiceController {
 
+    private static InvoiceController instance;
+
+    /**
+     * Creates the single instance for this execution. Fails if it already exists.
+     */
+    public static synchronized InvoiceController initialize(TicketController tickets, Supplier<InvoiceBuilder> builders) {
+        if (instance != null) {
+            throw new IllegalStateException("InvoiceController is already initialized");
+        }
+        instance = new InvoiceController(tickets, builders);
+        return instance;
+    }
+
+    public static synchronized InvoiceController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("InvoiceController is not initialized");
+        }
+        return instance;
+    }
+
+    /**
+     * Discards the instance at the end of an execution.
+     */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
     private final TicketController tickets;
     private final Supplier<InvoiceBuilder> builders;
 
-    public InvoiceController(TicketController tickets, Supplier<InvoiceBuilder> builders) {
+    private InvoiceController(TicketController tickets, Supplier<InvoiceBuilder> builders) {
         this.tickets = tickets;
         this.builders = builders;
     }

@@ -6,7 +6,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
@@ -22,13 +21,40 @@ import es.upm.amusementpark.business.repository.TicketRepository;
  */
 public class TicketController {
 
+    private static TicketController instance;
+
+    /**
+     * Creates the single instance for this execution. Fails if it already exists.
+     */
+    public static synchronized TicketController initialize(TicketRepository repository, UserController users, GroupController groups) throws IOException {
+        if (instance != null) {
+            throw new IllegalStateException("TicketController is already initialized");
+        }
+        instance = new TicketController(repository, users, groups);
+        return instance;
+    }
+
+    public static synchronized TicketController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("TicketController is not initialized");
+        }
+        return instance;
+    }
+
+    /**
+     * Discards the instance at the end of an execution.
+     */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
     private final TicketRepository repository;
     private final List<Ticket> tickets;
 
-    public TicketController(TicketRepository repository, Function<String, User> userByDni,
-                         Function<String, Group> groupById) throws IOException {
+    private TicketController(TicketRepository repository, UserController users, GroupController groups)
+            throws IOException {
         this.repository = repository;
-        this.tickets = repository.load(userByDni, groupById);
+        this.tickets = repository.load(users::findByDni, groups::find);
     }
 
     public List<Ticket> getTickets() {

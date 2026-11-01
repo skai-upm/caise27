@@ -3,7 +3,6 @@ package es.upm.amusementpark.business.controller;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.OperationException;
@@ -16,12 +15,39 @@ import es.upm.amusementpark.business.repository.GroupRepository;
  */
 public class GroupController {
 
+    private static GroupController instance;
+
+    /**
+     * Creates the single instance for this execution. Fails if it already exists.
+     */
+    public static synchronized GroupController initialize(GroupRepository repository, UserController users) throws IOException {
+        if (instance != null) {
+            throw new IllegalStateException("GroupController is already initialized");
+        }
+        instance = new GroupController(repository, users);
+        return instance;
+    }
+
+    public static synchronized GroupController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("GroupController is not initialized");
+        }
+        return instance;
+    }
+
+    /**
+     * Discards the instance at the end of an execution.
+     */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
     private final GroupRepository repository;
     private final List<Group> groups;
 
-    public GroupController(GroupRepository repository, Function<String, User> userByDni) throws IOException {
+    private GroupController(GroupRepository repository, UserController users) throws IOException {
         this.repository = repository;
-        this.groups = repository.load(userByDni);
+        this.groups = repository.load(users::findByDni);
     }
 
     public List<Group> getGroups() {

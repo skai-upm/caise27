@@ -1,6 +1,5 @@
 package es.upm.amusementpark.business.controller;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -12,19 +11,42 @@ import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Invoice;
 import es.upm.amusementpark.business.model.OperationException;
-import es.upm.amusementpark.business.model.SimpleInvoiceBuilder;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
-import es.upm.amusementpark.business.repository.AttractionRepository;
-import es.upm.amusementpark.business.repository.GroupRepository;
-import es.upm.amusementpark.business.repository.TicketRepository;
-import es.upm.amusementpark.business.repository.UserRepository;
 
 /**
  * Main controller of the park. Holds the single system date and the base ticket
  * price, and applies the rules that involve several kinds of objects.
  */
 public class ParkController {
+
+    private static ParkController instance;
+
+    /**
+     * Creates the single instance for this execution. Fails if it already exists.
+     */
+    public static synchronized ParkController initialize(UserController users, GroupController groups, TicketController tickets,
+            AttractionController attractions, InvoiceController invoices, LocalDate startDate) {
+        if (instance != null) {
+            throw new IllegalStateException("ParkController is already initialized");
+        }
+        instance = new ParkController(users, groups, tickets, attractions, invoices, startDate);
+        return instance;
+    }
+
+    public static synchronized ParkController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("ParkController is not initialized");
+        }
+        return instance;
+    }
+
+    /**
+     * Discards the instance at the end of an execution.
+     */
+    public static synchronized void reset() {
+        instance = null;
+    }
 
     public static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
 
@@ -36,20 +58,13 @@ public class ParkController {
     private LocalDate systemDate;
     private BigDecimal basePrice = DEFAULT_PRICE;
 
-    public ParkController(UserRepository userRepository, GroupRepository groupRepository,
-                          TicketRepository ticketRepository, AttractionRepository attractionRepository)
-            throws IOException {
-        this(userRepository, groupRepository, ticketRepository, attractionRepository, LocalDate.now());
-    }
-
-    public ParkController(UserRepository userRepository, GroupRepository groupRepository,
-                          TicketRepository ticketRepository, AttractionRepository attractionRepository,
-                          LocalDate startDate) throws IOException {
-        this.users = new UserController(userRepository);
-        this.groups = new GroupController(groupRepository, users::findByDni);
-        this.tickets = new TicketController(ticketRepository, users::findByDni, groups::find);
-        this.attractions = new AttractionController(attractionRepository);
-        this.invoices = new InvoiceController(tickets, SimpleInvoiceBuilder::new);
+    private ParkController(UserController users, GroupController groups, TicketController tickets,
+                           AttractionController attractions, InvoiceController invoices, LocalDate startDate) {
+        this.users = users;
+        this.groups = groups;
+        this.tickets = tickets;
+        this.attractions = attractions;
+        this.invoices = invoices;
         this.systemDate = startDate;
     }
 

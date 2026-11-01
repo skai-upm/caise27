@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -30,7 +31,13 @@ public class UserControllerTest {
     @BeforeEach
     public void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        manager = new UserController(new UserFileRepository(file));
+        UserController.reset();
+        manager = UserController.initialize(new UserFileRepository(file));
+    }
+
+    @AfterEach
+    public void tearDown() {
+        UserController.reset();
     }
 
     private void createAna() throws OperationException {
@@ -44,7 +51,8 @@ public class UserControllerTest {
     }
 
     private UserController restart() throws IOException {
-        return new UserController(new UserFileRepository(file));
+        UserController.reset();
+        return UserController.initialize(new UserFileRepository(file));
     }
 
     @Test

@@ -13,10 +13,37 @@ import es.upm.amusementpark.business.repository.AttractionRepository;
  */
 public class AttractionController {
 
+    private static AttractionController instance;
+
+    /**
+     * Creates the single instance for this execution. Fails if it already exists.
+     */
+    public static synchronized AttractionController initialize(AttractionRepository repository) throws IOException {
+        if (instance != null) {
+            throw new IllegalStateException("AttractionController is already initialized");
+        }
+        instance = new AttractionController(repository);
+        return instance;
+    }
+
+    public static synchronized AttractionController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("AttractionController is not initialized");
+        }
+        return instance;
+    }
+
+    /**
+     * Discards the instance at the end of an execution.
+     */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
     private final AttractionRepository repository;
     private final List<Attraction> attractions;
 
-    public AttractionController(AttractionRepository repository) throws IOException {
+    private AttractionController(AttractionRepository repository) throws IOException {
         this.repository = repository;
         this.attractions = repository.load();
     }

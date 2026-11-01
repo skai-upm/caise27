@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -29,7 +30,7 @@ public class InvoiceTest {
 
     @BeforeEach
     public void setUp() throws IOException, OperationException {
-        park = AppBootstrap.create(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        park = AppBootstrap.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
         park.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         park.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
@@ -40,6 +41,11 @@ public class InvoiceTest {
         park.addToGroup("G01", "ana@correo.com");
         park.addToGroup("G01", "pedro@correo.com");
         park.addToGroup("G01", "luis@correo.com");
+    }
+
+    @AfterEach
+    public void tearDown() {
+        AppBootstrap.shutdown();
     }
 
     @Test

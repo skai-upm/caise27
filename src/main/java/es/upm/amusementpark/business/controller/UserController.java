@@ -16,10 +16,37 @@ import es.upm.amusementpark.business.repository.UserRepository;
  */
 public class UserController {
 
+    private static UserController instance;
+
+    /**
+     * Creates the single instance for this execution. Fails if it already exists.
+     */
+    public static synchronized UserController initialize(UserRepository repository) throws IOException {
+        if (instance != null) {
+            throw new IllegalStateException("UserController is already initialized");
+        }
+        instance = new UserController(repository);
+        return instance;
+    }
+
+    public static synchronized UserController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("UserController is not initialized");
+        }
+        return instance;
+    }
+
+    /**
+     * Discards the instance at the end of an execution.
+     */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
     private final UserRepository repository;
     private final List<User> users;
 
-    public UserController(UserRepository repository) throws IOException {
+    private UserController(UserRepository repository) throws IOException {
         this.repository = repository;
         this.users = repository.load();
     }

@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -48,11 +49,18 @@ public class ParkControllerTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        park = AppBootstrap.create(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        park = AppBootstrap.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+    }
+
+    @AfterEach
+    public void tearDown() {
+        AppBootstrap.shutdown();
     }
 
     private ParkController restart() throws IOException {
-        return AppBootstrap.create(new StoragePaths(dir), park.getSystemDate());
+        LocalDate date = park.getSystemDate();
+        AppBootstrap.shutdown();
+        return AppBootstrap.start(new StoragePaths(dir), date);
     }
 
     private static String email(int i) {
@@ -77,10 +85,8 @@ public class ParkControllerTest {
 
     @Test
     public void defaultStartDateIsToday() throws IOException {
-        StoragePaths paths = new StoragePaths(dir);
-        assertEquals(LocalDate.now(), new ParkController(new UserFileRepository(paths.users()),
-                new GroupFileRepository(paths.groups()), new TicketFileRepository(paths.tickets()),
-                new AttractionFileRepository(paths.attractions())).getSystemDate());
+AppBootstrap.shutdown();
+        assertEquals(LocalDate.now(), AppBootstrap.start(new StoragePaths(dir)).getSystemDate());
     }
 
     @Test
