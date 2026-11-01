@@ -41,7 +41,7 @@ class PassCommandsTest extends ParkTestSupport {
         List<SpeedPass> passes = ticket("T001").getSpeedPasses();
         assertEquals(10, passes.size());
         assertEquals(10, passes.stream().map(Pass::getId).distinct().count());
-        assertTrue(passes.stream().allMatch(p -> p.getPrice().equals(new BigDecimal("12.00")) && !p.isConsumed()));
+        assertTrue(passes.stream().allMatch(p -> p.getPrice().compareTo(new BigDecimal("12.00")) == 0 && !p.isConsumed()));
         ok("SPEEDPASS CREATE;T001;1");
         assertEquals("T001-SP11", ticket("T001").getSpeedPasses().get(10).getId());
     }

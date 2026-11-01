@@ -62,7 +62,7 @@ Each constituent ticket SHALL block deletion of its user while dated on or after
 - **THEN** an error message is reported and Ana remains registered
 
 ### Requirement: GROUPTICKET DELETE command
-`GROUPTICKET DELETE;<Id>` SHALL delete a group ticket together with all its constituent tickets only when its date is strictly later than the system date; otherwise, or for unknown identifiers, it SHALL be rejected leaving every ticket unchanged.
+`GROUPTICKET DELETE;<Id>` SHALL delete a group ticket only when its date is strictly later than the system date, removing first the passes of each constituent ticket, then the constituent tickets, and finally the group ticket, as one all-or-nothing operation; otherwise, or for unknown identifiers, it SHALL be rejected leaving every ticket and pass unchanged in memory and in storage.
 
 #### Scenario: All-or-nothing group-ticket deletion
 - **GIVEN** system date 2026-10-01 and group ticket `TG001` dated 2026-10-15 with three constituent tickets
@@ -73,6 +73,11 @@ Each constituent ticket SHALL block deletion of its user while dated on or after
 - **GIVEN** system date 2026-10-15 and group ticket `TG01` dated 2026-10-15
 - **WHEN** `GROUPTICKET DELETE;TG01` is processed
 - **THEN** an error message is reported and the group ticket and all its constituents remain
+
+#### Scenario: Constituent passes removed
+- **GIVEN** a future group ticket `TG01` whose constituent tickets have SpeedPasses
+- **WHEN** `GROUPTICKET DELETE;TG01` succeeds and the application restarts
+- **THEN** no pass of any `TG01` constituent ticket exists
 
 ### Requirement: Group ticket persistence
 Group tickets SHALL be persisted with their group reference, total price, and constituent tickets, and restored at startup, including as history when the group or members were later deleted.

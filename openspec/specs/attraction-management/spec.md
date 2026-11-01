@@ -7,7 +7,7 @@ Models park attractions with a maximum capacity and lets ticket holders enter an
 ## Requirements
 
 ### Requirement: Attraction model and creation
-An attraction SHALL have a unique identifier, a name, a positive maximum capacity, and the collection of users currently present. `ATTRACTION CREATE;<Id>;<Nombre>;<Capacidad>` SHALL create one, rejecting duplicate identifiers, empty names, and capacities that are not positive integers.
+An attraction SHALL have a unique identifier, a name, a positive maximum capacity, a type, and the collection of users currently present. `ATTRACTION CREATE;<Id>;<Nombre>;<Capacidad>[;<Tipo>]` SHALL create one (type `GENERAL` when omitted), rejecting duplicate identifiers, empty names, capacities that are not positive integers, and unknown types.
 
 #### Scenario: Create attraction
 - **WHEN** `ATTRACTION CREATE;A01;Tornado;20` is processed
@@ -18,7 +18,7 @@ An attraction SHALL have a unique identifier, a name, a positive maximum capacit
 - **THEN** an error message is reported and no attraction is created or changed
 
 ### Requirement: Ticket-based entry
-`ATTRACTION ENTER;<AtraccionId>;<TicketId>` SHALL add to the attraction every user admitted by the ticket (the holder of an individual ticket, or the users of all constituent tickets of a group ticket). The ticket's date SHALL equal the current system date. Entry SHALL be all-or-nothing: if the attraction lacks room for all admitted users, or any of them is already present, nobody enters.
+`ATTRACTION ENTER;<AtraccionId>;<TicketId>[;SPEED]` SHALL add to the attraction every user admitted by the ticket (the holder of an individual ticket, or the users of all constituent tickets of a group ticket). The ticket identifier MAY name an individual ticket, a group ticket, or a constituent ticket of a group ticket (which then acts as an individual ticket). The ticket kind SHALL be admitted by the attraction type, and the ticket's date SHALL equal the current system date. Entry SHALL be all-or-nothing: if the attraction lacks room for all admitted users, any of them is already present, or a required pass is missing, nobody enters and no pass is consumed.
 
 #### Scenario: Individual entry
 - **GIVEN** system date 2026-10-15 and ticket `T001` for Ana dated 2026-10-15
@@ -40,8 +40,13 @@ An attraction SHALL have a unique identifier, a name, a positive maximum capacit
 - **WHEN** another valid individual ticket is used to enter
 - **THEN** an error message is reported and occupancy stays at 1
 
+#### Scenario: Constituent ticket used individually
+- **GIVEN** group ticket `TG01` valid today with constituent `TG01-1` for Ana
+- **WHEN** `ATTRACTION ENTER;A01;TG01-1` is processed at a `GENERAL` attraction
+- **THEN** only Ana enters
+
 ### Requirement: Leaving an attraction
-`ATTRACTION EXIT;<AtraccionId>;<TicketId>` SHALL remove from the attraction the users admitted by that ticket who are present, freeing their places, without revalidating the ticket date. It SHALL be rejected when the attraction or ticket does not exist or none of the ticket's users is present.
+`ATTRACTION EXIT;<AtraccionId>;<TicketId>` SHALL remove from the attraction the users admitted by that ticket (individual, group, or constituent ticket) who are present, freeing their places, without revalidating the ticket date. It SHALL be rejected when the attraction or ticket does not exist or none of the ticket's users is present.
 
 #### Scenario: Date changes after admission
 - **GIVEN** a user has entered with a ticket valid on the entry date
@@ -59,9 +64,14 @@ An attraction SHALL have a unique identifier, a name, a positive maximum capacit
 - **THEN** the status shows 2 users present and 18 places available
 
 ### Requirement: Attraction persistence and daily start
-Attraction definitions (identifier, name, capacity) SHALL be persisted and restored at startup. The users present SHALL NOT be persisted: every attraction starts empty at application startup.
+Attraction definitions (identifier, name, capacity, type) SHALL be persisted and restored at startup; stored definitions without a type SHALL load as `GENERAL`. The users present SHALL NOT be persisted: every attraction starts empty at application startup.
 
 #### Scenario: Restart empties attractions
 - **GIVEN** attraction `A01` with users present
 - **WHEN** the application restarts
 - **THEN** `A01` exists with its name and capacity and no users present
+
+#### Scenario: Type survives restart
+- **GIVEN** a `SPECIAL` attraction `A02`
+- **WHEN** the application restarts
+- **THEN** `A02` is still `SPECIAL`

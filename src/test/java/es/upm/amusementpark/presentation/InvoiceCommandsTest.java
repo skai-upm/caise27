@@ -62,5 +62,6 @@ class InvoiceCommandsTest extends ParkTestSupport {
         error("INVOICE CREATE;GROUP;G99");
         error("INVOICE CREATE;SHOP;X");
         error("INVOICE CREATE;USER");
+        assertTrue(run("INVOICE CREATE;GROUP;G99").contains("group G99 does not exist"));
     }
 }

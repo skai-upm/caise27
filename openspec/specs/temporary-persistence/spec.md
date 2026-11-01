@@ -7,7 +7,7 @@ Allows isolated application runs that use every persistence facility without alt
 ## Requirements
 
 ### Requirement: Fly mode storage directory
-When started with `--fly` as the first argument, the application SHALL create at startup a new directory `tmp/<yyyyMMdd_HHmmss>/` identified by the start timestamp and SHALL make every repository (users, groups, tickets, attractions) read and write only files inside it. Without `--fly` the permanent storage location and behaviour SHALL be unchanged.
+When started with `--fly` as the first argument, the application SHALL create at startup a new directory `tmp/<yyyyMMdd_HHmmss>/` identified by the start timestamp and SHALL make every repository (users, groups, tickets with their passes, attractions with their types) read and write only files inside it. Without `--fly` the permanent storage location and behaviour SHALL be unchanged.
 
 #### Scenario: Isolated run
 - **GIVEN** permanent data files exist
@@ -18,6 +18,11 @@ When started with `--fly` as the first argument, the application SHALL create at
 - **GIVEN** permanent data contains user `ana@correo.com`
 - **WHEN** the application runs with `--fly` and `USER DELETE;ana@correo.com;Clave1!` is processed
 - **THEN** the deletion fails because the user does not exist in the fly storage
+
+#### Scenario: F3 data isolated
+- **GIVEN** permanent data files exist
+- **WHEN** a `--fly` run buys passes, consumes them, and creates typed attractions, then exits
+- **THEN** the permanent files are unchanged and the temporary directory is removed
 
 ### Requirement: Shared repository logic
 Repositories SHALL use the same data-access code in normal and fly modes; only the configured storage paths SHALL differ.
