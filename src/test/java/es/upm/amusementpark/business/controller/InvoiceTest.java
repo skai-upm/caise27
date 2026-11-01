@@ -18,6 +18,7 @@ import org.junit.jupiter.api.io.TempDir;
 import es.upm.amusementpark.business.model.Invoice;
 import es.upm.amusementpark.business.model.OperationException;
 import es.upm.amusementpark.business.model.SimpleInvoiceBuilder;
+import es.upm.amusementpark.persistence.BCryptPasswordHasher;
 import es.upm.amusementpark.persistence.StoragePaths;
 import es.upm.amusementpark.presentation.AppBootstrap;
 
@@ -30,7 +31,7 @@ public class InvoiceTest {
 
     @BeforeEach
     public void setUp() throws IOException, OperationException {
-        park = AppBootstrap.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        park = AppBootstrap.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1), new BCryptPasswordHasher(4));
         park.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         park.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",

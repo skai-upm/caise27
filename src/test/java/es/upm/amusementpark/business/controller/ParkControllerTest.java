@@ -28,11 +28,8 @@ import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.OperationException;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
-import es.upm.amusementpark.persistence.AttractionFileRepository;
-import es.upm.amusementpark.persistence.GroupFileRepository;
+import es.upm.amusementpark.persistence.BCryptPasswordHasher;
 import es.upm.amusementpark.persistence.StoragePaths;
-import es.upm.amusementpark.persistence.TicketFileRepository;
-import es.upm.amusementpark.persistence.UserFileRepository;
 import es.upm.amusementpark.presentation.AppBootstrap;
 
 public class ParkControllerTest {
@@ -49,7 +46,7 @@ public class ParkControllerTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        park = AppBootstrap.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        park = AppBootstrap.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1), new BCryptPasswordHasher(4));
     }
 
     @AfterEach
@@ -60,7 +57,7 @@ public class ParkControllerTest {
     private ParkController restart() throws IOException {
         LocalDate date = park.getSystemDate();
         AppBootstrap.shutdown();
-        return AppBootstrap.start(new StoragePaths(dir), date);
+        return AppBootstrap.start(new StoragePaths(dir), date, new BCryptPasswordHasher(4));
     }
 
     private static String email(int i) {

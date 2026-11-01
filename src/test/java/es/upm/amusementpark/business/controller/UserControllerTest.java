@@ -18,9 +18,12 @@ import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.amusementpark.business.model.OperationException;
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.persistence.BCryptPasswordHasher;
 import es.upm.amusementpark.persistence.UserFileRepository;
 
 public class UserControllerTest {
+
+    private static final BCryptPasswordHasher HASHER = new BCryptPasswordHasher(4);
 
     @TempDir
     Path dir;
@@ -32,7 +35,7 @@ public class UserControllerTest {
     public void setUp() throws IOException {
         file = dir.resolve("users.txt");
         UserController.reset();
-        manager = UserController.initialize(new UserFileRepository(file));
+        manager = UserController.initialize(new UserFileRepository(file), HASHER);
     }
 
     @AfterEach
@@ -52,7 +55,7 @@ public class UserControllerTest {
 
     private UserController restart() throws IOException {
         UserController.reset();
-        return UserController.initialize(new UserFileRepository(file));
+        return UserController.initialize(new UserFileRepository(file), HASHER);
     }
 
     @Test
@@ -121,7 +124,7 @@ public class UserControllerTest {
         assertNotNull(u);
         assertEquals("Ana Maria", u.getName());
         assertEquals("Garcia", u.getSurname());
-        assertEquals("Nueva2#", u.getPassword());
+        assertTrue(HASHER.matches("Nueva2#", u.getPassword()));
         assertEquals("9999888877776666", u.getCard());
         assertEquals("699999999", u.getPhone());
         assertEquals("12345678Z", u.getDni());
@@ -161,7 +164,7 @@ public class UserControllerTest {
         assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Clave1!", "CARD", "123456789012345"));
         User ana = manager.findByEmail("ana@correo.com");
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(HASHER.matches("Clave1!", ana.getPassword()));
         assertEquals("1234567890123456", ana.getCard());
         assertEquals(before, Files.readString(file));
     }

@@ -21,11 +21,12 @@ public class UserController {
     /**
      * Creates the single instance for this execution. Fails if it already exists.
      */
-    public static synchronized UserController initialize(UserRepository repository) throws IOException {
+    public static synchronized UserController initialize(UserRepository repository, PasswordHasher hasher)
+            throws IOException {
         if (instance != null) {
             throw new IllegalStateException("UserController is already initialized");
         }
-        instance = new UserController(repository);
+        instance = new UserController(repository, hasher);
         return instance;
     }
 
@@ -44,10 +45,12 @@ public class UserController {
     }
 
     private final UserRepository repository;
+    private final PasswordHasher hasher;
     private final List<User> users;
 
-    private UserController(UserRepository repository) throws IOException {
+    private UserController(UserRepository repository, PasswordHasher hasher) throws IOException {
         this.repository = repository;
+        this.hasher = hasher;
         this.users = repository.load();
     }
 
@@ -100,7 +103,7 @@ public class UserController {
         if (findByEmail(email) != null) {
             throw new OperationException("A user with email " + email + " already exists");
         }
-        User user = new User(name, surname, dni, email, password, phone, card);
+        User user = new User(name, surname, dni, email, hasher.hash(password), phone, card);
         users.add(user);
         try {
             repository.save(users);
@@ -137,7 +140,7 @@ public class UserController {
         }
         validateNewValue(user, field, newValue);
         String oldValue = getValue(user, field);
-        setValue(user, field, newValue);
+        setValue(user, field, field == UserField.PASSWORD ? hasher.hash(newValue) : newValue);
         try {
             repository.save(users);
         } catch (IOException e) {
@@ -148,7 +151,7 @@ public class UserController {
 
     public User authenticate(String email, String password) throws OperationException {
         User user = findByEmail(email);
-        if (user == null || !user.getPassword().equals(password)) {
+        if (user == null || !hasher.matches(password, user.getPassword())) {
             throw new OperationException("Incorrect email or password");
         }
         return user;

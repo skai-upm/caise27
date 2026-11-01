@@ -15,6 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.repository.UserRepository;
+import es.upm.amusementpark.persistence.BCryptPasswordHasher;
 import es.upm.amusementpark.persistence.StoragePaths;
 import es.upm.amusementpark.persistence.UserFileRepository;
 import es.upm.amusementpark.presentation.AppBootstrap;
@@ -61,7 +62,7 @@ public class ControllerLifecycleTest {
     public void secondInitializationInSameExecutionFails() throws IOException {
         AppBootstrap.start(new StoragePaths(dir));
         assertThrows(IllegalStateException.class,
-                () -> UserController.initialize(new UserFileRepository(dir.resolve("other.txt"))));
+                () -> UserController.initialize(new UserFileRepository(dir.resolve("other.txt")), new BCryptPasswordHasher(4)));
         assertThrows(IllegalStateException.class, () -> AppBootstrap.start(new StoragePaths(dir)));
     }
 
@@ -83,7 +84,7 @@ public class ControllerLifecycleTest {
     @Test
     public void alternativeRepositoryCanBeInjected() throws Exception {
         InMemoryUserRepository repository = new InMemoryUserRepository();
-        UserController users = UserController.initialize(repository);
+        UserController users = UserController.initialize(repository, new BCryptPasswordHasher(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
         assertEquals(1, repository.stored.size());

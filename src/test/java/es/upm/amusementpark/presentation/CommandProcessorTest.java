@@ -22,6 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.controller.UserController;
+import es.upm.amusementpark.persistence.BCryptPasswordHasher;
 import es.upm.amusementpark.persistence.StoragePaths;
 
 public class CommandProcessorTest {
@@ -41,7 +42,7 @@ public class CommandProcessorTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        park = AppBootstrap.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1));
+        park = AppBootstrap.start(new StoragePaths(dir), LocalDate.of(2026, 10, 1), new BCryptPasswordHasher(4));
         manager = park.getUsers();
         buffer = new ByteArrayOutputStream();
         processor = new CommandProcessor(park, AppBootstrap.help(), new PrintStream(buffer, true, StandardCharsets.UTF_8));

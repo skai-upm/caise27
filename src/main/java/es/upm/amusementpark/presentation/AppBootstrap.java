@@ -8,10 +8,12 @@ import es.upm.amusementpark.business.controller.AttractionController;
 import es.upm.amusementpark.business.controller.GroupController;
 import es.upm.amusementpark.business.controller.InvoiceController;
 import es.upm.amusementpark.business.controller.ParkController;
+import es.upm.amusementpark.business.controller.PasswordHasher;
 import es.upm.amusementpark.business.controller.TicketController;
 import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.model.SimpleInvoiceBuilder;
 import es.upm.amusementpark.persistence.AttractionFileRepository;
+import es.upm.amusementpark.persistence.BCryptPasswordHasher;
 import es.upm.amusementpark.persistence.GroupFileRepository;
 import es.upm.amusementpark.persistence.StoragePaths;
 import es.upm.amusementpark.persistence.TicketFileRepository;
@@ -32,8 +34,13 @@ public final class AppBootstrap {
     }
 
     public static ParkController start(StoragePaths paths, LocalDate startDate) throws IOException {
+        return start(paths, startDate, new BCryptPasswordHasher());
+    }
+
+    public static ParkController start(StoragePaths paths, LocalDate startDate, PasswordHasher hasher)
+            throws IOException {
         try {
-            UserController users = UserController.initialize(new UserFileRepository(paths.users()));
+            UserController users = UserController.initialize(new UserFileRepository(paths.users()), hasher);
             GroupController groups = GroupController.initialize(new GroupFileRepository(paths.groups()), users);
             TicketController tickets = TicketController.initialize(
                     new TicketFileRepository(paths.tickets()), users, groups);

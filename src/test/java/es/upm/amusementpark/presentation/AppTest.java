@@ -52,6 +52,13 @@ public class AppTest {
         return file;
     }
 
+    /** User file lines with the password column masked, since BCrypt salts differ per run. */
+    private static List<String> withoutPasswords(Path usersFile) throws IOException {
+        return Files.readAllLines(usersFile).stream()
+                .map(line -> line.replaceFirst("^((?:[^;]*;){4})[^;]*", "$1*"))
+                .toList();
+    }
+
     private static boolean isEmptyDir(Path d) throws IOException {
         try (Stream<Path> s = Files.list(d)) {
             return s.findAny().isEmpty();
@@ -67,8 +74,8 @@ public class AppTest {
         String fileOut = runApp(new String[] {commandFile(COMMANDS).toString()}, noInput(), fileDir);
 
         assertEquals(interactiveOut, fileOut);
-        assertEquals(Files.readAllLines(interactiveDir.resolve("users.txt")),
-                Files.readAllLines(fileDir.resolve("users.txt")));
+        assertEquals(withoutPasswords(interactiveDir.resolve("users.txt")),
+                withoutPasswords(fileDir.resolve("users.txt")));
         assertTrue(Files.readString(fileDir.resolve("users.txt")).contains("699999999"));
     }
 
