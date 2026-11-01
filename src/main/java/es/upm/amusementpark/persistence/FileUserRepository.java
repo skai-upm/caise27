@@ -1,7 +1,6 @@
 package es.upm.amusementpark.persistence;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -59,12 +58,11 @@ public class FileUserRepository implements UserRepository {
     /** Rewrites the file so that it contains exactly the given users. */
     @Override
     public void save(List<User> users) throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            for (User user : users) {
-                writer.write(toLine(user));
-                writer.newLine();
-            }
+        List<String> lines = new ArrayList<>();
+        for (User user : users) {
+            lines.add(toLine(user));
         }
+        TextFiles.writeAtomically(file, lines);
     }
 
     private static String toLine(User user) {

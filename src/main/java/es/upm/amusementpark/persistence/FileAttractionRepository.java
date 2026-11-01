@@ -1,6 +1,5 @@
 package es.upm.amusementpark.persistence;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -13,8 +12,9 @@ import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.repository.AttractionRepository;
 
 /**
- * Stores attraction definitions ({@code id;name;capacity}). Users present are
- * never stored, so attractions start empty on every execution.
+ * Stores attraction definitions ({@code id;name;capacity;TYPE}); lines without
+ * a type (written by Delivery 2) load as GENERAL. Users present are never
+ * stored, so attractions start empty on every execution.
  */
 public class FileAttractionRepository implements AttractionRepository {
 
@@ -39,11 +39,12 @@ public class FileAttractionRepository implements AttractionRepository {
                 continue;
             }
             String[] parts = line.split(SEPARATOR, -1);
+            AttractionType type = parts.length == 4 ? AttractionType.fromName(parts[3]) : AttractionType.GENERAL;
             try {
-                if (parts.length != 3) {
+                if (parts.length < 3 || parts.length > 4 || type == null) {
                     throw new NumberFormatException();
                 }
-                attractions.add(AttractionType.GENERAL.create(parts[0], parts[1], Integer.parseInt(parts[2])));
+                attractions.add(type.create(parts[0], parts[1], Integer.parseInt(parts[2])));
             } catch (NumberFormatException e) {
                 System.err.println("WARNING: skipping malformed line " + lineNumber + " in " + file);
             }
@@ -53,12 +54,11 @@ public class FileAttractionRepository implements AttractionRepository {
 
     @Override
     public void save(List<Attraction<?>> attractions) throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            for (Attraction<?> attraction : attractions) {
-                writer.write(String.join(SEPARATOR, attraction.getId(), attraction.getName(),
-                        String.valueOf(attraction.getCapacity())));
-                writer.newLine();
-            }
+        List<String> lines = new ArrayList<>();
+        for (Attraction<?> attraction : attractions) {
+            lines.add(String.join(SEPARATOR, attraction.getId(), attraction.getName(),
+                    String.valueOf(attraction.getCapacity()), attraction.getType().name()));
         }
+        TextFiles.writeAtomically(file, lines);
     }
 }

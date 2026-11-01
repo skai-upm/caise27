@@ -1,6 +1,5 @@
 package es.upm.amusementpark.persistence;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -61,16 +60,14 @@ public class FileGroupRepository implements GroupRepository {
 
     @Override
     public void save(List<Group> groups) throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            for (Group group : groups) {
-                List<String> dnis = new ArrayList<>();
-                for (User member : group.getMembers()) {
-                    dnis.add(member.getDni());
-                }
-                writer.write(String.join(SEPARATOR, group.getId(), group.getName(),
-                        String.join(MEMBER_SEPARATOR, dnis)));
-                writer.newLine();
+        List<String> lines = new ArrayList<>();
+        for (Group group : groups) {
+            List<String> dnis = new ArrayList<>();
+            for (User member : group.getMembers()) {
+                dnis.add(member.getDni());
             }
+            lines.add(String.join(SEPARATOR, group.getId(), group.getName(), String.join(MEMBER_SEPARATOR, dnis)));
         }
+        TextFiles.writeAtomically(file, lines);
     }
 }

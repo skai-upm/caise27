@@ -132,7 +132,7 @@ class AttractionCommandsTest extends ParkTestSupport {
         ok("ATTRACTION CREATE;A01;Tornado;20");
         ok("TICKET CREATE;T001;" + email(1) + ";2026-10-01");
         ok("ATTRACTION ENTER;A01;T001");
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(tempDir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(tempDir.resolve("attractions.txt")));
         restart();
         assertEquals("Tornado", a01().getName());
         assertEquals(20, a01().getCapacity());

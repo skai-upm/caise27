@@ -40,8 +40,8 @@ Milestones follow the source order. Each group ends with `mvn test` passing and 
 
 ## 9. F3-C09 Persistence and UML
 
-- [ ] 9.1 Persist passes (with consumed state and special-pass history) and attraction types with backward-compatible loading and atomic file replacement; cascade deletions; verify with restart round-trip tests, cascade tests, failed-save no-partial-change tests, and fly isolation of F3 data
-- [ ] 9.2 Regenerate `uml/model.puml` from the F3 code; verify PlantUML syntax check and rendering succeed and elements match the code; commit `[F3-C09] Extend delivery 3 persistence and UML.`
+- [x] 9.1 Persist passes (with consumed state and special-pass history) and attraction types with backward-compatible loading and atomic file replacement; cascade deletions; verify with restart round-trip tests, cascade tests, failed-save no-partial-change tests, and fly isolation of F3 data
+- [x] 9.2 Regenerate `uml/model.puml` from the F3 code; verify PlantUML syntax check and rendering succeed and elements match the code; commit `[F3-C09] Extend delivery 3 persistence and UML.`
 
 ## 10. F3-C10 Integration
 

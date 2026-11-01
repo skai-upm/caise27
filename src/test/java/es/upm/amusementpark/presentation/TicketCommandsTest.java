@@ -86,7 +86,7 @@ class TicketCommandsTest extends ParkTestSupport {
         IndividualTicket ticket = assertInstanceOf(IndividualTicket.class, park.findTicket("T001"));
         assertSame(users.findByEmail("ana@correo.com"), ticket.getUser());
         assertEquals(LocalDate.of(2026, 10, 15), ticket.getDate());
-        assertEquals(List.of("I;T001;2026-10-15;40.00;12345678Z;Ana;Garcia Lopez;ana@correo.com"),
+        assertEquals(List.of("I;T001;2026-10-15;40.00;12345678Z;Ana;Garcia Lopez;ana@correo.com;false"),
                 Files.readAllLines(tempDir.resolve("tickets.txt")));
     }
 

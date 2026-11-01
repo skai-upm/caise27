@@ -107,6 +107,12 @@ public class IndividualTicket extends Ticket implements IndividualAdmission {
         specialPassIssued = true;
     }
 
+    /** Restores the stored Special Pass of this ticket. */
+    public void restoreSpecialPass(SpecialPass pass) {
+        specialPass = pass;
+        specialPassIssued = true;
+    }
+
     /** Reverts {@link #issueSpecialPass} when the purchase cannot be completed. */
     public void revokeSpecialPass() {
         specialPass = null;
