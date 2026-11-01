@@ -21,11 +21,15 @@ import es.upm.amusementpark.business.repository.AttractionRepository;
 import es.upm.amusementpark.business.repository.GroupRepository;
 import es.upm.amusementpark.business.repository.TicketRepository;
 import es.upm.amusementpark.business.repository.UserRepository;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class ControllerLifecycleTest {
+
+    private static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
 
     /** In-memory repositories show that controllers work with any injected implementation. */
     static final class MemoryUsers implements UserRepository {
@@ -93,7 +97,7 @@ class ControllerLifecycleTest {
     @Test
     void controllersAreSingletons() throws IOException {
         SystemController system = SystemController.initialize(LocalDate.of(2026, 10, 1));
-        UserController users = UserController.initialize(new MemoryUsers());
+        UserController users = UserController.initialize(new MemoryUsers(), HASHER);
         ParkController park = ParkController.initialize(system, users, new MemoryGroups(), new MemoryTickets(),
                 new MemoryAttractions());
         InvoiceController invoices = InvoiceController.initialize(users, park, StandardInvoiceBuilder::new);
@@ -107,11 +111,11 @@ class ControllerLifecycleTest {
     @Test
     void secondInitializationIsRejected() throws IOException {
         SystemController.initialize(LocalDate.of(2026, 10, 1));
-        UserController.initialize(new MemoryUsers());
+        UserController.initialize(new MemoryUsers(), HASHER);
         LocalDate date = LocalDate.of(2026, 10, 2);
         MemoryUsers repository = new MemoryUsers();
         assertThrows(IllegalStateException.class, () -> SystemController.initialize(date));
-        assertThrows(IllegalStateException.class, () -> UserController.initialize(repository));
+        assertThrows(IllegalStateException.class, () -> UserController.initialize(repository, HASHER));
     }
 
     @Test
@@ -127,7 +131,7 @@ class ControllerLifecycleTest {
         MemoryUsers userRepository = new MemoryUsers();
         MemoryTickets ticketRepository = new MemoryTickets();
         SystemController system = SystemController.initialize(LocalDate.of(2026, 10, 1));
-        UserController users = UserController.initialize(userRepository);
+        UserController users = UserController.initialize(userRepository, HASHER);
         ParkController park = ParkController.initialize(system, users, new MemoryGroups(), ticketRepository,
                 new MemoryAttractions());
 

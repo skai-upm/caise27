@@ -9,6 +9,7 @@ import es.upm.amusementpark.business.UserValidator;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.repository.UserRepository;
+import es.upm.amusementpark.business.security.PasswordHasher;
 
 /**
  * Keeps the registered users, enforces validation and uniqueness rules, and
@@ -20,19 +21,22 @@ public final class UserController {
     private static UserController instance;
 
     private final UserRepository repository;
+    private final PasswordHasher hasher;
     private final List<User> users;
 
-    private UserController(UserRepository repository) throws IOException {
+    private UserController(UserRepository repository, PasswordHasher hasher) throws IOException {
         this.repository = repository;
+        this.hasher = hasher;
         this.users = new ArrayList<>(repository.load());
     }
 
     /** Creates the execution's instance, loading the users from the given repository. */
-    public static synchronized UserController initialize(UserRepository repository) throws IOException {
+    public static synchronized UserController initialize(UserRepository repository, PasswordHasher hasher)
+            throws IOException {
         if (instance != null) {
             throw new IllegalStateException("UserController is already initialized");
         }
-        instance = new UserController(repository);
+        instance = new UserController(repository, hasher);
         return instance;
     }
 
@@ -87,7 +91,7 @@ public final class UserController {
         if (findByEmail(email) != null) {
             throw new OperationException("a user with email " + email + " already exists");
         }
-        User user = new User(name, surname, dni, email, password, phone, card);
+        User user = new User(name, surname, dni, email, hasher.hash(password), phone, card);
         users.add(user);
         try {
             persist();
@@ -119,7 +123,7 @@ public final class UserController {
             }
         }
         String oldValue = user.get(field);
-        user.set(field, newValue);
+        user.set(field, field == UserField.PASSWORD ? hasher.hash(newValue) : newValue);
         try {
             persist();
         } catch (OperationException e) {
@@ -131,7 +135,7 @@ public final class UserController {
     /** Returns the user with that email if the password matches; otherwise rejects the request. */
     public User authenticate(String email, String password) {
         User user = findByEmail(email);
-        if (user == null || !user.getPassword().equals(password)) {
+        if (user == null || !hasher.matches(password, user.getPassword())) {
             throw new OperationException("incorrect email or password");
         }
         return user;

@@ -21,6 +21,7 @@ import es.upm.amusementpark.presentation.help.CommandCatalog;
 import es.upm.amusementpark.presentation.help.CommandInfo;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.persistence.StorageConfig;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +41,8 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        ApplicationContext context = ApplicationContext.start(new StorageConfig(tempDir), LocalDate.now());
+        ApplicationContext context = ApplicationContext.start(new StorageConfig(tempDir), LocalDate.now(),
+                new BCryptPasswordHasher(4));
         manager = context.users();
         processor = context.processor();
     }

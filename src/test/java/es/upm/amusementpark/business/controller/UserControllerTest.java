@@ -15,6 +15,8 @@ import es.upm.amusementpark.business.OperationException;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.persistence.FileUserRepository;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,13 +28,15 @@ class UserControllerTest {
     @TempDir
     Path tempDir;
 
+    private static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
+
     private Path file;
     private UserController manager;
 
     @BeforeEach
     void setUp() throws IOException {
         file = tempDir.resolve("users.txt");
-        manager = UserController.initialize(new FileUserRepository(file));
+        manager = UserController.initialize(new FileUserRepository(file), HASHER);
     }
 
     @AfterEach
@@ -52,7 +56,7 @@ class UserControllerTest {
 
     private UserController restart() throws IOException {
         UserController.release();
-        return UserController.initialize(new FileUserRepository(file));
+        return UserController.initialize(new FileUserRepository(file), HASHER);
     }
 
     @Test
@@ -121,7 +125,7 @@ class UserControllerTest {
         assertEquals("Ana Maria", user.getName());
         assertEquals("Garcia", user.getSurname());
         assertEquals("12345678Z", user.getDni());
-        assertEquals("Nueva2#", user.getPassword());
+        assertTrue(HASHER.matches("Nueva2#", user.getPassword()));
         assertEquals("699999999", user.getPhone());
         assertEquals("9999888877776666", user.getCard());
     }
@@ -163,7 +167,7 @@ class UserControllerTest {
         assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo"));
         User user = manager.findByEmail("ana@correo.com");
-        assertEquals("Clave1!", user.getPassword());
+        assertTrue(HASHER.matches("Clave1!", user.getPassword()));
         assertEquals("1234567890123456", user.getCard());
         assertEquals(before, Files.readAllLines(file));
     }
@@ -172,7 +176,7 @@ class UserControllerTest {
     void failedSaveRevertsInMemoryChange() throws IOException {
         Path unwritable = tempDir.resolve("missing-dir").resolve("users.txt");
         UserController.release();
-        UserController blocked = UserController.initialize(new FileUserRepository(unwritable));
+        UserController blocked = UserController.initialize(new FileUserRepository(unwritable), HASHER);
         assertThrows(OperationException.class, () -> blocked.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456"));
         assertTrue(blocked.getUsers().isEmpty());

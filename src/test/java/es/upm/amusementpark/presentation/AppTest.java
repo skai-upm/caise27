@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
 import es.upm.amusementpark.persistence.StorageConfig;
 
 import org.junit.jupiter.api.Test;
@@ -60,8 +61,18 @@ class AppTest {
         assertEquals(0, interactive.status());
         assertEquals(0, file.status());
         assertEquals(interactive.out(), file.out());
-        assertEquals(Files.readAllLines(interactiveDir.resolve("users.txt")),
-                Files.readAllLines(fileDir.resolve("users.txt")));
+        assertEquals(withoutPasswords(interactiveDir.resolve("users.txt")),
+                withoutPasswords(fileDir.resolve("users.txt")));
+    }
+
+    /** Stored lines with the (randomly salted) password hash masked. */
+    private static List<String> withoutPasswords(Path usersFile) throws IOException {
+        return Files.readAllLines(usersFile).stream().map(line -> {
+            String[] fields = line.split(";", -1);
+            assertTrue(BCryptPasswordHasher.isHash(fields[4]), line);
+            fields[4] = "<hash>";
+            return String.join(";", fields);
+        }).toList();
     }
 
     @Test
@@ -72,7 +83,10 @@ class AppTest {
 
         List<String> stored = Files.readAllLines(tempDir.resolve("users.txt"));
         assertEquals(2, stored.size());
-        assertTrue(stored.get(0).startsWith("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;"));
+        String[] ana = stored.get(0).split(";");
+        assertEquals(List.of("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com"), List.of(ana).subList(0, 4));
+        assertTrue(BCryptPasswordHasher.isHash(ana[4]));
+        assertEquals("699999999", ana[5]);
     }
 
     @Test

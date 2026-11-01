@@ -11,6 +11,8 @@ import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.controller.SystemController;
 import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.persistence.StorageConfig;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +25,8 @@ import org.junit.jupiter.api.io.TempDir;
 abstract class ParkTestSupport {
 
     static final LocalDate START = LocalDate.of(2026, 10, 1);
+    /** Low-cost BCrypt hasher to keep the tests fast. */
+    static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
     private static final String DNI_LETTERS = "TRWAGMYFPDXBNJZSQVHLCKE";
 
     @TempDir
@@ -35,7 +39,7 @@ abstract class ParkTestSupport {
 
     @BeforeEach
     void startPark() throws IOException {
-        ApplicationContext context = ApplicationContext.start(new StorageConfig(tempDir), START);
+        ApplicationContext context = ApplicationContext.start(new StorageConfig(tempDir), START, HASHER);
         system = context.system();
         users = context.users();
         park = context.park();

@@ -23,7 +23,7 @@ Milestones follow the source order. Each group ends with `mvn test` passing and 
 
 ## 5. F3-C05 BCrypt passwords
 
-- [ ] 5.1 Add `jbcrypt` and the shade plugin, `PasswordHasher`/`BCryptPasswordHasher` injected into `UserController`; hash on create and password update after format validation; verify via tests that files hold no plaintext, wrong/correct passwords behave, new hash persists after restart, and legacy plaintext still authenticates unchanged; commit `[F3-C05] Secure stored user passwords.`
+- [x] 5.1 Add `jbcrypt` and the shade plugin, `PasswordHasher`/`BCryptPasswordHasher` injected into `UserController`; hash on create and password update after format validation; verify via tests that files hold no plaintext, wrong/correct passwords behave, new hash persists after restart, and legacy plaintext still authenticates unchanged; commit `[F3-C05] Secure stored user passwords.`
 
 ## 6. F3-C06 Passes
 

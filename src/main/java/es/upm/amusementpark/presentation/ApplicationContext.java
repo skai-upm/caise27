@@ -8,6 +8,8 @@ import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.controller.SystemController;
 import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
+import es.upm.amusementpark.business.security.BCryptPasswordHasher;
+import es.upm.amusementpark.business.security.PasswordHasher;
 import es.upm.amusementpark.persistence.FileAttractionRepository;
 import es.upm.amusementpark.persistence.FileGroupRepository;
 import es.upm.amusementpark.persistence.FileTicketRepository;
@@ -27,9 +29,14 @@ public record ApplicationContext(SystemController system, UserController users, 
                                  InvoiceController invoices, CommandProcessor processor) {
 
     public static ApplicationContext start(StorageConfig storage, LocalDate startDate) throws IOException {
+        return start(storage, startDate, new BCryptPasswordHasher());
+    }
+
+    public static ApplicationContext start(StorageConfig storage, LocalDate startDate, PasswordHasher hasher)
+            throws IOException {
         try {
             SystemController system = SystemController.initialize(startDate);
-            UserController users = UserController.initialize(new FileUserRepository(storage.users()));
+            UserController users = UserController.initialize(new FileUserRepository(storage.users()), hasher);
             ParkController park = ParkController.initialize(system, users,
                     new FileGroupRepository(storage.groups()),
                     new FileTicketRepository(storage.tickets()),
