@@ -11,6 +11,7 @@ import es.upm.amusementpark.business.invoice.InvoiceLine;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 
@@ -23,6 +24,7 @@ public final class InvoiceController {
 
     static final String INDIVIDUAL_TICKETS = "Individual tickets";
     static final String GROUP_TICKETS = "Group tickets";
+    static final String PASSES = "Passes";
 
     private static InvoiceController instance;
 
@@ -58,7 +60,10 @@ public final class InvoiceController {
         instance = null;
     }
 
-    /** Invoice of the tickets bought directly for a user; group-ticket constituents are not counted. */
+    /**
+     * Invoice of the tickets bought directly for a user (group-ticket constituents are not
+     * counted again) and of the passes attached to any of the user's tickets.
+     */
     public Invoice userInvoice(String email) {
         User user = users.findByEmail(email);
         if (user == null) {
@@ -71,9 +76,19 @@ public final class InvoiceController {
                         ticket.getPrice()));
             }
         }
+        List<InvoiceLine> passes = new ArrayList<>();
+        for (IndividualTicket ticket : park.getIndividualTickets()) {
+            if (ticket.getUser() == user) {
+                for (Pass pass : ticket.getPasses()) {
+                    passes.add(new InvoiceLine(pass.getKind() + " " + pass.getId() + " (ticket " + ticket.getId() + ")",
+                            pass.getPrice()));
+                }
+            }
+        }
         return builders.get()
                 .forRecipient("User " + user.getName() + " " + user.getSurname() + " (" + user.getEmail() + ")")
                 .addSection(INDIVIDUAL_TICKETS, tickets)
+                .addSection(PASSES, passes)
                 .build();
     }
 

@@ -27,8 +27,8 @@ Milestones follow the source order. Each group ends with `mvn test` passing and 
 
 ## 6. F3-C06 Passes
 
-- [ ] 6.1 Add `Pass`, `SpeedPass`, `SpecialPass` owned by `IndividualTicket`; add `SPEEDPASS CREATE/DELETE` and `SPECIALPASS CREATE/DELETE` with pricing, identifiers, lifetime Special Pass rule and E2 date rules; verify with tests for packs of 1/10, invalid quantities, constituent tickets, consumed/unrefundable rejections
-- [ ] 6.2 Add the passes section to user invoices; verify that constituent passes appear while constituent tickets are not double-counted; commit `[F3-C06] Add speed and special passes.`
+- [x] 6.1 Add `Pass`, `SpeedPass`, `SpecialPass` owned by `IndividualTicket`; add `SPEEDPASS CREATE/DELETE` and `SPECIALPASS CREATE/DELETE` with pricing, identifiers, lifetime Special Pass rule and E2 date rules; verify with tests for packs of 1/10, invalid quantities, constituent tickets, consumed/unrefundable rejections
+- [x] 6.2 Add the passes section to user invoices; verify that constituent passes appear while constituent tickets are not double-counted; commit `[F3-C06] Add speed and special passes.`
 
 ## 7. F3-C07 Attraction types
 

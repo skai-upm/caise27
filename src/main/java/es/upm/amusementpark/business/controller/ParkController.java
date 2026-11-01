@@ -12,6 +12,9 @@ import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.repository.AttractionRepository;
@@ -306,6 +309,118 @@ public final class ParkController {
         int index = tickets.indexOf(ticket);
         tickets.remove(index);
         save(() -> ticketRepository.save(tickets), () -> tickets.add(index, ticket));
+    }
+
+    // ---- passes ----
+
+    /** Every individual ticket: the ones bought directly and the constituents of group tickets. */
+    public List<IndividualTicket> getIndividualTickets() {
+        List<IndividualTicket> individuals = new ArrayList<>();
+        for (Ticket ticket : tickets) {
+            if (ticket instanceof IndividualTicket individual) {
+                individuals.add(individual);
+            } else if (ticket instanceof GroupTicket groupTicket) {
+                individuals.addAll(groupTicket.getTickets());
+            }
+        }
+        return individuals;
+    }
+
+    /** Finds an individual ticket bought directly or as part of a group ticket. */
+    public IndividualTicket findIndividualTicket(String id) {
+        for (IndividualTicket ticket : getIndividualTickets()) {
+            if (ticket.getId().equals(id)) {
+                return ticket;
+            }
+        }
+        return null;
+    }
+
+    private IndividualTicket ticketForPass(String ticketId) {
+        IndividualTicket ticket = findIndividualTicket(ticketId);
+        if (ticket == null) {
+            throw new OperationException("individual ticket " + ticketId + " does not exist");
+        }
+        if (ticket.getDate().isBefore(system.getCurrentDate())) {
+            throw new OperationException("ticket " + ticketId + " is dated " + ticket.getDate()
+                    + ", before the system date " + system.getCurrentDate());
+        }
+        return ticket;
+    }
+
+    /** Buys 1 or 10 SpeedPasses for an individual ticket that is not in the past. */
+    public List<SpeedPass> buySpeedPasses(String ticketId, int quantity) {
+        if (quantity != 1 && quantity != 10) {
+            throw new OperationException("SpeedPasses are sold individually or in packs of 10");
+        }
+        IndividualTicket ticket = ticketForPass(ticketId);
+        List<SpeedPass> bought = new ArrayList<>();
+        for (int i = 0; i < quantity; i++) {
+            SpeedPass pass = new SpeedPass(ticket.nextSpeedPassId(), SpeedPass.priceFor(ticket), false);
+            ticket.addSpeedPass(pass);
+            bought.add(pass);
+        }
+        save(() -> ticketRepository.save(tickets), () -> bought.forEach(ticket::removeSpeedPass));
+        return bought;
+    }
+
+    /** Buys the only Special Pass an individual ticket can ever have. */
+    public SpecialPass buySpecialPass(String ticketId) {
+        IndividualTicket ticket = ticketForPass(ticketId);
+        if (ticket.isSpecialPassIssued()) {
+            throw new OperationException("ticket " + ticketId + " already had a Special Pass");
+        }
+        SpecialPass pass = new SpecialPass(ticket.specialPassId(), ticket.getPrice(), false);
+        ticket.issueSpecialPass(pass);
+        save(() -> ticketRepository.save(tickets), ticket::revokeSpecialPass);
+        return pass;
+    }
+
+    /** Refunds an unused SpeedPass whose ticket is dated after the system date. */
+    public void refundSpeedPass(String passId) {
+        for (IndividualTicket ticket : getIndividualTickets()) {
+            for (SpeedPass pass : ticket.getSpeedPasses()) {
+                if (pass.getId().equals(passId)) {
+                    requireRefundable(ticket, pass);
+                    List<SpeedPass> before = new ArrayList<>(ticket.getSpeedPasses());
+                    ticket.removeSpeedPass(pass);
+                    save(() -> ticketRepository.save(tickets), () -> {
+                        before.forEach(ticket::removeSpeedPass);
+                        before.forEach(ticket::addSpeedPass);
+                    });
+                    return;
+                }
+            }
+        }
+        throw new OperationException("SpeedPass " + passId + " does not exist");
+    }
+
+    /** Refunds an unused Special Pass whose ticket is dated after the system date. */
+    public void refundSpecialPass(String passId) {
+        for (IndividualTicket ticket : getIndividualTickets()) {
+            SpecialPass pass = ticket.getSpecialPass();
+            if (pass != null && pass.getId().equals(passId)) {
+                requireRefundable(ticket, pass);
+                ticket.removeSpecialPass();
+                save(() -> ticketRepository.save(tickets), () -> {
+                    ticket.revokeSpecialPass();
+                    ticket.issueSpecialPass(pass);
+                });
+                return;
+            }
+        }
+        throw new OperationException("Special Pass " + passId + " does not exist");
+    }
+
+    private void requireRefundable(IndividualTicket ticket, Pass pass) {
+        if (pass.isConsumed()) {
+            throw new OperationException(pass.getKind() + " " + pass.getId() + " has been used and cannot be refunded");
+        }
+        if (!ticket.isRefundableOn(system.getCurrentDate())) {
+            throw new OperationException(pass.getKind() + " " + pass.getId() + " belongs to ticket " + ticket.getId()
+                    + " dated " + ticket.getDate() + "; only passes of tickets after the system date "
+                    + system.getCurrentDate() + " can be refunded");
+        }
     }
 
     // ---- attractions ----

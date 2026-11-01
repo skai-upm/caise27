@@ -21,6 +21,9 @@ import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.invoice.InvoiceLine;
 import es.upm.amusementpark.business.invoice.InvoiceSection;
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.presentation.help.HelpGenerator;
@@ -102,6 +105,10 @@ public class CommandProcessor {
                 case "ATTRACTION EXIT" -> CommandResult.message(exitAttraction(parts));
                 case "ATTRACTION STATUS" -> CommandResult.message(attractionStatus(parts));
                 case "INVOICE CREATE" -> CommandResult.message(createInvoice(parts));
+                case "SPEEDPASS CREATE" -> CommandResult.message(buySpeedPasses(parts));
+                case "SPEEDPASS DELETE" -> CommandResult.message(refundSpeedPass(parts));
+                case "SPECIALPASS CREATE" -> CommandResult.message(buySpecialPass(parts));
+                case "SPECIALPASS DELETE" -> CommandResult.message(refundSpecialPass(parts));
                 case "HELP" -> CommandResult.message(help.generate());
                 case "HELP EXTENDED" -> CommandResult.message(extendedHelp.generate());
                 case "EXIT" -> new CommandResult("OK: exiting", true);
@@ -254,6 +261,37 @@ public class CommandProcessor {
         }
         lines.add("TOTAL: " + formatPrice(invoice.getTotal()));
         return String.join(System.lineSeparator(), lines);
+    }
+
+    private String buySpeedPasses(String[] parts) {
+        requireParameters(parts, 2, "SPEEDPASS CREATE;IdTicket;Cantidad");
+        int quantity;
+        try {
+            quantity = Integer.parseInt(parts[2]);
+        } catch (NumberFormatException e) {
+            throw new OperationException("quantity must be 1 or 10");
+        }
+        List<SpeedPass> passes = park.buySpeedPasses(parts[1], quantity);
+        BigDecimal total = passes.stream().map(Pass::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return "OK SPEEDPASS CREATED -> " + formatPrice(total) + " " + passes.stream().map(Pass::getId).toList();
+    }
+
+    private String buySpecialPass(String[] parts) {
+        requireParameters(parts, 1, "SPECIALPASS CREATE;IdTicket");
+        SpecialPass pass = park.buySpecialPass(parts[1]);
+        return "OK SPECIALPASS CREATED -> " + formatPrice(pass.getPrice()) + " [" + pass.getId() + "]";
+    }
+
+    private String refundSpeedPass(String[] parts) {
+        requireParameters(parts, 1, "SPEEDPASS DELETE;IdPase");
+        park.refundSpeedPass(parts[1]);
+        return ok("SpeedPass", parts[1], DELETED);
+    }
+
+    private String refundSpecialPass(String[] parts) {
+        requireParameters(parts, 1, "SPECIALPASS DELETE;IdPase");
+        park.refundSpecialPass(parts[1]);
+        return ok("Special Pass", parts[1], DELETED);
     }
 
     private static String ok(String subject, String id, String outcome) {
