@@ -45,4 +45,4 @@ Milestones follow the source order. Each group ends with `mvn test` passing and 
 
 ## 10. F3-C10 Integration
 
-- [ ] 10.1 Integration check: `mvn package`, run `target/parque.jar` with an end-to-end command file mixing E1/E2/F3 commands interactively, from file, and with `--fly` (outputs equal, permanent files untouched, restart restores F3 state); verify `HELP`/`HELP EXTENDED` list all commands; commit `[F3-C10] Complete delivery 3 integration`
+- [x] 10.1 Integration check: `mvn package`, run `target/parque.jar` with an end-to-end command file mixing E1/E2/F3 commands interactively, from file, and with `--fly` (outputs equal, permanent files untouched, restart restores F3 state); verify `HELP`/`HELP EXTENDED` list all commands; commit `[F3-C10] Complete delivery 3 integration`
