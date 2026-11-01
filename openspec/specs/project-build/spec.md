@@ -22,16 +22,16 @@ Running `mvn test` SHALL compile the project and execute its automated tests suc
 - **THEN** the project compiles and all tests pass
 
 ### Requirement: Executable JAR
-The build SHALL produce an executable JAR whose manifest entry point starts the application, so it can be launched with `java -jar` without an IDE.
+The build SHALL produce an executable JAR whose manifest entry point starts the application and which bundles its runtime dependencies, so it can be launched with `java -jar` without an IDE or extra classpath.
 
 #### Scenario: Launch packaged application
 - **GIVEN** the project has been packaged with `mvn package`
 - **WHEN** the produced JAR is launched with `java -jar`
 - **THEN** the application starts and enters its command-execution path
 
-### Requirement: Runtime dependencies limited to the standard library
-The application SHALL use only the Java standard library at runtime; test-scope dependencies provided by the archetype are permitted.
+### Requirement: Runtime dependencies limited to BCrypt
+Besides the Java standard library, the only runtime dependency SHALL be a BCrypt password-hashing library declared in `pom.xml`; test-scope testing libraries are permitted.
 
-#### Scenario: No runtime third-party dependencies
+#### Scenario: Declared dependencies
 - **WHEN** the build's dependencies are inspected
-- **THEN** no dependency other than test-scope testing libraries is declared
+- **THEN** the only non-test dependency is the BCrypt library

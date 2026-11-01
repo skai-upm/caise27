@@ -67,11 +67,15 @@ If the command file does not exist, cannot be opened or cannot be read, the appl
 - **THEN** an error message naming the problem is shown and the application ends without a stack trace
 
 ### Requirement: HELP command
-`HELP` SHALL display every available command with its basic syntax, consistent with the implemented operations: `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta`, `USER DELETE;Correo;Contraseña`, `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, `SYSTEM DATE;yyyy-MM-dd`, `SYSTEM PRICE;Precio`, `GROUP CREATE;IdGrupo;Nombre`, `GROUP ADD;IdGrupo;Correo`, `GROUP REMOVE;IdGrupo;Correo`, `GROUP DELETE;IdGrupo`, `TICKET CREATE;IdTicket;Correo;yyyy-MM-dd`, `TICKET DELETE;IdTicket`, `GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd`, `GROUPTICKET DELETE;IdTicket`, `ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad`, `ATTRACTION ENTER;IdAtraccion;IdTicket`, `ATTRACTION EXIT;IdAtraccion;IdTicket`, `ATTRACTION STATUS;IdAtraccion`, `HELP` and `EXIT`.
+`HELP` SHALL display every registered command with its basic syntax, consistent with the implemented operations, generated from the command registry: the E1 and E2 commands (`USER CREATE`, `USER DELETE`, `USER UPDATE`, `SYSTEM DATE`, `SYSTEM PRICE`, `GROUP CREATE/ADD/REMOVE/DELETE`, `TICKET CREATE/DELETE`, `GROUPTICKET CREATE/DELETE`, `ATTRACTION CREATE/ENTER/EXIT/STATUS`), the F3 commands (`INVOICE CREATE`, `SPEEDPASS CREATE/DELETE`, `SPECIALPASS CREATE/DELETE`), `HELP`, `HELP EXTENDED` and `EXIT`.
 
 #### Scenario: Help lists current commands
 - **WHEN** `HELP` is executed
 - **THEN** every listed command and its basic syntax is shown, including the F1 user commands, `HELP` and `EXIT`
+
+#### Scenario: Help shows F3 syntax
+- **WHEN** `HELP` is executed
+- **THEN** it includes `INVOICE CREATE;USER;Correo`, `SPEEDPASS CREATE;IdTicket;Cantidad`, `ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;Tipo]` and `ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]`
 
 ### Requirement: EXIT command
 `EXIT` SHALL end interactive execution in a controlled manner and SHALL stop file processing immediately so that no later command in the file is executed.
@@ -80,3 +84,18 @@ If the command file does not exist, cannot be opened or cannot be read, the appl
 - **GIVEN** a file containing a valid `USER CREATE`, then `EXIT`, then another valid `USER CREATE`
 - **WHEN** the application runs that file
 - **THEN** only the first user is created
+
+### Requirement: HELP EXTENDED command
+`HELP EXTENDED` SHALL display, for every registered command, its syntax and a brief description of its behavior, using the same command registry as `HELP`.
+
+#### Scenario: Syntax plus description
+- **WHEN** `HELP EXTENDED` is executed
+- **THEN** each registered command's syntax is shown together with a description
+
+### Requirement: Injected help formatting
+The component that builds help text SHALL receive the output-formatting behavior through dependency injection at startup, so new help formats can be added without changing general command processing.
+
+#### Scenario: Alternative formatter
+- **GIVEN** a different help formatter injected at startup
+- **WHEN** help is requested
+- **THEN** the output uses that formatter and command processing code is unchanged

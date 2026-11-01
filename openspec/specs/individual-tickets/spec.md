@@ -52,7 +52,7 @@ Tickets SHALL be persisted after every change and restored at startup with their
 - **THEN** `T001` exists with price 60.00, its date and its user
 
 ### Requirement: Delete ticket command
-`TICKET DELETE;IdTicket` SHALL delete an individual ticket only if its date is strictly later than the system date. Tickets dated today or earlier, unknown identifiers, and tickets that belong to a group ticket SHALL be rejected.
+`TICKET DELETE;IdTicket` SHALL delete an individual ticket only if its date is strictly later than the system date, deleting all its SpeedPasses and its Special Pass in the same operation. Tickets dated today or earlier, unknown identifiers, and tickets that belong to a group ticket SHALL be rejected, leaving the ticket and its passes unchanged.
 
 #### Scenario: Future-only ticket refund
 - **GIVEN** system date 2026-10-10 and tickets dated 2026-10-09, 2026-10-10 and 2026-10-11
@@ -63,3 +63,8 @@ Tickets SHALL be persisted after every change and restored at startup with their
 - **GIVEN** a future group ticket
 - **WHEN** `TICKET DELETE` names one of its constituent tickets
 - **THEN** the command is rejected
+
+#### Scenario: Passes cascade-deleted
+- **GIVEN** a future ticket with SpeedPasses and a Special Pass
+- **WHEN** it is deleted
+- **THEN** none of its passes exists afterwards, also after a restart
