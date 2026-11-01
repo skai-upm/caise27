@@ -126,8 +126,12 @@ public class CommandProcessor {
                     out.println("Group ticket deleted: " + p[0]);
                 }
                 case "ATTRACTION CREATE" -> {
-                    requireParams(operation, p, 3);
-                    park.createAttraction(p[0], p[1], p[2]);
+                    requireParams(operation, p, 3, 4);
+                    if (p.length == 3) {
+                        park.createAttraction(p[0], p[1], p[2]);
+                    } else {
+                        park.createAttraction(p[0], p[1], p[2], p[3]);
+                    }
                     out.println("Attraction created: " + p[0]);
                 }
                 case "ATTRACTION ENTER" -> {
@@ -196,17 +200,26 @@ public class CommandProcessor {
         return true;
     }
 
-    private static String status(Attraction a) {
+    private static String status(Attraction<?> a) {
         List<String> users = new ArrayList<>();
         for (User u : a.getPresentUsers()) {
             users.add(u.getEmail() + " (" + u.getName() + " " + u.getSurname() + ")");
         }
         return String.join(System.lineSeparator(),
                 "Attraction: " + a.getId() + " - " + a.getName(),
+                "Type: " + a.getType(),
                 "Capacity: " + a.getCapacity(),
                 "Users present: " + a.getOccupancy(),
                 "Available places: " + a.getAvailable(),
                 "Present: " + (users.isEmpty() ? "none" : String.join(", ", users)));
+    }
+
+    private static void requireParams(String operation, String[] params, int min, int max)
+            throws OperationException {
+        if (params.length < min || params.length > max) {
+            throw new OperationException(operation + " expects " + min + " to " + max
+                    + " parameters but received " + params.length + ". Type HELP for the syntax.");
+        }
     }
 
     private static void requireParams(String operation, String[] params, int expected)

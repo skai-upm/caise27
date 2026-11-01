@@ -9,7 +9,7 @@ import java.util.List;
  * A ticket for one user on one date. It owns its personal passes: any number of
  * SpeedPasses and at most one Special Pass over its whole lifetime.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final User user;
     private final List<SpeedPass> speedPasses = new ArrayList<>();
@@ -21,6 +21,7 @@ public class IndividualTicket extends Ticket {
         this.user = user;
     }
 
+    @Override
     public User getUser() {
         return user;
     }
@@ -28,6 +29,11 @@ public class IndividualTicket extends Ticket {
     @Override
     public List<User> getUsers() {
         return List.of(user);
+    }
+
+    @Override
+    public List<IndividualTicket> getAccessTickets() {
+        return List.of(this);
     }
 
     public List<SpeedPass> getSpeedPasses() {
@@ -57,6 +63,7 @@ public class IndividualTicket extends Ticket {
     /**
      * The ticket's Special Pass, or null if it has none (never bought or refunded).
      */
+    @Override
     public SpecialPass getSpecialPass() {
         return specialPass;
     }

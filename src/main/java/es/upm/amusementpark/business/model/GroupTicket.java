@@ -9,7 +9,7 @@ import java.util.List;
  * A ticket bought by a group. It refers to the group and owns one individual
  * ticket per member at purchase time.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private final Group group;
     private final List<IndividualTicket> tickets;
@@ -20,11 +20,18 @@ public class GroupTicket extends Ticket {
         this.tickets = List.copyOf(tickets);
     }
 
+    @Override
     public Group getGroup() {
         return group;
     }
 
+    @Override
     public List<IndividualTicket> getTickets() {
+        return tickets;
+    }
+
+    @Override
+    public List<IndividualTicket> getAccessTickets() {
         return tickets;
     }
 

@@ -7,6 +7,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
@@ -216,26 +217,39 @@ public class ParkController {
     // --- attractions
 
     public void createAttraction(String id, String name, String capacityText) throws OperationException {
+        createAttraction(id, name, capacityText, AttractionType.GENERAL.name());
+    }
+
+    /**
+     * Creates an attraction of the named type (GENERAL, INDIVIDUAL, GROUP or SPECIAL).
+     */
+    public void createAttraction(String id, String name, String capacityText, String typeText)
+            throws OperationException {
+        AttractionType type = AttractionType.fromName(typeText);
+        if (type == null) {
+            throw new OperationException("Unknown attraction type (GENERAL, INDIVIDUAL, GROUP, SPECIAL): "
+                    + typeText);
+        }
         int capacity;
         try {
             capacity = Integer.parseInt(capacityText);
         } catch (NumberFormatException e) {
             throw new OperationException("Capacity must be a positive integer: " + capacityText);
         }
-        attractions.create(id, name, capacity);
+        attractions.create(id, name, capacity, type);
     }
 
     public void enterAttraction(String attractionId, String ticketId) throws OperationException {
-        Attraction attraction = attractions.require(attractionId);
+        Attraction<?> attraction = attractions.require(attractionId);
         attraction.enter(requireTicket(ticketId), systemDate);
     }
 
     public int exitAttraction(String attractionId, String ticketId) throws OperationException {
-        Attraction attraction = attractions.require(attractionId);
+        Attraction<?> attraction = attractions.require(attractionId);
         return attraction.exit(requireTicket(ticketId));
     }
 
-    public Attraction attractionStatus(String attractionId) throws OperationException {
+    public Attraction<?> attractionStatus(String attractionId) throws OperationException {
         return attractions.require(attractionId);
     }
 

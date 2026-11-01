@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.GeneralAttraction;
 import es.upm.amusementpark.business.repository.AttractionRepository;
 
 /**
@@ -23,8 +24,8 @@ public class AttractionFileRepository implements AttractionRepository {
     }
 
     @Override
-    public List<Attraction> load() throws IOException {
-        List<Attraction> attractions = new ArrayList<>();
+    public List<Attraction<?>> load() throws IOException {
+        List<Attraction<?>> attractions = new ArrayList<>();
         if (!Files.exists(file)) {
             return attractions;
         }
@@ -34,7 +35,7 @@ public class AttractionFileRepository implements AttractionRepository {
                 continue;
             }
             try {
-                attractions.add(new Attraction(f[0], f[1], Integer.parseInt(f[2])));
+                attractions.add(new GeneralAttraction(f[0], f[1], Integer.parseInt(f[2])));
             } catch (NumberFormatException e) {
                 // skip malformed line
             }
@@ -43,9 +44,9 @@ public class AttractionFileRepository implements AttractionRepository {
     }
 
     @Override
-    public void save(List<Attraction> attractions) throws IOException {
+    public void save(List<Attraction<?>> attractions) throws IOException {
         List<String> lines = new ArrayList<>();
-        for (Attraction a : attractions) {
+        for (Attraction<?> a : attractions) {
             lines.add(a.getId() + ";" + a.getName() + ";" + a.getCapacity());
         }
         Files.write(file, lines, StandardCharsets.UTF_8);

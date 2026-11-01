@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.OperationException;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.repository.AttractionRepository;
@@ -41,19 +42,19 @@ public class AttractionController {
     }
 
     private final AttractionRepository repository;
-    private final List<Attraction> attractions;
+    private final List<Attraction<?>> attractions;
 
     private AttractionController(AttractionRepository repository) throws IOException {
         this.repository = repository;
         this.attractions = repository.load();
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         return List.copyOf(attractions);
     }
 
-    public Attraction find(String id) {
-        for (Attraction a : attractions) {
+    public Attraction<?> find(String id) {
+        for (Attraction<?> a : attractions) {
             if (a.getId().equals(id)) {
                 return a;
             }
@@ -61,15 +62,15 @@ public class AttractionController {
         return null;
     }
 
-    public Attraction require(String id) throws OperationException {
-        Attraction attraction = find(id);
+    public Attraction<?> require(String id) throws OperationException {
+        Attraction<?> attraction = find(id);
         if (attraction == null) {
             throw new OperationException("Unknown attraction: " + id);
         }
         return attraction;
     }
 
-    public void create(String id, String name, int capacity) throws OperationException {
+    public void create(String id, String name, int capacity, AttractionType type) throws OperationException {
         if (id.isEmpty()) {
             throw new OperationException("Attraction identifier must not be empty");
         }
@@ -82,7 +83,7 @@ public class AttractionController {
         if (find(id) != null) {
             throw new OperationException("An attraction with identifier " + id + " already exists");
         }
-        Attraction attraction = new Attraction(id, name, capacity);
+        Attraction<?> attraction = type.create(id, name, capacity);
         attractions.add(attraction);
         try {
             repository.save(attractions);
@@ -93,7 +94,7 @@ public class AttractionController {
     }
 
     public void removeUserEverywhere(User user) {
-        for (Attraction a : attractions) {
+        for (Attraction<?> a : attractions) {
             a.removeUser(user);
         }
     }

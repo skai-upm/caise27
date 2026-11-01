@@ -149,6 +149,21 @@ public class CommandProcessorTest {
     }
 
     @Test
+    public void typedAttractionCommands() {
+        processor.process("ATTRACTION CREATE;A01;Casa;10;SPECIAL");
+        processor.process("ATTRACTION CREATE;A02;Rio;10");
+        processor.process("ATTRACTION CREATE;A03;X;10;VIP");
+        processor.process("ATTRACTION CREATE;A04;X;10;GROUP;extra");
+        processor.process("ATTRACTION STATUS;A01");
+        processor.process("ATTRACTION STATUS;A02");
+        String out = output();
+        assertTrue(out.contains("Type: SPECIAL"));
+        assertTrue(out.contains("Type: GENERAL"));
+        assertTrue(out.contains("Error: Unknown attraction type"));
+        assertTrue(out.contains("Error: ATTRACTION CREATE expects 3 to 4 parameters"));
+    }
+
+    @Test
     public void invoiceCommand() {
         processor.process(CREATE_ANA);
         processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");

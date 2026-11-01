@@ -6,19 +6,24 @@ import java.util.List;
 
 /**
  * A park attraction with a maximum capacity and the users currently inside.
- * Occupancy is runtime state only.
+ * {@code T} bounds the kind of ticket access the attraction handles; tickets of
+ * other kinds are rejected. Occupancy is runtime state only.
+ *
+ * @param <T> access capability admitted by this attraction
  */
-public class Attraction {
+public abstract class Attraction<T extends AttractionAccess> {
 
     private final String id;
     private final String name;
     private final int capacity;
+    private final Class<T> accessType;
     private final List<User> present = new ArrayList<>();
 
-    public Attraction(String id, String name, int capacity) {
+    protected Attraction(String id, String name, int capacity, Class<T> accessType) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+        this.accessType = accessType;
     }
 
     public String getId() {
@@ -33,6 +38,8 @@ public class Attraction {
         return capacity;
     }
 
+    public abstract AttractionType getType();
+
     public List<User> getPresentUsers() {
         return List.copyOf(present);
     }
@@ -46,14 +53,26 @@ public class Attraction {
     }
 
     /**
+     * True if this attraction handles the given kind of ticket.
+     */
+    public boolean admits(Ticket ticket) {
+        return accessType.isInstance(ticket);
+    }
+
+    /**
      * Admits every user of the ticket, or nobody if any check fails.
      */
     public void enter(Ticket ticket, LocalDate today) throws OperationException {
-        if (!ticket.isValidOn(today)) {
+        if (!admits(ticket)) {
+            throw new OperationException("Attraction " + id + " (" + getType() + ") does not admit ticket "
+                    + ticket.getId());
+        }
+        T access = accessType.cast(ticket);
+        if (!access.isValidOn(today)) {
             throw new OperationException("Ticket " + ticket.getId() + " is for " + ticket.getDate()
                     + ", not for the current date " + today);
         }
-        List<User> entering = ticket.getUsers();
+        List<User> entering = access.getUsers();
         for (User u : entering) {
             if (present.contains(u)) {
                 throw new OperationException("User " + u.getEmail() + " is already in attraction " + id);

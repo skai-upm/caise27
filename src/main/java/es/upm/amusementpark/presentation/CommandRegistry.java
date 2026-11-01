@@ -30,8 +30,9 @@ public final class CommandRegistry {
                     "Buys one ticket per group member with a size discount (3-5: 10%, 6-10: 20%, >10: 50%)."),
             new CommandInfo("GROUPTICKET DELETE;IdTicket",
                     "Refunds a group ticket dated after the current date together with its member tickets."),
-            new CommandInfo("ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad",
-                    "Creates an attraction with the given maximum capacity."),
+            new CommandInfo("ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;Tipo]",
+                    "Creates an attraction; Tipo is GENERAL (default, individual and group tickets), INDIVIDUAL, "
+                    + "GROUP or SPECIAL (individual tickets with a Special Pass)."),
             new CommandInfo("ATTRACTION ENTER;IdAtraccion;IdTicket",
                     "Admits every user of a ticket valid today if there is room for all of them."),
             new CommandInfo("ATTRACTION EXIT;IdAtraccion;IdTicket",
