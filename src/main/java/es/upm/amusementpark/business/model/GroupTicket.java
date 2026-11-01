@@ -11,7 +11,7 @@ import java.util.List;
  * A ticket bought by a group. It is composed of one individual ticket per
  * group member at purchase time; later membership changes do not affect it.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAdmission {
 
     private final Group group;
     private final List<IndividualTicket> tickets;
@@ -29,12 +29,18 @@ public class GroupTicket extends Ticket {
         this.tickets = new ArrayList<>(tickets);
     }
 
+    @Override
     public Group getGroup() {
         return group;
     }
 
     public List<IndividualTicket> getTickets() {
         return Collections.unmodifiableList(tickets);
+    }
+
+    @Override
+    public List<IndividualTicket> getIndividualAdmissions() {
+        return getTickets();
     }
 
     @Override

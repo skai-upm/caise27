@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 class AttractionCommandsTest extends ParkTestSupport {
 
-    private Attraction a01() {
+    private Attraction<?> a01() {
         return park.findAttraction("A01");
     }
 

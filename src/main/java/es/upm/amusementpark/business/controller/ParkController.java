@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Map;
 
 import es.upm.amusementpark.business.OperationException;
+import es.upm.amusementpark.business.model.Admission;
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
@@ -39,7 +41,7 @@ public final class ParkController {
     private final AttractionRepository attractionRepository;
     private final List<Group> groups;
     private final List<Ticket> tickets;
-    private final List<Attraction> attractions;
+    private final List<Attraction<?>> attractions;
 
     private ParkController(SystemController system, UserController users, GroupRepository groupRepository,
                            TicketRepository ticketRepository, AttractionRepository attractionRepository)
@@ -117,7 +119,7 @@ public final class ParkController {
             save(() -> groupRepository.save(groups), () -> { });
             throw e;
         }
-        for (Attraction attraction : attractions) {
+        for (Attraction<?> attraction : attractions) {
             attraction.removeVisitor(user);
         }
     }
@@ -425,8 +427,8 @@ public final class ParkController {
 
     // ---- attractions ----
 
-    public Attraction findAttraction(String id) {
-        for (Attraction attraction : attractions) {
+    public Attraction<?> findAttraction(String id) {
+        for (Attraction<?> attraction : attractions) {
             if (attraction.getId().equals(id)) {
                 return attraction;
             }
@@ -434,49 +436,54 @@ public final class ParkController {
         return null;
     }
 
-    public void createAttraction(String id, String name, int capacity) {
+    public void createAttraction(String id, String name, int capacity, AttractionType type) {
         if (findAttraction(id) != null) {
             throw new OperationException("attraction " + id + " already exists");
         }
         if (capacity <= 0) {
             throw new OperationException("capacity must be a positive integer");
         }
-        Attraction attraction = new Attraction(id, name, capacity);
+        Attraction<?> attraction = type.create(id, name, capacity);
         attractions.add(attraction);
         save(() -> attractionRepository.save(attractions), () -> attractions.remove(attraction));
     }
 
     /** Admits the users of a ticket valid for the system date; returns how many entered. */
     public int enterAttraction(String attractionId, String ticketId) {
-        Attraction attraction = existingAttraction(attractionId);
-        Ticket ticket = existingTicket(ticketId);
-        if (!ticket.getDate().equals(system.getCurrentDate())) {
-            throw new OperationException("ticket " + ticketId + " is valid for " + ticket.getDate()
+        Attraction<?> attraction = existingAttraction(attractionId);
+        Admission admission = existingAdmission(ticketId);
+        if (!admission.getDate().equals(system.getCurrentDate())) {
+            throw new OperationException("ticket " + ticketId + " is valid for " + admission.getDate()
                     + ", not for the system date " + system.getCurrentDate());
         }
-        attraction.enter(ticket);
-        return ticket.getUsers().size();
+        attraction.admit(admission);
+        return admission.getUsers().size();
     }
 
     /** Lets the present users of a ticket leave, without checking the date; returns how many left. */
     public int exitAttraction(String attractionId, String ticketId) {
-        return existingAttraction(attractionId).exit(existingTicket(ticketId));
+        return existingAttraction(attractionId).exit(existingAdmission(ticketId));
     }
 
-    private Attraction existingAttraction(String id) {
-        Attraction attraction = findAttraction(id);
+    private Attraction<?> existingAttraction(String id) {
+        Attraction<?> attraction = findAttraction(id);
         if (attraction == null) {
             throw new OperationException("attraction " + id + " does not exist");
         }
         return attraction;
     }
 
-    private Ticket existingTicket(String id) {
+    /** A ticket usable at attractions: a direct or group ticket, or a group-ticket constituent. */
+    private Admission existingAdmission(String id) {
         Ticket ticket = findTicket(id);
-        if (ticket == null) {
+        if (ticket != null) {
+            return ticket;
+        }
+        IndividualTicket constituent = findIndividualTicket(id);
+        if (constituent == null) {
             throw new OperationException("ticket " + id + " does not exist");
         }
-        return ticket;
+        return constituent;
     }
 
     // ---- persistence ----

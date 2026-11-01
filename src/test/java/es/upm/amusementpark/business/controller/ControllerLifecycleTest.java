@@ -76,12 +76,12 @@ class ControllerLifecycleTest {
 
     static final class MemoryAttractions implements AttractionRepository {
         @Override
-        public List<Attraction> load() {
+        public List<Attraction<?>> load() {
             return List.of();
         }
 
         @Override
-        public void save(List<Attraction> attractions) {
+        public void save(List<Attraction<?>> attractions) {
             // nothing to keep for these tests
         }
     }

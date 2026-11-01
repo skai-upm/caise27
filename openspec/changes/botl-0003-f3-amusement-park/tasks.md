@@ -32,7 +32,7 @@ Milestones follow the source order. Each group ends with `mvn test` passing and 
 
 ## 7. F3-C07 Attraction types
 
-- [ ] 7.1 Add `Admission`/`IndividualAdmission`/`GroupAdmission` interfaces, generic `Attraction<T extends Admission>` with typed subclasses and `AttractionType`, optional type in `ATTRACTION CREATE`, constituent tickets usable for ENTER/EXIT; verify with tests for every type × ticket kind, E2 syntax → GENERAL, unknown type rejection; commit `[F3-C07] Add generic attraction access types.`
+- [x] 7.1 Add `Admission`/`IndividualAdmission`/`GroupAdmission` interfaces, generic `Attraction<T extends Admission>` with typed subclasses and `AttractionType`, optional type in `ATTRACTION CREATE`, constituent tickets usable for ENTER/EXIT; verify with tests for every type × ticket kind, E2 syntax → GENERAL, unknown type rejection; commit `[F3-C07] Add generic attraction access types.`
 
 ## 8. F3-C08 Pass-based entry
 

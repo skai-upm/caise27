@@ -33,10 +33,12 @@ public final class CommandCatalog {
                     "Buys one ticket per current group member with a discount by group size."),
             new CommandInfo("GROUPTICKET DELETE;IdTicket",
                     "Refunds a group ticket dated after the system date, with all its member tickets."),
-            new CommandInfo("ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad",
-                    "Creates an attraction with a maximum capacity."),
+            new CommandInfo("ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;Tipo]",
+                    "Creates an attraction with a maximum capacity; Tipo is GENERAL (default), INDIVIDUAL, GROUP"
+                            + " or SPECIAL."),
             new CommandInfo("ATTRACTION ENTER;IdAtraccion;IdTicket",
-                    "Lets the users of a ticket valid today enter, all or none, within capacity."),
+                    "Lets the users of a ticket valid today enter, all or none, within capacity and if the"
+                            + " attraction type admits the ticket kind."),
             new CommandInfo("ATTRACTION EXIT;IdAtraccion;IdTicket",
                     "Lets the users of a ticket leave the attraction, freeing their places."),
             new CommandInfo("ATTRACTION STATUS;IdAtraccion",

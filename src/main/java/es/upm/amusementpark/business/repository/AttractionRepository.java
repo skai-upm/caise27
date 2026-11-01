@@ -10,7 +10,7 @@ import es.upm.amusementpark.business.model.Attraction;
  */
 public interface AttractionRepository {
 
-    List<Attraction> load() throws IOException;
+    List<Attraction<?>> load() throws IOException;
 
-    void save(List<Attraction> attractions) throws IOException;
+    void save(List<Attraction<?>> attractions) throws IOException;
 }

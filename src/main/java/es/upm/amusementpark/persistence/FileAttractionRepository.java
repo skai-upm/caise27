@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.repository.AttractionRepository;
 
 /**
@@ -26,8 +27,8 @@ public class FileAttractionRepository implements AttractionRepository {
     }
 
     @Override
-    public List<Attraction> load() throws IOException {
-        List<Attraction> attractions = new ArrayList<>();
+    public List<Attraction<?>> load() throws IOException {
+        List<Attraction<?>> attractions = new ArrayList<>();
         if (!Files.exists(file)) {
             return attractions;
         }
@@ -42,7 +43,7 @@ public class FileAttractionRepository implements AttractionRepository {
                 if (parts.length != 3) {
                     throw new NumberFormatException();
                 }
-                attractions.add(new Attraction(parts[0], parts[1], Integer.parseInt(parts[2])));
+                attractions.add(AttractionType.GENERAL.create(parts[0], parts[1], Integer.parseInt(parts[2])));
             } catch (NumberFormatException e) {
                 System.err.println("WARNING: skipping malformed line " + lineNumber + " in " + file);
             }
@@ -51,9 +52,9 @@ public class FileAttractionRepository implements AttractionRepository {
     }
 
     @Override
-    public void save(List<Attraction> attractions) throws IOException {
+    public void save(List<Attraction<?>> attractions) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            for (Attraction attraction : attractions) {
+            for (Attraction<?> attraction : attractions) {
                 writer.write(String.join(SEPARATOR, attraction.getId(), attraction.getName(),
                         String.valueOf(attraction.getCapacity())));
                 writer.newLine();

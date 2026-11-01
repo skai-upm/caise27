@@ -21,6 +21,7 @@ import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.invoice.InvoiceLine;
 import es.upm.amusementpark.business.invoice.InvoiceSection;
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
@@ -204,14 +205,19 @@ public class CommandProcessor {
     }
 
     private String createAttraction(String[] parts) {
-        requireParameters(parts, 3, "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad");
+        String syntax = "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;Tipo]";
+        requireParameters(parts, parts.length == 5 ? 4 : 3, syntax);
         int capacity;
         try {
             capacity = Integer.parseInt(parts[3]);
         } catch (NumberFormatException e) {
             throw new OperationException("capacity must be a positive integer");
         }
-        park.createAttraction(parts[1], parts[2], capacity);
+        AttractionType type = parts.length == 5 ? AttractionType.fromName(parts[4]) : AttractionType.GENERAL;
+        if (type == null) {
+            throw new OperationException("attraction type must be GENERAL, INDIVIDUAL, GROUP or SPECIAL");
+        }
+        park.createAttraction(parts[1], parts[2], capacity, type);
         return ok("attraction", parts[1], CREATED);
     }
 
@@ -229,7 +235,7 @@ public class CommandProcessor {
 
     private String attractionStatus(String[] parts) {
         requireParameters(parts, 1, "ATTRACTION STATUS;IdAtraccion");
-        Attraction attraction = park.findAttraction(parts[1]);
+        Attraction<?> attraction = park.findAttraction(parts[1]);
         if (attraction == null) {
             throw new OperationException("attraction " + parts[1] + " does not exist");
         }
@@ -238,6 +244,7 @@ public class CommandProcessor {
                 .toList();
         return String.join(System.lineSeparator(),
                 "Attraction: " + attraction.getId() + " - " + attraction.getName(),
+                "Type: " + attraction.getType(),
                 "Maximum capacity: " + attraction.getCapacity(),
                 "Users present: " + attraction.getVisitors().size(),
                 "Available places: " + attraction.getAvailablePlaces(),
