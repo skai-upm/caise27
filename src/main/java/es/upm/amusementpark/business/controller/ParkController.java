@@ -1,8 +1,6 @@
 package es.upm.amusementpark.business.controller;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,25 +14,23 @@ import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
-import es.upm.amusementpark.persistence.AttractionRepository;
-import es.upm.amusementpark.persistence.GroupRepository;
-import es.upm.amusementpark.persistence.StorageConfig;
-import es.upm.amusementpark.persistence.TicketRepository;
-import es.upm.amusementpark.persistence.UserRepository;
+import es.upm.amusementpark.business.repository.AttractionRepository;
+import es.upm.amusementpark.business.repository.GroupRepository;
+import es.upm.amusementpark.business.repository.TicketRepository;
 
 /**
- * Main controller of the park. It owns the single system date and base ticket
- * price used by every rule, the users, groups, tickets and attractions, and
- * persists each successful change. Rejected operations leave state unchanged.
+ * Controller of the park operations on groups, tickets and attractions and of
+ * the rules that span several entities. Date and price come from the injected
+ * {@link SystemController}; users from the injected {@link UserController}.
+ * Each successful change is persisted; rejected operations leave state
+ * unchanged. One instance per execution.
  */
-public class Park {
+public final class ParkController {
 
-    public static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
+    private static ParkController instance;
 
-    private LocalDate currentDate;
-    private BigDecimal basePrice = DEFAULT_PRICE;
-
-    private final UserManager userManager;
+    private final SystemController system;
+    private final UserController users;
     private final GroupRepository groupRepository;
     private final TicketRepository ticketRepository;
     private final AttractionRepository attractionRepository;
@@ -42,20 +38,17 @@ public class Park {
     private final List<Ticket> tickets;
     private final List<Attraction> attractions;
 
-    /** Loads the park from storage, starting on the operating system's current date. */
-    public Park(StorageConfig storage) throws IOException {
-        this(storage, LocalDate.now());
-    }
-
-    public Park(StorageConfig storage, LocalDate startDate) throws IOException {
-        this.currentDate = startDate;
-        this.userManager = new UserManager(new UserRepository(storage.users()));
-        this.groupRepository = new GroupRepository(storage.groups());
-        this.ticketRepository = new TicketRepository(storage.tickets());
-        this.attractionRepository = new AttractionRepository(storage.attractions());
+    private ParkController(SystemController system, UserController users, GroupRepository groupRepository,
+                           TicketRepository ticketRepository, AttractionRepository attractionRepository)
+            throws IOException {
+        this.system = system;
+        this.users = users;
+        this.groupRepository = groupRepository;
+        this.ticketRepository = ticketRepository;
+        this.attractionRepository = attractionRepository;
 
         Map<String, User> usersByDni = new HashMap<>();
-        for (User user : userManager.getUsers()) {
+        for (User user : users.getUsers()) {
             usersByDni.put(user.getDni(), user);
         }
         this.groups = new ArrayList<>(groupRepository.load(usersByDni));
@@ -67,38 +60,38 @@ public class Park {
         this.attractions = new ArrayList<>(attractionRepository.load());
     }
 
-    public UserManager getUserManager() {
-        return userManager;
-    }
-
-    // ---- system settings ----
-
-    public LocalDate getCurrentDate() {
-        return currentDate;
-    }
-
-    public void setCurrentDate(LocalDate date) {
-        this.currentDate = date;
-    }
-
-    public BigDecimal getBasePrice() {
-        return basePrice;
-    }
-
-    public void setBasePrice(BigDecimal price) {
-        if (price.signum() <= 0) {
-            throw new OperationException("price must be greater than zero");
+    /** Creates the execution's instance with its collaborators and repositories, loading their data. */
+    public static synchronized ParkController initialize(SystemController system, UserController users,
+                                                         GroupRepository groupRepository,
+                                                         TicketRepository ticketRepository,
+                                                         AttractionRepository attractionRepository)
+            throws IOException {
+        if (instance != null) {
+            throw new IllegalStateException("ParkController is already initialized");
         }
-        this.basePrice = price.setScale(2, RoundingMode.HALF_UP);
+        instance = new ParkController(system, users, groupRepository, ticketRepository, attractionRepository);
+        return instance;
+    }
+
+    public static synchronized ParkController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("ParkController is not initialized");
+        }
+        return instance;
+    }
+
+    /** Ends the execution's instance so a new execution can initialize its own. */
+    public static synchronized void release() {
+        instance = null;
     }
 
     // ---- users ----
 
     /** Deletes an authenticated user who holds no current or future ticket. */
     public void deleteUser(String email, String password) {
-        User user = userManager.authenticate(email, password);
+        User user = users.authenticate(email, password);
         for (Ticket ticket : tickets) {
-            if (ticket.isActiveOn(currentDate) && ticket.getUsers().contains(user)) {
+            if (ticket.isActiveOn(system.getCurrentDate()) && ticket.getUsers().contains(user)) {
                 throw new OperationException("user " + email + " has ticket " + ticket.getId()
                         + " dated " + ticket.getDate() + " and cannot be deleted");
             }
@@ -115,7 +108,7 @@ public class Park {
         Runnable restoreGroups = () -> memberOf.forEach(group -> group.addMember(user));
         save(() -> groupRepository.save(groups), restoreGroups);
         try {
-            userManager.remove(user);
+            users.remove(user);
         } catch (OperationException e) {
             restoreGroups.run();
             save(() -> groupRepository.save(groups), () -> { });
@@ -162,7 +155,7 @@ public class Park {
 
     public void removeMember(String groupId, String email) {
         Group group = unlockedGroup(groupId);
-        User user = userManager.findByEmail(email);
+        User user = users.findByEmail(email);
         if (user == null || !group.hasMember(user)) {
             throw new OperationException("user " + email + " is not in group " + groupId);
         }
@@ -185,7 +178,7 @@ public class Park {
     public boolean isLocked(Group group) {
         for (Ticket ticket : tickets) {
             if (ticket instanceof GroupTicket groupTicket && groupTicket.getGroup() == group
-                    && ticket.isActiveOn(currentDate)) {
+                    && ticket.isActiveOn(system.getCurrentDate())) {
                 return true;
             }
         }
@@ -209,7 +202,7 @@ public class Park {
     }
 
     private User existingUser(String email) {
-        User user = userManager.findByEmail(email);
+        User user = users.findByEmail(email);
         if (user == null) {
             throw new OperationException("user " + email + " does not exist");
         }
@@ -251,15 +244,15 @@ public class Park {
         if (isTicketIdUsed(id)) {
             throw new OperationException("ticket " + id + " already exists");
         }
-        if (date.isBefore(currentDate)) {
-            throw new OperationException("cannot buy a ticket for " + date + ", before the system date " + currentDate);
+        if (date.isBefore(system.getCurrentDate())) {
+            throw new OperationException("cannot buy a ticket for " + date + ", before the system date " + system.getCurrentDate());
         }
     }
 
     public IndividualTicket createTicket(String id, String email, LocalDate date) {
         User user = existingUser(email);
         requirePurchasable(id, date);
-        IndividualTicket ticket = new IndividualTicket(id, date, basePrice, user);
+        IndividualTicket ticket = new IndividualTicket(id, date, system.getBasePrice(), user);
         tickets.add(ticket);
         save(() -> ticketRepository.save(tickets), () -> tickets.remove(ticket));
         return ticket;
@@ -291,7 +284,7 @@ public class Park {
                 throw new OperationException("ticket " + constituentId + " already exists");
             }
         }
-        GroupTicket ticket = new GroupTicket(id, group, date, basePrice);
+        GroupTicket ticket = new GroupTicket(id, group, date, system.getBasePrice());
         tickets.add(ticket);
         save(() -> ticketRepository.save(tickets), () -> tickets.remove(ticket));
         return ticket;
@@ -306,9 +299,9 @@ public class Park {
     }
 
     private void removeRefundable(Ticket ticket) {
-        if (!ticket.isRefundableOn(currentDate)) {
+        if (!ticket.isRefundableOn(system.getCurrentDate())) {
             throw new OperationException("ticket " + ticket.getId() + " is dated " + ticket.getDate()
-                    + "; only tickets after the system date " + currentDate + " can be deleted");
+                    + "; only tickets after the system date " + system.getCurrentDate() + " can be deleted");
         }
         int index = tickets.indexOf(ticket);
         tickets.remove(index);
@@ -342,9 +335,9 @@ public class Park {
     public int enterAttraction(String attractionId, String ticketId) {
         Attraction attraction = existingAttraction(attractionId);
         Ticket ticket = existingTicket(ticketId);
-        if (!ticket.getDate().equals(currentDate)) {
+        if (!ticket.getDate().equals(system.getCurrentDate())) {
             throw new OperationException("ticket " + ticketId + " is valid for " + ticket.getDate()
-                    + ", not for the system date " + currentDate);
+                    + ", not for the system date " + system.getCurrentDate());
         }
         attraction.enter(ticket);
         return ticket.getUsers().size();

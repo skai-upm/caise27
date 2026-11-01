@@ -7,9 +7,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
-import es.upm.amusementpark.business.controller.Park;
+import es.upm.amusementpark.business.controller.ParkController;
+import es.upm.amusementpark.business.controller.SystemController;
+import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.persistence.StorageConfig;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,17 +28,28 @@ abstract class ParkTestSupport {
     @TempDir
     Path tempDir;
 
-    Park park;
+    SystemController system;
+    UserController users;
+    ParkController park;
     CommandProcessor processor;
 
     @BeforeEach
     void startPark() throws IOException {
-        park = new Park(new StorageConfig(tempDir), START);
-        processor = new CommandProcessor(park);
+        ApplicationContext context = ApplicationContext.start(new StorageConfig(tempDir), START);
+        system = context.system();
+        users = context.users();
+        park = context.park();
+        processor = context.processor();
+    }
+
+    @AfterEach
+    void stopPark() {
+        ApplicationContext.stop();
     }
 
     /** Simulates a new execution on the same storage, starting on {@link #START}. */
     void restart() throws IOException {
+        stopPark();
         startPark();
     }
 

@@ -49,7 +49,7 @@ class AttractionCommandsTest extends ParkTestSupport {
         error("ATTRACTION ENTER;A01;T001");
         ok("SYSTEM DATE;2026-10-15");
         expect("OK: 1 user(s) entered attraction A01", "ATTRACTION ENTER;A01;T001");
-        assertEquals(List.of(park.getUserManager().findByEmail(email(1))), a01().getVisitors());
+        assertEquals(List.of(users.findByEmail(email(1))), a01().getVisitors());
         error("ATTRACTION ENTER;A01;T001");
         error("ATTRACTION ENTER;A99;T001");
         error("ATTRACTION ENTER;A01;T999");

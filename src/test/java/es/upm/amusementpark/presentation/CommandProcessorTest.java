@@ -13,13 +13,14 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
-import es.upm.amusementpark.business.controller.Park;
-import es.upm.amusementpark.business.controller.UserManager;
+import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.persistence.StorageConfig;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -32,14 +33,19 @@ class CommandProcessorTest {
     @TempDir
     Path tempDir;
 
-    private UserManager manager;
+    private UserController manager;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws IOException {
-        Park park = new Park(new StorageConfig(tempDir));
-        manager = park.getUserManager();
-        processor = new CommandProcessor(park);
+        ApplicationContext context = ApplicationContext.start(new StorageConfig(tempDir), LocalDate.now());
+        manager = context.users();
+        processor = context.processor();
+    }
+
+    @AfterEach
+    void tearDown() {
+        ApplicationContext.stop();
     }
 
     @Test

@@ -14,8 +14,8 @@ Milestones follow the source order. Each group ends with `mvn test` passing and 
 
 ## 3. F3-C03 Singleton controllers and DI
 
-- [ ] 3.1 Introduce repository interfaces in `business.repository` and `File*Repository` implementations in `persistence`; verify persistence tests pass against the implementations
-- [ ] 3.2 Split controllers into Singleton `SystemController`, `UserController`, `ParkController`, `InvoiceController` with `initialize`/`getInstance`/`release`, wired in `App`; verify with tests for same-instance access, double-initialisation rejection, an in-memory repository injected, and unchanged E1/E2 behaviour; commit `[F3-C03] Add singleton controllers and dependency injection.`
+- [x] 3.1 Introduce repository interfaces in `business.repository` and `File*Repository` implementations in `persistence`; verify persistence tests pass against the implementations
+- [x] 3.2 Split controllers into Singleton `SystemController`, `UserController`, `ParkController`, `InvoiceController` with `initialize`/`getInstance`/`release`, wired in `App`; verify with tests for same-instance access, double-initialisation rejection, an in-memory repository injected, and unchanged E1/E2 behaviour; commit `[F3-C03] Add singleton controllers and dependency injection.`
 
 ## 4. F3-C04 Extended help
 

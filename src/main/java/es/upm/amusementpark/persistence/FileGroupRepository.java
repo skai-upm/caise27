@@ -11,22 +11,24 @@ import java.util.Map;
 
 import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.repository.GroupRepository;
 
 /**
  * Stores groups in a text file, one group per line: {@code id;name;dni1,dni2,...}.
  * Members are stored by DNI and resolved to the registered users when loading.
  */
-public class GroupRepository {
+public class FileGroupRepository implements GroupRepository {
 
     private static final String SEPARATOR = ";";
     private static final String MEMBER_SEPARATOR = ",";
 
     private final Path file;
 
-    public GroupRepository(Path file) {
+    public FileGroupRepository(Path file) {
         this.file = file;
     }
 
+    @Override
     public List<Group> load(Map<String, User> usersByDni) throws IOException {
         List<Group> groups = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -57,6 +59,7 @@ public class GroupRepository {
         return groups;
     }
 
+    @Override
     public void save(List<Group> groups) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
             for (Group group : groups) {

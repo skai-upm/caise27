@@ -14,21 +14,21 @@ import es.upm.amusementpark.business.model.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class UserRepositoryTest {
+class FileUserRepositoryTest {
 
     @TempDir
     Path tempDir;
 
     @Test
     void missingFileLoadsAsEmpty() throws IOException {
-        UserRepository repository = new UserRepository(tempDir.resolve("users.txt"));
+        FileUserRepository repository = new FileUserRepository(tempDir.resolve("users.txt"));
         assertTrue(repository.load().isEmpty());
     }
 
     @Test
     void savesOneUserPerLineInSpecifiedOrder() throws IOException {
         Path file = tempDir.resolve("users.txt");
-        UserRepository repository = new UserRepository(file);
+        FileUserRepository repository = new FileUserRepository(file);
         repository.save(List.of(
                 new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                         "1234567890123456"),
@@ -43,10 +43,10 @@ class UserRepositoryTest {
     @Test
     void roundTripRestoresAllAttributes() throws IOException {
         Path file = tempDir.resolve("users.txt");
-        new UserRepository(file).save(List.of(new User("Ana", "Garcia Lopez", "12345678Z",
+        new FileUserRepository(file).save(List.of(new User("Ana", "Garcia Lopez", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456")));
 
-        List<User> loaded = new UserRepository(file).load();
+        List<User> loaded = new FileUserRepository(file).load();
 
         assertEquals(1, loaded.size());
         User user = loaded.get(0);
@@ -66,7 +66,7 @@ class UserRepositoryTest {
                 "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
                 "",
                 "broken;line"), StandardCharsets.UTF_8);
-        List<User> loaded = new UserRepository(file).load();
+        List<User> loaded = new FileUserRepository(file).load();
         assertEquals(1, loaded.size());
         assertEquals("12345678Z", loaded.get(0).getDni());
     }

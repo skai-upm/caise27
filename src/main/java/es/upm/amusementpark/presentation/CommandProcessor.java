@@ -14,11 +14,12 @@ import java.util.List;
 
 import es.upm.amusementpark.business.OperationException;
 import es.upm.amusementpark.business.controller.InvoiceController;
-import es.upm.amusementpark.business.controller.Park;
+import es.upm.amusementpark.business.controller.ParkController;
+import es.upm.amusementpark.business.controller.SystemController;
+import es.upm.amusementpark.business.controller.UserController;
 import es.upm.amusementpark.business.invoice.Invoice;
 import es.upm.amusementpark.business.invoice.InvoiceLine;
 import es.upm.amusementpark.business.invoice.InvoiceSection;
-import es.upm.amusementpark.business.invoice.StandardInvoiceBuilder;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.UserField;
@@ -62,12 +63,17 @@ public class CommandProcessor {
     private static final String CREATED = "created";
     private static final String DELETED = "deleted";
 
-    private final Park park;
+    private final SystemController system;
+    private final UserController users;
+    private final ParkController park;
     private final InvoiceController invoices;
 
-    public CommandProcessor(Park park) {
+    public CommandProcessor(SystemController system, UserController users, ParkController park,
+                            InvoiceController invoices) {
+        this.system = system;
+        this.users = users;
         this.park = park;
-        this.invoices = new InvoiceController(park, StandardInvoiceBuilder::new);
+        this.invoices = invoices;
     }
 
     /**
@@ -126,7 +132,7 @@ public class CommandProcessor {
 
     private String createUser(String[] parts) {
         requireParameters(parts, 7, "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta");
-        park.getUserManager().create(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
+        users.create(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
         return ok(USER, parts[4], CREATED);
     }
 
@@ -143,20 +149,20 @@ public class CommandProcessor {
             throw new OperationException("field '" + parts[3]
                     + "' cannot be updated; use NAME, SURNAME, EMAIL, PASSWORD, PHONE or CARD");
         }
-        park.getUserManager().update(parts[1], parts[2], field, parts[4]);
+        users.update(parts[1], parts[2], field, parts[4]);
         return ok(USER, parts[1], "updated");
     }
 
     private String setDate(String[] parts) {
         requireParameters(parts, 1, "SYSTEM DATE;yyyy-MM-dd");
-        park.setCurrentDate(parseDate(parts[1]));
-        return "OK: system date set to " + park.getCurrentDate();
+        system.setCurrentDate(parseDate(parts[1]));
+        return "OK: system date set to " + system.getCurrentDate();
     }
 
     private String setPrice(String[] parts) {
         requireParameters(parts, 1, "SYSTEM PRICE;Precio");
-        park.setBasePrice(parsePrice(parts[1]));
-        return "OK: base price set to " + formatPrice(park.getBasePrice());
+        system.setBasePrice(parsePrice(parts[1]));
+        return "OK: base price set to " + formatPrice(system.getBasePrice());
     }
 
     private String createGroup(String[] parts) {

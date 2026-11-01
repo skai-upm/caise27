@@ -40,14 +40,14 @@ class GroupCommandsTest extends ParkTestSupport {
         ok("GROUP ADD;G01;" + email(1));
         ok("GROUP ADD;G01;" + email(2));
         Group group = park.findGroup("G01");
-        assertSame(park.getUserManager().findByEmail(email(1)), group.getMembers().get(0));
+        assertSame(users.findByEmail(email(1)), group.getMembers().get(0));
 
         ok("USER UPDATE;" + email(1) + ";Clave1!;NAME;Ana Maria");
         assertEquals("Ana Maria", group.getMembers().get(0).getName());
 
         ok("GROUP REMOVE;G01;" + email(1));
-        assertEquals(List.of(park.getUserManager().findByEmail(email(2))), group.getMembers());
-        assertTrue(park.getUserManager().findByEmail(email(1)) != null);
+        assertEquals(List.of(users.findByEmail(email(2))), group.getMembers());
+        assertTrue(users.findByEmail(email(1)) != null);
     }
 
     @Test
@@ -68,7 +68,7 @@ class GroupCommandsTest extends ParkTestSupport {
         createGroupWithUsers("G01", 1);
         expect("OK: group G01 deleted", "GROUP DELETE;G01");
         assertNull(park.findGroup("G01"));
-        assertTrue(park.getUserManager().findByEmail(email(1)) != null);
+        assertTrue(users.findByEmail(email(1)) != null);
         error("GROUP DELETE;G01");
     }
 
@@ -81,10 +81,10 @@ class GroupCommandsTest extends ParkTestSupport {
 
         Group group = park.findGroup("G01");
         assertEquals(2, group.getMembers().size());
-        assertSame(park.getUserManager().findByEmail(email(1)), group.getMembers().get(0));
-        assertSame(park.getUserManager().findByEmail(email(2)), group.getMembers().get(1));
+        assertSame(users.findByEmail(email(1)), group.getMembers().get(0));
+        assertSame(users.findByEmail(email(2)), group.getMembers().get(1));
         assertTrue(park.findGroup("G02").getMembers().isEmpty());
-        assertEquals(3, park.getUserManager().getUsers().size());
+        assertEquals(3, users.getUsers().size());
     }
 
     @Test

@@ -28,7 +28,7 @@ class TicketCommandsTest extends ParkTestSupport {
         expect("OK TICKET CREATED -> 40.00", "TICKET CREATE;T001;ana@correo.com;2026-10-15");
         IndividualTicket ticket = assertInstanceOf(IndividualTicket.class, park.findTicket("T001"));
         assertEquals(LocalDate.of(2026, 10, 15), ticket.getDate());
-        assertSame(park.getUserManager().findByEmail("ana@correo.com"), ticket.getUser());
+        assertSame(users.findByEmail("ana@correo.com"), ticket.getUser());
         assertEquals(new BigDecimal("40.00"), ticket.getPrice());
     }
 
@@ -84,7 +84,7 @@ class TicketCommandsTest extends ParkTestSupport {
         ok("TICKET CREATE;T001;ana@correo.com;2026-10-15");
         restart();
         IndividualTicket ticket = assertInstanceOf(IndividualTicket.class, park.findTicket("T001"));
-        assertSame(park.getUserManager().findByEmail("ana@correo.com"), ticket.getUser());
+        assertSame(users.findByEmail("ana@correo.com"), ticket.getUser());
         assertEquals(LocalDate.of(2026, 10, 15), ticket.getDate());
         assertEquals(List.of("I;T001;2026-10-15;40.00;12345678Z;Ana;Garcia Lopez;ana@correo.com"),
                 Files.readAllLines(tempDir.resolve("tickets.txt")));
@@ -97,7 +97,7 @@ class TicketCommandsTest extends ParkTestSupport {
         error("USER DELETE;ana@correo.com;Clave1!");
         ok("SYSTEM DATE;2026-10-15");
         error("USER DELETE;ana@correo.com;Clave1!");
-        assertNotNull(park.getUserManager().findByEmail("ana@correo.com"));
+        assertNotNull(users.findByEmail("ana@correo.com"));
         assertNotNull(park.findTicket("T001"));
     }
 
@@ -110,7 +110,7 @@ class TicketCommandsTest extends ParkTestSupport {
         ok("TICKET CREATE;T001;ana@correo.com;2026-10-15");
         ok("SYSTEM DATE;2026-10-16");
         expect("OK: user ana@correo.com deleted", "USER DELETE;ana@correo.com;Clave1!");
-        assertNull(park.getUserManager().findByEmail("ana@correo.com"));
+        assertNull(users.findByEmail("ana@correo.com"));
         assertEquals(1, park.findGroup("G01").getMembers().size());
 
         restart();
@@ -118,7 +118,7 @@ class TicketCommandsTest extends ParkTestSupport {
         assertEquals("12345678Z", ticket.getUser().getDni());
         assertEquals("Ana", ticket.getUser().getName());
         assertEquals("ana@correo.com", ticket.getUser().getEmail());
-        assertNull(park.getUserManager().findByEmail("ana@correo.com"));
+        assertNull(users.findByEmail("ana@correo.com"));
         assertEquals(1, park.findGroup("G01").getMembers().size());
     }
 
@@ -126,6 +126,6 @@ class TicketCommandsTest extends ParkTestSupport {
     void wrongCredentialsStillRejectDeletion() {
         ok(ANA);
         error("USER DELETE;ana@correo.com;Wrong1!");
-        assertTrue(park.getUserManager().findByEmail("ana@correo.com") != null);
+        assertTrue(users.findByEmail("ana@correo.com") != null);
     }
 }

@@ -18,6 +18,7 @@ import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.repository.TicketRepository;
 
 /**
  * Stores individual and group tickets in a text file. Record types:
@@ -29,7 +30,7 @@ import es.upm.amusementpark.business.model.User;
  * Holder name, surname and email are kept so that historical tickets survive the
  * deletion of their user; a deleted holder or group is rebuilt from that data.
  */
-public class TicketRepository {
+public class FileTicketRepository implements TicketRepository {
 
     private static final String SEPARATOR = ";";
     private static final String INDIVIDUAL = "I";
@@ -40,10 +41,11 @@ public class TicketRepository {
 
     private final Path file;
 
-    public TicketRepository(Path file) {
+    public FileTicketRepository(Path file) {
         this.file = file;
     }
 
+    @Override
     public List<Ticket> load(Map<String, User> usersByDni, Map<String, Group> groupsById) throws IOException {
         List<Ticket> tickets = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -87,6 +89,7 @@ public class TicketRepository {
         return tickets;
     }
 
+    @Override
     public void save(List<Ticket> tickets) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
             for (Ticket ticket : tickets) {

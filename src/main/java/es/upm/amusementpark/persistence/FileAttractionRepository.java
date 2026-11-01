@@ -9,21 +9,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.repository.AttractionRepository;
 
 /**
  * Stores attraction definitions ({@code id;name;capacity}). Users present are
  * never stored, so attractions start empty on every execution.
  */
-public class AttractionRepository {
+public class FileAttractionRepository implements AttractionRepository {
 
     private static final String SEPARATOR = ";";
 
     private final Path file;
 
-    public AttractionRepository(Path file) {
+    public FileAttractionRepository(Path file) {
         this.file = file;
     }
 
+    @Override
     public List<Attraction> load() throws IOException {
         List<Attraction> attractions = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -48,6 +50,7 @@ public class AttractionRepository {
         return attractions;
     }
 
+    @Override
     public void save(List<Attraction> attractions) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
             for (Attraction attraction : attractions) {

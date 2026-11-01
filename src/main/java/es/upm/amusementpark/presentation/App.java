@@ -11,9 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import es.upm.amusementpark.business.controller.Park;
 import es.upm.amusementpark.persistence.StorageConfig;
 
 /**
@@ -58,15 +58,19 @@ public class App {
                                PrintStream err) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new Park(storage));
+            processor = ApplicationContext.start(storage, LocalDate.now()).processor();
         } catch (IOException e) {
             err.println("ERROR: cannot load data from " + storage.directory() + ": " + e.getMessage());
             return 1;
         }
-        if (commandFile == null) {
-            return runInteractive(processor, in, out, err);
+        try {
+            if (commandFile == null) {
+                return runInteractive(processor, in, out, err);
+            }
+            return runFile(processor, commandFile, out, err);
+        } finally {
+            ApplicationContext.stop();
         }
-        return runFile(processor, commandFile, out, err);
     }
 
     private static int runInteractive(CommandProcessor processor, InputStream in, PrintStream out, PrintStream err) {

@@ -8,21 +8,44 @@ import es.upm.amusementpark.business.OperationException;
 import es.upm.amusementpark.business.UserValidator;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
-import es.upm.amusementpark.persistence.UserRepository;
+import es.upm.amusementpark.business.repository.UserRepository;
 
 /**
  * Keeps the registered users, enforces validation and uniqueness rules, and
- * persists every successful change through a {@link UserRepository}.
- * Rejected operations leave both memory and storage unchanged.
+ * persists every successful change through the injected {@link UserRepository}.
+ * Rejected operations leave both memory and storage unchanged. One instance per execution.
  */
-public class UserManager {
+public final class UserController {
+
+    private static UserController instance;
 
     private final UserRepository repository;
     private final List<User> users;
 
-    public UserManager(UserRepository repository) throws IOException {
+    private UserController(UserRepository repository) throws IOException {
         this.repository = repository;
         this.users = new ArrayList<>(repository.load());
+    }
+
+    /** Creates the execution's instance, loading the users from the given repository. */
+    public static synchronized UserController initialize(UserRepository repository) throws IOException {
+        if (instance != null) {
+            throw new IllegalStateException("UserController is already initialized");
+        }
+        instance = new UserController(repository);
+        return instance;
+    }
+
+    public static synchronized UserController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("UserController is not initialized");
+        }
+        return instance;
+    }
+
+    /** Ends the execution's instance so a new execution can initialize its own. */
+    public static synchronized void release() {
+        instance = null;
     }
 
     public List<User> getUsers() {

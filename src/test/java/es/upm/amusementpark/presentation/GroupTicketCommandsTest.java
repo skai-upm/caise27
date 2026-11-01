@@ -146,7 +146,7 @@ class GroupTicketCommandsTest extends ParkTestSupport {
         GroupTicket ticket = assertInstanceOf(GroupTicket.class, park.findTicket("TG01"));
         assertSame(park.findGroup("G01"), ticket.getGroup());
         assertEquals(new BigDecimal("80.00"), ticket.getPrice());
-        assertEquals(List.of(park.getUserManager().findByEmail(email(1)), park.getUserManager().findByEmail(email(2))),
+        assertEquals(List.of(users.findByEmail(email(1)), users.findByEmail(email(2))),
                 ticket.getUsers());
         assertEquals(3, Files.readAllLines(tempDir.resolve("tickets.txt")).size());
     }
@@ -165,7 +165,7 @@ class GroupTicketCommandsTest extends ParkTestSupport {
         assertEquals("G01", ticket.getGroup().getId());
         assertEquals("Group G01", ticket.getGroup().getName());
         assertEquals(email(1), ticket.getTickets().get(0).getUser().getEmail());
-        assertNotNull(park.getUserManager().findByEmail(email(2)));
-        assertSame(park.getUserManager().findByEmail(email(2)), ticket.getTickets().get(1).getUser());
+        assertNotNull(users.findByEmail(email(2)));
+        assertSame(users.findByEmail(email(2)), ticket.getTickets().get(1).getUser());
     }
 }

@@ -10,19 +10,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.repository.UserRepository;
 
 /**
  * Stores users in a text file, one user per line, with attributes separated by ';'
  * in the order: name, surname, DNI, email, password, phone, card.
  */
-public class UserRepository {
+public class FileUserRepository implements UserRepository {
 
     private static final String SEPARATOR = ";";
     private static final int FIELD_COUNT = 7;
 
     private final Path file;
 
-    public UserRepository(Path file) {
+    public FileUserRepository(Path file) {
         this.file = file;
     }
 
@@ -30,6 +31,7 @@ public class UserRepository {
      * Loads all stored users. A missing file means there are no users yet;
      * blank or malformed lines are skipped.
      */
+    @Override
     public List<User> load() throws IOException {
         List<User> users = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -55,6 +57,7 @@ public class UserRepository {
     }
 
     /** Rewrites the file so that it contains exactly the given users. */
+    @Override
     public void save(List<User> users) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
             for (User user : users) {

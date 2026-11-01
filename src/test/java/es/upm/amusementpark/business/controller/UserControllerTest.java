@@ -14,24 +14,30 @@ import java.util.List;
 import es.upm.amusementpark.business.OperationException;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.model.UserField;
-import es.upm.amusementpark.persistence.UserRepository;
+import es.upm.amusementpark.persistence.FileUserRepository;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class UserManagerTest {
+class UserControllerTest {
 
     @TempDir
     Path tempDir;
 
     private Path file;
-    private UserManager manager;
+    private UserController manager;
 
     @BeforeEach
     void setUp() throws IOException {
         file = tempDir.resolve("users.txt");
-        manager = new UserManager(new UserRepository(file));
+        manager = UserController.initialize(new FileUserRepository(file));
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserController.release();
     }
 
     private void createAna() {
@@ -44,8 +50,9 @@ class UserManagerTest {
                 "9876543210987654");
     }
 
-    private UserManager restart() throws IOException {
-        return new UserManager(new UserRepository(file));
+    private UserController restart() throws IOException {
+        UserController.release();
+        return UserController.initialize(new FileUserRepository(file));
     }
 
     @Test
@@ -164,7 +171,8 @@ class UserManagerTest {
     @Test
     void failedSaveRevertsInMemoryChange() throws IOException {
         Path unwritable = tempDir.resolve("missing-dir").resolve("users.txt");
-        UserManager blocked = new UserManager(new UserRepository(unwritable));
+        UserController.release();
+        UserController blocked = UserController.initialize(new FileUserRepository(unwritable));
         assertThrows(OperationException.class, () -> blocked.create("Ana", "Garcia", "12345678Z",
                 "ana@correo.com", "Clave1!", "612345678", "1234567890123456"));
         assertTrue(blocked.getUsers().isEmpty());

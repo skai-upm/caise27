@@ -16,24 +16,51 @@ import es.upm.amusementpark.business.model.User;
 
 /**
  * Directs the construction of user and group invoices from the purchases
- * known to the park.
+ * known to the park, using a fresh builder from the injected supplier for
+ * each invoice. One instance per execution.
  */
-public class InvoiceController {
+public final class InvoiceController {
 
     static final String INDIVIDUAL_TICKETS = "Individual tickets";
     static final String GROUP_TICKETS = "Group tickets";
 
-    private final Park park;
+    private static InvoiceController instance;
+
+    private final UserController users;
+    private final ParkController park;
     private final Supplier<InvoiceBuilder> builders;
 
-    public InvoiceController(Park park, Supplier<InvoiceBuilder> builders) {
+    private InvoiceController(UserController users, ParkController park, Supplier<InvoiceBuilder> builders) {
+        this.users = users;
         this.park = park;
         this.builders = builders;
     }
 
+    /** Creates the execution's instance with its collaborators. */
+    public static synchronized InvoiceController initialize(UserController users, ParkController park,
+                                                            Supplier<InvoiceBuilder> builders) {
+        if (instance != null) {
+            throw new IllegalStateException("InvoiceController is already initialized");
+        }
+        instance = new InvoiceController(users, park, builders);
+        return instance;
+    }
+
+    public static synchronized InvoiceController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("InvoiceController is not initialized");
+        }
+        return instance;
+    }
+
+    /** Ends the execution's instance so a new execution can initialize its own. */
+    public static synchronized void release() {
+        instance = null;
+    }
+
     /** Invoice of the tickets bought directly for a user; group-ticket constituents are not counted. */
     public Invoice userInvoice(String email) {
-        User user = park.getUserManager().findByEmail(email);
+        User user = users.findByEmail(email);
         if (user == null) {
             throw new OperationException("user " + email + " does not exist");
         }
