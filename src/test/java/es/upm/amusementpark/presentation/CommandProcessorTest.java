@@ -164,6 +164,25 @@ public class CommandProcessorTest {
     }
 
     @Test
+    public void passEntryReplies() {
+        processor.process(CREATE_ANA);
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-01");
+        processor.process("SPEEDPASS CREATE;T001;1");
+        processor.process("SPECIALPASS CREATE;T001");
+        processor.process("ATTRACTION CREATE;A01;Tornado;20");
+        processor.process("ATTRACTION CREATE;A02;Casa;5;SPECIAL");
+        processor.process("ATTRACTION ENTER;A01;T001;FAST");
+        processor.process("ATTRACTION ENTER;A01;T001;SPEED");
+        processor.process("ATTRACTION ENTER;A02;T001;SPEED");
+        processor.process("ATTRACTION ENTER;A02;T001");
+        String out = output();
+        assertTrue(out.contains("Error: Unknown ATTRACTION ENTER option (only SPEED): FAST"));
+        assertTrue(out.contains("Ticket T001 entered attraction A01 consuming SpeedPass T001-SP1"));
+        assertTrue(out.contains("Error: SPEED is not accepted at SPECIAL attraction A02"));
+        assertTrue(out.contains("Ticket T001 entered attraction A02 consuming Special Pass T001-SPECIAL"));
+    }
+
+    @Test
     public void invoiceCommand() {
         processor.process(CREATE_ANA);
         processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");

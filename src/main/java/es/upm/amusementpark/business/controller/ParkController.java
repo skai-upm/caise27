@@ -13,6 +13,7 @@ import es.upm.amusementpark.business.model.GroupTicket;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Invoice;
 import es.upm.amusementpark.business.model.OperationException;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
@@ -239,9 +240,31 @@ public class ParkController {
         attractions.create(id, name, capacity, type);
     }
 
-    public void enterAttraction(String attractionId, String ticketId) throws OperationException {
+    public List<Pass> enterAttraction(String attractionId, String ticketId) throws OperationException {
+        return enterAttraction(attractionId, ticketId, false);
+    }
+
+    /**
+     * Lets a ticket's users into an attraction, optionally using SpeedPasses, and
+     * persists the consumed passes. If that cannot be saved the entry is undone.
+     *
+     * @return the passes consumed
+     */
+    public List<Pass> enterAttraction(String attractionId, String ticketId, boolean speed)
+            throws OperationException {
         Attraction<?> attraction = attractions.require(attractionId);
-        attraction.enter(requireTicket(ticketId), systemDate);
+        Ticket ticket = requireTicket(ticketId);
+        List<Pass> consumed = attraction.enter(ticket, speed, systemDate);
+        if (!consumed.isEmpty()) {
+            try {
+                tickets.save();
+            } catch (OperationException e) {
+                consumed.forEach(Pass::restore);
+                ticket.getUsers().forEach(attraction::removeUser);
+                throw e;
+            }
+        }
+        return consumed;
     }
 
     public int exitAttraction(String attractionId, String ticketId) throws OperationException {

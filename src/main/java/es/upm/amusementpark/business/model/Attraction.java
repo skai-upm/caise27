@@ -60,9 +60,13 @@ public abstract class Attraction<T extends AttractionAccess> {
     }
 
     /**
-     * Admits every user of the ticket, or nobody if any check fails.
+     * Admits every user of the ticket, or nobody if any check fails. With {@code speed}
+     * one unused SpeedPass of each admitted ticket is consumed; subclasses may require
+     * other passes. Passes are consumed only when entry succeeds.
+     *
+     * @return the passes consumed by this entry
      */
-    public void enter(Ticket ticket, LocalDate today) throws OperationException {
+    public List<Pass> enter(Ticket ticket, boolean speed, LocalDate today) throws OperationException {
         if (!admits(ticket)) {
             throw new OperationException("Attraction " + id + " (" + getType() + ") does not admit ticket "
                     + ticket.getId());
@@ -82,7 +86,31 @@ public abstract class Attraction<T extends AttractionAccess> {
             throw new OperationException("Not enough capacity in attraction " + id + ": " + getAvailable()
                     + " place(s) available, " + entering.size() + " needed");
         }
+        List<Pass> passes = passesToConsume(access, speed);
         present.addAll(entering);
+        for (Pass pass : passes) {
+            pass.consume();
+        }
+        return passes;
+    }
+
+    /**
+     * Passes the entry will consume; throws if a required pass is missing. Nothing is
+     * modified here. By default SPEED needs one unused SpeedPass per admitted ticket.
+     */
+    protected List<Pass> passesToConsume(T access, boolean speed) throws OperationException {
+        List<Pass> passes = new ArrayList<>();
+        if (!speed) {
+            return passes;
+        }
+        for (IndividualTicket t : access.getAccessTickets()) {
+            SpeedPass pass = t.getUnusedSpeedPass();
+            if (pass == null) {
+                throw new OperationException("Ticket " + t.getId() + " has no unused SpeedPass");
+            }
+            passes.add(pass);
+        }
+        return passes;
     }
 
     /**

@@ -33,8 +33,9 @@ public final class CommandRegistry {
             new CommandInfo("ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;Tipo]",
                     "Creates an attraction; Tipo is GENERAL (default, individual and group tickets), INDIVIDUAL, "
                     + "GROUP or SPECIAL (individual tickets with a Special Pass)."),
-            new CommandInfo("ATTRACTION ENTER;IdAtraccion;IdTicket",
-                    "Admits every user of a ticket valid today if there is room for all of them."),
+            new CommandInfo("ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]",
+                    "Admits every user of a ticket valid today if the attraction type accepts it and there is room; "
+                    + "SPEED consumes one SpeedPass per person, SPECIAL attractions consume the Special Pass."),
             new CommandInfo("ATTRACTION EXIT;IdAtraccion;IdTicket",
                     "Lets the users of the ticket leave the attraction, freeing their places."),
             new CommandInfo("ATTRACTION STATUS;IdAtraccion",

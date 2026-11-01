@@ -10,6 +10,7 @@ import java.util.List;
 import es.upm.amusementpark.business.controller.ParkController;
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.OperationException;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
@@ -135,9 +136,17 @@ public class CommandProcessor {
                     out.println("Attraction created: " + p[0]);
                 }
                 case "ATTRACTION ENTER" -> {
-                    requireParams(operation, p, 2);
-                    park.enterAttraction(p[0], p[1]);
-                    out.println("Ticket " + p[1] + " entered attraction " + p[0]);
+                    requireParams(operation, p, 2, 3);
+                    if (p.length == 3 && !p[2].equals("SPEED")) {
+                        throw new OperationException("Unknown ATTRACTION ENTER option (only SPEED): " + p[2]);
+                    }
+                    List<Pass> consumed = park.enterAttraction(p[0], p[1], p.length == 3);
+                    List<String> used = new ArrayList<>();
+                    for (Pass pass : consumed) {
+                        used.add(pass.getKind() + " " + pass.getId());
+                    }
+                    out.println("Ticket " + p[1] + " entered attraction " + p[0]
+                            + (used.isEmpty() ? "" : " consuming " + String.join(", ", used)));
                 }
                 case "ATTRACTION EXIT" -> {
                     requireParams(operation, p, 2);
