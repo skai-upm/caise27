@@ -142,6 +142,27 @@ public class TicketManager {
         return "OK: Group ticket deleted: " + id + " (" + groupTicket.getTickets().size() + " tickets)";
     }
 
+    /** Individual tickets of the user that were bought directly, not as part of a group ticket. */
+    public List<IndividualTicket> standaloneTicketsOf(User user) {
+        List<IndividualTicket> result = new ArrayList<>();
+        for (IndividualTicket t : tickets) {
+            if (t.getUser() == user && ownerOf(t) == null) {
+                result.add(t);
+            }
+        }
+        return result;
+    }
+
+    public List<GroupTicket> groupTicketsOf(Group group) {
+        List<GroupTicket> result = new ArrayList<>();
+        for (GroupTicket gt : groupTickets) {
+            if (gt.getGroup() == group) {
+                result.add(gt);
+            }
+        }
+        return result;
+    }
+
     /** True if the user holds a ticket (standalone or constituent) dated on or after today. */
     public boolean hasActiveTicket(User user, LocalDate today) {
         for (IndividualTicket t : tickets) {

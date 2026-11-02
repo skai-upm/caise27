@@ -1,5 +1,6 @@
 package com.amusementpark.business.controller;
 
+import com.amusementpark.business.invoice.TextInvoiceBuilder;
 import com.amusementpark.business.model.Attraction;
 import com.amusementpark.business.model.Group;
 import com.amusementpark.business.model.Ticket;
@@ -33,6 +34,7 @@ public class ParkController {
     private final GroupManager groups;
     private final TicketManager tickets;
     private final AttractionManager attractions;
+    private final InvoiceManager invoices;
 
     private LocalDate systemDate;
     private BigDecimal basePrice = DEFAULT_PRICE;
@@ -48,6 +50,7 @@ public class ParkController {
         this.tickets = new TicketManager(new TicketFileStorage(paths.tickets(), paths.groupTickets()),
                 users.getUsers(), groups.getGroups());
         this.attractions = new AttractionManager(new AttractionFileStorage(paths.attractions()));
+        this.invoices = new InvoiceManager(tickets, TextInvoiceBuilder::new);
     }
 
     public LocalDate getSystemDate() {
@@ -268,6 +271,27 @@ public class ParkController {
             return "ERROR: Attraction " + attractionId + " does not exist.";
         }
         return AttractionManager.status(attraction);
+    }
+
+    // --- invoices --------------------------------------------------------------------------
+
+    /** {@code INVOICE CREATE;USER;<email>} or {@code INVOICE CREATE;GROUP;<groupId>}. */
+    public String createInvoice(String recipientType, String recipient) {
+        switch (recipientType.trim().toUpperCase()) {
+            case "USER" -> {
+                User user = users.findByEmail(recipient);
+                return user == null ? "ERROR: No user with email " + recipient + "."
+                        : invoices.userInvoice(user, systemDate).toText();
+            }
+            case "GROUP" -> {
+                Group group = groups.find(recipient);
+                return group == null ? "ERROR: Group " + recipient + " does not exist."
+                        : invoices.groupInvoice(group, systemDate).toText();
+            }
+            default -> {
+                return "ERROR: Invoice recipient type must be USER or GROUP: " + recipientType;
+            }
+        }
     }
 
     static LocalDate parseDate(String text) {

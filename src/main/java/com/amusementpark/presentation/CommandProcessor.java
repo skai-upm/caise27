@@ -34,6 +34,8 @@ public class CommandProcessor {
             "  ATTRACTION ENTER;IdAtraccion;IdEntrada",
             "  ATTRACTION EXIT;IdAtraccion;IdEntrada|Correo",
             "  ATTRACTION STATUS;IdAtraccion",
+            "  INVOICE CREATE;USER;Correo",
+            "  INVOICE CREATE;GROUP;IdGrupo",
             "  HELP",
             "  EXIT");
 
@@ -64,6 +66,7 @@ public class CommandProcessor {
         operations.put("ATTRACTION ENTER", new Operation(2, p -> park.enterAttraction(p[1], p[2])));
         operations.put("ATTRACTION EXIT", new Operation(2, p -> park.exitAttraction(p[1], p[2])));
         operations.put("ATTRACTION STATUS", new Operation(1, p -> park.attractionStatus(p[1])));
+        operations.put("INVOICE CREATE", new Operation(2, p -> park.createInvoice(p[1], p[2])));
         operations.put("HELP", new Operation(0, p -> HELP_TEXT));
     }
 
