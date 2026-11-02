@@ -76,9 +76,10 @@ public class CommandProcessor {
         register("ATTRACTION CREATE", 3, 4, "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;GENERAL|INDIVIDUAL|GROUP|SPECIAL]",
                 "Creates an attraction with a maximum capacity; the type (default GENERAL) sets the tickets it admits.",
                 p -> park.createAttraction(p[1], p[2], p[3], p.length > 4 ? p[4] : null));
-        register("ATTRACTION ENTER", 2, "ATTRACTION ENTER;IdAtraccion;IdEntrada",
-                "Admits all holders of a ticket valid today if there is room for all of them.",
-                p -> park.enterAttraction(p[1], p[2]));
+        register("ATTRACTION ENTER", 2, 3, "ATTRACTION ENTER;IdAtraccion;IdEntrada[;SPEED]",
+                "Admits all holders of a ticket valid today if there is room and the type allows it; SPEED uses"
+                        + " one SpeedPass per holder; SPECIAL attractions consume the Special Pass.",
+                p -> park.enterAttraction(p[1], p[2], p.length > 3 ? p[3] : null));
         register("ATTRACTION EXIT", 2, "ATTRACTION EXIT;IdAtraccion;IdEntrada|Correo",
                 "Lets the holders of a ticket, or the user with that email, leave the attraction.",
                 p -> park.exitAttraction(p[1], p[2]));

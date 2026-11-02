@@ -14,6 +14,18 @@ import java.util.List;
  */
 public abstract class Attraction<T extends Admission> {
 
+    /** Passes an entry would consume, or why the entry is not possible. */
+    protected record PassSelection(String error, List<Pass> passes) {
+
+        static PassSelection of(List<Pass> passes) {
+            return new PassSelection(null, passes);
+        }
+
+        static PassSelection failed(String reason) {
+            return new PassSelection(reason, List.of());
+        }
+    }
+
     private final String id;
     private final String name;
     private final int capacity;
@@ -53,17 +65,20 @@ public abstract class Attraction<T extends Admission> {
         return admittedType.isInstance(ticket);
     }
 
-    /** Admits every holder of the ticket, or nobody. */
-    public EntryResult enter(Admission ticket, LocalDate today) {
+    /**
+     * Admits every holder of the ticket, or nobody. With {@code speed}, one SpeedPass per admitted
+     * ticket is required and consumed; passes are consumed only when the entry succeeds.
+     */
+    public EntryResult enter(Admission ticket, LocalDate today, boolean speed) {
         if (!accepts(ticket)) {
             return EntryResult.rejected(getType() + " attraction " + id + " does not accept ticket "
                     + ticket.getId() + ".");
         }
-        return enterChecked(admittedType.cast(ticket), today);
+        return enterChecked(admittedType.cast(ticket), today, speed);
     }
 
     /** Runs every access check on the admitted ticket type before changing any state. */
-    protected EntryResult enterChecked(T ticket, LocalDate today) {
+    private EntryResult enterChecked(T ticket, LocalDate today, boolean speed) {
         if (!ticket.isValidOn(today)) {
             return EntryResult.rejected("Ticket " + ticket.getId() + " is valid on " + ticket.getDate()
                     + ", not on " + today + ".");
@@ -78,8 +93,38 @@ public abstract class Attraction<T extends Admission> {
             return EntryResult.rejected("Not enough places in " + id + ": " + holders.size() + " needed, "
                     + getAvailable() + " available.");
         }
+        PassSelection selection = selectPasses(ticket, speed);
+        if (selection.error() != null) {
+            return EntryResult.rejected(selection.error());
+        }
+        selection.passes().forEach(Pass::consume);
         visitors.addAll(holders);
-        return EntryResult.admitted(holders, List.of());
+        return EntryResult.admitted(holders, selection.passes());
+    }
+
+    /**
+     * Chooses the passes the entry needs without changing them. By default nothing is needed, and
+     * SPEED requires an unused SpeedPass for every individual admission of the ticket.
+     */
+    protected PassSelection selectPasses(T ticket, boolean speed) {
+        if (!speed) {
+            return PassSelection.of(List.of());
+        }
+        List<Pass> passes = new ArrayList<>();
+        for (IndividualAdmission admission : ticket.getAdmissions()) {
+            SpeedPass pass = admission.nextUnusedSpeedPass();
+            if (pass == null) {
+                return PassSelection.failed("Ticket " + admission.getId() + " has no unused SpeedPass.");
+            }
+            passes.add(pass);
+        }
+        return PassSelection.of(passes);
+    }
+
+    /** Reverts an entry that could not be saved: its users leave and its passes become unused. */
+    public void undo(EntryResult entry) {
+        visitors.removeAll(entry.admitted());
+        entry.consumedPasses().forEach(Pass::release);
     }
 
     /** Removes the given users that are present; returns how many left. */

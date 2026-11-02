@@ -3,6 +3,7 @@ package com.amusementpark.business.controller;
 import com.amusementpark.business.model.Attraction;
 import com.amusementpark.business.model.EntryResult;
 import com.amusementpark.business.model.Group;
+import com.amusementpark.business.model.Pass;
 import com.amusementpark.business.model.Ticket;
 import com.amusementpark.business.model.User;
 
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -231,7 +233,12 @@ public class ParkController {
         return attractions.create(id, name, capacity, type);
     }
 
-    public String enterAttraction(String attractionId, String ticketId) {
+    /** {@code option} is {@code null} for normal entry or {@code SPEED} to use SpeedPasses. */
+    public String enterAttraction(String attractionId, String ticketId, String option) {
+        boolean speed = option != null;
+        if (speed && !option.trim().equalsIgnoreCase("SPEED")) {
+            return "ERROR: Unknown entry option (expected SPEED): " + option;
+        }
         Attraction<?> attraction = attractions.find(attractionId);
         if (attraction == null) {
             return "ERROR: Attraction " + attractionId + " does not exist.";
@@ -240,11 +247,24 @@ public class ParkController {
         if (ticket == null) {
             return "ERROR: Ticket " + ticketId + " does not exist.";
         }
-        EntryResult result = attraction.enter(ticket, systemDate);
+        EntryResult result = attraction.enter(ticket, systemDate, speed);
         if (!result.isAdmitted()) {
             return "ERROR: " + result.error();
         }
-        return "OK: " + result.admitted().size() + " user(s) entered " + attractionId;
+        if (!result.consumedPasses().isEmpty() && !tickets.persist()) {
+            attraction.undo(result);
+            return "ERROR: Could not save pass consumption; nobody entered.";
+        }
+        StringBuilder message = new StringBuilder("OK: ").append(result.admitted().size())
+                .append(" user(s) entered ").append(attractionId);
+        if (!result.consumedPasses().isEmpty()) {
+            List<String> used = new ArrayList<>();
+            for (Pass pass : result.consumedPasses()) {
+                used.add(pass.getKind() + " " + pass.getId());
+            }
+            message.append(" (consumed: ").append(String.join(", ", used)).append(')');
+        }
+        return message.toString();
     }
 
     /** Exit by ticket identifier or, when the value contains '@', by user email. No date check. */
