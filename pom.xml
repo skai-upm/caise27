@@ -29,6 +29,12 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- Delivery 3: BCrypt protection of stored passwords (the only runtime dependency) -->
+    <dependency>
+      <groupId>org.mindrot</groupId>
+      <artifactId>jbcrypt</artifactId>
+      <version>0.4</version>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -54,6 +60,22 @@
             </manifest>
           </archive>
         </configuration>
+      </plugin>
+      <!-- Bundles jBCrypt into target/nombre-aplicacion.jar so java -jar needs no classpath -->
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->

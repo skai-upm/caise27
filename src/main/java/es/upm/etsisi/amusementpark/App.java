@@ -8,16 +8,23 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
-import es.upm.etsisi.amusementpark.command.CommandProcessor;
-import es.upm.etsisi.amusementpark.command.CommandRunner;
-import es.upm.etsisi.amusementpark.park.DataPaths;
-import es.upm.etsisi.amusementpark.park.Park;
+import es.upm.etsisi.amusementpark.business.controller.InvoiceController;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.persistence.FileRepositories;
 import es.upm.etsisi.amusementpark.persistence.TemporaryDirectory;
+import es.upm.etsisi.amusementpark.presentation.CommandCatalog;
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.presentation.CommandRunner;
+import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelp;
+import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
+import es.upm.etsisi.amusementpark.presentation.help.SyntaxHelp;
 
 /**
- * Application entry point. Supported forms: no arguments (interactive), a command
- * file path, {@code --fly}, or {@code --fly} followed by a command file path.
- * With {@code --fly} all data lives in a temporary directory deleted at the end.
+ * Application entry point and composition root. Supported forms: no arguments
+ * (interactive), a command file path, {@code --fly}, or {@code --fly} followed by a
+ * command file path. Repositories are created here for the chosen data directory and
+ * injected into the singleton controllers; with {@code --fly} the directory is a
+ * temporary one deleted at the end.
  */
 public class App {
     static final String FLY = "--fly";
@@ -59,9 +66,9 @@ public class App {
     }
 
     private static int execute(String commandFile, InputStream in, PrintStream out, Path dataDir) {
-        Park park = Park.getInstance();
+        ParkController park = ParkController.getInstance();
         try {
-            park.load(DataPaths.in(dataDir));
+            park.configure(FileRepositories.in(dataDir));
         } catch (IOException e) {
             out.println("ERROR: cannot load park data from " + dataDir.toAbsolutePath() + ": " + e.getMessage());
             return 1;
@@ -69,7 +76,7 @@ public class App {
         for (String warning : park.getLoadWarnings()) {
             out.println("WARNING: " + warning);
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(park), out);
+        CommandRunner runner = new CommandRunner(wire(park), out);
         if (commandFile != null) {
             return runner.runFile(Path.of(commandFile)) ? 0 : 1;
         }
@@ -80,5 +87,15 @@ public class App {
             out.println("ERROR: cannot read standard input: " + e.getMessage());
             return 1;
         }
+    }
+
+    /**
+     * Connects the controllers and the presentation components.
+     */
+    public static CommandProcessor wire(ParkController park) {
+        InvoiceController invoices = InvoiceController.getInstance();
+        invoices.configure(park);
+        return new CommandProcessor(park, invoices, new HelpGenerator(new SyntaxHelp(), CommandCatalog.ALL),
+                new HelpGenerator(new ExtendedHelp(), CommandCatalog.ALL));
     }
 }

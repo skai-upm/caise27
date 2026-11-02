@@ -1,80 +1,218 @@
 @startuml model
-' Delivery 2 domain model of es.upm.etsisi.amusementpark.
-' Methods and constructors are omitted; command and persistence classes are not part of the model.
+' Delivery 3 design of es.upm.etsisi.amusementpark.
+' Methods and constructors are omitted except where they show an injection point;
+' exceptions and command/help presentation details are summarized.
 hide empty methods
 skinparam classAttributeIconSize 0
 
-package park {
-  class Park <<singleton>> {
-    - {static} INSTANCE : Park
-    - currentDate : LocalDate
-    - basePrice : BigDecimal
+package presentation {
+  class CommandProcessor
+  class CommandRunner
+  class CommandSpec <<record>> {
+    syntax : String
+    description : String
+  }
+  class CommandCatalog {
+    + {static} ALL : List<CommandSpec>
+  }
+  package help {
+    interface HelpStrategy
+    class SyntaxHelp
+    class ExtendedHelp
+    class HelpGenerator
   }
 }
 
-package user {
-  class User {
-    - firstName : String
-    - surnames : String
-    - dni : String {readOnly}
-    - email : String
-    - password : String
-    - phone : String
-    - card : String
+package business {
+  package controller {
+    class ParkController <<singleton>> {
+      - {static} INSTANCE : ParkController
+      - currentDate : LocalDate
+      - basePrice : BigDecimal
+      + configure(repositories : Repositories)
+    }
+    class InvoiceController <<singleton>> {
+      - {static} INSTANCE : InvoiceController
+      + configure(park : ParkController)
+    }
   }
-  enum UserField {
-    NAME
-    SURNAME
-    EMAIL
-    PASSWORD
-    PHONE
-    CARD
+
+  package repository {
+    class Repositories <<record>>
+    interface UserRepository
+    interface GroupRepository
+    interface TicketRepository
+    interface AttractionRepository
+    interface PassRepository
   }
-  class UserManager
+
+  package user {
+    class User {
+      - firstName : String
+      - surnames : String
+      - dni : String {readOnly}
+      - email : String
+      - password : String (BCrypt hash)
+      - phone : String
+      - card : String
+    }
+    enum UserField {
+      NAME
+      SURNAME
+      EMAIL
+      PASSWORD
+      PHONE
+      CARD
+    }
+    class UserManager
+  }
+
+  package group {
+    class Group {
+      - identifier : String
+      - name : String
+    }
+  }
+
+  package ticket {
+    interface AccessTicket
+    interface IndividualAccess
+    interface GroupAccess
+    abstract class Ticket {
+      - identifier : String
+      - date : LocalDate
+    }
+    class IndividualTicket {
+      - basePrice : BigDecimal
+      - discountPercent : int
+    }
+    class GroupTicket
+  }
+
+  package pass {
+    abstract class Pass {
+      - identifier : String
+      - price : BigDecimal
+      - consumed : boolean
+    }
+    class SpeedPass
+    class SpecialPass
+    interface PassBook
+  }
+
+  package attraction {
+    abstract class "Attraction<T extends AccessTicket>" as Attraction {
+      - identifier : String
+      - name : String
+      - capacity : int
+      - accepted : Class<T>
+    }
+    class GeneralAttraction
+    class IndividualAttraction
+    class GroupAttraction
+    class SpecialAttraction
+    enum AttractionType {
+      GENERAL
+      INDIVIDUAL
+      GROUP
+      SPECIAL
+    }
+  }
+
+  package invoice {
+    abstract class InvoiceBuilder
+    class UserInvoiceBuilder
+    class GroupInvoiceBuilder
+    class Invoice {
+      - title : String
+      - total : BigDecimal
+    }
+    class InvoiceSection <<record>>
+    class InvoiceLine <<record>>
+  }
 }
 
-package group {
-  class Group {
-    - identifier : String
-    - name : String
-  }
+package persistence {
+  class FileRepositories
+  class FileUserRepository
+  class FileGroupRepository
+  class FileTicketRepository
+  class FileAttractionRepository
+  class FilePassRepository
+  class TemporaryDirectory
 }
 
-package ticket {
-  abstract class Ticket {
-    - identifier : String
-    - date : LocalDate
-  }
-  class IndividualTicket {
-    - basePrice : BigDecimal
-    - discountPercent : int
-  }
-  class GroupTicket
-}
-
-package attraction {
-  class Attraction {
-    - identifier : String
-    - name : String
-    - capacity : int
-  }
-}
-
+' ---- ticket hierarchy and access capabilities
+AccessTicket <|-- IndividualAccess
+AccessTicket <|-- GroupAccess
+AccessTicket <|.. Ticket
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
-
-Park "1" --> "1" UserManager : users
-Park "1" --> "*" Group : groups
-Park "1" --> "*" Ticket : tickets
-Park "1" --> "*" Attraction : attractions
-
-UserManager "1" --> "*" User : users
-UserManager ..> UserField
-
-Group "*" --> "*" User : members
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+GroupTicket "1" *-- "1..*" IndividualTicket : composition
 IndividualTicket "*" --> "1" User : user
 GroupTicket "*" --> "0..1" Group : group
-GroupTicket "1" *-- "1..*" IndividualTicket : composition
+Group "*" --> "*" User : members
+
+' ---- passes
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+SpeedPass "0..*" --> "1" IndividualTicket : ticket
+SpecialPass "0..1" --> "1" IndividualTicket : ticket
+
+' ---- generic attractions (bound parameter fixed by each type)
+Attraction <|-- GeneralAttraction : <<bind>> T -> AccessTicket
+Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T -> GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualAccess
 Attraction "*" --> "*" User : occupants
+Attraction ..> PassBook : uses on entry
+AttractionType ..> Attraction : creates
+PassBook <|.. ParkController
+
+' ---- controllers and injected dependencies
+ParkController "1" --> "1" UserManager : users
+ParkController "1" --> "*" Group : groups
+ParkController "1" --> "*" Ticket : tickets
+ParkController "1" --> "*" Attraction : attractions
+ParkController "1" --> "*" Pass : passes
+ParkController "1" --> "1" Repositories : <<injected>>
+InvoiceController "1" --> "1" ParkController : <<injected>>
+UserManager "1" --> "1" UserRepository : <<injected>>
+UserManager "1" --> "*" User : users
+UserManager ..> UserField
+Repositories --> UserRepository
+Repositories --> GroupRepository
+Repositories --> TicketRepository
+Repositories --> AttractionRepository
+Repositories --> PassRepository
+
+UserRepository <|.. FileUserRepository
+GroupRepository <|.. FileGroupRepository
+TicketRepository <|.. FileTicketRepository
+AttractionRepository <|.. FileAttractionRepository
+PassRepository <|.. FilePassRepository
+FileRepositories ..> Repositories : creates
+
+' ---- invoices (Builder; InvoiceController is the director)
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder ..> Invoice : builds
+Invoice "1" *-- "*" InvoiceSection : sections
+InvoiceSection "1" *-- "1..*" InvoiceLine : lines
+InvoiceController ..> UserInvoiceBuilder : directs
+InvoiceController ..> GroupInvoiceBuilder : directs
+
+' ---- presentation and injected help strategy
+HelpStrategy <|.. SyntaxHelp
+HelpStrategy <|.. ExtendedHelp
+HelpGenerator "1" --> "1" HelpStrategy : <<injected>>
+HelpGenerator "1" --> "*" CommandSpec : commands
+CommandCatalog --> "*" CommandSpec
+CommandProcessor "1" --> "1" ParkController : <<injected>>
+CommandProcessor "1" --> "1" InvoiceController : <<injected>>
+CommandProcessor "1" --> "2" HelpGenerator : help, extendedHelp <<injected>>
+CommandRunner "1" --> "1" CommandProcessor : <<injected>>
 
 @enduml
