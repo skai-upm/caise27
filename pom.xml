@@ -92,7 +92,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>com.amusementpark.App</mainClass>
+              <mainClass>com.amusementpark.presentation.App</mainClass>
             </manifest>
           </archive>
         </configuration>
