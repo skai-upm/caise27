@@ -31,6 +31,10 @@ class FlyModeTest {
             "ATTRACTION CREATE;A01;Tornado;20",
             "ATTRACTION ENTER;A01;T001",
             "ATTRACTION STATUS;A01",
+            "SPEEDPASS CREATE;T001;10",
+            "SPECIALPASS CREATE;TG01-1",
+            "ATTRACTION CREATE;A02;Magica;5;SPECIAL",
+            "INVOICE CREATE;USER;pedro@correo.com",
             "USER UPDATE;ana@correo.com;Clave1!;PHONE;611111111",
             "EXIT");
 
@@ -48,7 +52,8 @@ class FlyModeTest {
 
     private static String snapshot(Path workDir) throws IOException {
         StringBuilder sb = new StringBuilder();
-        for (String name : List.of("users.txt", "groups.txt", "tickets.txt", "group_tickets.txt", "attractions.txt")) {
+        for (String name : List.of("users.txt", "groups.txt", "tickets.txt", "group_tickets.txt", "passes.txt",
+                "attractions.txt")) {
             Path p = workDir.resolve(name);
             sb.append(name).append('=').append(Files.exists(p) ? Files.readString(p) : "<absent>").append('\n');
         }

@@ -5,7 +5,8 @@ import java.nio.file.Path;
 /**
  * Locations of every persistence file. Normal and --fly runs differ only in the directory used.
  */
-public record StoragePaths(Path users, Path groups, Path tickets, Path groupTickets, Path attractions) {
+public record StoragePaths(Path users, Path groups, Path tickets, Path groupTickets, Path passes,
+                           Path attractions) {
 
     public static StoragePaths in(Path dir) {
         return new StoragePaths(
@@ -13,6 +14,7 @@ public record StoragePaths(Path users, Path groups, Path tickets, Path groupTick
                 dir.resolve("groups.txt"),
                 dir.resolve("tickets.txt"),
                 dir.resolve("group_tickets.txt"),
+                dir.resolve("passes.txt"),
                 dir.resolve("attractions.txt"));
     }
 }

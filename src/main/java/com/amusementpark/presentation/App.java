@@ -104,7 +104,7 @@ public class App {
         GroupController groups = GroupController.getInstance();
         groups.configure(new GroupFileRepository(paths.groups()), users);
         TicketController tickets = TicketController.getInstance();
-        tickets.configure(new TicketFileRepository(paths.tickets(), paths.groupTickets()), users, groups);
+        tickets.configure(new TicketFileRepository(paths.tickets(), paths.groupTickets(), paths.passes()), users, groups);
         AttractionController attractions = AttractionController.getInstance();
         attractions.configure(new AttractionFileRepository(paths.attractions()));
         InvoiceController invoices = InvoiceController.getInstance();
