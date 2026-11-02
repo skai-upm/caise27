@@ -39,7 +39,7 @@ class CommandProcessorTest {
         ParkController park = App.configure(StoragePaths.in(dir), java.time.LocalDate.now());
         manager = UserController.getInstance();
         buffer = new ByteArrayOutputStream();
-        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = App.createProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     private String output() {

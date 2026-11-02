@@ -84,7 +84,7 @@ public class App {
             err.println("ERROR: Could not read data files: " + e.getMessage());
             return 1;
         }
-        CommandProcessor processor = new CommandProcessor(park, out);
+        CommandProcessor processor = createProcessor(park, out);
         if (commandFile == null) {
             return runInteractive(processor, in, err);
         }
@@ -109,6 +109,12 @@ public class App {
         ParkController park = ParkController.getInstance();
         park.configure(users, groups, tickets, attractions, invoices, startDate);
         return park;
+    }
+
+    /** Creates the command processor with the concise and extended help generators injected. */
+    public static CommandProcessor createProcessor(ParkController park, PrintStream out) {
+        return new CommandProcessor(park, new HelpGenerator(new SyntaxHelpFormatter()),
+                new HelpGenerator(new ExtendedHelpFormatter()), out);
     }
 
     private static int runInteractive(CommandProcessor processor, InputStream in, PrintStream err) {

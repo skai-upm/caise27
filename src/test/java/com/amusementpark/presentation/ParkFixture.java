@@ -31,7 +31,7 @@ class ParkFixture {
     final void restart() throws IOException {
         park = App.configure(StoragePaths.in(dir), START);
         buffer = new ByteArrayOutputStream();
-        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = App.createProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     /** Executes one command and returns what it printed, without the trailing newline. */
