@@ -2,6 +2,7 @@ package com.amusementpark.business.controller;
 
 import com.amusementpark.persistence.AttractionRepository;
 import com.amusementpark.business.model.Attraction;
+import com.amusementpark.business.model.AttractionType;
 import com.amusementpark.business.model.User;
 import com.amusementpark.business.model.UserValidator;
 
@@ -17,7 +18,7 @@ public class AttractionController {
     private static final AttractionController INSTANCE = new AttractionController();
 
     private AttractionRepository storage;
-    private final List<Attraction> attractions = new ArrayList<>();
+    private final List<Attraction<?>> attractions = new ArrayList<>();
 
     private AttractionController() {
     }
@@ -33,12 +34,12 @@ public class AttractionController {
         attractions.addAll(storage.load());
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         return new ArrayList<>(attractions);
     }
 
-    public Attraction find(String id) {
-        for (Attraction a : attractions) {
+    public Attraction<?> find(String id) {
+        for (Attraction<?> a : attractions) {
             if (a.getId().equals(id)) {
                 return a;
             }
@@ -46,7 +47,8 @@ public class AttractionController {
         return null;
     }
 
-    public String create(String id, String name, String capacityText) {
+    /** Creates an attraction; a {@code null} type text means GENERAL (E2 syntax). */
+    public String create(String id, String name, String capacityText, String typeText) {
         if (!UserValidator.isNotBlank(id) || !UserValidator.isNotBlank(name)) {
             return "ERROR: Attraction identifier and name must not be empty.";
         }
@@ -62,7 +64,11 @@ public class AttractionController {
         if (capacity <= 0) {
             return "ERROR: Capacity must be a positive integer: " + capacityText;
         }
-        Attraction attraction = new Attraction(id, name, capacity);
+        AttractionType type = typeText == null ? AttractionType.GENERAL : AttractionType.fromText(typeText);
+        if (type == null) {
+            return "ERROR: Unknown attraction type (GENERAL, INDIVIDUAL, GROUP, SPECIAL): " + typeText;
+        }
+        Attraction<?> attraction = type.create(id, name, capacity);
         attractions.add(attraction);
         try {
             storage.save(attractions);
@@ -70,13 +76,14 @@ public class AttractionController {
             attractions.remove(attraction);
             return "ERROR: Could not save attractions file.";
         }
-        return "OK: Attraction created: " + id;
+        return "OK: Attraction created: " + id + " (" + type + ")";
     }
 
     /** Multi-line description of the attraction's current state. */
-    public static String status(Attraction a) {
+    public static String status(Attraction<?> a) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Attraction ").append(a.getId()).append(" - ").append(a.getName()).append(System.lineSeparator());
+        sb.append("Attraction ").append(a.getId()).append(" - ").append(a.getName())
+                .append(" [").append(a.getType()).append(']').append(System.lineSeparator());
         sb.append("  Capacity: ").append(a.getCapacity())
                 .append(" | Present: ").append(a.getVisitors().size())
                 .append(" | Available: ").append(a.getAvailable()).append(System.lineSeparator());

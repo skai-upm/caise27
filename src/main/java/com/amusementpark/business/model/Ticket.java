@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Common abstraction for individual and group tickets: an identifier, a date of use and the price paid.
  */
-public abstract class Ticket {
+public abstract class Ticket implements Admission {
 
     private final String id;
     private final LocalDate date;
@@ -19,10 +19,12 @@ public abstract class Ticket {
         this.price = price;
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }
@@ -31,7 +33,7 @@ public abstract class Ticket {
         return price;
     }
 
-    /** The users this ticket admits. */
+    @Override
     public abstract List<User> getHolders();
 
     /** Dated today or later: the ticket still blocks deletions and group changes. */
@@ -45,6 +47,7 @@ public abstract class Ticket {
     }
 
     /** Admits its holders to attractions only on its own date. */
+    @Override
     public boolean isValidOn(LocalDate today) {
         return date.equals(today);
     }

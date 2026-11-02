@@ -7,20 +7,27 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A park attraction with a maximum capacity and the users currently inside.
+ * A park attraction with a maximum capacity and the users currently inside. The type parameter
+ * bounds which ticket access capability the attraction admits; entry checks run on that type.
+ *
+ * @param <T> the admitted ticket capability
  */
-public class Attraction {
+public abstract class Attraction<T extends Admission> {
 
     private final String id;
     private final String name;
     private final int capacity;
+    private final Class<T> admittedType;
     private final List<User> visitors = new ArrayList<>();
 
-    public Attraction(String id, String name, int capacity) {
+    protected Attraction(String id, String name, int capacity, Class<T> admittedType) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+        this.admittedType = admittedType;
     }
+
+    public abstract AttractionType getType();
 
     public String getId() {
         return id;
@@ -42,26 +49,37 @@ public class Attraction {
         return capacity - visitors.size();
     }
 
-    /**
-     * Admits every holder of the ticket, or nobody.
-     *
-     * @return {@code null} on success, otherwise the reason for rejection
-     */
-    public String enter(Ticket ticket, LocalDate today) {
+    public boolean accepts(Admission ticket) {
+        return admittedType.isInstance(ticket);
+    }
+
+    /** Admits every holder of the ticket, or nobody. */
+    public EntryResult enter(Admission ticket, LocalDate today) {
+        if (!accepts(ticket)) {
+            return EntryResult.rejected(getType() + " attraction " + id + " does not accept ticket "
+                    + ticket.getId() + ".");
+        }
+        return enterChecked(admittedType.cast(ticket), today);
+    }
+
+    /** Runs every access check on the admitted ticket type before changing any state. */
+    protected EntryResult enterChecked(T ticket, LocalDate today) {
         if (!ticket.isValidOn(today)) {
-            return "Ticket " + ticket.getId() + " is valid on " + ticket.getDate() + ", not on " + today + ".";
+            return EntryResult.rejected("Ticket " + ticket.getId() + " is valid on " + ticket.getDate()
+                    + ", not on " + today + ".");
         }
         List<User> holders = ticket.getHolders();
         for (User user : holders) {
             if (visitors.contains(user)) {
-                return user.getEmail() + " is already in " + id + ".";
+                return EntryResult.rejected(user.getEmail() + " is already in " + id + ".");
             }
         }
         if (holders.size() > getAvailable()) {
-            return "Not enough places in " + id + ": " + holders.size() + " needed, " + getAvailable() + " available.";
+            return EntryResult.rejected("Not enough places in " + id + ": " + holders.size() + " needed, "
+                    + getAvailable() + " available.");
         }
         visitors.addAll(holders);
-        return null;
+        return EntryResult.admitted(holders, List.of());
     }
 
     /** Removes the given users that are present; returns how many left. */

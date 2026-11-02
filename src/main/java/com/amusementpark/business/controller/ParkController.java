@@ -1,6 +1,7 @@
 package com.amusementpark.business.controller;
 
 import com.amusementpark.business.model.Attraction;
+import com.amusementpark.business.model.EntryResult;
 import com.amusementpark.business.model.Group;
 import com.amusementpark.business.model.Ticket;
 import com.amusementpark.business.model.User;
@@ -226,12 +227,12 @@ public class ParkController {
 
     // --- attractions -----------------------------------------------------------------------
 
-    public String createAttraction(String id, String name, String capacity) {
-        return attractions.create(id, name, capacity);
+    public String createAttraction(String id, String name, String capacity, String type) {
+        return attractions.create(id, name, capacity, type);
     }
 
     public String enterAttraction(String attractionId, String ticketId) {
-        Attraction attraction = attractions.find(attractionId);
+        Attraction<?> attraction = attractions.find(attractionId);
         if (attraction == null) {
             return "ERROR: Attraction " + attractionId + " does not exist.";
         }
@@ -239,16 +240,16 @@ public class ParkController {
         if (ticket == null) {
             return "ERROR: Ticket " + ticketId + " does not exist.";
         }
-        String problem = attraction.enter(ticket, systemDate);
-        if (problem != null) {
-            return "ERROR: " + problem;
+        EntryResult result = attraction.enter(ticket, systemDate);
+        if (!result.isAdmitted()) {
+            return "ERROR: " + result.error();
         }
-        return "OK: " + ticket.getHolders().size() + " user(s) entered " + attractionId;
+        return "OK: " + result.admitted().size() + " user(s) entered " + attractionId;
     }
 
     /** Exit by ticket identifier or, when the value contains '@', by user email. No date check. */
     public String exitAttraction(String attractionId, String ticketOrEmail) {
-        Attraction attraction = attractions.find(attractionId);
+        Attraction<?> attraction = attractions.find(attractionId);
         if (attraction == null) {
             return "ERROR: Attraction " + attractionId + " does not exist.";
         }
@@ -271,7 +272,7 @@ public class ParkController {
     }
 
     public String attractionStatus(String attractionId) {
-        Attraction attraction = attractions.find(attractionId);
+        Attraction<?> attraction = attractions.find(attractionId);
         if (attraction == null) {
             return "ERROR: Attraction " + attractionId + " does not exist.";
         }

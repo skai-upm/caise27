@@ -73,9 +73,9 @@ public class CommandProcessor {
         register("SPECIALPASS DELETE", 1, "SPECIALPASS DELETE;IdPase",
                 "Refunds an unused Special Pass of a ticket dated after the system date.",
                 p -> park.deleteSpecialPass(p[1]));
-        register("ATTRACTION CREATE", 3, "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad",
-                "Creates an attraction with a maximum capacity.",
-                p -> park.createAttraction(p[1], p[2], p[3]));
+        register("ATTRACTION CREATE", 3, 4, "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad[;GENERAL|INDIVIDUAL|GROUP|SPECIAL]",
+                "Creates an attraction with a maximum capacity; the type (default GENERAL) sets the tickets it admits.",
+                p -> park.createAttraction(p[1], p[2], p[3], p.length > 4 ? p[4] : null));
         register("ATTRACTION ENTER", 2, "ATTRACTION ENTER;IdAtraccion;IdEntrada",
                 "Admits all holders of a ticket valid today if there is room for all of them.",
                 p -> park.enterAttraction(p[1], p[2]));
@@ -101,7 +101,12 @@ public class CommandProcessor {
 
     private void register(String name, int parameters, String syntax, String description,
                           Function<String[], String> action) {
-        commands.add(new CommandDefinition(name, parameters, syntax, description, action));
+        register(name, parameters, parameters, syntax, description, action);
+    }
+
+    private void register(String name, int minParameters, int maxParameters, String syntax, String description,
+                          Function<String[], String> action) {
+        commands.add(new CommandDefinition(name, minParameters, maxParameters, syntax, description, action));
     }
 
     public List<CommandDefinition> getCommands() {

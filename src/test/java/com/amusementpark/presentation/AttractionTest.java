@@ -29,7 +29,7 @@ class AttractionTest {
                 "GROUPTICKET CREATE;TG01;G01;2026-10-15", "ATTRACTION CREATE;A01;Tornado;20");
     }
 
-    private Attraction a01() {
+    private Attraction<?> a01() {
         return AttractionController.getInstance().find("A01");
     }
 

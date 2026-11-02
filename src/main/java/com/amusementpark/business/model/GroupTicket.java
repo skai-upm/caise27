@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * A ticket bought by a group, composed of one individual ticket per member at purchase time.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAdmission {
 
     private final Group group;
     private final List<IndividualTicket> tickets;
@@ -23,6 +23,7 @@ public class GroupTicket extends Ticket {
         return group;
     }
 
+    @Override
     public List<IndividualTicket> getTickets() {
         return tickets;
     }
@@ -34,5 +35,10 @@ public class GroupTicket extends Ticket {
             holders.add(ticket.getUser());
         }
         return holders;
+    }
+
+    @Override
+    public List<IndividualAdmission> getAdmissions() {
+        return List.copyOf(tickets);
     }
 }

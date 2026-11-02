@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * A ticket for one user, owning its personal passes.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAdmission {
 
     private final User user;
     private final List<SpeedPass> speedPasses = new ArrayList<>();
@@ -26,6 +26,7 @@ public class IndividualTicket extends Ticket {
         this.specialPassPurchased = specialPassPurchased;
     }
 
+    @Override
     public User getUser() {
         return user;
     }
@@ -35,10 +36,16 @@ public class IndividualTicket extends Ticket {
         return List.of(user);
     }
 
+    @Override
+    public List<IndividualAdmission> getAdmissions() {
+        return List.of(this);
+    }
+
     public List<SpeedPass> getSpeedPasses() {
         return Collections.unmodifiableList(speedPasses);
     }
 
+    @Override
     public SpecialPass getSpecialPass() {
         return specialPass;
     }
@@ -57,6 +64,7 @@ public class IndividualTicket extends Ticket {
         return passes;
     }
 
+    @Override
     public SpeedPass nextUnusedSpeedPass() {
         for (SpeedPass p : speedPasses) {
             if (!p.isConsumed()) {

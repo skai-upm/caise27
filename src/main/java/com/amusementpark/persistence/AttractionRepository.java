@@ -9,7 +9,7 @@ import java.util.List;
  */
 public interface AttractionRepository {
 
-    List<Attraction> load() throws IOException;
+    List<Attraction<?>> load() throws IOException;
 
-    void save(List<Attraction> attractions) throws IOException;
+    void save(List<Attraction<?>> attractions) throws IOException;
 }
