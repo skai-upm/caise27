@@ -55,10 +55,15 @@ class AppTest {
         assertEquals(0, run(new String[] {commands.toString()}, "", fileDir));
 
         assertEquals(interactiveOut, out.toString(StandardCharsets.UTF_8));
-        assertEquals(Files.readAllLines(interactiveUsers), Files.readAllLines(fileUsers));
+        assertEquals(withoutPasswords(interactiveUsers), withoutPasswords(fileUsers));
         // Pedro survives because the DELETE after EXIT is never executed.
         assertEquals(2, Files.readAllLines(fileUsers).size());
         assertTrue(Files.readAllLines(fileUsers).get(0).endsWith(";699999999;1234567890123456"));
+    }
+
+    /** Users file lines without the password column, whose BCrypt salt differs between runs. */
+    private static List<String> withoutPasswords(Path usersFile) throws IOException {
+        return Files.readAllLines(usersFile).stream().map(l -> l.replaceFirst("^((?:[^;]*;){4})[^;]*", "$1*")).toList();
     }
 
     @Test

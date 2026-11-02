@@ -1,10 +1,13 @@
 package com.amusementpark.business.controller;
 
 import com.amusementpark.business.model.User;
+import com.amusementpark.business.security.BCryptPasswordHasher;
+import com.amusementpark.business.security.PasswordHasher;
 import com.amusementpark.persistence.UserFileRepository;
 import com.amusementpark.persistence.UserRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -17,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class UserControllerTest {
+
+    private static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
 
     @TempDir
     Path dir;
@@ -36,7 +41,7 @@ class UserControllerTest {
     }
 
     private UserController restart() throws IOException {
-        UserController.getInstance().configure(new UserFileRepository(file));
+        UserController.getInstance().configure(new UserFileRepository(file), HASHER);
         return UserController.getInstance();
     }
 
@@ -48,8 +53,14 @@ class UserControllerTest {
     @Test
     void createsValidUserAndPersistsIt() throws IOException {
         assertTrue(createAna().startsWith("OK:"));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
-                Files.readAllLines(file));
+        List<String> lines = Files.readAllLines(file);
+        assertEquals(1, lines.size());
+        String[] fields = lines.get(0).split(";", -1);
+        assertEquals(List.of("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com"), List.of(fields).subList(0, 4));
+        assertEquals(List.of("612345678", "1234567890123456"), List.of(fields).subList(5, 7));
+        assertTrue(BCryptPasswordHasher.isBCryptHash(fields[4]));
+        assertFalse(lines.get(0).contains("Clave1!"), "no plaintext password stored");
+        assertTrue(HASHER.matches("Clave1!", fields[4]));
         assertEquals("ana@correo.com", only(restart()).getEmail());
     }
 
@@ -112,7 +123,9 @@ class UserControllerTest {
         assertEquals("Garcia", ana.getSurname());
         assertEquals("12345678Z", ana.getDni());
         assertEquals("ana.nueva@correo.com", ana.getEmail());
-        assertEquals("Nueva2#", ana.getPassword());
+        assertTrue(HASHER.matches("Nueva2#", ana.getPassword()));
+        assertFalse(HASHER.matches("Clave1!", ana.getPassword()));
+        assertTrue(restart().authenticate("ana.nueva@correo.com", "Nueva2#") != null);
         assertEquals("699999999", ana.getPhone());
         assertEquals("9999888877776666", ana.getCard());
     }
@@ -146,7 +159,7 @@ class UserControllerTest {
         User ana = manager.getUsers().get(0);
         assertEquals("12345678Z", ana.getDni());
         assertEquals("ana@correo.com", ana.getEmail());
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(HASHER.matches("Clave1!", ana.getPassword()));
     }
 
     @Test
@@ -168,7 +181,7 @@ class UserControllerTest {
             public void save(List<User> users) throws IOException {
                 throw new IOException("disk full");
             }
-        });
+        }, HASHER);
         assertTrue(m.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456").startsWith("ERROR:"));
         assertTrue(m.getUsers().isEmpty());

@@ -7,6 +7,8 @@ import com.amusementpark.business.controller.ParkController;
 import com.amusementpark.business.controller.TicketController;
 import com.amusementpark.business.controller.UserController;
 import com.amusementpark.business.invoice.TextInvoiceBuilder;
+import com.amusementpark.business.security.BCryptPasswordHasher;
+import com.amusementpark.business.security.PasswordHasher;
 import com.amusementpark.persistence.AttractionFileRepository;
 import com.amusementpark.persistence.GroupFileRepository;
 import com.amusementpark.persistence.StoragePaths;
@@ -79,7 +81,7 @@ public class App {
                                PrintStream err) {
         ParkController park;
         try {
-            park = configure(paths, LocalDate.now());
+            park = configure(paths, new BCryptPasswordHasher(), LocalDate.now());
         } catch (IOException e) {
             err.println("ERROR: Could not read data files: " + e.getMessage());
             return 1;
@@ -95,9 +97,10 @@ public class App {
      * Composition root: creates the repositories for the given paths and injects them, and the
      * collaborating controllers, into the Singleton controllers for a new execution.
      */
-    public static ParkController configure(StoragePaths paths, LocalDate startDate) throws IOException {
+    public static ParkController configure(StoragePaths paths, PasswordHasher hasher, LocalDate startDate)
+            throws IOException {
         UserController users = UserController.getInstance();
-        users.configure(new UserFileRepository(paths.users()));
+        users.configure(new UserFileRepository(paths.users()), hasher);
         GroupController groups = GroupController.getInstance();
         groups.configure(new GroupFileRepository(paths.groups()), users);
         TicketController tickets = TicketController.getInstance();

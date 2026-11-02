@@ -36,7 +36,7 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        ParkController park = App.configure(StoragePaths.in(dir), java.time.LocalDate.now());
+        ParkController park = App.configure(StoragePaths.in(dir), ParkFixture.HASHER, java.time.LocalDate.now());
         manager = UserController.getInstance();
         buffer = new ByteArrayOutputStream();
         processor = App.createProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));

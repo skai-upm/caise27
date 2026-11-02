@@ -42,7 +42,7 @@ class SystemSettingsTest {
     void controllersAreSingletons() throws IOException {
         assertSame(ParkController.getInstance(), ParkController.getInstance());
         assertSame(UserController.getInstance(), UserController.getInstance());
-        assertSame(f.park, App.configure(StoragePaths.in(dir), ParkFixture.START));
+        assertSame(f.park, App.configure(StoragePaths.in(dir), ParkFixture.HASHER, ParkFixture.START));
     }
 
     @Test

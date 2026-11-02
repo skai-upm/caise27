@@ -4,6 +4,7 @@ import com.amusementpark.persistence.UserRepository;
 import com.amusementpark.business.model.User;
 import com.amusementpark.business.model.UserField;
 import com.amusementpark.business.model.UserValidator;
+import com.amusementpark.business.security.PasswordHasher;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ public class UserController {
     private static final UserController INSTANCE = new UserController();
 
     private UserRepository storage;
+    private PasswordHasher hasher;
     private final List<User> users = new ArrayList<>();
 
     private UserController() {
@@ -35,9 +37,10 @@ public class UserController {
         return INSTANCE;
     }
 
-    /** Injects the repository and loads the users of a new execution. */
-    public void configure(UserRepository storage) throws IOException {
+    /** Injects the repository and the password hasher, and loads the users of a new execution. */
+    public void configure(UserRepository storage, PasswordHasher hasher) throws IOException {
         this.storage = storage;
+        this.hasher = hasher;
         users.clear();
         users.addAll(storage.load());
     }
@@ -75,7 +78,7 @@ public class UserController {
         if (findByEmail(email) != null) {
             return String.format(DUPLICATE_EMAIL, email);
         }
-        User user = new User(name, surname, dni, email, password, phone, card);
+        User user = new User(name, surname, dni, email, hasher.hash(password), phone, card);
         users.add(user);
         if (!persist()) {
             users.remove(user);
@@ -141,12 +144,12 @@ public class UserController {
         return null;
     }
 
-    private static void apply(User user, UserField field, String value) {
+    private void apply(User user, UserField field, String value) {
         switch (field) {
             case NAME -> user.setName(value);
             case SURNAME -> user.setSurname(value);
             case EMAIL -> user.setEmail(value);
-            case PASSWORD -> user.setPassword(value);
+            case PASSWORD -> user.setPassword(hasher.hash(value));
             case PHONE -> user.setPhone(value);
             case CARD -> user.setCard(value);
         }
@@ -155,7 +158,7 @@ public class UserController {
     /** Returns the user with this email and password, or {@code null}. */
     public User authenticate(String email, String password) {
         User user = findByEmail(email);
-        if (user == null || !user.getPassword().equals(password)) {
+        if (user == null || !hasher.matches(password, user.getPassword())) {
             return null;
         }
         return user;

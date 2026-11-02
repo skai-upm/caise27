@@ -1,6 +1,8 @@
 package com.amusementpark.presentation;
 
 import com.amusementpark.business.controller.ParkController;
+import com.amusementpark.business.security.BCryptPasswordHasher;
+import com.amusementpark.business.security.PasswordHasher;
 import com.amusementpark.persistence.StoragePaths;
 
 import java.io.ByteArrayOutputStream;
@@ -17,6 +19,9 @@ class ParkFixture {
 
     static final LocalDate START = LocalDate.of(2026, 10, 1);
 
+    /** Low-cost BCrypt so tests stay fast. */
+    static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
+
     final Path dir;
     ParkController park;
     private ByteArrayOutputStream buffer;
@@ -29,7 +34,7 @@ class ParkFixture {
 
     /** Reloads everything from disk, as a new execution would. */
     final void restart() throws IOException {
-        park = App.configure(StoragePaths.in(dir), START);
+        park = App.configure(StoragePaths.in(dir), HASHER, START);
         buffer = new ByteArrayOutputStream();
         processor = App.createProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
