@@ -47,7 +47,7 @@ Each constituent ticket SHALL count as a ticket of its user, so a user with a co
 - **THEN** deletion is rejected
 
 ### Requirement: Delete group ticket
-`GROUPTICKET DELETE;<groupTicketId>` SHALL delete the group ticket together with all its constituent tickets only when its date is strictly later than the system date; otherwise, or for an unknown identifier, it SHALL be rejected and nothing SHALL be deleted.
+`GROUPTICKET DELETE;<groupTicketId>` SHALL delete, in this order, the passes of its constituent tickets, the constituent tickets, and the group ticket only when its date is strictly later than the system date; otherwise, or for an unknown identifier, it SHALL be rejected and nothing SHALL be deleted.
 
 #### Scenario: All-or-nothing deletion
 - **WHEN** the system date is 2026-10-10 and `GROUPTICKET DELETE;TG01` is executed for `TG01` dated 2026-10-15
@@ -56,6 +56,10 @@ Each constituent ticket SHALL count as a ticket of its user, so a user with a co
 #### Scenario: Current group ticket not deletable
 - **WHEN** the system date equals the date of `TG01` and `GROUPTICKET DELETE;TG01` is executed
 - **THEN** an error is shown and `TG01` with all constituents remains
+
+#### Scenario: Cascade without partial state
+- **WHEN** future `TG01` has constituents with passes and `GROUPTICKET DELETE;TG01` succeeds
+- **THEN** its passes, constituents, and the group ticket are gone; when the deletion is rejected, all of them remain
 
 ### Requirement: Group ticket persistence
 Group tickets SHALL be persisted with their identifier, date, total price, originating group, and constituent tickets, and restored at startup with the same composition. A group ticket SHALL be retained as history after its date passes, including when its group is later deleted.

@@ -29,7 +29,7 @@ A ticket SHALL keep the price it was sold at; later `SYSTEM PRICE` changes SHALL
 - **THEN** `T001` still has price 40.00 and a new ticket is sold at 60.00
 
 ### Requirement: Delete individual ticket
-`TICKET DELETE;<ticketId>` SHALL delete a standalone individual ticket only when its date is strictly later than the system date. A ticket dated today or earlier, an unknown identifier, or a ticket that is a constituent of a group ticket SHALL be rejected without changes.
+`TICKET DELETE;<ticketId>` SHALL delete a standalone individual ticket, together with all its passes, only when its date is strictly later than the system date. A ticket dated today or earlier, an unknown identifier, or a ticket that is a constituent of a group ticket SHALL be rejected without changes.
 
 #### Scenario: Future-only ticket refund
 - **WHEN** the system date is 2026-10-15 and tickets dated 2026-10-14, 2026-10-15, and 2026-10-16 are each submitted to `TICKET DELETE`
@@ -38,6 +38,10 @@ A ticket SHALL keep the price it was sold at; later `SYSTEM PRICE` changes SHALL
 #### Scenario: Constituent ticket
 - **WHEN** `TICKET DELETE` names an individual ticket that belongs to a group ticket
 - **THEN** an error is shown and the group ticket and all its constituents remain
+
+#### Scenario: Cascade to passes
+- **WHEN** future ticket `T001` has SpeedPasses and a Special Pass and `TICKET DELETE;T001` succeeds
+- **THEN** the ticket and all its passes are removed and no longer appear after restart
 
 ### Requirement: Ticket persistence and history
 Individual tickets SHALL be persisted after every successful change and restored at startup linked to their users. Past tickets SHALL be retained, including when their user is later deleted; such a ticket SHALL keep its holder's identifying data (DNI, email, name, surname) as recorded.

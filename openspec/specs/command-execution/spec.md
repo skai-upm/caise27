@@ -54,11 +54,15 @@ If the command file does not exist, cannot be opened, or cannot be read, the app
 - **THEN** an error message naming the problem is shown, no stack trace is shown, and the application terminates
 
 ### Requirement: HELP command
-The `HELP` command SHALL display every available command with its basic syntax, consistent with the commands actually implemented: the F1 user commands, `SYSTEM DATE`, `SYSTEM PRICE`, `GROUP CREATE`, `GROUP ADD`, `GROUP REMOVE`, `GROUP DELETE`, `TICKET CREATE`, `TICKET DELETE`, `GROUPTICKET CREATE`, `GROUPTICKET DELETE`, `ATTRACTION CREATE`, `ATTRACTION ENTER`, `ATTRACTION EXIT`, `ATTRACTION STATUS`, `HELP`, and `EXIT`.
+The `HELP` command SHALL display, from the registry of available commands, every command with its basic syntax and no description: the F1 user commands, `SYSTEM DATE`, `SYSTEM PRICE`, the `GROUP`, `TICKET`, `GROUPTICKET`, `ATTRACTION`, `SPEEDPASS`, `SPECIALPASS`, and `INVOICE` commands, `HELP`, `HELP EXTENDED`, and `EXIT`.
 
 #### Scenario: Help lists current commands
 - **WHEN** `HELP` is processed
 - **THEN** every command listed in this requirement is displayed with its syntax
+
+#### Scenario: F3 commands listed
+- **WHEN** `HELP` is processed
+- **THEN** `SPEEDPASS CREATE`, `SPEEDPASS DELETE`, `SPECIALPASS CREATE`, `SPECIALPASS DELETE`, `INVOICE CREATE`, and `HELP EXTENDED` appear with their syntax
 
 ### Requirement: EXIT command
 The `EXIT` command SHALL terminate interactive mode in a controlled manner and SHALL stop file processing immediately so that no later command in the file is executed.
@@ -66,3 +70,14 @@ The `EXIT` command SHALL terminate interactive mode in a controlled manner and S
 #### Scenario: No commands after EXIT in file mode
 - **WHEN** a file contains a `USER CREATE` command, then `EXIT`, then another `USER CREATE` command
 - **THEN** only the first creation is executed and the later one is not
+
+### Requirement: HELP EXTENDED command
+`HELP EXTENDED` SHALL display, from the same command registry, every command's syntax followed by a brief description of its behavior. The help text SHALL be produced by a help generator that receives its output format through dependency injection, so new formats can be added without changing command processing.
+
+#### Scenario: Syntax and descriptions
+- **WHEN** `HELP EXTENDED` is processed
+- **THEN** every command shown by `HELP` is shown with its syntax and a description
+
+#### Scenario: Same registry for both modes
+- **WHEN** a command is registered
+- **THEN** it appears in both `HELP` and `HELP EXTENDED` output without further changes
