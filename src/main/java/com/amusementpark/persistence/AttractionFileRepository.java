@@ -10,14 +10,15 @@ import java.util.List;
 /**
  * Persists attraction definitions as {@code id;name;capacity}. Visitors are never stored.
  */
-public class AttractionFileStorage {
+public class AttractionFileRepository implements AttractionRepository {
 
     private final LineFile file;
 
-    public AttractionFileStorage(Path file) {
+    public AttractionFileRepository(Path file) {
         this.file = new LineFile(file);
     }
 
+    @Override
     public List<Attraction> load() throws IOException {
         List<Attraction> attractions = new ArrayList<>();
         for (String[] f : file.read(3)) {
@@ -30,6 +31,7 @@ public class AttractionFileStorage {
         return attractions;
     }
 
+    @Override
     public void save(List<Attraction> attractions) throws IOException {
         List<String> lines = new ArrayList<>();
         for (Attraction a : attractions) {

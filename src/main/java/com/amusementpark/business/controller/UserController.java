@@ -1,9 +1,9 @@
 package com.amusementpark.business.controller;
 
+import com.amusementpark.persistence.UserRepository;
 import com.amusementpark.business.model.User;
 import com.amusementpark.business.model.UserField;
 import com.amusementpark.business.model.UserValidator;
-import com.amusementpark.persistence.UserFileStorage;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.List;
  * User operations: validation, uniqueness, authentication and persistence after each change.
  * Every method returns a one-line result message starting with "OK:" or "ERROR:".
  */
-public class UserManager {
+public class UserController {
 
     private static final String SAVE_FAILED = "ERROR: Could not save users file.";
     private static final String BAD_CREDENTIALS = "ERROR: Unknown email or wrong password.";
@@ -23,12 +23,23 @@ public class UserManager {
     private static final String BAD_EMAIL = "ERROR: Invalid email: ";
     private static final String DUPLICATE_EMAIL = "ERROR: A user with email %s already exists.";
 
-    private final UserFileStorage storage;
-    private final List<User> users;
+    private static final UserController INSTANCE = new UserController();
 
-    public UserManager(UserFileStorage storage) throws IOException {
+    private UserRepository storage;
+    private final List<User> users = new ArrayList<>();
+
+    private UserController() {
+    }
+
+    public static UserController getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the repository and loads the users of a new execution. */
+    public void configure(UserRepository storage) throws IOException {
         this.storage = storage;
-        this.users = storage.load();
+        users.clear();
+        users.addAll(storage.load());
     }
 
     public List<User> getUsers() {

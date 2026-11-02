@@ -1,9 +1,9 @@
 package com.amusementpark.business.controller;
 
+import com.amusementpark.persistence.GroupRepository;
 import com.amusementpark.business.model.Group;
 import com.amusementpark.business.model.User;
 import com.amusementpark.business.model.UserValidator;
-import com.amusementpark.persistence.GroupFileStorage;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,16 +12,27 @@ import java.util.List;
 /**
  * Group operations with persistence after each change. Ticket locks are checked by the caller.
  */
-public class GroupManager {
+public class GroupController {
 
     private static final String SAVE_FAILED = "ERROR: Could not save groups file.";
 
-    private final GroupFileStorage storage;
-    private final List<Group> groups;
+    private static final GroupController INSTANCE = new GroupController();
 
-    public GroupManager(GroupFileStorage storage, List<User> users) throws IOException {
+    private GroupRepository storage;
+    private final List<Group> groups = new ArrayList<>();
+
+    private GroupController() {
+    }
+
+    public static GroupController getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the repository and the user controller whose users the groups reference, then loads. */
+    public void configure(GroupRepository storage, UserController users) throws IOException {
         this.storage = storage;
-        this.groups = storage.load(users);
+        groups.clear();
+        groups.addAll(storage.load(users.getUsers()));
     }
 
     public List<Group> getGroups() {

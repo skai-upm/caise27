@@ -29,7 +29,7 @@ class ParkFixture {
 
     /** Reloads everything from disk, as a new execution would. */
     final void restart() throws IOException {
-        park = new ParkController(StoragePaths.in(dir), START);
+        park = App.configure(StoragePaths.in(dir), START);
         buffer = new ByteArrayOutputStream();
         processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }

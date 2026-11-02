@@ -13,20 +13,20 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class UserFileStorageTest {
+class UserFileRepositoryTest {
 
     @TempDir
     Path dir;
 
     @Test
     void missingFileLoadsNoUsers() throws IOException {
-        assertTrue(new UserFileStorage(dir.resolve("users.txt")).load().isEmpty());
+        assertTrue(new UserFileRepository(dir.resolve("users.txt")).load().isEmpty());
     }
 
     @Test
     void savesOneSemicolonSeparatedLinePerUserAndReloadsThem() throws IOException {
         Path file = dir.resolve("users.txt");
-        UserFileStorage storage = new UserFileStorage(file);
+        UserFileRepository storage = new UserFileRepository(file);
         storage.save(List.of(
                 new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                         "1234567890123456"),
@@ -38,7 +38,7 @@ class UserFileStorageTest {
                 "Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"),
                 Files.readAllLines(file));
 
-        List<User> loaded = new UserFileStorage(file).load();
+        List<User> loaded = new UserFileRepository(file).load();
         assertEquals(2, loaded.size());
         User pedro = loaded.get(1);
         assertEquals("Pedro", pedro.getName());
@@ -57,7 +57,7 @@ class UserFileStorageTest {
                 "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
                 "",
                 "broken;line"));
-        List<User> loaded = new UserFileStorage(file).load();
+        List<User> loaded = new UserFileRepository(file).load();
         assertEquals(1, loaded.size());
         assertEquals("12345678Z", loaded.get(0).getDni());
     }

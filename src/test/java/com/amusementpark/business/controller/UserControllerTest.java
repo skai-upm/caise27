@@ -1,7 +1,8 @@
 package com.amusementpark.business.controller;
 
 import com.amusementpark.business.model.User;
-import com.amusementpark.persistence.UserFileStorage;
+import com.amusementpark.persistence.UserFileRepository;
+import com.amusementpark.persistence.UserRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,18 +16,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class UserManagerTest {
+class UserControllerTest {
 
     @TempDir
     Path dir;
 
     private Path file;
-    private UserManager manager;
+    private UserController manager;
 
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        manager = new UserManager(new UserFileStorage(file));
+        manager = restart();
     }
 
     private String createAna() {
@@ -34,11 +35,12 @@ class UserManagerTest {
                 "1234567890123456");
     }
 
-    private UserManager restart() throws IOException {
-        return new UserManager(new UserFileStorage(file));
+    private UserController restart() throws IOException {
+        UserController.getInstance().configure(new UserFileRepository(file));
+        return UserController.getInstance();
     }
 
-    private static User only(UserManager m) {
+    private static User only(UserController m) {
         assertEquals(1, m.getUsers().size());
         return m.getUsers().get(0);
     }
@@ -155,12 +157,16 @@ class UserManagerTest {
 
     @Test
     void failedSaveLeavesStateUnchanged() throws IOException {
-        Path blocked = dir.resolve("as-directory");
-        Files.createDirectory(blocked);
-        UserManager m = new UserManager(new UserFileStorage(blocked) {
+        UserController m = UserController.getInstance();
+        m.configure(new UserRepository() {
             @Override
             public List<User> load() {
                 return new java.util.ArrayList<>();
+            }
+
+            @Override
+            public void save(List<User> users) throws IOException {
+                throw new IOException("disk full");
             }
         });
         assertTrue(m.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",

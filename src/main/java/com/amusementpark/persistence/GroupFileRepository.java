@@ -11,16 +11,17 @@ import java.util.List;
 /**
  * Persists groups as {@code id;name;dni1,dni2,...}; members are resolved to existing users on load.
  */
-public class GroupFileStorage {
+public class GroupFileRepository implements GroupRepository {
 
     private static final String MEMBER_SEPARATOR = ",";
 
     private final LineFile file;
 
-    public GroupFileStorage(Path file) {
+    public GroupFileRepository(Path file) {
         this.file = new LineFile(file);
     }
 
+    @Override
     public List<Group> load(List<User> users) throws IOException {
         List<Group> groups = new ArrayList<>();
         for (String[] f : file.read(3)) {
@@ -36,6 +37,7 @@ public class GroupFileStorage {
         return groups;
     }
 
+    @Override
     public void save(List<Group> groups) throws IOException {
         List<String> lines = new ArrayList<>();
         for (Group g : groups) {

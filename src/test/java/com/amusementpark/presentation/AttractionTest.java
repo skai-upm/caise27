@@ -1,5 +1,6 @@
 package com.amusementpark.presentation;
 
+import com.amusementpark.business.controller.AttractionController;
 import com.amusementpark.business.model.Attraction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,7 +30,7 @@ class AttractionTest {
     }
 
     private Attraction a01() {
-        return f.park.getAttractionManager().find("A01");
+        return AttractionController.getInstance().find("A01");
     }
 
     @Test
@@ -46,7 +47,7 @@ class AttractionTest {
         assertTrue(f.run("ATTRACTION CREATE;A02;Otra;-3").startsWith("ERROR:"));
         assertTrue(f.run("ATTRACTION CREATE;A02;Otra;muchos").startsWith("ERROR:"));
         assertTrue(f.run("ATTRACTION CREATE;A02;;5").startsWith("ERROR:"));
-        assertEquals(1, f.park.getAttractionManager().getAttractions().size());
+        assertEquals(1, AttractionController.getInstance().getAttractions().size());
     }
 
     @Test
@@ -76,14 +77,14 @@ class AttractionTest {
     void groupEntryIsAtomicOnCapacity() {
         f.ok("ATTRACTION CREATE;A02;Mini;2", "ATTRACTION ENTER;A02;T001");
         assertTrue(f.run("ATTRACTION ENTER;A02;TG01").startsWith("ERROR:"));
-        assertEquals(1, f.park.getAttractionManager().find("A02").getVisitors().size());
+        assertEquals(1, AttractionController.getInstance().find("A02").getVisitors().size());
     }
 
     @Test
     void capacityIsNeverExceeded() {
         f.ok("ATTRACTION CREATE;A02;Solo;1", "ATTRACTION ENTER;A02;T001");
         assertTrue(f.run("ATTRACTION ENTER;A02;TG01-1").startsWith("ERROR:"));
-        assertEquals(0, f.park.getAttractionManager().find("A02").getAvailable());
+        assertEquals(0, AttractionController.getInstance().find("A02").getAvailable());
     }
 
     @Test

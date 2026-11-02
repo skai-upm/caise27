@@ -1,5 +1,7 @@
 package com.amusementpark.presentation;
 
+import com.amusementpark.business.controller.TicketController;
+import com.amusementpark.business.controller.UserController;
 import com.amusementpark.business.model.IndividualTicket;
 import com.amusementpark.business.model.User;
 
@@ -32,7 +34,7 @@ class IndividualTicketTest {
     }
 
     private IndividualTicket ticket(String id) {
-        return (IndividualTicket) f.park.getTicketManager().find(id);
+        return (IndividualTicket) TicketController.getInstance().find(id);
     }
 
     @Test
@@ -40,7 +42,7 @@ class IndividualTicketTest {
         assertEquals("OK TICKET CREATED -> 40.00", f.run("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
         IndividualTicket t = ticket("T001");
         assertEquals(LocalDate.of(2026, 10, 15), t.getDate());
-        assertSame(f.park.getUserManager().findByEmail("ana@correo.com"), t.getUser());
+        assertSame(UserController.getInstance().findByEmail("ana@correo.com"), t.getUser());
         assertEquals("40.00", t.getPrice().toPlainString());
     }
 
@@ -57,7 +59,7 @@ class IndividualTicketTest {
         assertTrue(f.run("TICKET CREATE;T003;ana@correo.com;2026-09-30").startsWith("ERROR:"));
         assertTrue(f.run("TICKET CREATE;T004;ana@correo.com;2026-10-32").startsWith("ERROR:"));
         assertTrue(f.run("TICKET CREATE;;ana@correo.com;2026-10-15").startsWith("ERROR:"));
-        assertEquals(1, f.park.getTicketManager().getTickets().size());
+        assertEquals(1, TicketController.getInstance().getTickets().size());
     }
 
     @Test
@@ -86,11 +88,11 @@ class IndividualTicketTest {
         assertTrue(f.run("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR:"));
         f.ok("SYSTEM DATE;2026-10-15");
         assertTrue(f.run("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR:"));
-        assertNotNull(f.park.getUserManager().findByEmail("ana@correo.com"));
+        assertNotNull(UserController.getInstance().findByEmail("ana@correo.com"));
         assertNotNull(ticket("T001"));
 
         f.ok("SYSTEM DATE;2026-10-16", "USER DELETE;ana@correo.com;Clave1!");
-        assertNull(f.park.getUserManager().findByEmail("ana@correo.com"));
+        assertNull(UserController.getInstance().findByEmail("ana@correo.com"));
         assertNotNull(ticket("T001"));
     }
 
@@ -104,8 +106,8 @@ class IndividualTicketTest {
     void ticketsAndHistorySurviveRestart() throws IOException {
         f.ok("TICKET CREATE;T001;ana@correo.com;2026-10-15", "TICKET CREATE;T002;ana@correo.com;2026-10-20");
         f.restart();
-        assertEquals(2, f.park.getTicketManager().getTickets().size());
-        assertSame(f.park.getUserManager().findByEmail("ana@correo.com"), ticket("T001").getUser());
+        assertEquals(2, TicketController.getInstance().getTickets().size());
+        assertSame(UserController.getInstance().findByEmail("ana@correo.com"), ticket("T001").getUser());
         assertEquals("40.00", ticket("T002").getPrice().toPlainString());
 
         f.ok("SYSTEM DATE;2026-10-21", "USER DELETE;ana@correo.com;Clave1!");
@@ -116,7 +118,7 @@ class IndividualTicketTest {
         assertEquals("Ana", holder.getName());
         assertEquals("Apellido", holder.getSurname());
         assertSame(holder, ticket("T002").getUser());
-        assertTrue(f.park.getUserManager().getUsers().isEmpty());
+        assertTrue(UserController.getInstance().getUsers().isEmpty());
     }
 
     @Test

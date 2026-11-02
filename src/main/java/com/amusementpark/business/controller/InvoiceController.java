@@ -10,12 +10,22 @@ import java.util.function.Supplier;
 /**
  * Invoice director: decides which builder steps apply to each recipient type.
  */
-public class InvoiceManager {
+public class InvoiceController {
 
-    private final TicketManager tickets;
-    private final Supplier<InvoiceBuilder> builders;
+    private static final InvoiceController INSTANCE = new InvoiceController();
 
-    public InvoiceManager(TicketManager tickets, Supplier<InvoiceBuilder> builders) {
+    private TicketController tickets;
+    private Supplier<InvoiceBuilder> builders;
+
+    private InvoiceController() {
+    }
+
+    public static InvoiceController getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the ticket controller and the factory of fresh builders used for each invoice. */
+    public void configure(TicketController tickets, Supplier<InvoiceBuilder> builders) {
         this.tickets = tickets;
         this.builders = builders;
     }

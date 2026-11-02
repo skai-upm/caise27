@@ -1,17 +1,10 @@
 package com.amusementpark.business.controller;
 
-import com.amusementpark.business.invoice.TextInvoiceBuilder;
 import com.amusementpark.business.model.Attraction;
 import com.amusementpark.business.model.Group;
 import com.amusementpark.business.model.Ticket;
 import com.amusementpark.business.model.User;
-import com.amusementpark.persistence.AttractionFileStorage;
-import com.amusementpark.persistence.GroupFileStorage;
-import com.amusementpark.persistence.StoragePaths;
-import com.amusementpark.persistence.TicketFileStorage;
-import com.amusementpark.persistence.UserFileStorage;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -30,27 +23,37 @@ public class ParkController {
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
-    private final UserManager users;
-    private final GroupManager groups;
-    private final TicketManager tickets;
-    private final AttractionManager attractions;
-    private final InvoiceManager invoices;
+    private static final ParkController INSTANCE = new ParkController();
+
+    private UserController users;
+    private GroupController groups;
+    private TicketController tickets;
+    private AttractionController attractions;
+    private InvoiceController invoices;
 
     private LocalDate systemDate;
-    private BigDecimal basePrice = DEFAULT_PRICE;
+    private BigDecimal basePrice;
 
-    public ParkController(StoragePaths paths) throws IOException {
-        this(paths, LocalDate.now());
+    private ParkController() {
     }
 
-    public ParkController(StoragePaths paths, LocalDate startDate) throws IOException {
+    public static ParkController getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the collaborating controllers (already configured) and starts a new execution on the
+     * given date with the default base price.
+     */
+    public void configure(UserController users, GroupController groups, TicketController tickets,
+                          AttractionController attractions, InvoiceController invoices, LocalDate startDate) {
+        this.users = users;
+        this.groups = groups;
+        this.tickets = tickets;
+        this.attractions = attractions;
+        this.invoices = invoices;
         this.systemDate = startDate;
-        this.users = new UserManager(new UserFileStorage(paths.users()));
-        this.groups = new GroupManager(new GroupFileStorage(paths.groups()), users.getUsers());
-        this.tickets = new TicketManager(new TicketFileStorage(paths.tickets(), paths.groupTickets()),
-                users.getUsers(), groups.getGroups());
-        this.attractions = new AttractionManager(new AttractionFileStorage(paths.attractions()));
-        this.invoices = new InvoiceManager(tickets, TextInvoiceBuilder::new);
+        this.basePrice = DEFAULT_PRICE;
     }
 
     public LocalDate getSystemDate() {
@@ -59,22 +62,6 @@ public class ParkController {
 
     public BigDecimal getBasePrice() {
         return basePrice;
-    }
-
-    public UserManager getUserManager() {
-        return users;
-    }
-
-    public GroupManager getGroupManager() {
-        return groups;
-    }
-
-    public TicketManager getTicketManager() {
-        return tickets;
-    }
-
-    public AttractionManager getAttractionManager() {
-        return attractions;
     }
 
     // --- system settings -------------------------------------------------------------------
@@ -270,7 +257,7 @@ public class ParkController {
         if (attraction == null) {
             return "ERROR: Attraction " + attractionId + " does not exist.";
         }
-        return AttractionManager.status(attraction);
+        return AttractionController.status(attraction);
     }
 
     // --- invoices --------------------------------------------------------------------------

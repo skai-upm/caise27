@@ -1,7 +1,7 @@
 package com.amusementpark.presentation;
 
 import com.amusementpark.business.controller.ParkController;
-import com.amusementpark.business.controller.UserManager;
+import com.amusementpark.business.controller.UserController;
 import com.amusementpark.persistence.StoragePaths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,14 +30,14 @@ class CommandProcessorTest {
     @TempDir
     Path dir;
 
-    private UserManager manager;
+    private UserController manager;
     private ByteArrayOutputStream buffer;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws IOException {
-        ParkController park = new ParkController(StoragePaths.in(dir));
-        manager = park.getUserManager();
+        ParkController park = App.configure(StoragePaths.in(dir), java.time.LocalDate.now());
+        manager = UserController.getInstance();
         buffer = new ByteArrayOutputStream();
         processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }

@@ -1,6 +1,8 @@
 package com.amusementpark.presentation;
 
-import com.amusementpark.business.controller.TicketManager;
+import com.amusementpark.business.controller.GroupController;
+import com.amusementpark.business.controller.UserController;
+import com.amusementpark.business.controller.TicketController;
 import com.amusementpark.business.model.GroupTicket;
 import com.amusementpark.business.model.Ticket;
 import com.amusementpark.business.model.User;
@@ -35,7 +37,7 @@ class GroupTicketTest {
     }
 
     private GroupTicket groupTicket(String id) {
-        return (GroupTicket) f.park.getTicketManager().find(id);
+        return (GroupTicket) TicketController.getInstance().find(id);
     }
 
     @ParameterizedTest
@@ -48,7 +50,7 @@ class GroupTicketTest {
 
     @Test
     void discountRoundsHalfUp() {
-        assertEquals("89.99", TicketManager.groupPrice(new BigDecimal("33.33"), 3).toPlainString());
+        assertEquals("89.99", TicketController.groupPrice(new BigDecimal("33.33"), 3).toPlainString());
     }
 
     @Test
@@ -56,12 +58,12 @@ class GroupTicketTest {
         f.group("G01", 2, 20000000);
         f.ok("SYSTEM PRICE;50.00", "GROUPTICKET CREATE;TG01;G01;2026-10-15");
         GroupTicket gt = groupTicket("TG01");
-        List<User> members = f.park.getGroupManager().find("G01").getMembers();
+        List<User> members = GroupController.getInstance().find("G01").getMembers();
         assertEquals(List.of("TG01-1", "TG01-2"), gt.getTickets().stream().map(Ticket::getId).toList());
         assertSame(members.get(0), gt.getTickets().get(0).getUser());
         assertSame(members.get(1), gt.getTickets().get(1).getUser());
         assertEquals("50.00", gt.getTickets().get(0).getPrice().toPlainString());
-        assertSame(f.park.getGroupManager().find("G01"), gt.getGroup());
+        assertSame(GroupController.getInstance().find("G01"), gt.getGroup());
 
         f.user("Late", 20000009);
         f.ok("SYSTEM DATE;2026-10-16", "GROUP ADD;G01;late@correo.com");
@@ -78,8 +80,8 @@ class GroupTicketTest {
         assertTrue(f.run("GROUPTICKET CREATE;TG01;G01;2026-02-30").startsWith("ERROR:"));
         assertTrue(f.run("GROUPTICKET CREATE;TG02-2;G01;2026-10-15").startsWith("ERROR:"));
         assertTrue(f.run("GROUPTICKET CREATE;TG02;G01;2026-10-15").startsWith("ERROR:"), "constituent id clash");
-        assertTrue(f.park.getTicketManager().getGroupTickets().isEmpty());
-        assertEquals(1, f.park.getTicketManager().getTickets().size());
+        assertTrue(TicketController.getInstance().getGroupTickets().isEmpty());
+        assertEquals(1, TicketController.getInstance().getTickets().size());
     }
 
     @Test
@@ -91,7 +93,7 @@ class GroupTicketTest {
         assertTrue(f.run("GROUP REMOVE;G01;g01m0@correo.com").startsWith("ERROR:"));
         assertTrue(f.run("GROUP DELETE;G01").startsWith("ERROR:"));
         assertTrue(f.run("USER DELETE;g01m0@correo.com;Clave1!").startsWith("ERROR:"));
-        assertEquals(2, f.park.getGroupManager().find("G01").getMembers().size());
+        assertEquals(2, GroupController.getInstance().find("G01").getMembers().size());
 
         f.ok("SYSTEM DATE;2026-10-16", "GROUP ADD;G01;other@correo.com", "GROUP REMOVE;G01;other@correo.com",
                 "USER DELETE;g01m0@correo.com;Clave1!", "GROUP DELETE;G01");
@@ -103,7 +105,7 @@ class GroupTicketTest {
         f.group("G01", 2, 50000000);
         f.ok("GROUPTICKET CREATE;TG01;G01;2026-10-15");
         assertTrue(f.run("TICKET DELETE;TG01-1").startsWith("ERROR:"));
-        assertEquals(2, f.park.getTicketManager().getTickets().size());
+        assertEquals(2, TicketController.getInstance().getTickets().size());
     }
 
     @Test
@@ -114,12 +116,12 @@ class GroupTicketTest {
         assertTrue(f.run("GROUPTICKET DELETE;TG01").startsWith("ERROR:"));
         assertTrue(f.run("GROUPTICKET DELETE;NOPE").startsWith("ERROR:"));
         assertTrue(f.run("GROUPTICKET DELETE;T001").startsWith("ERROR:"));
-        assertEquals(6, f.park.getTicketManager().getTickets().size());
+        assertEquals(6, TicketController.getInstance().getTickets().size());
 
         assertEquals("OK: Group ticket deleted: TG02 (3 tickets)", f.run("GROUPTICKET DELETE;TG02"));
         assertNull(groupTicket("TG02"));
-        assertNull(f.park.getTicketManager().find("TG02-1"));
-        assertEquals(3, f.park.getTicketManager().getTickets().size());
+        assertNull(TicketController.getInstance().find("TG02-1"));
+        assertEquals(3, TicketController.getInstance().getTickets().size());
         assertNotNull(groupTicket("TG01"));
     }
 
@@ -130,16 +132,16 @@ class GroupTicketTest {
         f.restart();
         GroupTicket gt = groupTicket("TG01");
         assertEquals("80.00", gt.getPrice().toPlainString());
-        assertSame(f.park.getGroupManager().find("G01"), gt.getGroup());
+        assertSame(GroupController.getInstance().find("G01"), gt.getGroup());
         assertEquals(2, gt.getTickets().size());
-        assertSame(f.park.getUserManager().findByEmail("g01m0@correo.com"), gt.getTickets().get(0).getUser());
-        assertSame(gt.getTickets().get(0), f.park.getTicketManager().find("TG01-1"));
+        assertSame(UserController.getInstance().findByEmail("g01m0@correo.com"), gt.getTickets().get(0).getUser());
+        assertSame(gt.getTickets().get(0), TicketController.getInstance().find("TG01-1"));
 
         f.ok("SYSTEM DATE;2026-10-16", "GROUP DELETE;G01");
         f.restart();
         gt = groupTicket("TG01");
         assertEquals("G01", gt.getGroup().getId());
         assertEquals("Grupo G01", gt.getGroup().getName());
-        assertNull(f.park.getGroupManager().find("G01"));
+        assertNull(GroupController.getInstance().find("G01"));
     }
 }

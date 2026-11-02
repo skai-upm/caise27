@@ -1,9 +1,11 @@
 package com.amusementpark.presentation;
 
 import com.amusementpark.business.controller.ParkController;
+import com.amusementpark.business.controller.UserController;
 import com.amusementpark.persistence.StoragePaths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -30,9 +32,17 @@ class SystemSettingsTest {
 
     @Test
     void startsWithOperatingSystemDateAndDefaultPrice() throws IOException {
-        ParkController park = new ParkController(StoragePaths.in(dir));
+        App.run(new String[0], new java.io.ByteArrayInputStream(new byte[0]), System.out, System.err, dir);
+        ParkController park = ParkController.getInstance();
         assertEquals(LocalDate.now(), park.getSystemDate());
         assertEquals("40.00", park.getBasePrice().toPlainString());
+    }
+
+    @Test
+    void controllersAreSingletons() throws IOException {
+        assertSame(ParkController.getInstance(), ParkController.getInstance());
+        assertSame(UserController.getInstance(), UserController.getInstance());
+        assertSame(f.park, App.configure(StoragePaths.in(dir), ParkFixture.START));
     }
 
     @Test

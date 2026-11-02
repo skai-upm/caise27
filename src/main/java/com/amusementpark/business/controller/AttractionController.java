@@ -1,9 +1,9 @@
 package com.amusementpark.business.controller;
 
+import com.amusementpark.persistence.AttractionRepository;
 import com.amusementpark.business.model.Attraction;
 import com.amusementpark.business.model.User;
 import com.amusementpark.business.model.UserValidator;
-import com.amusementpark.persistence.AttractionFileStorage;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,14 +12,25 @@ import java.util.List;
 /**
  * Attraction definitions (persisted) and their current visitors (runtime only).
  */
-public class AttractionManager {
+public class AttractionController {
 
-    private final AttractionFileStorage storage;
-    private final List<Attraction> attractions;
+    private static final AttractionController INSTANCE = new AttractionController();
 
-    public AttractionManager(AttractionFileStorage storage) throws IOException {
+    private AttractionRepository storage;
+    private final List<Attraction> attractions = new ArrayList<>();
+
+    private AttractionController() {
+    }
+
+    public static AttractionController getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the repository and loads the attraction definitions; visitors start empty. */
+    public void configure(AttractionRepository storage) throws IOException {
         this.storage = storage;
-        this.attractions = storage.load();
+        attractions.clear();
+        attractions.addAll(storage.load());
     }
 
     public List<Attraction> getAttractions() {

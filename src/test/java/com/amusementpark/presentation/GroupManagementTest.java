@@ -1,5 +1,7 @@
 package com.amusementpark.presentation;
 
+import com.amusementpark.business.controller.GroupController;
+import com.amusementpark.business.controller.UserController;
 import com.amusementpark.business.model.Group;
 import com.amusementpark.business.model.User;
 
@@ -31,7 +33,7 @@ class GroupManagementTest {
     }
 
     private Group g01() {
-        return f.park.getGroupManager().find("G01");
+        return GroupController.getInstance().find("G01");
     }
 
     @Test
@@ -40,15 +42,15 @@ class GroupManagementTest {
         assertEquals("Familia Garcia", g01().getName());
         f.ok("GROUP ADD;G01;ana@correo.com", "GROUP ADD;G01;pedro@correo.com");
         assertEquals(2, g01().getMembers().size());
-        assertSame(f.park.getUserManager().findByEmail("ana@correo.com"), g01().getMembers().get(0));
+        assertSame(UserController.getInstance().findByEmail("ana@correo.com"), g01().getMembers().get(0));
 
         f.ok("GROUP REMOVE;G01;ana@correo.com");
         assertEquals(1, g01().getMembers().size());
-        assertTrue(f.park.getUserManager().findByEmail("ana@correo.com") != null);
+        assertTrue(UserController.getInstance().findByEmail("ana@correo.com") != null);
 
         f.ok("GROUP DELETE;G01");
         assertEquals(null, g01());
-        assertEquals(2, f.park.getUserManager().getUsers().size());
+        assertEquals(2, UserController.getInstance().getUsers().size());
     }
 
     @Test
@@ -79,11 +81,11 @@ class GroupManagementTest {
         f.ok("GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com", "GROUP ADD;G01;pedro@correo.com",
                 "GROUP CREATE;G02;Vacio");
         f.restart();
-        List<User> users = f.park.getUserManager().getUsers();
+        List<User> users = UserController.getInstance().getUsers();
         assertEquals(2, users.size());
         assertSame(users.get(0), g01().getMembers().get(0));
         assertSame(users.get(1), g01().getMembers().get(1));
-        assertTrue(f.park.getGroupManager().find("G02").getMembers().isEmpty());
+        assertTrue(GroupController.getInstance().find("G02").getMembers().isEmpty());
     }
 
     @Test

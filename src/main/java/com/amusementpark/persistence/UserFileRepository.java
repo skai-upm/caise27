@@ -10,19 +10,20 @@ import java.util.List;
 /**
  * Saves users to and loads users from a semicolon-separated text file, one user per line.
  */
-public class UserFileStorage {
+public class UserFileRepository implements UserRepository {
 
     private static final int FIELD_COUNT = 7;
 
     private final LineFile file;
 
-    public UserFileStorage(Path file) {
+    public UserFileRepository(Path file) {
         this.file = new LineFile(file);
     }
 
     /**
      * Loads all stored users. A missing file yields an empty list; malformed lines are skipped.
      */
+    @Override
     public List<User> load() throws IOException {
         List<User> users = new ArrayList<>();
         for (String[] f : file.read(FIELD_COUNT)) {
@@ -32,6 +33,7 @@ public class UserFileStorage {
     }
 
     /** Replaces the file content with the given users. */
+    @Override
     public void save(List<User> users) throws IOException {
         List<String> lines = new ArrayList<>();
         for (User u : users) {

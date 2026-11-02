@@ -21,26 +21,23 @@ import java.util.Map;
  * group tickets ({@code id;date;price;groupId;groupName}). Holders and groups that no longer exist
  * are rebuilt from the stored snapshot so historical tickets survive.
  */
-public class TicketFileStorage {
-
-    /** Tickets read back from disk. */
-    public record Loaded(List<IndividualTicket> tickets, List<GroupTicket> groupTickets) {
-    }
+public class TicketFileRepository implements TicketRepository {
 
     private final LineFile ticketFile;
     private final LineFile groupTicketFile;
 
-    public TicketFileStorage(Path ticketFile, Path groupTicketFile) {
+    public TicketFileRepository(Path ticketFile, Path groupTicketFile) {
         this.ticketFile = new LineFile(ticketFile);
         this.groupTicketFile = new LineFile(groupTicketFile);
     }
 
+    @Override
     public Loaded load(List<User> users, List<Group> groups) throws IOException {
         Map<String, User> detachedUsers = new HashMap<>();
         Map<String, List<IndividualTicket>> constituents = new LinkedHashMap<>();
         List<IndividualTicket> tickets = new ArrayList<>();
         for (String[] f : ticketFile.read(8)) {
-            User user = GroupFileStorage.findByDni(users, f[3]);
+            User user = GroupFileRepository.findByDni(users, f[3]);
             if (user == null) {
                 user = detachedUsers.computeIfAbsent(f[3], dni -> new User(f[5], f[6], dni, f[4], "", "", ""));
             }
@@ -72,6 +69,7 @@ public class TicketFileStorage {
         return new Loaded(tickets, groupTickets);
     }
 
+    @Override
     public void save(List<IndividualTicket> tickets, List<GroupTicket> groupTickets) throws IOException {
         Map<IndividualTicket, String> owner = new HashMap<>();
         List<String> groupLines = new ArrayList<>();

@@ -1,8 +1,18 @@
 package com.amusementpark.presentation;
 
+import com.amusementpark.business.controller.AttractionController;
+import com.amusementpark.business.controller.GroupController;
+import com.amusementpark.business.controller.InvoiceController;
 import com.amusementpark.business.controller.ParkController;
+import com.amusementpark.business.controller.TicketController;
+import com.amusementpark.business.controller.UserController;
+import com.amusementpark.business.invoice.TextInvoiceBuilder;
+import com.amusementpark.persistence.AttractionFileRepository;
+import com.amusementpark.persistence.GroupFileRepository;
 import com.amusementpark.persistence.StoragePaths;
 import com.amusementpark.persistence.TemporaryStorage;
+import com.amusementpark.persistence.TicketFileRepository;
+import com.amusementpark.persistence.UserFileRepository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 /**
  * Application entry point. Without a command file, commands are read from standard input;
@@ -68,7 +79,7 @@ public class App {
                                PrintStream err) {
         ParkController park;
         try {
-            park = new ParkController(paths);
+            park = configure(paths, LocalDate.now());
         } catch (IOException e) {
             err.println("ERROR: Could not read data files: " + e.getMessage());
             return 1;
@@ -78,6 +89,26 @@ public class App {
             return runInteractive(processor, in, err);
         }
         return runFile(processor, commandFile, err);
+    }
+
+    /**
+     * Composition root: creates the repositories for the given paths and injects them, and the
+     * collaborating controllers, into the Singleton controllers for a new execution.
+     */
+    public static ParkController configure(StoragePaths paths, LocalDate startDate) throws IOException {
+        UserController users = UserController.getInstance();
+        users.configure(new UserFileRepository(paths.users()));
+        GroupController groups = GroupController.getInstance();
+        groups.configure(new GroupFileRepository(paths.groups()), users);
+        TicketController tickets = TicketController.getInstance();
+        tickets.configure(new TicketFileRepository(paths.tickets(), paths.groupTickets()), users, groups);
+        AttractionController attractions = AttractionController.getInstance();
+        attractions.configure(new AttractionFileRepository(paths.attractions()));
+        InvoiceController invoices = InvoiceController.getInstance();
+        invoices.configure(tickets, TextInvoiceBuilder::new);
+        ParkController park = ParkController.getInstance();
+        park.configure(users, groups, tickets, attractions, invoices, startDate);
+        return park;
     }
 
     private static int runInteractive(CommandProcessor processor, InputStream in, PrintStream err) {

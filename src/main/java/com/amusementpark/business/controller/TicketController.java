@@ -1,12 +1,12 @@
 package com.amusementpark.business.controller;
 
+import com.amusementpark.persistence.TicketRepository;
 import com.amusementpark.business.model.Group;
 import com.amusementpark.business.model.GroupTicket;
 import com.amusementpark.business.model.IndividualTicket;
 import com.amusementpark.business.model.Ticket;
 import com.amusementpark.business.model.User;
 import com.amusementpark.business.model.UserValidator;
-import com.amusementpark.persistence.TicketFileStorage;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -19,19 +19,31 @@ import java.util.List;
  * Individual and group tickets: purchase, deletion, locks and persistence of both ticket files.
  * Every date rule receives the system date from the caller.
  */
-public class TicketManager {
+public class TicketController {
 
     private static final String SAVE_FAILED = "ERROR: Could not save tickets files.";
 
-    private final TicketFileStorage storage;
-    private final List<IndividualTicket> tickets;
-    private final List<GroupTicket> groupTickets;
+    private static final TicketController INSTANCE = new TicketController();
 
-    public TicketManager(TicketFileStorage storage, List<User> users, List<Group> groups) throws IOException {
+    private TicketRepository storage;
+    private final List<IndividualTicket> tickets = new ArrayList<>();
+    private final List<GroupTicket> groupTickets = new ArrayList<>();
+
+    private TicketController() {
+    }
+
+    public static TicketController getInstance() {
+        return INSTANCE;
+    }
+
+    /** Injects the repository and the controllers whose users and groups tickets reference, then loads. */
+    public void configure(TicketRepository storage, UserController users, GroupController groups) throws IOException {
         this.storage = storage;
-        TicketFileStorage.Loaded loaded = storage.load(users, groups);
-        this.tickets = new ArrayList<>(loaded.tickets());
-        this.groupTickets = new ArrayList<>(loaded.groupTickets());
+        TicketRepository.Loaded loaded = storage.load(users.getUsers(), groups.getGroups());
+        tickets.clear();
+        tickets.addAll(loaded.tickets());
+        groupTickets.clear();
+        groupTickets.addAll(loaded.groupTickets());
     }
 
     public List<IndividualTicket> getTickets() {
