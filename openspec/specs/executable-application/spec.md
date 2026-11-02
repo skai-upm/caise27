@@ -14,7 +14,7 @@ Defines how the application is built into a standalone executable JAR and how it
 - **THEN** `target/nombre-aplicacion.jar` exists and its manifest declares a `Main-Class`
 
 ### Requirement: Launch modes
-Run without arguments, the JAR SHALL start in interactive mode and wait for commands on standard input. Run with a text file path as its first argument, it SHALL process the commands contained in that file.
+Run without arguments, the JAR SHALL start in interactive mode and wait for commands on standard input. Run with a text file path as its first argument, it SHALL process the commands contained in that file. From Delivery 2, `--fly` MAY be given as the first argument, alone (interactive) or followed by a command file path, to run with temporary persistence.
 
 #### Scenario: Interactive launch
 - **WHEN** `java -jar target/nombre-aplicacion.jar` is run
@@ -23,3 +23,7 @@ Run without arguments, the JAR SHALL start in interactive mode and wait for comm
 #### Scenario: File launch
 - **WHEN** `java -jar target/nombre-aplicacion.jar input.txt` is run with a readable command file
 - **THEN** the application processes the commands contained in `input.txt`
+
+#### Scenario: Fly launches
+- **WHEN** `java -jar target/nombre-aplicacion.jar --fly` or `java -jar target/nombre-aplicacion.jar --fly input_fase2.txt` is run
+- **THEN** the application runs interactively or processes the file, respectively, using temporary persistence

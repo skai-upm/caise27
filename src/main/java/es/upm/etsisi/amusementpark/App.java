@@ -2,8 +2,9 @@ package es.upm.etsisi.amusementpark;
 
 import es.upm.etsisi.amusementpark.command.CommandProcessor;
 import es.upm.etsisi.amusementpark.command.CommandRunner;
-import es.upm.etsisi.amusementpark.persistence.UserFileRepository;
-import es.upm.etsisi.amusementpark.user.UserService;
+import es.upm.etsisi.amusementpark.park.Park;
+import es.upm.etsisi.amusementpark.persistence.ParkStorage;
+import es.upm.etsisi.amusementpark.persistence.TemporaryDataDirectory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,37 +13,75 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
- * Application entry point: interactive mode without arguments, file mode with a command file path.
+ * Application entry point.
+ *
+ * <pre>
+ * java -jar app.jar                  interactive
+ * java -jar app.jar input.txt        command file
+ * java -jar app.jar --fly            interactive, temporary persistence
+ * java -jar app.jar --fly input.txt  command file, temporary persistence
+ * </pre>
  */
 public final class App {
 
-    static final Path USERS_FILE = Path.of("users.txt");
+    static final String FLY = "--fly";
+    static final String TMP_DIR = "tmp";
 
     private App() {
     }
 
     public static void main(String[] args) {
-        int status = run(args, System.in, System.out, System.err, USERS_FILE);
+        int status = run(args, System.in, System.out, System.err, Path.of(""));
         if (status != 0) {
             System.exit(status);
         }
     }
 
-    static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path usersFile) {
-        CommandRunner runner;
+    /**
+     * Runs the application with the given streams; normal data lives in {@code baseDir}.
+     */
+    static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path baseDir) {
+        boolean fly = args.length > 0 && FLY.equals(args[0]);
+        int first = fly ? 1 : 0;
+        String commandFile = args.length > first ? args[first] : null;
+        if (!fly) {
+            return execute(commandFile, in, out, err, baseDir);
+        }
+        Path dataDir;
         try {
-            UserService users = new UserService(new UserFileRepository(usersFile, err));
-            runner = new CommandRunner(new CommandProcessor(users), out);
+            dataDir = TemporaryDataDirectory.create(baseDir.resolve(TMP_DIR), LocalDateTime.now());
         } catch (IOException e) {
-            err.println("ERROR: could not load users from " + usersFile + ": " + e.getMessage());
+            err.println("ERROR: could not create temporary directory: " + e.getMessage());
             return 1;
         }
-        if (args.length == 0) {
+        try {
+            return execute(commandFile, in, out, err, dataDir);
+        } finally {
+            try {
+                TemporaryDataDirectory.delete(dataDir);
+            } catch (IOException e) {
+                err.println("ERROR: could not delete temporary directory " + dataDir + ": " + e.getMessage());
+            }
+        }
+    }
+
+    private static int execute(String commandFile, InputStream in, PrintStream out, PrintStream err, Path dataDir) {
+        Park park = Park.getInstance();
+        try {
+            park.initialize(new ParkStorage(dataDir, err), LocalDate.now());
+        } catch (IOException | RuntimeException e) {
+            err.println("ERROR: could not load park data from " + dataDir.toAbsolutePath() + ": " + e.getMessage());
+            return 1;
+        }
+        CommandRunner runner = new CommandRunner(new CommandProcessor(park), out);
+        if (commandFile == null) {
             return runInteractive(runner, in, err);
         }
-        return runFile(runner, Path.of(args[0]), err);
+        return runFile(runner, Path.of(commandFile), err);
     }
 
     private static int runInteractive(CommandRunner runner, InputStream in, PrintStream err) {
