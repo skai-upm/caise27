@@ -1,0 +1,12 @@
+## MODIFIED Requirements
+
+### Requirement: Delivery 2 technical restrictions
+Delivery 2 SHALL keep all Delivery 1 restrictions (Java 21, Maven, executable JAR via `mvn package`, Java standard library only, no databases, frameworks or external libraries). In memory, domain relationships SHALL be held as object references and collections with the specified directions: attractions know their occupants, individual tickets know their user, group tickets are composed of individual tickets and reference their group while it exists, and users and groups do not reference tickets or attractions. Delivery 1 features SHALL NOT be removed or made incompatible. From Delivery 3 the BCrypt Maven dependency is additionally permitted for password protection.
+
+#### Scenario: Relationship directions in code
+- **WHEN** the domain classes are inspected
+- **THEN** user and group classes have no ticket or attraction fields, and ticket and attraction classes hold object references rather than identifier strings for users and groups
+
+#### Scenario: BCrypt allowed from Delivery 3
+- **WHEN** runtime dependencies are inspected after Delivery 3
+- **THEN** besides the JDK only the BCrypt library is present

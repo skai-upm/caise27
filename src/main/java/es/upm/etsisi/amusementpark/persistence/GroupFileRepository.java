@@ -1,7 +1,7 @@
 package es.upm.etsisi.amusementpark.persistence;
 
-import es.upm.etsisi.amusementpark.group.Group;
-import es.upm.etsisi.amusementpark.user.User;
+import es.upm.etsisi.amusementpark.business.group.Group;
+import es.upm.etsisi.amusementpark.business.user.User;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;

@@ -1,10 +1,10 @@
 package es.upm.etsisi.amusementpark.persistence;
 
-import es.upm.etsisi.amusementpark.group.Group;
-import es.upm.etsisi.amusementpark.ticket.GroupTicket;
-import es.upm.etsisi.amusementpark.ticket.IndividualTicket;
-import es.upm.etsisi.amusementpark.ticket.Ticket;
-import es.upm.etsisi.amusementpark.user.User;
+import es.upm.etsisi.amusementpark.business.group.Group;
+import es.upm.etsisi.amusementpark.business.ticket.GroupTicket;
+import es.upm.etsisi.amusementpark.business.ticket.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.ticket.Ticket;
+import es.upm.etsisi.amusementpark.business.user.User;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigDecimal;

@@ -1,10 +1,12 @@
 package es.upm.etsisi.amusementpark;
 
-import es.upm.etsisi.amusementpark.command.CommandProcessor;
-import es.upm.etsisi.amusementpark.command.CommandRunner;
-import es.upm.etsisi.amusementpark.park.Park;
-import es.upm.etsisi.amusementpark.persistence.ParkStorage;
+import es.upm.etsisi.amusementpark.business.StorageException;
+import es.upm.etsisi.amusementpark.business.user.BCryptPasswordHasher;
+import es.upm.etsisi.amusementpark.business.user.PasswordHasher;
+import es.upm.etsisi.amusementpark.persistence.FileParkRepository;
 import es.upm.etsisi.amusementpark.persistence.TemporaryDataDirectory;
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.presentation.CommandRunner;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +37,8 @@ public final class App {
     }
 
     public static void main(String[] args) {
-        int status = run(args, System.in, System.out, System.err, Path.of(""));
+        int status = run(args, System.in, System.out, System.err, Path.of(""),
+                new BCryptPasswordHasher(BCryptPasswordHasher.DEFAULT_LOG_ROUNDS));
         if (status != 0) {
             System.exit(status);
         }
@@ -44,12 +47,13 @@ public final class App {
     /**
      * Runs the application with the given streams; normal data lives in {@code baseDir}.
      */
-    static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path baseDir) {
+    static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path baseDir,
+                   PasswordHasher hasher) {
         boolean fly = args.length > 0 && FLY.equals(args[0]);
         int first = fly ? 1 : 0;
         String commandFile = args.length > first ? args[first] : null;
         if (!fly) {
-            return execute(commandFile, in, out, err, baseDir);
+            return execute(commandFile, in, out, err, baseDir, hasher);
         }
         Path dataDir;
         try {
@@ -59,7 +63,7 @@ public final class App {
             return 1;
         }
         try {
-            return execute(commandFile, in, out, err, dataDir);
+            return execute(commandFile, in, out, err, dataDir, hasher);
         } finally {
             try {
                 TemporaryDataDirectory.delete(dataDir);
@@ -69,15 +73,16 @@ public final class App {
         }
     }
 
-    private static int execute(String commandFile, InputStream in, PrintStream out, PrintStream err, Path dataDir) {
-        Park park = Park.getInstance();
+    private static int execute(String commandFile, InputStream in, PrintStream out, PrintStream err, Path dataDir,
+                               PasswordHasher hasher) {
+        CommandProcessor processor;
         try {
-            park.initialize(new ParkStorage(dataDir, err), LocalDate.now());
-        } catch (IOException | RuntimeException e) {
-            err.println("ERROR: could not load park data from " + dataDir.toAbsolutePath() + ": " + e.getMessage());
+            processor = ApplicationContext.start(new FileParkRepository(dataDir, err), LocalDate.now(), hasher);
+        } catch (StorageException e) {
+            err.println("ERROR: " + e.getMessage());
             return 1;
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(park), out);
+        CommandRunner runner = new CommandRunner(processor, out);
         if (commandFile == null) {
             return runInteractive(runner, in, err);
         }
