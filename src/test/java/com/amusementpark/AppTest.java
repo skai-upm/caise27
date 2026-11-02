@@ -34,23 +34,25 @@ class AppTest {
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
     private final ByteArrayOutputStream err = new ByteArrayOutputStream();
 
-    private int run(String[] args, String stdin, Path usersFile) {
+    private int run(String[] args, String stdin, Path workDir) {
         return App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(out, true, StandardCharsets.UTF_8),
-                new PrintStream(err, true, StandardCharsets.UTF_8), usersFile);
+                new PrintStream(err, true, StandardCharsets.UTF_8), workDir);
     }
 
     @Test
     void interactiveAndFileModesProduceEquivalentResults() throws IOException {
-        Path interactiveUsers = dir.resolve("users-interactive.txt");
-        assertEquals(0, run(new String[0], String.join("\n", SCRIPT), interactiveUsers));
+        Path interactiveDir = Files.createDirectory(dir.resolve("interactive"));
+        Path interactiveUsers = interactiveDir.resolve("users.txt");
+        assertEquals(0, run(new String[0], String.join("\n", SCRIPT), interactiveDir));
         String interactiveOut = out.toString(StandardCharsets.UTF_8);
         out.reset();
 
         Path commands = dir.resolve("input_basico.txt");
         Files.write(commands, SCRIPT);
-        Path fileUsers = dir.resolve("users-file.txt");
-        assertEquals(0, run(new String[] {commands.toString()}, "", fileUsers));
+        Path fileDir = Files.createDirectory(dir.resolve("file"));
+        Path fileUsers = fileDir.resolve("users.txt");
+        assertEquals(0, run(new String[] {commands.toString()}, "", fileDir));
 
         assertEquals(interactiveOut, out.toString(StandardCharsets.UTF_8));
         assertEquals(Files.readAllLines(interactiveUsers), Files.readAllLines(fileUsers));
@@ -61,17 +63,16 @@ class AppTest {
 
     @Test
     void endOfInputTerminatesInteractiveMode() {
-        assertEquals(0, run(new String[0], CommandProcessorTest.CREATE_ANA, dir.resolve("users.txt")));
+        assertEquals(0, run(new String[0], CommandProcessorTest.CREATE_ANA, dir));
         assertTrue(out.toString(StandardCharsets.UTF_8).startsWith("OK:"));
     }
 
     @Test
     void usersAreReloadedOnRestart() {
-        Path users = dir.resolve("users.txt");
-        run(new String[0], CommandProcessorTest.CREATE_ANA + "\nEXIT", users);
+        run(new String[0], CommandProcessorTest.CREATE_ANA + "\nEXIT", dir);
         out.reset();
         run(new String[0], "USER CREATE;Otra;X;87654321X;ana@correo.com;Clave1!;6;1234567890123456\n"
-                + "USER DELETE;ana@correo.com;Clave1!\nEXIT", users);
+                + "USER DELETE;ana@correo.com;Clave1!\nEXIT", dir);
         List<String> lines = out.toString(StandardCharsets.UTF_8).lines().toList();
         assertTrue(lines.get(0).startsWith("ERROR:"), "duplicate email of reloaded user must be rejected");
         assertTrue(lines.get(1).startsWith("OK:"), "reloaded user must be deletable");
@@ -79,7 +80,7 @@ class AppTest {
 
     @Test
     void nonexistentCommandFileIsReportedWithoutStackTrace() {
-        int code = run(new String[] {dir.resolve("missing.txt").toString()}, "", dir.resolve("users.txt"));
+        int code = run(new String[] {dir.resolve("missing.txt").toString()}, "", dir);
         assertEquals(1, code);
         String error = err.toString(StandardCharsets.UTF_8);
         assertTrue(error.startsWith("ERROR: Command file not found"));
@@ -88,7 +89,7 @@ class AppTest {
 
     @Test
     void directoryAsCommandFileIsReported() {
-        int code = run(new String[] {dir.toString()}, "", dir.resolve("users.txt"));
+        int code = run(new String[] {dir.toString()}, "", dir);
         assertEquals(1, code);
         assertTrue(err.toString(StandardCharsets.UTF_8).startsWith("ERROR:"));
     }

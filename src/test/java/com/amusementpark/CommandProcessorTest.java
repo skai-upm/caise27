@@ -32,9 +32,10 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        manager = new UserManager(new UserFileStorage(dir.resolve("users.txt")));
+        ParkController park = new ParkController(StoragePaths.in(dir));
+        manager = park.getUserManager();
         buffer = new ByteArrayOutputStream();
-        processor = new CommandProcessor(manager, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     private String output() {
@@ -81,6 +82,18 @@ class CommandProcessorTest {
         assertTrue(out.contains("USER UPDATE;Correo;Contraseña;Campo;NuevoValor"));
         assertTrue(out.lines().anyMatch(l -> l.trim().equals("HELP")));
         assertTrue(out.lines().anyMatch(l -> l.trim().equals("EXIT")));
+    }
+
+    @Test
+    void helpListsEveryF2Command() {
+        processor.process("HELP");
+        String out = output();
+        for (String syntax : new String[] {"SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;", "GROUP CREATE;", "GROUP ADD;",
+            "GROUP REMOVE;", "GROUP DELETE;", "TICKET CREATE;", "TICKET DELETE;", "GROUPTICKET CREATE;",
+            "GROUPTICKET DELETE;", "ATTRACTION CREATE;", "ATTRACTION ENTER;", "ATTRACTION EXIT;",
+            "ATTRACTION STATUS;"}) {
+            assertTrue(out.contains(syntax), syntax);
+        }
     }
 
     @Test

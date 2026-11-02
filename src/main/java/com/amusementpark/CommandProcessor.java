@@ -3,6 +3,9 @@ package com.amusementpark;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Interprets and executes text commands. Shared by interactive and file modes.
@@ -15,15 +18,51 @@ public class CommandProcessor {
             "  USER DELETE;Correo;Contraseña",
             "  USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
             "      Campo: NAME | SURNAME | EMAIL | PASSWORD | PHONE | CARD",
+            "  SYSTEM DATE;yyyy-MM-dd",
+            "  SYSTEM PRICE;Precio",
+            "  GROUP CREATE;IdGrupo;Nombre",
+            "  GROUP ADD;IdGrupo;Correo",
+            "  GROUP REMOVE;IdGrupo;Correo",
+            "  GROUP DELETE;IdGrupo",
+            "  TICKET CREATE;IdEntrada;Correo;yyyy-MM-dd",
+            "  TICKET DELETE;IdEntrada",
+            "  GROUPTICKET CREATE;IdEntradaGrupo;IdGrupo;yyyy-MM-dd",
+            "  GROUPTICKET DELETE;IdEntradaGrupo",
+            "  ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad",
+            "  ATTRACTION ENTER;IdAtraccion;IdEntrada",
+            "  ATTRACTION EXIT;IdAtraccion;IdEntrada|Correo",
+            "  ATTRACTION STATUS;IdAtraccion",
             "  HELP",
             "  EXIT");
 
-    private final UserManager userManager;
+    /** A command's parameter count and the action run with the split command parts. */
+    private record Operation(int parameters, Function<String[], String> action) {
+    }
+
+    private final Map<String, Operation> operations = new LinkedHashMap<>();
     private final PrintStream out;
 
-    public CommandProcessor(UserManager userManager, PrintStream out) {
-        this.userManager = userManager;
+    public CommandProcessor(ParkController park, PrintStream out) {
         this.out = out;
+        operations.put("USER CREATE", new Operation(7,
+                p -> park.createUser(p[1], p[2], p[3], p[4], p[5], p[6], p[7])));
+        operations.put("USER DELETE", new Operation(2, p -> park.deleteUser(p[1], p[2])));
+        operations.put("USER UPDATE", new Operation(4, p -> park.updateUser(p[1], p[2], p[3], p[4])));
+        operations.put("SYSTEM DATE", new Operation(1, p -> park.setSystemDate(p[1])));
+        operations.put("SYSTEM PRICE", new Operation(1, p -> park.setBasePrice(p[1])));
+        operations.put("GROUP CREATE", new Operation(2, p -> park.createGroup(p[1], p[2])));
+        operations.put("GROUP ADD", new Operation(2, p -> park.addToGroup(p[1], p[2])));
+        operations.put("GROUP REMOVE", new Operation(2, p -> park.removeFromGroup(p[1], p[2])));
+        operations.put("GROUP DELETE", new Operation(1, p -> park.deleteGroup(p[1])));
+        operations.put("TICKET CREATE", new Operation(3, p -> park.createTicket(p[1], p[2], p[3])));
+        operations.put("TICKET DELETE", new Operation(1, p -> park.deleteTicket(p[1])));
+        operations.put("GROUPTICKET CREATE", new Operation(3, p -> park.createGroupTicket(p[1], p[2], p[3])));
+        operations.put("GROUPTICKET DELETE", new Operation(1, p -> park.deleteGroupTicket(p[1])));
+        operations.put("ATTRACTION CREATE", new Operation(3, p -> park.createAttraction(p[1], p[2], p[3])));
+        operations.put("ATTRACTION ENTER", new Operation(2, p -> park.enterAttraction(p[1], p[2])));
+        operations.put("ATTRACTION EXIT", new Operation(2, p -> park.exitAttraction(p[1], p[2])));
+        operations.put("ATTRACTION STATUS", new Operation(1, p -> park.attractionStatus(p[1])));
+        operations.put("HELP", new Operation(0, p -> HELP_TEXT));
     }
 
     /**
@@ -49,36 +88,19 @@ public class CommandProcessor {
             return true;
         }
         String[] parts = command.split(";", -1);
-        String operation = parts[0].trim();
-        switch (operation) {
-            case "USER CREATE" -> {
-                if (hasParameters(parts, 7)) {
-                    out.println(userManager.create(parts[1], parts[2], parts[3], parts[4],
-                            parts[5], parts[6], parts[7]));
-                }
+        String name = parts[0].trim();
+        if (name.equals("EXIT")) {
+            if (hasParameters(parts, 0)) {
+                out.println("OK: Bye.");
+                return false;
             }
-            case "USER DELETE" -> {
-                if (hasParameters(parts, 2)) {
-                    out.println(userManager.delete(parts[1], parts[2]));
-                }
-            }
-            case "USER UPDATE" -> {
-                if (hasParameters(parts, 4)) {
-                    out.println(userManager.update(parts[1], parts[2], parts[3], parts[4]));
-                }
-            }
-            case "HELP" -> {
-                if (hasParameters(parts, 0)) {
-                    out.println(HELP_TEXT);
-                }
-            }
-            case "EXIT" -> {
-                if (hasParameters(parts, 0)) {
-                    out.println("OK: Bye.");
-                    return false;
-                }
-            }
-            default -> out.println("ERROR: Unknown command: " + operation + " (type HELP for the list)");
+            return true;
+        }
+        Operation operation = operations.get(name);
+        if (operation == null) {
+            out.println("ERROR: Unknown command: " + name + " (type HELP for the list)");
+        } else if (hasParameters(parts, operation.parameters())) {
+            out.println(operation.action().apply(parts));
         }
         return true;
     }

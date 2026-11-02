@@ -1,0 +1,121 @@
+@startuml model
+' Amusement park (Delivery 2) - class model derived from src/main/java/com/amusementpark.
+' Conventions: no methods; attributes are values only (no visibility markers); relationship labels are
+' the holding field names; "x" marks the end of the class that holds the field. Dashed arrows are
+' shown only towards classes that no field references.
+hide empty members
+hide circle
+skinparam classAttributeIconSize 0
+
+package com.amusementpark {
+
+  class App
+  class CommandProcessor
+  class "CommandProcessor.Operation" as Operation <<record>> {
+    parameters : int
+  }
+  class ParkController {
+    systemDate : LocalDate
+    basePrice : BigDecimal
+  }
+
+  class UserManager
+  class GroupManager
+  class TicketManager
+  class AttractionManager
+  class UserValidator <<utility>>
+
+  class User {
+    name : String
+    surname : String
+    dni : String
+    email : String
+    password : String
+    phone : String
+    card : String
+  }
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+  class Group {
+    id : String
+    name : String
+  }
+  abstract class Ticket {
+    id : String
+    date : LocalDate
+    price : BigDecimal
+  }
+  class IndividualTicket
+  class GroupTicket
+  class Attraction {
+    id : String
+    name : String
+    capacity : int
+  }
+
+  class StoragePaths <<record>>
+  class LineFile
+  class UserFileStorage
+  class GroupFileStorage
+  class TicketFileStorage
+  class "TicketFileStorage.Loaded" as Loaded <<record>>
+  class AttractionFileStorage
+}
+
+' --- inheritance
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' --- command layer
+CommandProcessor x--> "0..*" Operation : operations
+
+' --- controller and managers
+ParkController x--> "1" UserManager : users
+ParkController x--> "1" GroupManager : groups
+ParkController x--> "1" TicketManager : tickets
+ParkController x--> "1" AttractionManager : attractions
+
+UserManager x--> "0..*" User : users
+UserManager x--> "1" UserFileStorage : storage
+GroupManager x--> "0..*" Group : groups
+GroupManager x--> "1" GroupFileStorage : storage
+TicketManager x--> "0..*" IndividualTicket : tickets
+TicketManager x--> "0..*" GroupTicket : groupTickets
+TicketManager x--> "1" TicketFileStorage : storage
+AttractionManager x--> "0..*" Attraction : attractions
+AttractionManager x--> "1" AttractionFileStorage : storage
+
+' --- domain
+Group x--> "0..*" User : members
+IndividualTicket x--> "1" User : user
+GroupTicket x--> "1" Group : group
+GroupTicket *--> "1..*" IndividualTicket : tickets
+Attraction x--> "0..*" User : visitors
+
+' --- storage
+UserFileStorage x--> "1" LineFile : file
+GroupFileStorage x--> "1" LineFile : file
+TicketFileStorage x--> "1" LineFile : ticketFile
+TicketFileStorage x--> "1" LineFile : groupTicketFile
+AttractionFileStorage x--> "1" LineFile : file
+Loaded x--> "0..*" IndividualTicket : tickets
+Loaded x--> "0..*" GroupTicket : groupTickets
+
+' --- usage of classes that no field references
+App ..> CommandProcessor : <<use>>
+App ..> ParkController : <<use>>
+App ..> StoragePaths : <<use>>
+CommandProcessor ..> ParkController : <<use>>
+UserManager ..> UserField : <<use>>
+UserManager ..> UserValidator : <<use>>
+GroupManager ..> UserValidator : <<use>>
+TicketManager ..> UserValidator : <<use>>
+AttractionManager ..> UserValidator : <<use>>
+TicketManager ..> Loaded : <<use>>
+@enduml

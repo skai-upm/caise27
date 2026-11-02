@@ -136,7 +136,8 @@ public class UserManager {
         }
     }
 
-    private User authenticate(String email, String password) {
+    /** Returns the user with this email and password, or {@code null}. */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null || !user.getPassword().equals(password)) {
             return null;
@@ -144,7 +145,7 @@ public class UserManager {
         return user;
     }
 
-    private User findByEmail(String email) {
+    public User findByEmail(String email) {
         for (User u : users) {
             if (u.getEmail().equals(email)) {
                 return u;
