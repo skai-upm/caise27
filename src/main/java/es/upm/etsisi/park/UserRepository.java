@@ -1,13 +1,6 @@
 package es.upm.etsisi.park;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -17,7 +10,6 @@ import java.util.List;
  */
 public class UserRepository {
 
-    private static final String SEPARATOR = ";";
     private static final int FIELDS = 7;
 
     private final Path file;
@@ -26,54 +18,33 @@ public class UserRepository {
         this.file = file;
     }
 
+    public Path getFile() {
+        return file;
+    }
+
     public List<User> load() {
         List<User> users = new ArrayList<>();
-        if (!Files.exists(file)) {
-            return users;
-        }
-        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            String line;
-            int number = 0;
-            while ((line = reader.readLine()) != null) {
-                number++;
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] f = line.split(SEPARATOR, -1);
-                if (f.length != FIELDS) {
-                    System.err.println("WARNING: skipping malformed line " + number + " in " + file);
-                    continue;
-                }
-                users.add(new User(f[0], f[1], f[2], f[3], f[4], f[5], f[6]));
+        for (String line : TextFile.readLines(file)) {
+            String[] f = TextFile.fields(line);
+            if (f.length != FIELDS) {
+                TextFile.warnMalformed(file, line);
+                continue;
             }
-        } catch (IOException e) {
-            throw new UserException("Cannot read users file " + file + ": " + e.getMessage(), e);
+            users.add(new User(f[0], f[1], f[2], f[3], f[4], f[5], f[6]));
         }
         return users;
     }
 
     public void save(Collection<User> users) {
-        Path parent = file.toAbsolutePath().getParent();
-        try {
-            Path tmp = Files.createTempFile(parent, "users", ".tmp");
-            try (BufferedWriter writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
-                for (User u : users) {
-                    writer.write(toLine(u));
-                    writer.newLine();
-                }
-            }
-            try {
-                Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException e) {
-            throw new UserException("Cannot write users file " + file + ": " + e.getMessage(), e);
-        }
+        TextFile.write(file, toLines(users));
+    }
+
+    List<String> toLines(Collection<User> users) {
+        return users.stream().map(UserRepository::toLine).toList();
     }
 
     static String toLine(User u) {
-        return String.join(SEPARATOR, u.getFirstName(), u.getSurnames(), u.getDni(), u.getEmail(),
+        return TextFile.join(u.getFirstName(), u.getSurnames(), u.getDni(), u.getEmail(),
                 u.getPassword(), u.getPhone(), u.getCard());
     }
 }

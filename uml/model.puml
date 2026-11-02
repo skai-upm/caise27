@@ -1,0 +1,102 @@
+@startuml model
+' Delivery 2 class model of es.upm.etsisi.park (methods and constructors omitted).
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package "es.upm.etsisi.park" {
+
+  class Park <<singleton>> {
+    - {static} INSTANCE : Park
+    - today : LocalDate
+    - basePrice : BigDecimal
+  }
+
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    - id : String {readOnly}
+    - name : String {readOnly}
+  }
+
+  abstract class Ticket {
+    - id : String {readOnly}
+    - date : LocalDate {readOnly}
+  }
+
+  class IndividualTicket {
+    - basePrice : BigDecimal {readOnly}
+    - discountPercent : int {readOnly}
+  }
+
+  class GroupTicket {
+  }
+
+  class Attraction {
+    - id : String {readOnly}
+    - name : String {readOnly}
+    - capacity : int {readOnly}
+  }
+
+  class CommandProcessor {
+    - exitRequested : boolean
+  }
+
+  class ParkRepository
+  class UserRepository {
+    - file : Path
+  }
+  class GroupRepository {
+    - file : Path
+  }
+  class TicketRepository {
+    - file : Path
+  }
+  class AttractionRepository {
+    - file : Path
+  }
+}
+
+' ticket hierarchy
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' central management (keyed collections)
+Park "1" o--> "0..*" User : users
+Park "1" o--> "0..*" Group : groups
+Park "1" o--> "0..*" Ticket : tickets
+Park "1" o--> "0..*" Attraction : attractions
+Park "1" --> "1" ParkRepository : repository
+Park ..> UserField
+
+' domain relationships (unidirectional)
+Group "0..*" --> "0..*" User : members
+IndividualTicket "0..*" --> "1" User : user
+GroupTicket "1" *--> "1..*" IndividualTicket : composition
+GroupTicket "0..*" --> "0..1" Group : group
+Attraction "0..*" --> "0..*" User : occupants
+
+' interface and persistence
+CommandProcessor "1" --> "1" Park : park
+ParkRepository "1" *--> "1" UserRepository : users
+ParkRepository "1" *--> "1" GroupRepository : groups
+ParkRepository "1" *--> "1" TicketRepository : tickets
+ParkRepository "1" *--> "1" AttractionRepository : attractions
+
+@enduml
