@@ -21,7 +21,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import es.upm.etsisi.amusementpark.persistence.UserStorage;
+import es.upm.etsisi.amusementpark.park.DataPaths;
+import es.upm.etsisi.amusementpark.park.Park;
 import es.upm.etsisi.amusementpark.user.UserManager;
 
 class CommandRunnerTest {
@@ -34,12 +35,15 @@ class CommandRunnerTest {
     private final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
     private final PrintStream out = new PrintStream(bytes, true, StandardCharsets.UTF_8);
 
+    /** Loads the park from its own data directory and returns its users. */
     private UserManager users(String name) throws IOException {
-        return new UserManager(new UserStorage(dir.resolve(name)));
+        Path data = Files.createDirectories(dir.resolve(name));
+        Park.getInstance().load(DataPaths.in(data));
+        return Park.getInstance().getUsers();
     }
 
     private CommandRunner runner(UserManager users) {
-        return new CommandRunner(new CommandProcessor(users), out);
+        return new CommandRunner(new CommandProcessor(Park.getInstance()), out);
     }
 
     private String output() {
@@ -54,7 +58,7 @@ class CommandRunnerTest {
 
     @Test
     void processesInteractiveCommandsInOrder() throws IOException {
-        UserManager users = users("users.txt");
+        UserManager users = users("data");
         runner(users).run(new BufferedReader(new StringReader(CREATE_ANA + "\n" + UPDATE_PHONE + "\n")));
         assertEquals(List.of("USER CREATED", "USER UPDATED"), output().lines().toList());
         assertEquals("699999999", users.findByEmail("ana@correo.com").getPhone());
@@ -62,7 +66,7 @@ class CommandRunnerTest {
 
     @Test
     void processesFileInOrderIgnoringBlankLines() throws IOException {
-        UserManager users = users("users.txt");
+        UserManager users = users("data");
         assertTrue(runner(users).runFile(commandFile(CREATE_ANA, "", "   ", UPDATE_PHONE)));
         assertEquals(List.of("USER CREATED", "USER UPDATED"), output().lines().toList());
         assertEquals("699999999", users.findByEmail("ana@correo.com").getPhone());
@@ -73,48 +77,59 @@ class CommandRunnerTest {
         String[] sequence = {CREATE_ANA, CREATE_PEDRO, "USER CREATE;bad", UPDATE_PHONE,
             "USER DELETE;pedro@correo.com;Otra2#", "HELP", "EXIT"};
 
-        runner(users("interactive.txt")).run(new BufferedReader(new StringReader(String.join("\n", sequence))));
+        runner(users("interactive")).run(new BufferedReader(new StringReader(String.join("\n", sequence))));
         String interactiveOutput = output();
         bytes.reset();
-        runner(users("file.txt")).runFile(commandFile(sequence));
+        runner(users("file")).runFile(commandFile(sequence));
 
         assertEquals(interactiveOutput, output());
-        assertEquals(Files.readAllLines(dir.resolve("interactive.txt")), Files.readAllLines(dir.resolve("file.txt")));
+        assertEquals(Files.readAllLines(dir.resolve("interactive/users.txt")),
+                Files.readAllLines(dir.resolve("file/users.txt")));
     }
 
     @Test
     void missingFileIsReportedInControlledWay() throws IOException {
-        assertFalse(runner(users("users.txt")).runFile(dir.resolve("does-not-exist.txt")));
+        assertFalse(runner(users("data")).runFile(dir.resolve("does-not-exist.txt")));
         assertTrue(output().startsWith("ERROR: cannot read command file"));
     }
 
     @Test
     void directoryIsNotAReadableCommandFile() throws IOException {
-        assertFalse(runner(users("users.txt")).runFile(dir));
+        assertFalse(runner(users("data")).runFile(dir));
         assertTrue(output().startsWith("ERROR:"));
     }
 
     @Test
     void helpListsCommandSyntax() throws IOException {
-        runner(users("users.txt")).run(new BufferedReader(new StringReader("HELP\n")));
+        runner(users("data")).run(new BufferedReader(new StringReader("HELP\n")));
         String help = output();
-        assertTrue(help.contains("USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>"));
-        assertTrue(help.contains("USER DELETE;<email>;<password>"));
-        assertTrue(help.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
+        assertTrue(help.contains("USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>"));
+        assertTrue(help.contains("USER DELETE;<Email>;<Password>"));
+        assertTrue(help.contains("USER UPDATE;<Email>;<Password>;<Field>;<NewValue>"));
+        for (String command : List.of("SYSTEM DATE;<yyyy-MM-dd>", "SYSTEM PRICE;<Price>",
+                "GROUP CREATE;<Identifier>;<Name>", "GROUP ADD;<Identifier>;<Email>",
+                "GROUP REMOVE;<Identifier>;<Email>", "GROUP DELETE;<Identifier>",
+                "TICKET CREATE;<identifier>;<email>;<date>", "TICKET DELETE;<identifier>",
+                "GROUPTICKET CREATE;<identifier>;<group>;<date>", "GROUPTICKET DELETE;<identifier>",
+                "ATTRACTION CREATE;<identifier>;<name>;<capacity>", "ATTRACTION ENTER;<attraction>;<ticket>",
+                "ATTRACTION EXIT;<attraction>;<email>", "ATTRACTION LIST;<attraction>",
+                "ATTRACTION STATUS;<attractionIdentifier>")) {
+            assertTrue(help.contains(command), command);
+        }
         assertTrue(help.contains("HELP"));
         assertTrue(help.contains("EXIT"));
     }
 
     @Test
     void exitStopsInteractiveReading() throws IOException {
-        UserManager users = users("users.txt");
+        UserManager users = users("data");
         runner(users).run(new BufferedReader(new StringReader("EXIT\n" + CREATE_ANA + "\n")));
         assertNull(users.findByEmail("ana@correo.com"));
     }
 
     @Test
     void commandsAfterExitInFileAreNotExecuted() throws IOException {
-        UserManager users = users("users.txt");
+        UserManager users = users("data");
         runner(users).runFile(commandFile(CREATE_ANA, "EXIT", CREATE_PEDRO));
         assertNotNull(users.findByEmail("ana@correo.com"));
         assertNull(users.findByEmail("pedro@correo.com"));

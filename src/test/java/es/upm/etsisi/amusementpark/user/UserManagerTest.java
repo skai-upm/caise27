@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import es.upm.etsisi.amusementpark.OperationException;
 import es.upm.etsisi.amusementpark.persistence.UserStorage;
 
 class UserManagerTest {
@@ -64,7 +65,7 @@ class UserManagerTest {
         User badPassword = new User("Ana", "G", "12345678Z", "ana@correo.com", "clave1!", "6", "1234567890123456");
         User badCard = new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "6", "123456789012345");
         for (User u : List.of(badDni, badEmail, badPassword, badCard)) {
-            assertThrows(UserOperationException.class, () -> manager.create(u));
+            assertThrows(OperationException.class, () -> manager.create(u));
         }
         assertTrue(manager.getUsers().isEmpty());
     }
@@ -74,8 +75,8 @@ class UserManagerTest {
         manager.create(ana());
         User sameDni = new User("X", "Y", "12345678Z", "otra@correo.com", "Clave1!", "6", "1234567890123456");
         User sameEmail = new User("X", "Y", "87654321X", "ana@correo.com", "Clave1!", "6", "1234567890123456");
-        assertThrows(UserOperationException.class, () -> manager.create(sameDni));
-        assertThrows(UserOperationException.class, () -> manager.create(sameEmail));
+        assertThrows(OperationException.class, () -> manager.create(sameDni));
+        assertThrows(OperationException.class, () -> manager.create(sameEmail));
         assertEquals(1, manager.getUsers().size());
         assertEquals(1, storedLines().size());
     }
@@ -98,7 +99,7 @@ class UserManagerTest {
             }
         };
         UserManager broken = new UserManager(failing);
-        assertThrows(UserOperationException.class, () -> broken.create(ana()));
+        assertThrows(OperationException.class, () -> broken.create(ana()));
         assertTrue(broken.getUsers().isEmpty());
     }
 
@@ -106,7 +107,7 @@ class UserManagerTest {
     void deletesWithCorrectCredentials() throws Exception {
         manager.create(ana());
         manager.create(pedro());
-        manager.delete("pedro@correo.com", "Otra2#");
+        manager.remove(manager.authenticate("pedro@correo.com", "Otra2#"));
         assertNull(manager.findByEmail("pedro@correo.com"));
         assertNull(restart().findByEmail("pedro@correo.com"));
         assertEquals(1, storedLines().size());
@@ -116,8 +117,8 @@ class UserManagerTest {
     void deletionRequiresValidIdentification() throws Exception {
         manager.create(ana());
         List<String> before = storedLines();
-        assertThrows(UserOperationException.class, () -> manager.delete("ana@correo.com", "Wrong1!"));
-        assertThrows(UserOperationException.class, () -> manager.delete("nobody@correo.com", "Clave1!"));
+        assertThrows(OperationException.class, () -> manager.authenticate("ana@correo.com", "Wrong1!"));
+        assertThrows(OperationException.class, () -> manager.authenticate("nobody@correo.com", "Clave1!"));
         assertEquals(1, manager.getUsers().size());
         assertEquals(before, storedLines());
     }
@@ -147,17 +148,17 @@ class UserManagerTest {
         manager.create(ana());
         manager.create(pedro());
         List<String> before = storedLines();
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "pedro@correo.com"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo.es"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "clave1!"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.CARD, "1234 5678 9012 3456"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("ana@correo.com", "Wrong1!", UserField.NAME, "X"));
-        assertThrows(UserOperationException.class,
+        assertThrows(OperationException.class,
                 () -> manager.update("nobody@correo.com", "Clave1!", UserField.NAME, "X"));
         assertEquals(before, storedLines());
         assertEquals("Ana", manager.findByEmail("ana@correo.com").getFirstName());
@@ -168,5 +169,29 @@ class UserManagerTest {
         manager.create(ana());
         manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "ana@correo.com");
         assertNotNull(manager.findByEmail("ana@correo.com"));
+    }
+
+    @Test
+    void updateKeepsTheSameUserObject() throws Exception {
+        manager.create(ana());
+        User before = manager.findByEmail("ana@correo.com");
+        manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "ana.nueva@correo.com");
+        assertTrue(before == manager.findByEmail("ana.nueva@correo.com"));
+        assertEquals("ana.nueva@correo.com", before.getEmail());
+    }
+
+    @Test
+    void failedUpdateSaveLeavesUserUnchanged() throws Exception {
+        manager.create(ana());
+        UserStorage failing = new UserStorage(file) {
+            @Override
+            public void save(List<User> users) throws IOException {
+                throw new IOException("disk full");
+            }
+        };
+        UserManager broken = new UserManager(failing);
+        assertThrows(OperationException.class,
+                () -> broken.update("ana@correo.com", "Clave1!", UserField.NAME, "Ana Maria"));
+        assertEquals("Ana", broken.findByEmail("ana@correo.com").getFirstName());
     }
 }

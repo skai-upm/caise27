@@ -1,0 +1,80 @@
+@startuml model
+' Delivery 2 domain model of es.upm.etsisi.amusementpark.
+' Methods and constructors are omitted; command and persistence classes are not part of the model.
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package park {
+  class Park <<singleton>> {
+    - {static} INSTANCE : Park
+    - currentDate : LocalDate
+    - basePrice : BigDecimal
+  }
+}
+
+package user {
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+  class UserManager
+}
+
+package group {
+  class Group {
+    - identifier : String
+    - name : String
+  }
+}
+
+package ticket {
+  abstract class Ticket {
+    - identifier : String
+    - date : LocalDate
+  }
+  class IndividualTicket {
+    - basePrice : BigDecimal
+    - discountPercent : int
+  }
+  class GroupTicket
+}
+
+package attraction {
+  class Attraction {
+    - identifier : String
+    - name : String
+    - capacity : int
+  }
+}
+
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+Park "1" --> "1" UserManager : users
+Park "1" --> "*" Group : groups
+Park "1" --> "*" Ticket : tickets
+Park "1" --> "*" Attraction : attractions
+
+UserManager "1" --> "*" User : users
+UserManager ..> UserField
+
+Group "*" --> "*" User : members
+IndividualTicket "*" --> "1" User : user
+GroupTicket "*" --> "0..1" Group : group
+GroupTicket "1" *-- "1..*" IndividualTicket : composition
+Attraction "*" --> "*" User : occupants
+
+@enduml

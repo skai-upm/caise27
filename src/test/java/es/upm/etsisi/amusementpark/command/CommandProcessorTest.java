@@ -11,7 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import es.upm.etsisi.amusementpark.persistence.UserStorage;
+import es.upm.etsisi.amusementpark.park.DataPaths;
+import es.upm.etsisi.amusementpark.park.Park;
 import es.upm.etsisi.amusementpark.user.UserManager;
 
 class CommandProcessorTest {
@@ -29,8 +30,10 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        users = new UserManager(new UserStorage(dir.resolve("users.txt")));
-        processor = new CommandProcessor(users);
+        Park park = Park.getInstance();
+        park.load(DataPaths.in(dir));
+        users = park.getUsers();
+        processor = new CommandProcessor(park);
     }
 
     private String run(String line) {
