@@ -45,7 +45,7 @@ class HelpTest {
     void extendedHelpShowsSyntaxAndDescriptionOfEveryCommand() {
         String help = f.run("HELP EXTENDED");
         List<CommandDefinition> commands = registry();
-        assertEquals(21, commands.size());
+        assertEquals(25, commands.size());
         for (CommandDefinition c : commands) {
             assertTrue(help.contains(c.syntax()), c.name());
             assertTrue(help.contains(c.description()), c.name());

@@ -2,6 +2,7 @@ package com.amusementpark.business.invoice;
 
 import com.amusementpark.business.model.GroupTicket;
 import com.amusementpark.business.model.IndividualTicket;
+import com.amusementpark.business.model.Pass;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -15,6 +16,8 @@ public interface InvoiceBuilder {
     InvoiceBuilder addTickets(List<IndividualTicket> tickets);
 
     InvoiceBuilder addGroupTickets(List<GroupTicket> groupTickets);
+
+    InvoiceBuilder addPasses(List<Pass> passes);
 
     Invoice build();
 }

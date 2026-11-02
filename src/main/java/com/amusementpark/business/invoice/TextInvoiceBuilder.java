@@ -2,6 +2,7 @@ package com.amusementpark.business.invoice;
 
 import com.amusementpark.business.model.GroupTicket;
 import com.amusementpark.business.model.IndividualTicket;
+import com.amusementpark.business.model.Pass;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -41,6 +42,16 @@ public class TextInvoiceBuilder implements InvoiceBuilder {
                     + gt.getTickets().size() + " members)", gt.getPrice()));
         }
         return addSection("Group tickets", lines);
+    }
+
+    @Override
+    public InvoiceBuilder addPasses(List<Pass> passes) {
+        List<Invoice.Line> lines = new ArrayList<>();
+        for (Pass p : passes) {
+            lines.add(new Invoice.Line(p.getKind() + " " + p.getId() + (p.isConsumed() ? " (used)" : ""),
+                    p.getPrice()));
+        }
+        return addSection("Passes", lines);
     }
 
     @Override

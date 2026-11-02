@@ -206,6 +206,24 @@ public class ParkController {
         return tickets.deleteGroupTicket(ticketId, systemDate);
     }
 
+    // --- passes ----------------------------------------------------------------------------
+
+    public String createSpeedPasses(String ticketId, String quantity) {
+        return tickets.createSpeedPasses(ticketId, quantity, systemDate);
+    }
+
+    public String deleteSpeedPass(String passId) {
+        return tickets.deleteSpeedPass(passId, systemDate);
+    }
+
+    public String createSpecialPass(String ticketId) {
+        return tickets.createSpecialPass(ticketId, systemDate);
+    }
+
+    public String deleteSpecialPass(String passId) {
+        return tickets.deleteSpecialPass(passId, systemDate);
+    }
+
     // --- attractions -----------------------------------------------------------------------
 
     public String createAttraction(String id, String name, String capacity) {

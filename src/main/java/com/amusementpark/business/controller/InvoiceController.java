@@ -30,11 +30,15 @@ public class InvoiceController {
         this.builders = builders;
     }
 
-    /** Standalone tickets bought for the user; constituents of group tickets are not repeated. */
+    /**
+     * Standalone tickets bought for the user (constituents of group tickets are not repeated) and
+     * the passes attached to any of the user's tickets.
+     */
     public Invoice userInvoice(User user, LocalDate date) {
         return builders.get()
                 .start("User " + user.getName() + " " + user.getSurname() + " (" + user.getEmail() + ")", date)
                 .addTickets(tickets.standaloneTicketsOf(user))
+                .addPasses(tickets.passesOf(user))
                 .build();
     }
 

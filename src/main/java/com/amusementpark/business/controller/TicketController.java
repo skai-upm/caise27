@@ -4,6 +4,9 @@ import com.amusementpark.persistence.TicketRepository;
 import com.amusementpark.business.model.Group;
 import com.amusementpark.business.model.GroupTicket;
 import com.amusementpark.business.model.IndividualTicket;
+import com.amusementpark.business.model.Pass;
+import com.amusementpark.business.model.SpecialPass;
+import com.amusementpark.business.model.SpeedPass;
 import com.amusementpark.business.model.Ticket;
 import com.amusementpark.business.model.User;
 import com.amusementpark.business.model.UserValidator;
@@ -22,6 +25,7 @@ import java.util.List;
 public class TicketController {
 
     private static final String SAVE_FAILED = "ERROR: Could not save tickets files.";
+    private static final BigDecimal SPEEDPASS_RATE = new BigDecimal("0.20");
 
     private static final TicketController INSTANCE = new TicketController();
 
@@ -209,6 +213,120 @@ public class TicketController {
             discount = new BigDecimal("0.50");
         }
         return sum.multiply(BigDecimal.ONE.subtract(discount)).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    // --- personal passes -------------------------------------------------------------------
+
+    public String createSpeedPasses(String ticketId, String quantityText, LocalDate today) {
+        IndividualTicket ticket = passTicket(ticketId);
+        if (ticket == null) {
+            return "ERROR: Individual ticket " + ticketId + " does not exist.";
+        }
+        String quantity = quantityText.trim();
+        if (!quantity.equals("1") && !quantity.equals("10")) {
+            return "ERROR: SpeedPasses are sold in quantities of 1 or 10: " + quantityText;
+        }
+        if (ticket.getDate().isBefore(today)) {
+            return "ERROR: Passes cannot be bought for a ticket dated before " + today + ".";
+        }
+        BigDecimal unit = ticket.getPrice().multiply(SPEEDPASS_RATE).setScale(2, RoundingMode.HALF_UP);
+        int first = ticket.nextSpeedPassNumber();
+        List<SpeedPass> created = new ArrayList<>();
+        for (int i = 0; i < Integer.parseInt(quantity); i++) {
+            SpeedPass pass = new SpeedPass(ticketId + "-S" + (first + i), unit, false);
+            ticket.addSpeedPass(pass);
+            created.add(pass);
+        }
+        if (!persist()) {
+            created.forEach(ticket::removeSpeedPass);
+            return SAVE_FAILED;
+        }
+        BigDecimal total = unit.multiply(BigDecimal.valueOf(created.size()));
+        return "OK SPEEDPASS CREATED -> " + total.toPlainString();
+    }
+
+    public String createSpecialPass(String ticketId, LocalDate today) {
+        IndividualTicket ticket = passTicket(ticketId);
+        if (ticket == null) {
+            return "ERROR: Individual ticket " + ticketId + " does not exist.";
+        }
+        if (ticket.hasHadSpecialPass()) {
+            return "ERROR: Ticket " + ticketId + " already had a Special Pass.";
+        }
+        if (ticket.getDate().isBefore(today)) {
+            return "ERROR: Passes cannot be bought for a ticket dated before " + today + ".";
+        }
+        SpecialPass pass = new SpecialPass(ticketId + "-SPECIAL", ticket.getPrice(), false);
+        ticket.setSpecialPass(pass);
+        if (!persist()) {
+            ticket.removeSpecialPass();
+            return SAVE_FAILED;
+        }
+        return "OK SPECIALPASS CREATED -> " + pass.getPrice().toPlainString();
+    }
+
+    public String deleteSpeedPass(String passId, LocalDate today) {
+        for (IndividualTicket t : tickets) {
+            for (SpeedPass p : t.getSpeedPasses()) {
+                if (p.getId().equals(passId)) {
+                    String problem = checkRefundable(t, p, today);
+                    if (problem != null) {
+                        return problem;
+                    }
+                    t.removeSpeedPass(p);
+                    if (!persist()) {
+                        t.addSpeedPass(p);
+                        return SAVE_FAILED;
+                    }
+                    return "OK: SpeedPass deleted: " + passId;
+                }
+            }
+        }
+        return "ERROR: SpeedPass " + passId + " does not exist.";
+    }
+
+    public String deleteSpecialPass(String passId, LocalDate today) {
+        for (IndividualTicket t : tickets) {
+            SpecialPass p = t.getSpecialPass();
+            if (p != null && p.getId().equals(passId)) {
+                String problem = checkRefundable(t, p, today);
+                if (problem != null) {
+                    return problem;
+                }
+                t.removeSpecialPass();
+                if (!persist()) {
+                    t.setSpecialPass(p);
+                    return SAVE_FAILED;
+                }
+                return "OK: Special Pass deleted: " + passId;
+            }
+        }
+        return "ERROR: Special Pass " + passId + " does not exist.";
+    }
+
+    /** Passes attached to any ticket of the user, including constituents of group tickets. */
+    public List<Pass> passesOf(User user) {
+        List<Pass> result = new ArrayList<>();
+        for (IndividualTicket t : tickets) {
+            if (t.getUser() == user) {
+                result.addAll(t.getPasses());
+            }
+        }
+        return result;
+    }
+
+    private IndividualTicket passTicket(String ticketId) {
+        return find(ticketId) instanceof IndividualTicket t ? t : null;
+    }
+
+    private static String checkRefundable(IndividualTicket ticket, Pass pass, LocalDate today) {
+        if (pass.isConsumed()) {
+            return "ERROR: " + pass.getKind() + " " + pass.getId() + " has been used and cannot be refunded.";
+        }
+        if (!ticket.isRefundableOn(today)) {
+            return "ERROR: Passes can only be refunded for tickets dated after " + today + ".";
+        }
+        return null;
     }
 
     /** Saves both ticket files; also used to refresh holder snapshots after user data changes. */

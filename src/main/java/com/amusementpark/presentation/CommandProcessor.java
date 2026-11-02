@@ -61,6 +61,18 @@ public class CommandProcessor {
         register("GROUPTICKET DELETE", 1, "GROUPTICKET DELETE;IdEntradaGrupo",
                 "Refunds a group ticket dated after the system date with all its tickets.",
                 p -> park.deleteGroupTicket(p[1]));
+        register("SPEEDPASS CREATE", 2, "SPEEDPASS CREATE;IdEntrada;1|10",
+                "Buys 1 or 10 SpeedPasses for an individual ticket, each at 20% of the ticket price.",
+                p -> park.createSpeedPasses(p[1], p[2]));
+        register("SPEEDPASS DELETE", 1, "SPEEDPASS DELETE;IdPase",
+                "Refunds an unused SpeedPass of a ticket dated after the system date.",
+                p -> park.deleteSpeedPass(p[1]));
+        register("SPECIALPASS CREATE", 1, "SPECIALPASS CREATE;IdEntrada",
+                "Buys the ticket's only Special Pass, at the ticket price.",
+                p -> park.createSpecialPass(p[1]));
+        register("SPECIALPASS DELETE", 1, "SPECIALPASS DELETE;IdPase",
+                "Refunds an unused Special Pass of a ticket dated after the system date.",
+                p -> park.deleteSpecialPass(p[1]));
         register("ATTRACTION CREATE", 3, "ATTRACTION CREATE;IdAtraccion;Nombre;Capacidad",
                 "Creates an attraction with a maximum capacity.",
                 p -> park.createAttraction(p[1], p[2], p[3]));
@@ -74,7 +86,7 @@ public class CommandProcessor {
                 "Shows capacity, occupancy, free places and users present.",
                 p -> park.attractionStatus(p[1]));
         register("INVOICE CREATE", 2, "INVOICE CREATE;USER|GROUP;Correo|IdGrupo",
-                "Shows an invoice of a user's tickets or of a group's group tickets.",
+                "Shows an invoice of a user's tickets and passes, or of a group's group tickets.",
                 p -> park.createInvoice(p[1], p[2]));
         register("HELP", 0, "HELP",
                 "Lists the syntax of every command.",
