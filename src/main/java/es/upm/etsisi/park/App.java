@@ -1,11 +1,17 @@
 package es.upm.etsisi.park;
 
-import java.io.BufferedReader;
+import es.upm.etsisi.park.business.BCryptPasswordHasher;
+import es.upm.etsisi.park.business.ParkException;
+import es.upm.etsisi.park.business.PasswordHasher;
+import es.upm.etsisi.park.persistence.TemporaryStorage;
+import es.upm.etsisi.park.persistence.TextParkRepository;
+import es.upm.etsisi.park.presentation.CommandProcessor;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,42 +29,55 @@ public class App {
     static final String FLY = "--fly";
 
     public static void main(String[] args) {
-        int status = run(args, System.in, System.out, System.err, Path.of(""), LocalDate.now());
+        int status = run(args, System.in, System.out, System.err, Path.of(""), LocalDate.now(), new BCryptPasswordHasher());
         if (status != 0) {
             System.exit(status);
         }
     }
 
-    static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err, Path baseDir, LocalDate today) {
+    static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err, Path baseDir,
+                   LocalDate today, PasswordHasher hasher) {
         boolean fly = args.length > 0 && FLY.equals(args[0]);
         int fileIndex = fly ? 1 : 0;
         String commandFile = args.length > fileIndex ? args[fileIndex] : null;
+        Execution execution = new Execution(commandFile, stdin, out, err, today, hasher);
         if (!fly) {
-            return execute(commandFile, stdin, out, err, baseDir, today);
+            return execution.run(baseDir);
         }
         try (TemporaryStorage storage = TemporaryStorage.create(baseDir, LocalDateTime.now())) {
-            return execute(commandFile, stdin, out, err, storage.getDirectory(), today);
+            return execution.run(storage.getDirectory());
         } catch (IOException e) {
             err.println("ERROR: Temporary storage failure: " + e.getMessage());
             return 1;
         }
     }
 
-    private static int execute(String commandFile, InputStream stdin, PrintStream out, PrintStream err,
-                               Path dataDir, LocalDate today) {
-        try {
-            Park park = Park.getInstance();
-            park.start(new ParkRepository(dataDir), today);
-            CommandProcessor processor = new CommandProcessor(park);
-            if (commandFile == null) {
-                processor.run(new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8)), out);
-            } else {
-                processor.runFile(Path.of(commandFile), out);
+    private record Execution(String commandFile, InputStream stdin, PrintStream out, PrintStream err,
+                             LocalDate today, PasswordHasher hasher) {
+
+        int run(Path dataDir) {
+            try {
+                CommandProcessor processor = ParkApplication.commandProcessor(
+                        ParkApplication.start(new TextParkRepository(dataDir), today, hasher));
+                if (commandFile == null) {
+                    processor.run(stdin, out);
+                } else {
+                    processCommandFile(processor, Path.of(commandFile));
+                }
+                return 0;
+            } catch (ParkException | IOException | UncheckedIOException e) {
+                err.println("ERROR: " + e.getMessage());
+                return 1;
             }
-            return 0;
-        } catch (ParkException | IOException e) {
-            err.println("ERROR: " + e.getMessage());
-            return 1;
+        }
+
+        private void processCommandFile(CommandProcessor processor, Path file) throws IOException {
+            if (!Files.isRegularFile(file) || !Files.isReadable(file)) {
+                throw new IOException("Cannot read command file: " + file);
+            }
+            try (InputStream in = Files.newInputStream(file)) {
+                processor.run(in, out);
+            }
         }
     }
 }
