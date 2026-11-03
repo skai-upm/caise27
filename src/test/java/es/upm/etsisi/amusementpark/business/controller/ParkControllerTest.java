@@ -26,12 +26,12 @@ class ParkControllerTest {
 
     @BeforeEach
     void setUp() {
-        UserController users = new UserController(new UserFileStorage(dir.resolve("users.txt")));
-        GroupController groups = new GroupController(new GroupFileStorage(dir.resolve("groups.txt")), users);
-        TicketController tickets = new TicketController(new TicketFileStorage(dir.resolve("tickets.txt")),
+        UserController users = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        GroupController groups = GroupController.initialize(new GroupFileStorage(dir.resolve("groups.txt")), users);
+        TicketController tickets = TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), users, groups);
-        AttractionController attractions = new AttractionController(new AttractionFileStorage(dir.resolve("a.txt")));
-        park = new ParkController(users, groups, tickets, attractions, TODAY);
+        AttractionController attractions = AttractionController.initialize(new AttractionFileStorage(dir.resolve("a.txt")));
+        park = ParkController.initialize(users, groups, tickets, attractions, TODAY);
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         groups.create("G01", "Familia");
     }

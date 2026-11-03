@@ -28,7 +28,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         file = dir.resolve("users.txt");
-        service = new UserController(new UserFileStorage(file));
+        service = UserController.initialize(new UserFileStorage(file));
         service.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
     }
 

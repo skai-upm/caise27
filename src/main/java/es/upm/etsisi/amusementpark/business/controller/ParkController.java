@@ -33,14 +33,36 @@ public class ParkController {
     private LocalDate currentDate;
     private BigDecimal currentPrice = DEFAULT_PRICE;
 
-    /** Creates the controller with the operating system's local date as current date. */
-    public ParkController(UserController users, GroupController groups, TicketController tickets,
-                          AttractionController attractions) {
-        this(users, groups, tickets, attractions, LocalDate.now());
+    private static volatile ParkController instance;
+
+    /**
+     * Creates the unique main controller of the current execution, with the operating system's local date
+     * as current date and the injected controllers it collaborates with. Called once by the composition root.
+     */
+    public static ParkController initialize(UserController users, GroupController groups, TicketController tickets,
+                                            AttractionController attractions) {
+        return initialize(users, groups, tickets, attractions, LocalDate.now());
     }
 
-    public ParkController(UserController users, GroupController groups, TicketController tickets,
-                          AttractionController attractions, LocalDate initialDate) {
+    /** Same as {@link #initialize(UserController, GroupController, TicketController, AttractionController)} with a given start date. */
+    public static synchronized ParkController initialize(UserController users, GroupController groups,
+                                                         TicketController tickets, AttractionController attractions,
+                                                         LocalDate initialDate) {
+        instance = new ParkController(users, groups, tickets, attractions, initialDate);
+        return instance;
+    }
+
+    /** The unique instance of the current execution. */
+    public static ParkController getInstance() {
+        ParkController current = instance;
+        if (current == null) {
+            throw new IllegalStateException("ParkController has not been initialized");
+        }
+        return current;
+    }
+
+    private ParkController(UserController users, GroupController groups, TicketController tickets,
+                           AttractionController attractions, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;

@@ -37,11 +37,11 @@ class TicketControllerTest {
 
     @BeforeEach
     void setUp() {
-        users = new UserController(new UserFileStorage(dir.resolve("users.txt")));
+        users = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")));
         ana = users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         file = dir.resolve("tickets.txt");
-        tickets = new TicketController(new TicketFileStorage(file), new GroupTicketFileStorage(dir.resolve("grouptickets.txt")),
-                users, new GroupController(new GroupFileStorage(dir.resolve("groups.txt")), users));
+        tickets = TicketController.initialize(new TicketFileStorage(file), new GroupTicketFileStorage(dir.resolve("grouptickets.txt")),
+                users, GroupController.initialize(new GroupFileStorage(dir.resolve("groups.txt")), users));
     }
 
     @Test

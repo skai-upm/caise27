@@ -57,3 +57,10 @@ The class diagram SHALL represent the invoice Builder: the `InvoiceBuilder` abst
 #### Scenario: Builder hierarchy shown
 - **WHEN** the diagram is reviewed
 - **THEN** it shows `UserInvoiceBuilder` and `GroupInvoiceBuilder` realising `InvoiceBuilder` through `AbstractInvoiceBuilder`, and `Invoice` composed of `InvoiceSection`s composed of `InvoiceLine`s
+
+### Requirement: Repositories and singletons in the diagram
+The class diagram SHALL show the repository interfaces realised by the file repositories, the controllers depending on the interfaces, and each Singleton controller's reference to its unique instance.
+
+#### Scenario: Repository interfaces shown
+- **WHEN** the diagram is reviewed
+- **THEN** `UserFileStorage` realises `UserRepository` (and likewise for groups, tickets, group tickets and attractions) and `UserController` is associated with `UserRepository`, not with the file class

@@ -16,7 +16,7 @@ import java.util.List;
  * Members are stored by DNI only (immutable), so user data is never duplicated; on load the DNIs
  * are linked to the already loaded user objects. This is the only class that touches the group file.
  */
-public class GroupFileStorage {
+public class GroupFileStorage implements GroupRepository {
 
     public static final String DEFAULT_FILE = "groups.txt";
     private static final String SEPARATOR = ";";
@@ -30,6 +30,7 @@ public class GroupFileStorage {
     }
 
     /** Loads the stored groups, linking members to the given registered users. */
+    @Override
     public List<Group> load(List<User> users) {
         List<Group> groups = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -63,6 +64,7 @@ public class GroupFileStorage {
     }
 
     /** Rewrites the file so that it contains exactly the given groups. */
+    @Override
     public void save(List<Group> groups) {
         List<String> lines = new ArrayList<>(groups.size());
         for (Group g : groups) {

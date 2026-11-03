@@ -28,11 +28,11 @@ class GroupControllerTest {
 
     @BeforeEach
     void setUp() {
-        users = new UserController(new UserFileStorage(dir.resolve("users.txt")));
+        users = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
         groupsFile = dir.resolve("groups.txt");
-        groups = new GroupController(new GroupFileStorage(groupsFile), users);
+        groups = GroupController.initialize(new GroupFileStorage(groupsFile), users);
         groups.create("G01", "Familia Garcia");
     }
 

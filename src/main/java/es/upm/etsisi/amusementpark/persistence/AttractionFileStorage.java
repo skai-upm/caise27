@@ -14,7 +14,7 @@ import java.util.List;
  * Stores attraction definitions, one per line: {@code Id;Nombre;Capacidad}. Users present are not stored:
  * attractions are always empty when the application starts. Only class touching the attraction file.
  */
-public class AttractionFileStorage {
+public class AttractionFileStorage implements AttractionRepository {
 
     public static final String DEFAULT_FILE = "attractions.txt";
     private static final String SEPARATOR = ";";
@@ -26,6 +26,7 @@ public class AttractionFileStorage {
         this.file = file;
     }
 
+    @Override
     public List<Attraction> load() {
         List<Attraction> attractions = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -54,6 +55,7 @@ public class AttractionFileStorage {
         return attractions;
     }
 
+    @Override
     public void save(List<Attraction> attractions) {
         List<String> lines = new ArrayList<>(attractions.size());
         for (Attraction a : attractions) {

@@ -36,18 +36,18 @@ class SystemDateTest {
 
     @BeforeEach
     void setUp() {
-        service = new UserController(new UserFileStorage(dir.resolve("users.txt")));
-        groups = new GroupController(new GroupFileStorage(dir.resolve("groups.txt")), service);
-        tickets = new TicketController(new TicketFileStorage(dir.resolve("tickets.txt")),
+        service = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        groups = GroupController.initialize(new GroupFileStorage(dir.resolve("groups.txt")), service);
+        tickets = TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                         new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups);
-        attractions = new AttractionController(new AttractionFileStorage(dir.resolve("attractions.txt")));
-        processor = new CommandProcessor(new ParkController(service, groups, tickets, attractions, START));
+        attractions = AttractionController.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")));
+        processor = new CommandProcessor(ParkController.initialize(service, groups, tickets, attractions, START));
     }
 
     @Test
     void defaultStartsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = new ParkController(service, groups, tickets, attractions).getCurrentDate();
+        LocalDate date = ParkController.initialize(service, groups, tickets, attractions).getCurrentDate();
         LocalDate after = LocalDate.now();
         assertTrue(!date.isBefore(before) && !date.isAfter(after));
     }
@@ -59,7 +59,7 @@ class SystemDateTest {
 
     @Test
     void setsValidDate() {
-        CommandProcessor p = new CommandProcessor(new ParkController(service, groups, tickets, attractions, LocalDate.of(2000, 1, 1)));
+        CommandProcessor p = new CommandProcessor(ParkController.initialize(service, groups, tickets, attractions, LocalDate.of(2000, 1, 1)));
         assertEquals("OK: System date set to 2026-09-15", p.process("SYSTEM DATE;2026-09-15"));
         assertEquals(START, p.getPark().getCurrentDate());
     }

@@ -3,7 +3,7 @@ package es.upm.etsisi.amusementpark.business.controller;
 import es.upm.etsisi.amusementpark.business.UserValidator;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserField;
-import es.upm.etsisi.amusementpark.persistence.UserFileStorage;
+import es.upm.etsisi.amusementpark.persistence.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,10 +16,30 @@ import java.util.Optional;
  */
 public class UserController {
 
-    private final UserFileStorage storage;
+    private final UserRepository storage;
     private final List<User> users;
 
-    public UserController(UserFileStorage storage) {
+    private static volatile UserController instance;
+
+    /**
+     * Creates the unique instance of this controller for the current execution with its injected
+     * dependencies. Called once by the composition root at startup; calling it again starts a new execution.
+     */
+    public static synchronized UserController initialize(UserRepository storage) {
+        instance = new UserController(storage);
+        return instance;
+    }
+
+    /** The unique instance of the current execution. */
+    public static UserController getInstance() {
+        UserController current = instance;
+        if (current == null) {
+            throw new IllegalStateException("UserController has not been initialized");
+        }
+        return current;
+    }
+
+    private UserController(UserRepository storage) {
         this.storage = storage;
         this.users = new ArrayList<>(storage.load());
     }

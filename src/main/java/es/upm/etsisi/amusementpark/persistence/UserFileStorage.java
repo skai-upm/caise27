@@ -15,7 +15,7 @@ import java.util.List;
  * {@code Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta}.
  * This is the only class that reads or writes the user file.
  */
-public class UserFileStorage {
+public class UserFileStorage implements UserRepository {
 
     public static final String DEFAULT_FILE = "users.txt";
     private static final String SEPARATOR = ";";
@@ -32,6 +32,7 @@ public class UserFileStorage {
     }
 
     /** Loads every stored user. A missing file means there are no users yet. */
+    @Override
     public List<User> load() {
         List<User> users = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -58,6 +59,7 @@ public class UserFileStorage {
     }
 
     /** Rewrites the file so that it contains exactly the given users. */
+    @Override
     public void save(List<User> users) {
         List<String> lines = new ArrayList<>(users.size());
         for (User u : users) {

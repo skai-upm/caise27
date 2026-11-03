@@ -6,8 +6,8 @@ import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.ParkTicket;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
-import es.upm.etsisi.amusementpark.persistence.GroupTicketFileStorage;
-import es.upm.etsisi.amusementpark.persistence.TicketFileStorage;
+import es.upm.etsisi.amusementpark.persistence.GroupTicketRepository;
+import es.upm.etsisi.amusementpark.persistence.TicketRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,14 +22,35 @@ import java.util.Optional;
  */
 public class TicketController {
 
-    private final TicketFileStorage storage;
-    private final GroupTicketFileStorage groupStorage;
+    private final TicketRepository storage;
+    private final GroupTicketRepository groupStorage;
     private final UserController users;
     private final List<Ticket> tickets;
     private final List<GroupTicket> groupTickets;
 
-    public TicketController(TicketFileStorage storage, GroupTicketFileStorage groupStorage,
-                         UserController users, GroupController groups) {
+    private static volatile TicketController instance;
+
+    /**
+     * Creates the unique instance of this controller for the current execution with its injected
+     * dependencies. Called once by the composition root at startup; calling it again starts a new execution.
+     */
+    public static synchronized TicketController initialize(TicketRepository storage, GroupTicketRepository groupStorage,
+                                                       UserController users, GroupController groups) {
+        instance = new TicketController(storage, groupStorage, users, groups);
+        return instance;
+    }
+
+    /** The unique instance of the current execution. */
+    public static TicketController getInstance() {
+        TicketController current = instance;
+        if (current == null) {
+            throw new IllegalStateException("TicketController has not been initialized");
+        }
+        return current;
+    }
+
+    private TicketController(TicketRepository storage, GroupTicketRepository groupStorage,
+                             UserController users, GroupController groups) {
         this.storage = storage;
         this.groupStorage = groupStorage;
         this.users = users;

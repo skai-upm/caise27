@@ -33,11 +33,11 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() {
-        service = new UserController(new UserFileStorage(dir.resolve("users.txt")));
-        GroupController groups = new GroupController(new GroupFileStorage(dir.resolve("groups.txt")), service);
-        processor = new CommandProcessor(new ParkController(service, groups, new TicketController(new TicketFileStorage(dir.resolve("tickets.txt")),
+        service = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        GroupController groups = GroupController.initialize(new GroupFileStorage(dir.resolve("groups.txt")), service);
+        processor = new CommandProcessor(ParkController.initialize(service, groups, TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups),
-                new AttractionController(new AttractionFileStorage(dir.resolve("attractions.txt")))));
+                AttractionController.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")))));
     }
 
     @Test

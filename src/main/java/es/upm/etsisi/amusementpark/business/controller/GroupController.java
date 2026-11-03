@@ -3,7 +3,7 @@ package es.upm.etsisi.amusementpark.business.controller;
 import es.upm.etsisi.amusementpark.business.UserValidator;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.User;
-import es.upm.etsisi.amusementpark.persistence.GroupFileStorage;
+import es.upm.etsisi.amusementpark.persistence.GroupRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +16,31 @@ import java.util.Optional;
  */
 public class GroupController {
 
-    private final GroupFileStorage storage;
+    private final GroupRepository storage;
     private final UserController users;
     private final List<Group> groups;
 
-    public GroupController(GroupFileStorage storage, UserController users) {
+    private static volatile GroupController instance;
+
+    /**
+     * Creates the unique instance of this controller for the current execution with its injected
+     * dependencies. Called once by the composition root at startup; calling it again starts a new execution.
+     */
+    public static synchronized GroupController initialize(GroupRepository storage, UserController users) {
+        instance = new GroupController(storage, users);
+        return instance;
+    }
+
+    /** The unique instance of the current execution. */
+    public static GroupController getInstance() {
+        GroupController current = instance;
+        if (current == null) {
+            throw new IllegalStateException("GroupController has not been initialized");
+        }
+        return current;
+    }
+
+    private GroupController(GroupRepository storage, UserController users) {
         this.storage = storage;
         this.users = users;
         this.groups = new ArrayList<>(storage.load(users.getUsers()));

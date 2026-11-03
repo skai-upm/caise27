@@ -4,7 +4,7 @@ import es.upm.etsisi.amusementpark.business.UserValidator;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.ParkTicket;
 import es.upm.etsisi.amusementpark.business.model.User;
-import es.upm.etsisi.amusementpark.persistence.AttractionFileStorage;
+import es.upm.etsisi.amusementpark.persistence.AttractionRepository;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -18,10 +18,30 @@ import java.util.Optional;
  */
 public class AttractionController {
 
-    private final AttractionFileStorage storage;
+    private final AttractionRepository storage;
     private final List<Attraction> attractions;
 
-    public AttractionController(AttractionFileStorage storage) {
+    private static volatile AttractionController instance;
+
+    /**
+     * Creates the unique instance of this controller for the current execution with its injected
+     * dependencies. Called once by the composition root at startup; calling it again starts a new execution.
+     */
+    public static synchronized AttractionController initialize(AttractionRepository storage) {
+        instance = new AttractionController(storage);
+        return instance;
+    }
+
+    /** The unique instance of the current execution. */
+    public static AttractionController getInstance() {
+        AttractionController current = instance;
+        if (current == null) {
+            throw new IllegalStateException("AttractionController has not been initialized");
+        }
+        return current;
+    }
+
+    private AttractionController(AttractionRepository storage) {
         this.storage = storage;
         this.attractions = new ArrayList<>(storage.load());
     }

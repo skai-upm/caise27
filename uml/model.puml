@@ -101,6 +101,11 @@ package es.upm.etsisi.amusementpark {
   }
 
   package persistence {
+    interface UserRepository
+    interface GroupRepository
+    interface TicketRepository
+    interface GroupTicketRepository
+    interface AttractionRepository
     class UserFileStorage {
       - file : Path
     }
@@ -136,18 +141,18 @@ ParkController x--> "1" TicketController : tickets
 ParkController x--> "1" AttractionController : attractions
 
 ' --- users
-UserController x--> "1" UserFileStorage : storage
+UserController x--> "1" UserRepository : storage
 UserController o--> "*" User : users
 
 ' --- groups
-GroupController x--> "1" GroupFileStorage : storage
+GroupController x--> "1" GroupRepository : storage
 GroupController x--> "1" UserController : users
 GroupController o--> "*" Group : groups
 Group o--> "*" User : members
 
 ' --- tickets
-TicketController x--> "1" TicketFileStorage : storage
-TicketController x--> "1" GroupTicketFileStorage : groupStorage
+TicketController x--> "1" TicketRepository : storage
+TicketController x--> "1" GroupTicketRepository : groupStorage
 TicketController x--> "1" UserController : users
 TicketController o--> "*" Ticket : tickets
 TicketController o--> "*" GroupTicket : groupTickets
@@ -156,7 +161,7 @@ GroupTicket o--> "0..1" Group : group
 GroupTicket *--> "1..*" Ticket : tickets
 
 ' --- attractions
-AttractionController x--> "1" AttractionFileStorage : storage
+AttractionController x--> "1" AttractionRepository : storage
 AttractionController o--> "*" Attraction : attractions
 Attraction o--> "*" User : present
 
@@ -172,7 +177,26 @@ GroupInvoiceBuilder o--> "*" GroupTicket : groupTickets
 Invoice *--> "*" InvoiceSection : sections
 InvoiceSection *--> "*" InvoiceLine : lines
 
+' --- repositories (replaceable, injected at startup)
+UserRepository <|.. UserFileStorage
+GroupRepository <|.. GroupFileStorage
+TicketRepository <|.. TicketFileStorage
+GroupTicketRepository <|.. GroupTicketFileStorage
+AttractionRepository <|.. AttractionFileStorage
+
+' --- singleton controllers: unique instance per execution
+UserController x--> "0..1" UserController : instance
+GroupController x--> "0..1" GroupController : instance
+TicketController x--> "0..1" TicketController : instance
+AttractionController x--> "0..1" AttractionController : instance
+ParkController x--> "0..1" ParkController : instance
+
 ' --- usage of classes without incoming relationships
+App ..> UserFileStorage : creates
+App ..> GroupFileStorage : creates
+App ..> TicketFileStorage : creates
+App ..> GroupTicketFileStorage : creates
+App ..> AttractionFileStorage : creates
 ParkController ..> InvoiceDirector
 InvoiceDirector ..> InvoiceBuilder
 AbstractInvoiceBuilder ..> Invoice : builds

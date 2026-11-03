@@ -6,10 +6,15 @@ import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.controller.TicketController;
 import es.upm.etsisi.amusementpark.business.controller.UserController;
 import es.upm.etsisi.amusementpark.persistence.AttractionFileStorage;
+import es.upm.etsisi.amusementpark.persistence.AttractionRepository;
 import es.upm.etsisi.amusementpark.persistence.GroupFileStorage;
+import es.upm.etsisi.amusementpark.persistence.GroupRepository;
 import es.upm.etsisi.amusementpark.persistence.GroupTicketFileStorage;
+import es.upm.etsisi.amusementpark.persistence.GroupTicketRepository;
 import es.upm.etsisi.amusementpark.persistence.TicketFileStorage;
+import es.upm.etsisi.amusementpark.persistence.TicketRepository;
 import es.upm.etsisi.amusementpark.persistence.UserFileStorage;
+import es.upm.etsisi.amusementpark.persistence.UserRepository;
 import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
 import es.upm.etsisi.amusementpark.presentation.CommandRunner;
 
@@ -132,14 +137,25 @@ public class App {
         CommandRunner.runFile(commandFile, out, createProcessor(dataDir));
     }
 
-    /** Composition root: builds the repositories, controllers and the command processor over {@code dataDir}. */
+    /**
+     * Composition root: creates the repositories for {@code dataDir} (the working directory or the
+     * {@code --fly} directory), initialises the unique controllers in dependency order injecting them, and
+     * builds the command processor.
+     */
     public static CommandProcessor createProcessor(Path dataDir) {
-        UserController users = new UserController(new UserFileStorage(dataDir.resolve(UserFileStorage.DEFAULT_FILE)));
-        GroupController groups = new GroupController(new GroupFileStorage(dataDir.resolve(GroupFileStorage.DEFAULT_FILE)), users);
-        TicketController tickets = new TicketController(new TicketFileStorage(dataDir.resolve(TicketFileStorage.DEFAULT_FILE)),
-                new GroupTicketFileStorage(dataDir.resolve(GroupTicketFileStorage.DEFAULT_FILE)), users, groups);
-        AttractionController attractions =
-                new AttractionController(new AttractionFileStorage(dataDir.resolve(AttractionFileStorage.DEFAULT_FILE)));
-        return new CommandProcessor(new ParkController(users, groups, tickets, attractions));
+        UserRepository userRepository = new UserFileStorage(dataDir.resolve(UserFileStorage.DEFAULT_FILE));
+        GroupRepository groupRepository = new GroupFileStorage(dataDir.resolve(GroupFileStorage.DEFAULT_FILE));
+        TicketRepository ticketRepository = new TicketFileStorage(dataDir.resolve(TicketFileStorage.DEFAULT_FILE));
+        GroupTicketRepository groupTicketRepository =
+                new GroupTicketFileStorage(dataDir.resolve(GroupTicketFileStorage.DEFAULT_FILE));
+        AttractionRepository attractionRepository =
+                new AttractionFileStorage(dataDir.resolve(AttractionFileStorage.DEFAULT_FILE));
+
+        UserController users = UserController.initialize(userRepository);
+        GroupController groups = GroupController.initialize(groupRepository, users);
+        TicketController tickets = TicketController.initialize(ticketRepository, groupTicketRepository, users, groups);
+        AttractionController attractions = AttractionController.initialize(attractionRepository);
+        ParkController.initialize(users, groups, tickets, attractions);
+        return new CommandProcessor(ParkController.getInstance());
     }
 }

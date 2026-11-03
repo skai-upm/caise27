@@ -22,7 +22,7 @@ import java.util.Optional;
  * Constituent tickets are rebuilt from the DNIs (in purchase order) and linked to the loaded users; groups
  * and users that no longer exist are kept as historical identifiers. Only class touching the file.
  */
-public class GroupTicketFileStorage {
+public class GroupTicketFileStorage implements GroupTicketRepository {
 
     public static final String DEFAULT_FILE = "grouptickets.txt";
     private static final String SEPARATOR = ";";
@@ -35,6 +35,7 @@ public class GroupTicketFileStorage {
         this.file = file;
     }
 
+    @Override
     public List<GroupTicket> load(List<User> users, List<Group> groups) {
         List<GroupTicket> result = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -81,6 +82,7 @@ public class GroupTicketFileStorage {
         return new GroupTicket(id, group, f[1], date, unitPrice, tickets, total);
     }
 
+    @Override
     public void save(List<GroupTicket> groupTickets) {
         List<String> lines = new ArrayList<>(groupTickets.size());
         for (GroupTicket g : groupTickets) {

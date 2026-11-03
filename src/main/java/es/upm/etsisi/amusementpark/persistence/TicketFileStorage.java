@@ -20,7 +20,7 @@ import java.util.Optional;
  * and linked to the loaded users; tickets of users that no longer exist are kept as history.
  * This is the only class that touches the ticket file.
  */
-public class TicketFileStorage {
+public class TicketFileStorage implements TicketRepository {
 
     public static final String DEFAULT_FILE = "tickets.txt";
     private static final String SEPARATOR = ";";
@@ -32,6 +32,7 @@ public class TicketFileStorage {
         this.file = file;
     }
 
+    @Override
     public List<Ticket> load(List<User> users) {
         List<Ticket> tickets = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -64,6 +65,7 @@ public class TicketFileStorage {
         return tickets;
     }
 
+    @Override
     public void save(List<Ticket> tickets) {
         List<String> lines = new ArrayList<>(tickets.size());
         for (Ticket t : tickets) {
