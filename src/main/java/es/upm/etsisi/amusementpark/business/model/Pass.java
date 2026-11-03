@@ -47,6 +47,11 @@ public abstract class Pass {
         this.consumed = true;
     }
 
+    /** Undoes a consumption that could not be completed (e.g. it could not be saved). */
+    public void unmarkConsumed() {
+        this.consumed = false;
+    }
+
     /** Persistent type name of the pass. */
     public abstract String getType();
 }

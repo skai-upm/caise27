@@ -64,7 +64,9 @@ class AttractionTypeCommandsTest {
         assertTrue(p.process("ATTRACTION ENTER;A03;T001").startsWith("OK:"));
         assertTrue(p.process("ATTRACTION ENTER;A04;TG01").startsWith("ERROR:"));
         assertTrue(p.process("ATTRACTION EXIT;A03;T001").startsWith("OK:"));
-        assertTrue(p.process("ATTRACTION ENTER;A04;T001").startsWith("OK:"));
+        assertEquals("ERROR: Ticket T001 has no unused Special Pass", p.process("ATTRACTION ENTER;A04;T001"));
+        p.process("SPECIALPASS CREATE;SP1;T001");
+        assertTrue(p.process("ATTRACTION ENTER;A04;T001").endsWith("; consumed Special Pass SP1"));
         assertTrue(p.process("ATTRACTION EXIT;A02;TG01").startsWith("OK:"));
         assertTrue(p.process("ATTRACTION ENTER;A01;T001").startsWith("OK:"));
         assertTrue(p.process("ATTRACTION ENTER;A01;TG01").startsWith("OK:"));

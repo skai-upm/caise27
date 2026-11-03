@@ -51,6 +51,9 @@ package es.upm.etsisi.amusementpark {
       }
       class UserController
       class PassController
+      class EntryResult {
+        - admitted : int
+      }
       class GroupController
       class TicketController
       class AttractionController
@@ -234,6 +237,8 @@ PassController x--> "1" PassRepository : storage
 PassController x--> "1" TicketController : tickets
 PassController o--> "*" Pass : passes
 UserInvoiceBuilder o--> "*" Pass : passes
+EntryResult x--> "1" Attraction : attraction
+EntryResult o--> "*" Pass : consumed
 
 ' --- attractions
 AttractionController x--> "1" AttractionRepository : storage
@@ -276,6 +281,7 @@ App ..> GroupTicketFileStorage : creates
 App ..> AttractionFileStorage : creates
 App ..> PassFileStorage : creates
 ParkController ..> InvoiceDirector
+ParkController ..> EntryResult : creates
 InvoiceDirector ..> InvoiceBuilder
 AbstractInvoiceBuilder ..> Invoice : builds
 App ..> CommandRunner

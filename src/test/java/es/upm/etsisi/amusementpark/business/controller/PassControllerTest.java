@@ -82,4 +82,29 @@ class PassControllerTest {
     void initializeRegistersTheUniqueInstance() {
         assertSame(passes, PassController.getInstance());
     }
+
+    @Test
+    void failedConsumptionIsUndone() {
+        List<Pass> bought = passes.buySpeedPasses("S1", "T001", 1, TODAY);
+        repository.fail = true;
+        assertThrows(IllegalStateException.class, () -> passes.consume(bought));
+        assertTrue(bought.stream().noneMatch(Pass::isConsumed));
+        passes.consume(List.of());
+    }
+
+    @Test
+    void failedEntryLeavesNobodyInsideAndNoPassConsumed() {
+        passes.buySpeedPasses("S1", "T001", 1, TODAY.plusDays(14));
+        ParkController park = ParkController.initialize(UserController.getInstance(), GroupController.getInstance(),
+                TicketController.getInstance(), AttractionController.getInstance(), passes, TODAY.plusDays(14));
+        park.attractions().create("A01", "Tornado", "5");
+        repository.fail = true;
+        assertThrows(IllegalStateException.class, () -> park.enter("A01", "T001", true));
+        assertTrue(park.attractions().get("A01").getPresent().isEmpty());
+        assertTrue(passes.getPasses().stream().noneMatch(Pass::isConsumed));
+        repository.fail = false;
+        EntryResult result = park.enter("A01", "T001", true);
+        assertEquals(1, result.getAdmitted());
+        assertEquals("S1-1", result.getConsumed().get(0).getId());
+    }
 }

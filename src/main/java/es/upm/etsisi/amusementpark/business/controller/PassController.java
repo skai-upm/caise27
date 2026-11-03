@@ -64,6 +64,25 @@ public class PassController {
         return passes.stream().filter(p -> p.getTicket() == ticket).toList();
     }
 
+    /** Earliest bought unconsumed pass of that type for the ticket, if any. */
+    public Optional<Pass> firstUnused(Ticket ticket, String type) {
+        return passesOf(ticket).stream().filter(p -> p.getType().equals(type) && !p.isConsumed()).findFirst();
+    }
+
+    /** Marks the passes as consumed and persists them; on failure none stays consumed. */
+    public void consume(List<Pass> toConsume) {
+        if (toConsume.isEmpty()) {
+            return;
+        }
+        toConsume.forEach(Pass::markConsumed);
+        try {
+            storage.save(passes);
+        } catch (RuntimeException e) {
+            toConsume.forEach(Pass::unmarkConsumed);
+            throw e;
+        }
+    }
+
     /** Buys 1 or 10 SpeedPasses {@code <id>-1..n}; all identifiers are checked before anything is created. */
     public List<Pass> buySpeedPasses(String id, String ticketId, int quantity, LocalDate today) {
         require(quantity == SINGLE || quantity == PACK, "SpeedPasses can only be bought in quantities of 1 or 10");

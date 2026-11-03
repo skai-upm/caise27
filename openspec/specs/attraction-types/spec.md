@@ -25,9 +25,9 @@ The system SHALL support the attraction types `GENERAL`, `INDIVIDUAL`, `GROUP` a
 - **THEN** both entries succeed
 
 #### Scenario: SPECIAL works with individual tickets
-- **GIVEN** a `SPECIAL` attraction `A04`
+- **GIVEN** a `SPECIAL` attraction `A04` and `T001` with an unused Special Pass
 - **WHEN** `ATTRACTION ENTER;A04;T001` and `ATTRACTION ENTER;A04;TG01` are processed
-- **THEN** the individual ticket is admitted and the group ticket is rejected
+- **THEN** the individual ticket is admitted (consuming its Special Pass) and the group ticket is rejected
 
 ### Requirement: Access capabilities in the type system
 Ticket access capabilities SHALL be represented by interfaces implemented by the ticket classes, and each attraction type SHALL be parameterised by a bounded generic type that restricts, at compile time, which ticket capability its typed entry operation accepts; tickets obtained at run time from commands SHALL be checked against that bound before entry.

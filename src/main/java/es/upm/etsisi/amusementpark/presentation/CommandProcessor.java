@@ -1,6 +1,7 @@
 package es.upm.etsisi.amusementpark.presentation;
 
 import es.upm.etsisi.amusementpark.business.controller.AttractionController;
+import es.upm.etsisi.amusementpark.business.controller.EntryResult;
 import es.upm.etsisi.amusementpark.business.controller.GroupController;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.controller.UserController;
@@ -9,7 +10,6 @@ import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.Invoice;
 import es.upm.etsisi.amusementpark.business.model.InvoiceLine;
 import es.upm.etsisi.amusementpark.business.model.InvoiceSection;
-import es.upm.etsisi.amusementpark.business.model.ParkTicket;
 import es.upm.etsisi.amusementpark.business.model.Pass;
 import es.upm.etsisi.amusementpark.business.model.SpecialPass;
 import es.upm.etsisi.amusementpark.business.model.SpeedPass;
@@ -51,7 +51,7 @@ import java.util.Locale;
  * SPECIALPASS CREATE;IdPase;IdTicket
  * SPECIALPASS DELETE;IdPase
  * ATTRACTION CREATE;Id;Nombre;Capacidad[;Tipo]
- * ATTRACTION ENTER;IdAtraccion;IdTicket
+ * ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]
  * ATTRACTION EXIT;IdAtraccion;IdTicket
  * ATTRACTION STATUS;IdAtraccion
  * INVOICE CREATE;USER;correo
@@ -80,6 +80,7 @@ public class CommandProcessor {
     private static final int ATTRACTION_ACCESS_TOKENS = 3;
     private static final int ATTRACTION_STATUS_TOKENS = 2;
     private static final int INVOICE_TOKENS = 3;
+    private static final String SPEED_OPTION = "SPEED";
     private static final int SPEEDPASS_CREATE_TOKENS = 4;
     private static final int SPECIALPASS_CREATE_TOKENS = 3;
     private static final int PASS_DELETE_TOKENS = 2;
@@ -300,13 +301,24 @@ public class CommandProcessor {
     }
 
     private String attractionEnter(String[] t) {
-        if (t.length != ATTRACTION_ACCESS_TOKENS) {
-            return usage("ATTRACTION ENTER;IdAtraccion;IdTicket");
+        boolean speed = t.length == ATTRACTION_ACCESS_TOKENS + 1;
+        if (t.length != ATTRACTION_ACCESS_TOKENS && !speed) {
+            return usage("ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]");
         }
-        ParkTicket ticket = park.enter(t[1], t[2]);
-        Attraction<?> a = attractions.get(t[1]);
-        return "OK: " + ticket.getVisitors().size() + " user(s) entered attraction " + a.getId()
+        if (speed && !t[3].equalsIgnoreCase(SPEED_OPTION)) {
+            return error("Unknown entry option " + t[3] + " (only SPEED is allowed)");
+        }
+        EntryResult result = park.enter(t[1], t[2], speed);
+        Attraction<?> a = result.getAttraction();
+        String text = "OK: " + result.getAdmitted() + " user(s) entered attraction " + a.getId()
                 + " (" + a.getAvailable() + " places available)";
+        List<Pass> consumed = result.getConsumed();
+        if (consumed.isEmpty()) {
+            return text;
+        }
+        String kind = consumed.get(0) instanceof SpecialPass ? "Special Pass" : "SpeedPass";
+        return text + "; consumed " + kind + (consumed.size() > 1 ? "es " : " ")
+                + String.join(", ", consumed.stream().map(Pass::getId).toList());
     }
 
     /** Exit by ticket identifier or, as a fallback, by the email of a present user. */

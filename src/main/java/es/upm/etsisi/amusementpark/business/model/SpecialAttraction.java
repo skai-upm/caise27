@@ -7,6 +7,18 @@ public class SpecialAttraction extends Attraction<IndividualAccess> {
         super(id, name, capacity, IndividualAccess.class);
     }
 
+    /** SpeedPasses cannot be used at SPECIAL attractions. */
+    @Override
+    public boolean acceptsSpeed() {
+        return false;
+    }
+
+    /** Every entry needs the ticket's unused Special Pass, consumed on success. */
+    @Override
+    public boolean requiresSpecialPass() {
+        return true;
+    }
+
     @Override
     public AttractionType getType() {
         return AttractionType.SPECIAL;

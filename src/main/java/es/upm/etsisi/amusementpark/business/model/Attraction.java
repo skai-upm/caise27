@@ -36,12 +36,31 @@ public abstract class Attraction<T extends AccessTicket> {
         return admitted.isInstance(ticket);
     }
 
-    /** Entry with a ticket whose kind is only known at run time: rejected if this attraction does not admit it. */
-    public void enter(AccessTicket ticket, LocalDate today) {
+    /** Whether entries may request SpeedPass use. */
+    public boolean acceptsSpeed() {
+        return true;
+    }
+
+    /** Whether every entry needs, and consumes, the ticket's Special Pass. */
+    public boolean requiresSpecialPass() {
+        return false;
+    }
+
+    /**
+     * Checks, without changing anything, every attraction condition of an entry: the ticket kind is admitted,
+     * it is dated {@code today}, none of its users is already present and all of them fit.
+     */
+    public void requireAdmissible(AccessTicket ticket, LocalDate today) {
         if (!admits(ticket)) {
             throw new IllegalArgumentException("Attraction " + id + " (" + getType() + ") does not admit ticket "
                     + ticket.getId());
         }
+        check(ticket, today);
+    }
+
+    /** Entry with a ticket whose kind is only known at run time: rejected if this attraction does not admit it. */
+    public void enter(AccessTicket ticket, LocalDate today) {
+        requireAdmissible(ticket, today);
         admit(admitted.cast(ticket), today);
     }
 
@@ -75,6 +94,11 @@ public abstract class Attraction<T extends AccessTicket> {
      * present and all of them must fit in the remaining capacity.
      */
     public void admit(T ticket, LocalDate today) {
+        check(ticket, today);
+        present.addAll(ticket.getVisitors());
+    }
+
+    private void check(AccessTicket ticket, LocalDate today) {
         if (!ticket.getDate().equals(today)) {
             throw new IllegalArgumentException("Ticket " + ticket.getId() + " is not valid on " + today
                     + " (it is dated " + ticket.getDate() + ")");
@@ -92,7 +116,6 @@ public abstract class Attraction<T extends AccessTicket> {
             throw new IllegalArgumentException("Not enough capacity in attraction " + id + ": " + visitors.size()
                     + " users, " + getAvailable() + " places available");
         }
-        present.addAll(visitors);
     }
 
     /** Removes the given users that are present; returns how many left. */
