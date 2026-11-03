@@ -211,4 +211,16 @@ class AppTest {
         assertEquals(List.of("TG01;G01;2026-10-15;80.00;40.00;12345678Z,87654321X"),
                 Files.readAllLines(dir.resolve("grouptickets.txt")));
     }
+
+    @Test
+    void attractionsStartEmptyAfterRestart() throws IOException {
+        Path input = commandFile("park.txt", CREATE_ANA, "SYSTEM DATE;2026-10-15", "TICKET CREATE;T001;ana@correo.com;2026-10-15",
+                "ATTRACTION CREATE;A01;Tornado;20", "ATTRACTION ENTER;A01;T001", "ATTRACTION STATUS;A01", "EXIT");
+        List<String> out = runFile(input, dir);
+        assertTrue(out.contains("Users present: 1"));
+        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        List<String> again = runStdin(dir, "ATTRACTION STATUS;A01", "EXIT");
+        assertTrue(again.contains("Users present: 0"));
+        assertTrue(again.contains("Available places: 20"));
+    }
 }

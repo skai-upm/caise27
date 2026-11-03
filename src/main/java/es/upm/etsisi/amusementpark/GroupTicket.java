@@ -92,6 +92,11 @@ public class GroupTicket extends ParkTicket {
         return Collections.unmodifiableList(tickets);
     }
 
+    @Override
+    public List<User> getVisitors() {
+        return tickets.stream().flatMap(t -> t.getVisitors().stream()).toList();
+    }
+
     public boolean belongsTo(Group candidate) {
         return group == candidate;
     }

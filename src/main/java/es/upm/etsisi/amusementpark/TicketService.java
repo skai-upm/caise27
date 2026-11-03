@@ -36,6 +36,12 @@ public class TicketService {
         return groupTickets.stream().filter(t -> t.getId().equals(id)).findFirst();
     }
 
+    /** An individual or group ticket that can be used to enter attractions (not a constituent ticket). */
+    public Optional<ParkTicket> findUsable(String id) {
+        Optional<ParkTicket> individual = find(id).map(ParkTicket.class::cast);
+        return individual.isPresent() ? individual : findGroupTicket(id).map(ParkTicket.class::cast);
+    }
+
     /** Every ticket of the park through the common abstraction: individual, group and constituent tickets. */
     public List<ParkTicket> getAllTickets() {
         List<ParkTicket> all = new ArrayList<>(tickets);

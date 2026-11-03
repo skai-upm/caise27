@@ -3,6 +3,7 @@ package es.upm.etsisi.amusementpark;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -41,6 +42,11 @@ public class Ticket extends ParkTicket {
     /** The owning user, empty for a historical ticket whose user no longer exists. */
     public Optional<User> getUser() {
         return Optional.ofNullable(user);
+    }
+
+    @Override
+    public List<User> getVisitors() {
+        return user == null ? List.of() : List.of(user);
     }
 
     public String getOwnerDni() {

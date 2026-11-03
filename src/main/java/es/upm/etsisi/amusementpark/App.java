@@ -12,7 +12,7 @@ import java.nio.file.Path;
  * Entry point: starts the application and handles terminal interaction.
  * Without arguments commands are read from standard input; with an argument, the first one is the
  * path of a text file with one command per line. Both sources share the same processing loop.
- * Data files ({@code users.txt}, {@code groups.txt}, {@code tickets.txt}, {@code grouptickets.txt}) are kept in the working directory.
+ * Data files ({@code users.txt}, {@code groups.txt}, {@code tickets.txt}, {@code grouptickets.txt}, {@code attractions.txt}) are kept in the working directory.
  */
 public class App {
 
@@ -54,7 +54,9 @@ public class App {
         GroupService groups = new GroupService(new GroupFileStorage(dataDir.resolve(GroupFileStorage.DEFAULT_FILE)), users);
         TicketService tickets = new TicketService(new TicketFileStorage(dataDir.resolve(TicketFileStorage.DEFAULT_FILE)),
                 new GroupTicketFileStorage(dataDir.resolve(GroupTicketFileStorage.DEFAULT_FILE)), users, groups);
-        return new CommandProcessor(users, groups, tickets);
+        AttractionService attractions =
+                new AttractionService(new AttractionFileStorage(dataDir.resolve(AttractionFileStorage.DEFAULT_FILE)));
+        return new CommandProcessor(users, groups, tickets, attractions);
     }
 
     /**

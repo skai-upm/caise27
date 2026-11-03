@@ -26,6 +26,10 @@ import java.util.Locale;
  * TICKET DELETE;Id
  * GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd
  * GROUPTICKET DELETE;Id
+ * ATTRACTION CREATE;Id;Nombre;Capacidad
+ * ATTRACTION ENTER;IdAtraccion;IdTicket
+ * ATTRACTION EXIT;IdAtraccion;IdTicket
+ * ATTRACTION STATUS;IdAtraccion
  * SYSTEM DATE;yyyy-MM-dd
  * SYSTEM PRICE;Precio
  * HELP
@@ -45,6 +49,9 @@ public class CommandProcessor {
     private static final int TICKET_CREATE_TOKENS = 4;
     private static final int TICKET_DELETE_TOKENS = 2;
     private static final int PRICE_TOKENS = 2;
+    private static final int ATTRACTION_CREATE_TOKENS = 4;
+    private static final int ATTRACTION_ACCESS_TOKENS = 3;
+    private static final int ATTRACTION_STATUS_TOKENS = 2;
     private static final int PRICE_DECIMALS = 2;
     /** Ticket price at the start of every execution. */
     static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
@@ -64,6 +71,10 @@ public class CommandProcessor {
             "TICKET DELETE;Id",
             "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
             "GROUPTICKET DELETE;Id",
+            "ATTRACTION CREATE;Id;Nombre;Capacidad",
+            "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION EXIT;IdAtraccion;IdTicket",
+            "ATTRACTION STATUS;IdAtraccion",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -72,19 +83,23 @@ public class CommandProcessor {
     private final UserService users;
     private final GroupService groups;
     private final TicketService tickets;
+    private final AttractionService attractions;
     private boolean exitRequested;
     private LocalDate currentDate;
     private BigDecimal currentPrice = DEFAULT_PRICE;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserService users, GroupService groups, TicketService tickets) {
-        this(users, groups, tickets, LocalDate.now());
+    public CommandProcessor(UserService users, GroupService groups, TicketService tickets,
+                            AttractionService attractions) {
+        this(users, groups, tickets, attractions, LocalDate.now());
     }
 
-    public CommandProcessor(UserService users, GroupService groups, TicketService tickets, LocalDate initialDate) {
+    public CommandProcessor(UserService users, GroupService groups, TicketService tickets,
+                            AttractionService attractions, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        this.attractions = attractions;
         this.currentDate = initialDate;
     }
 
@@ -125,6 +140,10 @@ public class CommandProcessor {
                 case "TICKET DELETE" -> ticketDelete(tokens);
                 case "GROUPTICKET CREATE" -> groupTicketCreate(tokens);
                 case "GROUPTICKET DELETE" -> groupTicketDelete(tokens);
+                case "ATTRACTION CREATE" -> attractionCreate(tokens);
+                case "ATTRACTION ENTER" -> attractionEnter(tokens);
+                case "ATTRACTION EXIT" -> attractionExit(tokens);
+                case "ATTRACTION STATUS" -> attractionStatus(tokens);
                 case "SYSTEM DATE" -> systemDate(tokens);
                 case "SYSTEM PRICE" -> systemPrice(tokens);
                 case "HELP" -> tokens.length == 1 ? help() : usage("HELP");
@@ -246,6 +265,54 @@ public class CommandProcessor {
         }
         tickets.deleteGroupTicket(t[1], currentDate);
         return "OK: Group ticket " + t[1] + " deleted";
+    }
+
+    private String attractionCreate(String[] t) {
+        if (t.length != ATTRACTION_CREATE_TOKENS) {
+            return usage("ATTRACTION CREATE;Id;Nombre;Capacidad");
+        }
+        attractions.create(t[1], t[2], t[3]);
+        return "OK: Attraction " + t[1] + " created";
+    }
+
+    private String attractionEnter(String[] t) {
+        if (t.length != ATTRACTION_ACCESS_TOKENS) {
+            return usage("ATTRACTION ENTER;IdAtraccion;IdTicket");
+        }
+        ParkTicket ticket = tickets.findUsable(t[2])
+                .orElseThrow(() -> new IllegalArgumentException("No ticket with identifier " + t[2]));
+        Attraction a = attractions.enter(t[1], ticket, currentDate);
+        return "OK: " + ticket.getVisitors().size() + " user(s) entered attraction " + a.getId()
+                + " (" + a.getAvailable() + " places available)";
+    }
+
+    /** Exit by ticket identifier or, as a fallback, by the email of a present user. */
+    private String attractionExit(String[] t) {
+        if (t.length != ATTRACTION_ACCESS_TOKENS) {
+            return usage("ATTRACTION EXIT;IdAtraccion;IdTicket");
+        }
+        Attraction attraction = attractions.get(t[1]);
+        List<User> leaving = tickets.findUsable(t[2]).map(ParkTicket::getVisitors)
+                .or(() -> users.findByEmail(t[2]).map(List::of))
+                .orElseThrow(() -> new IllegalArgumentException("No ticket or user " + t[2]));
+        Attraction a = attractions.exit(attraction.getId(), leaving);
+        return "OK: User(s) left attraction " + a.getId() + " (" + a.getAvailable() + " places available)";
+    }
+
+    private String attractionStatus(String[] t) {
+        if (t.length != ATTRACTION_STATUS_TOKENS) {
+            return usage("ATTRACTION STATUS;IdAtraccion");
+        }
+        Attraction a = attractions.get(t[1]);
+        String people = a.getPresent().stream()
+                .map(u -> u.getName() + " " + u.getSurname() + " <" + u.getEmail() + ">")
+                .reduce((x, y) -> x + ", " + y).orElse("-");
+        String nl = System.lineSeparator();
+        return "Attraction " + a.getId() + " - " + a.getName() + nl
+                + "Capacity: " + a.getCapacity() + nl
+                + "Users present: " + a.getPresent().size() + nl
+                + "Available places: " + a.getAvailable() + nl
+                + "Present: " + people;
     }
 
     private String systemDate(String[] t) {

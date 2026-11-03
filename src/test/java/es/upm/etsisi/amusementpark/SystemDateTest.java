@@ -20,6 +20,7 @@ class SystemDateTest {
     UserService service;
     GroupService groups;
     TicketService tickets;
+    AttractionService attractions;
     CommandProcessor processor;
 
     @BeforeEach
@@ -28,13 +29,14 @@ class SystemDateTest {
         groups = new GroupService(new GroupFileStorage(dir.resolve("groups.txt")), service);
         tickets = new TicketService(new TicketFileStorage(dir.resolve("tickets.txt")),
                         new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups);
-        processor = new CommandProcessor(service, groups, tickets, START);
+        attractions = new AttractionService(new AttractionFileStorage(dir.resolve("attractions.txt")));
+        processor = new CommandProcessor(service, groups, tickets, attractions, START);
     }
 
     @Test
     void defaultStartsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = new CommandProcessor(service, groups, tickets).getCurrentDate();
+        LocalDate date = new CommandProcessor(service, groups, tickets, attractions).getCurrentDate();
         LocalDate after = LocalDate.now();
         assertTrue(!date.isBefore(before) && !date.isAfter(after));
     }
@@ -46,7 +48,7 @@ class SystemDateTest {
 
     @Test
     void setsValidDate() {
-        CommandProcessor p = new CommandProcessor(service, groups, tickets, LocalDate.of(2000, 1, 1));
+        CommandProcessor p = new CommandProcessor(service, groups, tickets, attractions, LocalDate.of(2000, 1, 1));
         assertEquals("OK: System date set to 2026-09-15", p.process("SYSTEM DATE;2026-09-15"));
         assertEquals(START, p.getCurrentDate());
     }

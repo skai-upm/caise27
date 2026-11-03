@@ -7,7 +7,7 @@ Documents the implemented object-oriented design as a PlantUML class diagram kep
 ## Requirements
 
 ### Requirement: PlantUML class model
-The project SHALL contain `uml/model.puml`, a valid PlantUML class diagram that represents the implemented classes and enums, their relationships and the multiplicities of the associations (including group membership of users, the user owning each ticket, the ticket inheritance hierarchy, and the aggregation and composition of group tickets).
+The project SHALL contain `uml/model.puml`, a valid PlantUML class diagram that represents the implemented classes and enums, their relationships and the multiplicities of the associations (including group membership of users, the user owning each ticket, the ticket inheritance hierarchy, the aggregation and composition of group tickets, and the users present in each attraction).
 
 #### Scenario: Diagram is valid
 - **WHEN** `uml/model.puml` is checked with PlantUML
@@ -24,3 +24,7 @@ The project SHALL contain `uml/model.puml`, a valid PlantUML class diagram that 
 #### Scenario: Group ticket relationships represented
 - **WHEN** the diagram is reviewed
 - **THEN** it shows `Ticket` and `GroupTicket` specialising `ParkTicket`, `GroupTicket` aggregating its `Group` and composed of `1..*` `Ticket`
+
+#### Scenario: Attraction relationships represented
+- **WHEN** the diagram is reviewed
+- **THEN** it shows `Attraction` with `*` present `User`s, its dependency on `ParkTicket` for entry, and the attraction service and storage classes

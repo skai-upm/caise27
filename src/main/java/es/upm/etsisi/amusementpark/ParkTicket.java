@@ -2,6 +2,7 @@ package es.upm.etsisi.amusementpark;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /** Common abstraction of every ticket sold by the park: an identifier, a date of use and a price. */
 public abstract class ParkTicket {
@@ -28,4 +29,7 @@ public abstract class ParkTicket {
     }
 
     public abstract BigDecimal getPrice();
+
+    /** The registered users this ticket admits: its owner, or every member of a group ticket. */
+    public abstract List<User> getVisitors();
 }

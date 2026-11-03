@@ -19,8 +19,8 @@ package es.upm.etsisi.amusementpark {
     - exitRequested : boolean
     - currentDate : LocalDate
     - currentPrice : BigDecimal
-    + CommandProcessor(users : UserService, groups : GroupService, tickets : TicketService)
-    + CommandProcessor(users : UserService, groups : GroupService, tickets : TicketService, initialDate : LocalDate)
+    + CommandProcessor(users : UserService, groups : GroupService, tickets : TicketService, attractions : AttractionService)
+    + CommandProcessor(users : UserService, groups : GroupService, tickets : TicketService, attractions : AttractionService, initialDate : LocalDate)
     + process(line : String) : String
     + isExitRequested() : boolean
     + getCurrentDate() : LocalDate
@@ -107,12 +107,14 @@ package es.upm.etsisi.amusementpark {
     + getDate() : LocalDate
     + isValidOn(today : LocalDate) : boolean
     + {abstract} getPrice() : BigDecimal
+    + {abstract} getVisitors() : List<User>
   }
 
   class Ticket {
     - price : BigDecimal {readOnly}
     - ownerDni : String {readOnly}
     + getUser() : Optional<User>
+    + getVisitors() : List<User>
     + belongsTo(candidate : User) : boolean
   }
 
@@ -124,6 +126,7 @@ package es.upm.etsisi.amusementpark {
     + {static} total(unitPrice : BigDecimal, members : int) : BigDecimal
     + getGroup() : Optional<Group>
     + getTickets() : List<Ticket>
+    + getVisitors() : List<User>
     + belongsTo(candidate : Group) : boolean
     + getPrice() : BigDecimal
   }
@@ -139,6 +142,7 @@ package es.upm.etsisi.amusementpark {
     + getTickets() : List<Ticket>
     + getGroupTickets() : List<GroupTicket>
     + getAllTickets() : List<ParkTicket>
+    + findUsable(id : String) : Optional<ParkTicket>
     + find(id : String) : Optional<Ticket>
     + create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Ticket
     + delete(id : String, today : LocalDate) : void
@@ -153,6 +157,33 @@ package es.upm.etsisi.amusementpark {
     - file : Path
     + load(users : List<User>) : List<Ticket>
     + save(tickets : List<Ticket>) : void
+  }
+
+  class Attraction {
+    - id : String {readOnly}
+    - name : String {readOnly}
+    - capacity : int {readOnly}
+    + getPresent() : List<User>
+    + getAvailable() : int
+    + isPresent(user : User) : boolean
+    + enter(ticket : ParkTicket, today : LocalDate) : void
+    + exit(users : Collection<User>) : int
+  }
+
+  class AttractionService {
+    + getAttractions() : List<Attraction>
+    + find(id : String) : Optional<Attraction>
+    + get(id : String) : Attraction
+    + create(id : String, name : String, capacityText : String) : Attraction
+    + enter(id : String, ticket : ParkTicket, today : LocalDate) : Attraction
+    + exit(id : String, users : Collection<User>) : Attraction
+  }
+
+  class AttractionFileStorage {
+    + {static} DEFAULT_FILE : String = "attractions.txt"
+    - file : Path
+    + load() : List<Attraction>
+    + save(attractions : List<Attraction>) : void
   }
 }
 
@@ -183,4 +214,10 @@ TicketService --> "1" GroupTicketFileStorage : groupStorage
 TicketService o--> "*" GroupTicket : groupTickets
 TicketService ..> GroupService : restores with
 GroupTicketFileStorage ..> GroupTicket : reads/writes
+CommandProcessor --> "1" AttractionService : attractions
+AttractionService --> "1" AttractionFileStorage : storage
+AttractionService o--> "*" Attraction : attractions
+Attraction o--> "*" User : present
+Attraction ..> ParkTicket : admits visitors of
+AttractionFileStorage ..> Attraction : reads/writes
 @enduml

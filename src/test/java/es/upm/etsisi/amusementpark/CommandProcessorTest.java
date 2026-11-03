@@ -26,7 +26,8 @@ class CommandProcessorTest {
         service = new UserService(new UserFileStorage(dir.resolve("users.txt")));
         GroupService groups = new GroupService(new GroupFileStorage(dir.resolve("groups.txt")), service);
         processor = new CommandProcessor(service, groups, new TicketService(new TicketFileStorage(dir.resolve("tickets.txt")),
-                new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups));
+                new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups),
+                new AttractionService(new AttractionFileStorage(dir.resolve("attractions.txt"))));
     }
 
     @Test
