@@ -50,7 +50,7 @@ import java.util.Locale;
  * SPEEDPASS DELETE;IdPase
  * SPECIALPASS CREATE;IdPase;IdTicket
  * SPECIALPASS DELETE;IdPase
- * ATTRACTION CREATE;Id;Nombre;Capacidad
+ * ATTRACTION CREATE;Id;Nombre;Capacidad[;Tipo]
  * ATTRACTION ENTER;IdAtraccion;IdTicket
  * ATTRACTION EXIT;IdAtraccion;IdTicket
  * ATTRACTION STATUS;IdAtraccion
@@ -289,10 +289,13 @@ public class CommandProcessor {
     }
 
     private String attractionCreate(String[] t) {
-        if (t.length != ATTRACTION_CREATE_TOKENS) {
-            return usage("ATTRACTION CREATE;Id;Nombre;Capacidad");
+        if (t.length == ATTRACTION_CREATE_TOKENS) {
+            attractions.create(t[1], t[2], t[3]);
+        } else if (t.length == ATTRACTION_CREATE_TOKENS + 1) {
+            attractions.create(t[1], t[2], t[3], t[4]);
+        } else {
+            return usage("ATTRACTION CREATE;Id;Nombre;Capacidad[;Tipo]");
         }
-        attractions.create(t[1], t[2], t[3]);
         return "OK: Attraction " + t[1] + " created";
     }
 
@@ -301,7 +304,7 @@ public class CommandProcessor {
             return usage("ATTRACTION ENTER;IdAtraccion;IdTicket");
         }
         ParkTicket ticket = park.enter(t[1], t[2]);
-        Attraction a = attractions.get(t[1]);
+        Attraction<?> a = attractions.get(t[1]);
         return "OK: " + ticket.getVisitors().size() + " user(s) entered attraction " + a.getId()
                 + " (" + a.getAvailable() + " places available)";
     }
@@ -311,7 +314,7 @@ public class CommandProcessor {
         if (t.length != ATTRACTION_ACCESS_TOKENS) {
             return usage("ATTRACTION EXIT;IdAtraccion;IdTicket");
         }
-        Attraction a = park.exit(t[1], t[2]);
+        Attraction<?> a = park.exit(t[1], t[2]);
         return "OK: User(s) left attraction " + a.getId() + " (" + a.getAvailable() + " places available)";
     }
 
@@ -319,7 +322,7 @@ public class CommandProcessor {
         if (t.length != ATTRACTION_STATUS_TOKENS) {
             return usage("ATTRACTION STATUS;IdAtraccion");
         }
-        Attraction a = attractions.get(t[1]);
+        Attraction<?> a = attractions.get(t[1]);
         String people = a.getPresent().stream()
                 .map(u -> u.getName() + " " + u.getSurname() + " <" + u.getEmail() + ">")
                 .reduce((x, y) -> x + ", " + y).orElse("-");

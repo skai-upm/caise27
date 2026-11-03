@@ -25,10 +25,10 @@ class AttractionControllerTest {
     void createsAndPersistsDefinitions() throws IOException {
         Path file = dir.resolve("attractions.txt");
         AttractionController service = AttractionController.initialize(new AttractionFileStorage(file));
-        Attraction a = service.create("A01", "Tornado", "20");
+        Attraction<?> a = service.create("A01", "Tornado", "20");
         assertEquals(20, a.getCapacity());
         assertTrue(a.getPresent().isEmpty());
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(file));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(file));
         Files.write(file, List.of("A01;Tornado;20", "", "bad", "A02;X;abc"));
         AttractionController reloaded = AttractionController.initialize(new AttractionFileStorage(file));
         assertEquals(1, reloaded.getAttractions().size());

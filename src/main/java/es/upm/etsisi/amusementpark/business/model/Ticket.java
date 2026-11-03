@@ -11,7 +11,7 @@ import java.util.Optional;
  * The owner's DNI is kept as well, so a historical ticket remains identifiable after its user has been
  * deleted. Holds state only; it knows nothing about persistence.
  */
-public class Ticket extends ParkTicket {
+public class Ticket extends ParkTicket implements IndividualAccess {
 
     private final BigDecimal price;
     private final User user;

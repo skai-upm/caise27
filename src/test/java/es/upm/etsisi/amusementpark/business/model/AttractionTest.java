@@ -18,7 +18,7 @@ class AttractionTest {
 
     @Test
     void individualAndGroupTicketsAreHandledUniformly() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         User ana = TestData.user("12345678Z", "ana@correo.com");
         Group g = TestData.groupOf(2);
         List<ParkTicket> tickets = List.of(new Ticket("T001", ana, TODAY, PRICE), new GroupTicket("TG01", g, TODAY, PRICE));
@@ -33,7 +33,7 @@ class AttractionTest {
 
     @Test
     void onlyTicketsForTodayAreValid() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         User ana = TestData.user("12345678Z", "ana@correo.com");
         Ticket tomorrow = new Ticket("T001", ana, TODAY.plusDays(1), PRICE);
         Ticket yesterday = new Ticket("T002", ana, TODAY.minusDays(1), PRICE);
@@ -44,7 +44,7 @@ class AttractionTest {
 
     @Test
     void groupEntryIsAtomicAndCapacityIsNeverExceeded() {
-        Attraction a = new Attraction("A01", "Tornado", 4);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 4);
         a.enter(new Ticket("T001", TestData.user("12345678Z", "ana@correo.com"), TODAY, PRICE), TODAY);
         GroupTicket four = new GroupTicket("TG01", TestData.groupOf(4), TODAY, PRICE);
         assertThrows(IllegalArgumentException.class, () -> a.enter(four, TODAY));
@@ -58,7 +58,7 @@ class AttractionTest {
 
     @Test
     void alreadyPresentUserCannotEnterTwice() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         User ana = TestData.user("12345678Z", "ana@correo.com");
         Ticket t = new Ticket("T001", ana, TODAY, PRICE);
         a.enter(t, TODAY);
@@ -68,7 +68,7 @@ class AttractionTest {
 
     @Test
     void exitReleasesPlaces() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         GroupTicket g = new GroupTicket("TG01", TestData.groupOf(3), TODAY, PRICE);
         a.enter(g, TODAY);
         assertEquals(3, a.exit(g.getVisitors()));
@@ -78,7 +78,7 @@ class AttractionTest {
 
     @Test
     void historicalTicketHasNoVisitors() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         Ticket history = new Ticket("T001", "12345678Z", TODAY, PRICE);
         assertTrue(history.getVisitors().isEmpty());
         assertThrows(IllegalArgumentException.class, () -> a.enter(history, TODAY));

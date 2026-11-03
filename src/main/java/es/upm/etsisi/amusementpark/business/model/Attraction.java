@@ -7,21 +7,42 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A park attraction with a maximum capacity and the users currently present. Users enter with any
- * {@link ParkTicket}: the ticket decides which users it admits, so entry is handled uniformly.
- * Holds state only; the users present are never persisted.
+ * A park attraction with a maximum capacity and the users currently present (never persisted).
+ * The type parameter is the ticket access capability the attraction admits: {@link #admit} only accepts
+ * tickets of that capability, which the compiler enforces; tickets whose kind is only known at run time
+ * go through {@link #enter}, which checks the capability before admitting.
+ *
+ * @param <T> access capability admitted by this attraction
  */
-public class Attraction {
+public abstract class Attraction<T extends AccessTicket> {
 
     private final String id;
     private final String name;
     private final int capacity;
+    private final Class<T> admitted;
     private final List<User> present = new ArrayList<>();
 
-    public Attraction(String id, String name, int capacity) {
+    protected Attraction(String id, String name, int capacity, Class<T> admitted) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+        this.admitted = admitted;
+    }
+
+    public abstract AttractionType getType();
+
+    /** True if tickets of this kind may be used at this attraction. */
+    public boolean admits(AccessTicket ticket) {
+        return admitted.isInstance(ticket);
+    }
+
+    /** Entry with a ticket whose kind is only known at run time: rejected if this attraction does not admit it. */
+    public void enter(AccessTicket ticket, LocalDate today) {
+        if (!admits(ticket)) {
+            throw new IllegalArgumentException("Attraction " + id + " (" + getType() + ") does not admit ticket "
+                    + ticket.getId());
+        }
+        admit(admitted.cast(ticket), today);
     }
 
     public String getId() {
@@ -53,7 +74,7 @@ public class Attraction {
      * Admits every user of the ticket, or none: the ticket must be dated {@code today}, no user may already be
      * present and all of them must fit in the remaining capacity.
      */
-    public void enter(ParkTicket ticket, LocalDate today) {
+    public void admit(T ticket, LocalDate today) {
         if (!ticket.getDate().equals(today)) {
             throw new IllegalArgumentException("Ticket " + ticket.getId() + " is not valid on " + today
                     + " (it is dated " + ticket.getDate() + ")");

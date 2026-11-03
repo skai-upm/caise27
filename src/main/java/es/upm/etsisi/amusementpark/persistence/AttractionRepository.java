@@ -10,8 +10,8 @@ import java.util.List;
 public interface AttractionRepository {
 
     /** Loads the stored attraction definitions (always empty of visitors). */
-    List<Attraction> load();
+    List<Attraction<?>> load();
 
     /** Stores exactly the given attraction definitions. */
-    void save(List<Attraction> attractions);
+    void save(List<Attraction<?>> attractions);
 }

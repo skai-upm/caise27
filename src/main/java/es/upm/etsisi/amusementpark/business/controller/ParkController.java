@@ -169,8 +169,8 @@ public class ParkController {
     }
 
     /** Exit by ticket identifier or, as a fallback, by the email of a present user (no date check). */
-    public Attraction exit(String attractionId, String ticketOrEmail) {
-        Attraction attraction = attractions.get(attractionId);
+    public Attraction<?> exit(String attractionId, String ticketOrEmail) {
+        Attraction<?> attraction = attractions.get(attractionId);
         List<User> leaving = tickets.findUsable(ticketOrEmail).map(ParkTicket::getVisitors)
                 .or(() -> users.findByEmail(ticketOrEmail).map(List::of))
                 .orElseThrow(() -> new IllegalArgumentException("No ticket or user " + ticketOrEmail));

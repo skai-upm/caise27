@@ -91,10 +91,24 @@ package es.upm.etsisi.amusementpark {
         - unitPrice : BigDecimal
         - price : BigDecimal
       }
-      class Attraction {
+      interface AccessTicket
+      interface IndividualAccess
+      interface GroupAccess
+      abstract class "Attraction<T extends AccessTicket>" as Attraction {
         - id : String
         - name : String
         - capacity : int
+        - admitted : Class<T>
+      }
+      class GeneralAttraction
+      class IndividualAttraction
+      class GroupAttraction
+      class SpecialAttraction
+      enum AttractionType {
+        GENERAL
+        INDIVIDUAL
+        GROUP
+        SPECIAL
       }
       abstract class Pass {
         - id : String
@@ -155,9 +169,18 @@ package es.upm.etsisi.amusementpark {
   }
 }
 
-' --- inheritance
+' --- inheritance and access capabilities
 ParkTicket <|-- Ticket
 ParkTicket <|-- GroupTicket
+AccessTicket <|-- IndividualAccess
+AccessTicket <|-- GroupAccess
+AccessTicket <|.. ParkTicket
+IndividualAccess <|.. Ticket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <<bind>> T -> AccessTicket
+Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T -> GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualAccess
 
 ' --- presentation
 CommandProcessor x--> "1" ParkController : park
@@ -260,6 +283,11 @@ App ..> CommandProcessor : creates
 App ..> SyntaxHelpFormatter : creates
 App ..> ExtendedHelpFormatter : creates
 App ..> CommandCatalog
+Attraction ..> AttractionType
+AttractionType ..> GeneralAttraction : creates
+AttractionType ..> IndividualAttraction : creates
+AttractionType ..> GroupAttraction : creates
+AttractionType ..> SpecialAttraction : creates
 App ..> BCryptPasswordHasher : creates
 CommandRunner ..> CommandProcessor
 UserController ..> UserValidator

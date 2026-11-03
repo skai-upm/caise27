@@ -13,7 +13,7 @@ import java.util.Optional;
  * {@link Ticket} per member at purchase time; later membership changes do not alter the composition.
  * The total is the sum of the individual prices with a discount depending on the number of members.
  */
-public class GroupTicket extends ParkTicket {
+public class GroupTicket extends ParkTicket implements GroupAccess {
 
     private static final BigDecimal HUNDRED = new BigDecimal(100);
 

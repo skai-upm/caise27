@@ -33,8 +33,8 @@ class HelpTest {
     }
 
     @Test
-    void catalogHasTwentySixDescribedCommands() {
-        assertEquals(26, CommandCatalog.COMMANDS.size());
+    void catalogHasTwentySevenDescribedCommands() {
+        assertEquals(27, CommandCatalog.COMMANDS.size());
         assertTrue(CommandCatalog.COMMANDS.stream().allMatch(c -> !c.getSyntax().isBlank() && !c.getDescription().isBlank()));
     }
 

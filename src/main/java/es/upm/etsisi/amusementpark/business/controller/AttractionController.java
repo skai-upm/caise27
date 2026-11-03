@@ -2,7 +2,8 @@ package es.upm.etsisi.amusementpark.business.controller;
 
 import es.upm.etsisi.amusementpark.business.UserValidator;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
-import es.upm.etsisi.amusementpark.business.model.ParkTicket;
+import es.upm.etsisi.amusementpark.business.model.AccessTicket;
+import es.upm.etsisi.amusementpark.business.model.AttractionType;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.persistence.AttractionRepository;
 
@@ -19,7 +20,7 @@ import java.util.Optional;
 public class AttractionController {
 
     private final AttractionRepository storage;
-    private final List<Attraction> attractions;
+    private final List<Attraction<?>> attractions;
 
     private static volatile AttractionController instance;
 
@@ -46,19 +47,25 @@ public class AttractionController {
         this.attractions = new ArrayList<>(storage.load());
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         return List.copyOf(attractions);
     }
 
-    public Optional<Attraction> find(String id) {
+    public Optional<Attraction<?>> find(String id) {
         return attractions.stream().filter(a -> a.getId().equals(id)).findFirst();
     }
 
-    public Attraction get(String id) {
+    public Attraction<?> get(String id) {
         return find(id).orElseThrow(() -> new IllegalArgumentException("No attraction with identifier " + id));
     }
 
-    public Attraction create(String id, String name, String capacityText) {
+    /** Creates a GENERAL attraction (syntax without type). */
+    public Attraction<?> create(String id, String name, String capacityText) {
+        return create(id, name, capacityText, AttractionType.GENERAL.name());
+    }
+
+    /** Creates an attraction of the given type: GENERAL, INDIVIDUAL, GROUP or SPECIAL. */
+    public Attraction<?> create(String id, String name, String capacityText, String typeText) {
         require(UserValidator.isNotBlank(id), "Attraction identifier must not be empty");
         require(UserValidator.isNotBlank(name), "Attraction name must not be empty");
         require(find(id).isEmpty(), "An attraction with identifier " + id + " already exists");
@@ -69,7 +76,9 @@ public class AttractionController {
             throw new IllegalArgumentException("Invalid capacity " + capacityText + ": it must be a positive integer", e);
         }
         require(capacity > 0, "Invalid capacity " + capacityText + ": it must be a positive integer");
-        Attraction attraction = new Attraction(id, name, capacity);
+        AttractionType type = AttractionType.parse(typeText).orElseThrow(() -> new IllegalArgumentException(
+                "Unknown attraction type " + typeText + " (GENERAL, INDIVIDUAL, GROUP or SPECIAL)"));
+        Attraction<?> attraction = type.create(id, name, capacity);
         attractions.add(attraction);
         try {
             storage.save(attractions);
@@ -80,15 +89,15 @@ public class AttractionController {
         return attraction;
     }
 
-    public Attraction enter(String id, ParkTicket ticket, LocalDate today) {
-        Attraction attraction = get(id);
+    public Attraction<?> enter(String id, AccessTicket ticket, LocalDate today) {
+        Attraction<?> attraction = get(id);
         attraction.enter(ticket, today);
         return attraction;
     }
 
     /** Removes the given users from the attraction; at least one of them must be present. */
-    public Attraction exit(String id, Collection<User> users) {
-        Attraction attraction = get(id);
+    public Attraction<?> exit(String id, Collection<User> users) {
+        Attraction<?> attraction = get(id);
         require(attraction.exit(users) > 0, "None of those users is in attraction " + id);
         return attraction;
     }
