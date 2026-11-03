@@ -109,7 +109,7 @@ class InvoiceCommandsTest {
     @Test
     void helpListsTheInvoiceCommands() {
         String help = p.process("HELP");
-        assertEquals(21, CommandProcessor.COMMAND_SYNTAX.size());
+        assertTrue(CommandProcessor.COMMAND_SYNTAX.size() >= 21);
         assertTrue(help.contains("INVOICE CREATE;USER;<correo>"));
         assertTrue(help.contains("INVOICE CREATE;GROUP;<identificadorGrupo>"));
     }

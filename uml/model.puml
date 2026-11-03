@@ -20,6 +20,18 @@ package es.upm.etsisi.amusementpark {
     class CommandProcessor {
       - exitRequested : boolean
     }
+
+    package help {
+      class HelpGenerator
+      interface HelpFormatter
+      class SyntaxHelpFormatter
+      class ExtendedHelpFormatter
+      class CommandCatalog
+      class CommandInfo {
+        - syntax : String
+        - description : String
+      }
+    }
   }
 
   package business {
@@ -134,6 +146,15 @@ CommandProcessor x--> "1" UserController : users
 CommandProcessor x--> "1" GroupController : groups
 CommandProcessor x--> "1" AttractionController : attractions
 
+CommandProcessor x--> "1" HelpGenerator : help
+CommandProcessor x--> "1" HelpGenerator : extendedHelp
+
+' --- help (behaviour injected into the generator)
+HelpGenerator o--> "*" CommandInfo : commands
+HelpGenerator x--> "1" HelpFormatter : formatter
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+
 ' --- main controller
 ParkController x--> "1" UserController : users
 ParkController x--> "1" GroupController : groups
@@ -202,6 +223,9 @@ InvoiceDirector ..> InvoiceBuilder
 AbstractInvoiceBuilder ..> Invoice : builds
 App ..> CommandRunner
 App ..> CommandProcessor : creates
+App ..> SyntaxHelpFormatter : creates
+App ..> ExtendedHelpFormatter : creates
+App ..> CommandCatalog
 CommandRunner ..> CommandProcessor
 UserController ..> UserValidator
 GroupController ..> UserValidator

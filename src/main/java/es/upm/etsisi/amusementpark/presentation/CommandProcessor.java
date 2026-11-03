@@ -14,6 +14,9 @@ import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserField;
 
+import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
+import es.upm.etsisi.amusementpark.presentation.help.CommandInfo;
+import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -49,6 +52,7 @@ import java.util.Locale;
  * SYSTEM DATE;yyyy-MM-dd
  * SYSTEM PRICE;Precio
  * HELP
+ * HELP EXTENDED
  * EXIT
  * </pre>
  */
@@ -72,38 +76,27 @@ public class CommandProcessor {
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
-    /** Syntax of every available command, shown by HELP. Extend it when new commands are added. */
-    static final List<String> COMMAND_SYNTAX = List.of(
-            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "USER DELETE;Correo;Contraseña",
-            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
-            "GROUP CREATE;Id;Nombre",
-            "GROUP ADD;Id;Correo",
-            "GROUP REMOVE;Id;Correo",
-            "GROUP DELETE;Id",
-            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
-            "TICKET DELETE;Id",
-            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
-            "GROUPTICKET DELETE;Id",
-            "ATTRACTION CREATE;Id;Nombre;Capacidad",
-            "ATTRACTION ENTER;IdAtraccion;IdTicket",
-            "ATTRACTION EXIT;IdAtraccion;IdTicket",
-            "ATTRACTION STATUS;IdAtraccion",
-            "INVOICE CREATE;USER;<correo>",
-            "INVOICE CREATE;GROUP;<identificadorGrupo>",
-            "SYSTEM DATE;yyyy-MM-dd",
-            "SYSTEM PRICE;Precio",
-            "HELP",
-            "EXIT");
+    /** Syntax of every available command, taken from the command registry. */
+    static final List<String> COMMAND_SYNTAX =
+            CommandCatalog.COMMANDS.stream().map(CommandInfo::getSyntax).toList();
 
     private final ParkController park;
     private final UserController users;
     private final GroupController groups;
     private final AttractionController attractions;
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
     private boolean exitRequested;
 
-    public CommandProcessor(ParkController park) {
+    /**
+     * @param park         main controller of the business layer
+     * @param help         generator of the concise HELP text
+     * @param extendedHelp generator of the HELP EXTENDED text
+     */
+    public CommandProcessor(ParkController park, HelpGenerator help, HelpGenerator extendedHelp) {
         this.park = park;
+        this.help = help;
+        this.extendedHelp = extendedHelp;
         this.users = park.users();
         this.groups = park.groups();
         this.attractions = park.attractions();
@@ -147,7 +140,8 @@ public class CommandProcessor {
                 case "INVOICE CREATE" -> invoiceCreate(tokens);
                 case "SYSTEM DATE" -> systemDate(tokens);
                 case "SYSTEM PRICE" -> systemPrice(tokens);
-                case "HELP" -> tokens.length == 1 ? help() : usage("HELP");
+                case "HELP" -> tokens.length == 1 ? help.generate() : usage("HELP");
+                case "HELP EXTENDED" -> tokens.length == 1 ? extendedHelp.generate() : usage("HELP EXTENDED");
                 case "EXIT" -> tokens.length == 1 ? exit() : usage("EXIT");
                 default -> error("Unknown command: " + tokens[0]);
             };
@@ -344,11 +338,6 @@ public class CommandProcessor {
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Invalid date " + text + ". Expected format yyyy-MM-dd", e);
         }
-    }
-
-    private static String help() {
-        return "Available commands:" + System.lineSeparator() + "  "
-                + String.join(System.lineSeparator() + "  ", COMMAND_SYNTAX);
     }
 
     private String exit() {

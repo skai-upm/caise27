@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.presentation;
 
+import es.upm.etsisi.amusementpark.TestData;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.controller.AttractionController;
 import es.upm.etsisi.amusementpark.business.controller.GroupController;
@@ -41,7 +42,7 @@ class SystemDateTest {
         tickets = TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                         new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups);
         attractions = AttractionController.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")));
-        processor = new CommandProcessor(ParkController.initialize(service, groups, tickets, attractions, START));
+        processor = TestData.processor(ParkController.initialize(service, groups, tickets, attractions, START));
     }
 
     @Test
@@ -59,7 +60,7 @@ class SystemDateTest {
 
     @Test
     void setsValidDate() {
-        CommandProcessor p = new CommandProcessor(ParkController.initialize(service, groups, tickets, attractions, LocalDate.of(2000, 1, 1)));
+        CommandProcessor p = TestData.processor(ParkController.initialize(service, groups, tickets, attractions, LocalDate.of(2000, 1, 1)));
         assertEquals("OK: System date set to 2026-09-15", p.process("SYSTEM DATE;2026-09-15"));
         assertEquals(START, p.getPark().getCurrentDate());
     }

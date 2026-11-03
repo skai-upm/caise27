@@ -17,6 +17,10 @@ import es.upm.etsisi.amusementpark.persistence.UserFileStorage;
 import es.upm.etsisi.amusementpark.persistence.UserRepository;
 import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
 import es.upm.etsisi.amusementpark.presentation.CommandRunner;
+import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
+import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
+import es.upm.etsisi.amusementpark.presentation.help.SyntaxHelpFormatter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -140,7 +144,7 @@ public class App {
     /**
      * Composition root: creates the repositories for {@code dataDir} (the working directory or the
      * {@code --fly} directory), initialises the unique controllers in dependency order injecting them, and
-     * builds the command processor.
+     * builds the command processor with its injected help generators.
      */
     public static CommandProcessor createProcessor(Path dataDir) {
         UserRepository userRepository = new UserFileStorage(dataDir.resolve(UserFileStorage.DEFAULT_FILE));
@@ -156,6 +160,8 @@ public class App {
         TicketController tickets = TicketController.initialize(ticketRepository, groupTicketRepository, users, groups);
         AttractionController attractions = AttractionController.initialize(attractionRepository);
         ParkController.initialize(users, groups, tickets, attractions);
-        return new CommandProcessor(ParkController.getInstance());
+        HelpGenerator help = new HelpGenerator(CommandCatalog.COMMANDS, new SyntaxHelpFormatter());
+        HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.COMMANDS, new ExtendedHelpFormatter());
+        return new CommandProcessor(ParkController.getInstance(), help, extendedHelp);
     }
 }

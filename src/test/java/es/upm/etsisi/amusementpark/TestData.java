@@ -1,7 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.User;
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
+import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
+import es.upm.etsisi.amusementpark.presentation.help.SyntaxHelpFormatter;
 
 /** Shared test fixtures. */
 public final class TestData {
@@ -27,5 +33,11 @@ public final class TestData {
             g.addMember(user(String.format("%08dX", i), "u" + i + "@correo.com"));
         }
         return g;
+    }
+
+    /** A command processor over the given main controller with the default help generators. */
+    public static CommandProcessor processor(ParkController park) {
+        return new CommandProcessor(park, new HelpGenerator(CommandCatalog.COMMANDS, new SyntaxHelpFormatter()),
+                new HelpGenerator(CommandCatalog.COMMANDS, new ExtendedHelpFormatter()));
     }
 }
