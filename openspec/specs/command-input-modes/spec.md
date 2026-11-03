@@ -7,7 +7,7 @@ Lets commands be supplied either interactively through standard input or in batc
 ## Requirements
 
 ### Requirement: Interactive mode
-When launched without arguments, the application SHALL read commands from standard input, one per line, process each line as soon as it is read, and keep waiting for further lines until `EXIT` is processed or the input ends.
+When launched without a command-file argument (no arguments, or only the `--fly` option), the application SHALL read commands from standard input, one per line, process each line as soon as it is read, and keep waiting for further lines until `EXIT` is processed or the input ends.
 
 #### Scenario: Interactive session
 - **GIVEN** the application started without arguments
@@ -19,8 +19,12 @@ When launched without arguments, the application SHALL read commands from standa
 - **WHEN** standard input ends without `EXIT`
 - **THEN** the application terminates normally after processing every line received
 
+#### Scenario: Only the fly option
+- **WHEN** the application is launched with `--fly` only
+- **THEN** it reads commands from standard input
+
 ### Requirement: File mode
-When launched with at least one argument, the application SHALL treat the first argument as the path of a text file, read it line by line and process each non-blank line as a command, in file order.
+When launched with a command-file argument, the application SHALL treat the first argument that is not the `--fly` option as the path of a text file, read it line by line and process each non-blank line as a command, in file order.
 
 #### Scenario: Batch file run
 - **GIVEN** a file `input_basico.txt` with lines creating Ana and Pedro, updating Ana's phone to `699999999`, then `EXIT`
@@ -31,6 +35,10 @@ When launched with at least one argument, the application SHALL treat the first 
 - **GIVEN** a file with an empty line between a valid `USER CREATE` and `HELP`
 - **WHEN** it is processed
 - **THEN** the empty line produces no output and no error, and both commands are executed
+
+#### Scenario: File after the fly option
+- **WHEN** the application is launched with `--fly input_fase2.txt`
+- **THEN** `input_fase2.txt` is processed as the command file
 
 ### Requirement: Shared command processing
 Interactive and file modes SHALL use the same command-processing mechanism, so that the same sequence of commands produces the same responses and the same persisted effects from either source.
