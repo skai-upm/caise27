@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -21,13 +25,8 @@ final class ParkFixture {
 
     ParkFixture(Path dir) throws IOException {
         this.dir = dir;
-        this.park = TestParks.start(dir);
-        reset();
-    }
-
-    private void reset() {
-        buffer = new ByteArrayOutputStream();
-        processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        this.park = Park.getInstance();
+        restart();
     }
 
     /** Runs the commands and returns the output of the last one. */
@@ -43,8 +42,8 @@ final class ParkFixture {
 
     /** Simulates a new execution on the same data directory. */
     void restart() throws IOException {
-        park.start(new ParkStorage(dir), TestParks.TODAY);
-        reset();
+        buffer = new ByteArrayOutputStream();
+        processor = TestParks.processor(new TextParkRepository(dir), new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     /** Creates {@code n} users with valid distinct data and returns their emails' prefix. */

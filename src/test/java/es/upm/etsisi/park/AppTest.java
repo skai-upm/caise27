@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,7 +36,7 @@ class AppTest {
             "USER CREATE;Luis;Perez;11111111H;luis@correo.com;Clave1!;600000000;1111222233334444");
 
     private static final List<String> EXPECTED_DATA = List.of(
-            "Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456");
+            "Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;*;699999999;1234567890123456");
 
     @TempDir
     Path dir;
@@ -65,7 +69,7 @@ class AppTest {
         String out = run(new String[0], stdin(INPUT), 0);
         assertTrue(out.startsWith("USER CREATED"));
         assertTrue(out.strip().endsWith("BYE"));
-        assertEquals(EXPECTED_DATA, Files.readAllLines(data));
+        assertEquals(EXPECTED_DATA, TestParks.users(data));
     }
 
     @Test
@@ -74,7 +78,7 @@ class AppTest {
         Files.writeString(input, INPUT);
         String out = run(new String[] {input.toString()}, stdin(""), 0);
         assertEquals(stdinOutputForSameSequence(), out);
-        assertEquals(EXPECTED_DATA, Files.readAllLines(data));
+        assertEquals(EXPECTED_DATA, TestParks.users(data));
     }
 
     private String stdinOutputForSameSequence() throws IOException {
@@ -93,7 +97,7 @@ class AppTest {
         String out = run(new String[0],
                 stdin("USER CREATE;Otra;Persona;12345678Z;otra@correo.com;Clave1!;600000000;1111222233334444\nEXIT"), 0);
         assertTrue(out.startsWith("ERROR: a user with DNI 12345678Z already exists"));
-        assertEquals(EXPECTED_DATA, Files.readAllLines(data));
+        assertEquals(EXPECTED_DATA, TestParks.users(data));
     }
 
     @Test
@@ -148,11 +152,11 @@ class AppTest {
     @Test
     void flyModeInteractiveUsesEmptyTemporaryData() throws IOException {
         run(new String[0], stdin(INPUT), 0);
-        List<String> before = Files.readAllLines(data);
+        List<String> before = TestParks.users(data);
         String out = run(new String[] {App.FLY}, stdin("USER DELETE;ana.nueva@correo.com;Clave1!\n" + PHASE2 + "\nEXIT"), 0);
         assertTrue(out.startsWith("ERROR: no user with email ana.nueva@correo.com"));
         assertTrue(out.strip().endsWith("BYE"));
-        assertEquals(before, Files.readAllLines(data));
+        assertEquals(before, TestParks.users(data));
         assertFalse(Files.exists(dir.resolve("tmp")));
     }
 
@@ -190,7 +194,7 @@ class AppTest {
         Files.writeString(input, PHASE2);
         run(new String[] {input.toString()}, stdin(""), 0);
         assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(dir.resolve("groups.txt")));
-        assertEquals(List.of("A01;Dragon Rojo;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Dragon Rojo;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
     }
 
     @Test

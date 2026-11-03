@@ -1,26 +1,42 @@
 @startuml model
-' Amusement Park - Delivery 2 class model (package es.upm.etsisi.park).
+' Amusement Park - Delivery 3 class model.
 ' Methods and constructors are omitted; only relevant attributes are shown.
 hide empty members
 skinparam classAttributeIconSize 0
 
 package es.upm.etsisi.park {
+  class App <<composition root>>
+}
+
+package es.upm.etsisi.park.presentation {
+  class CommandRunner
+  class CommandProcessor
+  class CommandInfo <<record>> {
+    syntax : String
+    purpose : String
+  }
+  class HelpGenerator
+  interface HelpFormatter
+  class SyntaxHelpFormatter
+  class ExtendedHelpFormatter
+}
+
+package es.upm.etsisi.park.business {
   class Park <<singleton>> {
-    - {static} INSTANCE : Park
     - currentDate : LocalDate
     - basePrice : BigDecimal
   }
+  interface ParkRepository
 
   class User {
     - firstName : String
     - surnames : String
     - dni : String {readOnly}
     - email : String
-    - password : String
+    - passwordHash : String
     - phone : String
     - card : String
   }
-
   enum UserField {
     NAME
     SURNAME
@@ -29,95 +45,192 @@ package es.upm.etsisi.park {
     PHONE
     CARD
   }
+  class UserValidator <<utility>>
+  class PasswordHasher <<utility>>
 
   class Group {
     - id : String
     - name : String
   }
 
+  interface GeneralAccess
+  interface IndividualAccess
+  interface GroupAccess
+
   abstract class Ticket {
     - id : String
     - date : LocalDate
   }
-
   class IndividualTicket {
     - basePrice : BigDecimal
     - discountPercent : int
   }
-
   class GroupTicket
 
-  class Attraction {
+  abstract class Pass {
+    - id : String
+    - price : BigDecimal
+    - consumed : boolean
+  }
+  class SpeedPass
+  class SpecialPass
+  interface PassLedger
+
+  abstract class Attraction<T extends GeneralAccess> {
     - id : String
     - name : String
     - capacity : int
+    - accessType : Class<T>
+  }
+  class GeneralAttraction <<Attraction<GeneralAccess>>>
+  class IndividualAttraction <<Attraction<IndividualAccess>>>
+  class GroupAttraction <<Attraction<GroupAccess>>>
+  class SpecialAttraction <<Attraction<IndividualAccess>>>
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 
+  class UserController <<singleton>>
+  class SystemController <<singleton>>
+  class GroupController <<singleton>>
+  class TicketController <<singleton>>
+  class PassController <<singleton>>
+  class AttractionController <<singleton>>
+  class InvoiceController <<singleton>>
+
+  abstract class ParkException
   class ValidationException
+  class NotFoundException
+  class OperationNotAllowedException
+  class PersistenceException
+}
 
-  class UserService
-  class SystemService
-  class GroupService
-  class TicketService
-  class AttractionService
-  class UserValidator <<utility>>
+package es.upm.etsisi.park.business.invoice {
+  interface InvoiceBuilder
+  abstract class AbstractInvoiceBuilder
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
+  class Invoice {
+    - title : String
+    - total : BigDecimal
+  }
+}
 
-  class ParkStorage
+package es.upm.etsisi.park.persistence {
+  class TextParkRepository
   abstract class TextFileRepository
   class UserRepository
   class GroupRepository
   class TicketRepository
   class AttractionRepository
-
-  class App
-  class CommandRunner
-  class CommandProcessor
+  class PassRepository
 }
 
-' ---- ticket hierarchy ----
+' ---- tickets and access capabilities ----
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+GeneralAccess <|-- IndividualAccess
+GeneralAccess <|-- GroupAccess
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
 
 ' ---- domain relationships (directions as implemented) ----
 Park "1" o--> "0..*" User : users
 Park "1" o--> "0..*" Group : groups
-Park "1" o--> "0..*" Ticket : tickets\n(standalone and group)
+Park "1" o--> "0..*" Ticket : tickets
 Park "1" o--> "0..*" Attraction : attractions
-Park --> "1" ParkStorage : storage
-
+Park "1" o--> "0..*" Pass : passes
+Park --> "1" ParkRepository : repository
 Group "0..*" --> "0..*" User : members
 IndividualTicket "0..*" --> "1" User : user
 GroupTicket "1" *--> "1..*" IndividualTicket : composition
 GroupTicket "0..*" --> "0..1" Group : group
 Attraction "0..*" --> "0..*" User : occupants
 
-' ---- services ----
-UserService --> "1" Park : park
-SystemService --> "1" Park : park
-GroupService --> "1" Park : park
-TicketService --> "1" Park : park
-AttractionService --> "1" Park : park
-UserService ..> UserField
-UserService ..> UserValidator
-Exception <|-- ValidationException
+' ---- passes: 0..* SpeedPasses and 0..1 Special Pass per individual ticket ----
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Pass "0..*" --> "1" IndividualTicket : ticket
+note "An individual ticket has 0..* SpeedPasses\nand at most one (0..1) SpecialPass" as PassCardinality
+PassCardinality .. Pass
 
-' ---- persistence ----
+' ---- generic attractions ----
+Attraction <|-- GeneralAttraction
+Attraction <|-- IndividualAttraction
+Attraction <|-- GroupAttraction
+Attraction <|-- SpecialAttraction
+Attraction ..> GeneralAccess : T extends
+Attraction ..> PassLedger : uses on entry
+AttractionType ..> Attraction : creates
+
+' ---- singleton controllers and injected collaborations ----
+UserController --> "1" Park : park
+SystemController --> "1" Park : park
+GroupController --> "1" Park : park
+TicketController --> "1" Park : park
+TicketController --> "1" PassController : passes
+PassController --> "1" Park : park
+PassLedger <|.. PassController
+AttractionController --> "1" Park : park
+AttractionController --> "1" PassController : passes
+InvoiceController --> "1" Park : park
+InvoiceController --> "1" PassController : passes
+UserController ..> UserField
+UserController ..> UserValidator
+UserController ..> PasswordHasher
+User ..> PasswordHasher
+
+' ---- invoices (Builder) ----
+InvoiceBuilder <|.. AbstractInvoiceBuilder
+AbstractInvoiceBuilder <|-- UserInvoiceBuilder
+AbstractInvoiceBuilder <|-- GroupInvoiceBuilder
+AbstractInvoiceBuilder ..> Invoice : builds
+InvoiceController ..> UserInvoiceBuilder : directs
+InvoiceController ..> GroupInvoiceBuilder : directs
+
+' ---- exceptions ----
+Exception <|-- ParkException
+ParkException <|-- ValidationException
+ParkException <|-- NotFoundException
+ParkException <|-- OperationNotAllowedException
+ParkException <|-- PersistenceException
+
+' ---- persistence (implements the business port) ----
+ParkRepository <|.. TextParkRepository
 TextFileRepository <|-- UserRepository
 TextFileRepository <|-- GroupRepository
 TextFileRepository <|-- TicketRepository
 TextFileRepository <|-- AttractionRepository
-ParkStorage "1" *--> "1" UserRepository : users
-ParkStorage "1" *--> "1" GroupRepository : groups
-ParkStorage "1" *--> "1" TicketRepository : tickets
-ParkStorage "1" *--> "1" AttractionRepository : attractions
+TextFileRepository <|-- PassRepository
+TextParkRepository "1" *--> "1" UserRepository : users
+TextParkRepository "1" *--> "1" GroupRepository : groups
+TextParkRepository "1" *--> "1" TicketRepository : tickets
+TextParkRepository "1" *--> "1" AttractionRepository : attractions
+TextParkRepository "1" *--> "1" PassRepository : passes
 
-' ---- application ----
-App ..> Park : getInstance()
-App ..> CommandRunner
+' ---- presentation ----
 CommandRunner --> "1" CommandProcessor : processor
-CommandProcessor --> "1" UserService : users
-CommandProcessor --> "1" SystemService : system
-CommandProcessor --> "1" GroupService : groups
-CommandProcessor --> "1" TicketService : tickets
-CommandProcessor --> "1" AttractionService : attractions
+CommandProcessor --> "1" HelpGenerator : help
+CommandProcessor --> "1" HelpGenerator : extendedHelp
+CommandProcessor ..> UserController
+CommandProcessor ..> SystemController
+CommandProcessor ..> GroupController
+CommandProcessor ..> TicketController
+CommandProcessor ..> PassController
+CommandProcessor ..> AttractionController
+CommandProcessor ..> InvoiceController
+CommandProcessor ..> ParkException : reports
+HelpGenerator --> "1" HelpFormatter : formatter
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+HelpGenerator ..> CommandInfo
+
+' ---- composition root (dependency injection) ----
+App ..> Park : start(repository)
+App ..> TextParkRepository : creates
+App ..> CommandProcessor : creates
+App ..> CommandRunner : creates
 @enduml

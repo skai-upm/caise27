@@ -7,7 +7,7 @@ Adds park attractions with identity, name, capacity and an in-memory collection 
 ## Requirements
 
 ### Requirement: Create attraction
-`ATTRACTION CREATE;Identifier;Name;Capacity` SHALL create an attraction with a unique identifier, a name, a positive integer maximum capacity and no users inside; a duplicate identifier or a non-positive or non-integer capacity SHALL be rejected.
+`ATTRACTION CREATE;Identifier;Name;Capacity` and `ATTRACTION CREATE;Identifier;Name;Capacity;Type` SHALL create an attraction with a unique identifier, a name, a positive integer maximum capacity, a type (GENERAL when omitted) and no users inside; a duplicate identifier, a non-positive or non-integer capacity, or an unknown type SHALL be rejected.
 
 #### Scenario: Attraction created
 - **WHEN** `ATTRACTION CREATE;A01;Dragon Rojo;20` is processed

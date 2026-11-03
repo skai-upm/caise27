@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

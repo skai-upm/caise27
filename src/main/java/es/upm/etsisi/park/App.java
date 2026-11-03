@@ -1,5 +1,21 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.AttractionController;
+import es.upm.etsisi.park.business.GroupController;
+import es.upm.etsisi.park.business.InvoiceController;
+import es.upm.etsisi.park.business.Park;
+import es.upm.etsisi.park.business.ParkRepository;
+import es.upm.etsisi.park.business.PassController;
+import es.upm.etsisi.park.business.SystemController;
+import es.upm.etsisi.park.business.TicketController;
+import es.upm.etsisi.park.business.UserController;
+import es.upm.etsisi.park.persistence.TextParkRepository;
+import es.upm.etsisi.park.presentation.CommandProcessor;
+import es.upm.etsisi.park.presentation.CommandRunner;
+import es.upm.etsisi.park.presentation.ExtendedHelpFormatter;
+import es.upm.etsisi.park.presentation.HelpGenerator;
+import es.upm.etsisi.park.presentation.SyntaxHelpFormatter;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +35,10 @@ import java.util.Comparator;
  * input; with a file argument it reads them from that file. A leading
  * {@code --fly} argument keeps all data in a temporary directory that is removed
  * when the execution ends.
+ *
+ * <p>This class is also the composition root: it creates the repository for the
+ * selected data directory and injects it, and the controllers' collaborators,
+ * into the singleton controllers.
  */
 public class App {
 
@@ -60,14 +80,14 @@ public class App {
     }
 
     private static int execute(String[] args, Path dataDir, InputStream in, PrintStream out) {
-        Park park = Park.getInstance();
+        CommandProcessor processor;
         try {
-            park.start(new ParkStorage(dataDir), LocalDate.now());
+            processor = configure(new TextParkRepository(dataDir), LocalDate.now(), out);
         } catch (IOException e) {
             out.println("ERROR: cannot load park data from " + dataDir + ": " + e.getMessage());
             return 1;
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(park, out));
+        CommandRunner runner = new CommandRunner(processor);
 
         if (args.length == 0) {
             try {
@@ -87,6 +107,34 @@ public class App {
             return 1;
         }
         return 0;
+    }
+
+    /**
+     * Wires the application: loads the park from the injected repository and
+     * configures every singleton controller with its collaborators.
+     */
+    public static CommandProcessor configure(ParkRepository repository, LocalDate today, PrintStream out)
+            throws IOException {
+        Park park = Park.getInstance();
+        park.start(repository, today);
+        PassController passes = PassController.getInstance();
+        passes.configure(park);
+        UserController users = UserController.getInstance();
+        users.configure(park);
+        SystemController system = SystemController.getInstance();
+        system.configure(park);
+        GroupController groups = GroupController.getInstance();
+        groups.configure(park);
+        TicketController tickets = TicketController.getInstance();
+        tickets.configure(park, passes);
+        AttractionController attractions = AttractionController.getInstance();
+        attractions.configure(park, passes);
+        InvoiceController invoices = InvoiceController.getInstance();
+        invoices.configure(park, passes);
+        CommandProcessor.Controllers controllers = new CommandProcessor.Controllers(
+                users, system, groups, tickets, passes, attractions, invoices);
+        return new CommandProcessor(controllers, new HelpGenerator(new SyntaxHelpFormatter()),
+                new HelpGenerator(new ExtendedHelpFormatter()), out);
     }
 
     /** Timestamped temporary data directory used by --fly executions. */

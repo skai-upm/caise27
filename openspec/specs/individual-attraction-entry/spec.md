@@ -14,7 +14,7 @@ Lets the holder of an individual ticket valid for the current system date enter 
 - **THEN** Ana is inside `A01` and success is reported
 
 ### Requirement: Entry rejections leave occupancy unchanged
-Entry SHALL be rejected without changing occupancy when the attraction or ticket does not exist, the ticket date differs from the current system date, the attraction is full, or a user who would enter is already inside that attraction.
+Entry SHALL be rejected without changing occupancy or passes when the attraction or ticket does not exist, the ticket date differs from the current system date, the attraction is full, a user who would enter is already inside that attraction, the attraction type does not accept the ticket kind, or a required SpeedPass or Special Pass is not available.
 
 #### Scenario: Ticket for another date
 - **WHEN** ticket `T001` is dated tomorrow and `ATTRACTION ENTER;A01;T001` is processed
@@ -22,6 +22,10 @@ Entry SHALL be rejected without changing occupancy when the attraction or ticket
 
 #### Scenario: Full attraction
 - **WHEN** `A01` is at capacity and a valid ticket for today is used to enter
+- **THEN** an error is reported and occupancy is unchanged
+
+#### Scenario: Ticket kind not accepted
+- **WHEN** a valid individual ticket is used at a GROUP attraction
 - **THEN** an error is reported and occupancy is unchanged
 
 ### Requirement: Presence independent of later date changes

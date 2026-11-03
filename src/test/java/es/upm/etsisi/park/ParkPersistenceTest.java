@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -77,7 +81,7 @@ class ParkPersistenceTest {
                 "GROUPTICKET CREATE;TG01;G01;2027-04-15", "TICKET CREATE;T001;ana@correo.com;2027-04-16",
                 "ATTRACTION CREATE;A01;Dragon Rojo;20");
         assertEquals(List.of("G01;Familia;12345678Z"), Files.readAllLines(dir.resolve("groups.txt")));
-        assertEquals(List.of("A01;Dragon Rojo;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Dragon Rojo;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
         assertEquals(List.of(
                 "G;TG01;2027-04-15;G01",
                 "C;TG01;TG01:12345678Z;2027-04-15;40.00;0;12345678Z;ana@correo.com;Ana;Garcia Lopez",
@@ -88,7 +92,7 @@ class ParkPersistenceTest {
     @Test
     void skipsMalformedRecords() throws IOException {
         Files.writeString(dir.resolve("users.txt"),
-                "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456\n");
+                "Ana;Garcia Lopez;12345678Z;ana@correo.com;*;612345678;1234567890123456\n");
         Files.writeString(dir.resolve("groups.txt"), "G01;Familia;12345678Z,99999999R\nbroken\n");
         Files.writeString(dir.resolve("attractions.txt"), "A01;Dragon;20\nA02;Bad;zero\nA03;Bad;0\nshort\n");
         Files.writeString(dir.resolve("tickets.txt"), String.join("\n",
@@ -112,14 +116,9 @@ class ParkPersistenceTest {
                 "ATTRACTION CREATE;A01;Dragon;5", "GROUP CREATE;G02;Old", "GROUP ADD;G02;pedro@correo.com",
                 "GROUPTICKET CREATE;TG02;G02;2027-04-15", "SYSTEM DATE;2027-04-16");
         Park park = f.park;
-        park.start(new ParkStorage(dir) {
-            @Override
-            public void saveAll(java.util.Collection<User> u, java.util.Collection<Group> g,
-                                java.util.Collection<Ticket> t, java.util.Collection<Attraction> a) throws IOException {
-                throw new IOException("disk full");
-            }
-        }, TestParks.TODAY.plusDays(1));
-        CommandProcessor p = new CommandProcessor(park, new java.io.PrintStream(new java.io.ByteArrayOutputStream()));
+        CommandProcessor p = TestParks.processor(new FailingRepository(dir),
+                new java.io.PrintStream(new java.io.ByteArrayOutputStream()));
+        p.process("SYSTEM DATE;2027-04-16");
         p.process("GROUP CREATE;G03;Nuevo");
         p.process("GROUP REMOVE;G02;pedro@correo.com");
         p.process("GROUP ADD;G02;ana@correo.com");

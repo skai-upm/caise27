@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,9 +34,9 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        service = TestParks.start(dir);
         buffer = new ByteArrayOutputStream();
-        processor = new CommandProcessor(service, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        processor = TestParks.processor(new TextParkRepository(dir), new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        service = Park.getInstance();
     }
 
     private String output() {
@@ -120,7 +124,7 @@ class CommandProcessorTest {
     }
 
     @Test
-    void helpListsPhaseOneAndTwoCommandsInOrder() {
+    void helpListsAllDeliveriesCommandsInOrder() {
         processor.process("HELP");
         assertEquals(List.of(
                 "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
@@ -137,11 +141,20 @@ class CommandProcessorTest {
                 "GROUPTICKET CREATE;<identifier>;<group>;<date>",
                 "GROUPTICKET DELETE;<identifier>",
                 "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+                "ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
                 "ATTRACTION ENTER;<attraction>;<ticket>",
+                "ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
                 "ATTRACTION EXIT;<attraction>;<email>",
                 "ATTRACTION LIST;<attraction>",
                 "ATTRACTION STATUS;<attractionIdentifier>",
+                "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>",
+                "SPEEDPASS DELETE;<speedPassIdentifier>",
+                "SPECIALPASS CREATE;<identifier>;<individualTicket>",
+                "SPECIALPASS DELETE;<specialPassIdentifier>",
+                "INVOICE CREATE;USER;<email>",
+                "INVOICE CREATE;GROUP;<groupIdentifier>",
                 "HELP",
+                "HELP EXTENDED",
                 "EXIT"), output().lines().toList());
     }
 }

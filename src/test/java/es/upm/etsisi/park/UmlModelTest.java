@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -17,11 +21,22 @@ import org.junit.jupiter.api.Test;
 class UmlModelTest {
 
     private static final Path MODEL = Path.of("uml/model.puml");
-    private static final Path SOURCES = Path.of("src/main/java/es/upm/etsisi/park");
-    private static final String PACKAGE = "es.upm.etsisi.park.";
+    private static final Path SOURCES = Path.of("src/main/java");
 
     private static List<String> lines() throws IOException {
         return Files.readAllLines(MODEL).stream().map(String::strip).toList();
+    }
+
+    /** Simple name to fully qualified name of every main source class. */
+    private static java.util.Map<String, String> sourceClasses() throws IOException {
+        java.util.Map<String, String> classes = new java.util.TreeMap<>();
+        try (var files = Files.walk(SOURCES)) {
+            for (Path p : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                String fqn = SOURCES.relativize(p).toString().replace(".java", "").replace('/', '.');
+                classes.put(p.getFileName().toString().replace(".java", ""), fqn);
+            }
+        }
+        return classes;
     }
 
     @Test
@@ -35,11 +50,7 @@ class UmlModelTest {
                 }
             }
         }
-        Set<String> sources = new TreeSet<>();
-        try (var files = Files.list(SOURCES)) {
-            files.map(p -> p.getFileName().toString().replace(".java", "")).forEach(sources::add);
-        }
-        assertEquals(sources, declared);
+        assertEquals(new TreeSet<>(sourceClasses().keySet()), declared);
     }
 
     @Test
@@ -52,7 +63,8 @@ class UmlModelTest {
             }
             String owner = line.split(" ")[0];
             String field = line.substring(line.indexOf(" : ") + 3).split("\\\\n")[0].strip();
-            assertDoesNotThrow(() -> Class.forName(PACKAGE + owner).getDeclaredField(field), line);
+            String className = sourceClasses().get(owner);
+            assertDoesNotThrow(() -> Class.forName(className).getDeclaredField(field), line);
             checked++;
         }
         assertFalse(checked == 0);

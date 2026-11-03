@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -36,11 +40,11 @@ class CommandRunnerTest {
 
     private Outcome runFrom(BufferedReader reader, String dataName) throws IOException {
         Path dataDir = dir.resolve(dataName);
-        Park park = TestParks.start(dataDir);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        CommandProcessor processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        CommandProcessor processor = TestParks.processor(new TextParkRepository(dataDir),
+                new PrintStream(buffer, true, StandardCharsets.UTF_8));
         new CommandRunner(processor).run(reader);
-        return new Outcome(buffer.toString(StandardCharsets.UTF_8), Files.readAllLines(dataDir.resolve("users.txt")));
+        return new Outcome(buffer.toString(StandardCharsets.UTF_8), TestParks.users(dataDir.resolve("users.txt")));
     }
 
     @Test
@@ -56,8 +60,8 @@ class CommandRunnerTest {
 
         assertEquals(interactive, file);
         assertEquals(List.of(
-                "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
-                "Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"),
+                "Ana;Garcia Lopez;12345678Z;ana@correo.com;*;699999999;1234567890123456",
+                "Pedro;Lopez Martin;87654321X;pedro@correo.com;*;623456789;9876543210987654"),
                 file.stored());
     }
 
@@ -71,8 +75,9 @@ class CommandRunnerTest {
 
     @Test
     void commandsAfterExitAreNotExecuted() throws IOException {
-        Park service = TestParks.start(dir);
-        CommandProcessor processor = new CommandProcessor(service, new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+        CommandProcessor processor = TestParks.processor(new TextParkRepository(dir),
+                new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+        Park service = Park.getInstance();
         String file = String.join("\n",
                 "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
                 "EXIT",

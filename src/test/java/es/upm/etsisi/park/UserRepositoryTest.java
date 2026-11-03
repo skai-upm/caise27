@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -42,7 +46,7 @@ class UserRepositoryTest {
         repo.saveAll(List.of(ana));
         List<User> loaded = new UserRepository(file).load();
         assertEquals(1, loaded.size());
-        assertEquals(UserRepository.toLine(ana), UserRepository.toLine(loaded.get(0)));
+        assertEquals(TestParks.line(ana), TestParks.line(loaded.get(0)));
     }
 
     @Test

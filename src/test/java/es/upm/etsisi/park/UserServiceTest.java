@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -20,28 +24,29 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class UserServiceTest {
 
-    private static final String ANA_LINE = "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
+    private static final String ANA_LINE = "Ana;Garcia Lopez;12345678Z;ana@correo.com;*;612345678;1234567890123456";
 
     @TempDir
     Path dir;
     private Path file;
-    private UserService service;
+    private UserController service;
 
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        service = new UserService(TestParks.start(dir));
+        TestParks.start(dir);
+        service = UserController.getInstance();
     }
 
     private static Park park() {
         return Park.getInstance();
     }
 
-    private void createAna() throws ValidationException {
+    private void createAna() throws ParkException {
         service.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
     }
 
-    private void createPedro() throws ValidationException {
+    private void createPedro() throws ParkException {
         service.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
     }
 
@@ -53,7 +58,7 @@ class UserServiceTest {
     void createsValidUniqueUser() throws Exception {
         createAna();
         assertEquals(1, park().getUsers().size());
-        assertEquals(List.of(ANA_LINE), Files.readAllLines(file));
+        assertEquals(List.of(ANA_LINE), TestParks.users(file));
     }
 
     @ParameterizedTest
@@ -63,7 +68,7 @@ class UserServiceTest {
             "12345678Z|ana@correo.com|clave1!|1234567890123456",
             "12345678Z|ana@correo.com|Clave1!|123456789012345"})
     void rejectsInvalidData(String dni, String email, String password, String card) {
-        assertThrows(ValidationException.class,
+        assertThrows(ParkException.class,
                 () -> service.create("Ana", "Garcia Lopez", dni, email, password, "612345678", card));
         assertTrue(park().getUsers().isEmpty());
         assertTrue(Files.notExists(file));
@@ -72,7 +77,7 @@ class UserServiceTest {
     @Test
     void rejectsDuplicateDni() throws Exception {
         createAna();
-        assertThrows(ValidationException.class, () -> service.create("Otra", "Persona", "12345678Z",
+        assertThrows(ParkException.class, () -> service.create("Otra", "Persona", "12345678Z",
                 "otra@correo.com", "Clave1!", "600000000", "1111222233334444"));
         assertEquals(1, park().getUsers().size());
     }
@@ -80,7 +85,7 @@ class UserServiceTest {
     @Test
     void rejectsDuplicateEmail() throws Exception {
         createAna();
-        assertThrows(ValidationException.class, () -> service.create("Otra", "Persona", "87654321X",
+        assertThrows(ParkException.class, () -> service.create("Otra", "Persona", "87654321X",
                 "ana@correo.com", "Clave1!", "600000000", "1111222233334444"));
         assertEquals(1, park().getUsers().size());
     }
@@ -88,11 +93,12 @@ class UserServiceTest {
     @Test
     void usersSurviveRestartAndStillCountForUniqueness() throws Exception {
         createAna();
-        UserService restarted = new UserService(reload());
+        reload();
+        UserController restarted = UserController.getInstance();
         User ana = park().findUser("ana@correo.com");
         assertNotNull(ana);
-        assertEquals(ANA_LINE, UserRepository.toLine(ana));
-        assertThrows(ValidationException.class, () -> restarted.create("Otra", "Persona", "12345678Z",
+        assertEquals(ANA_LINE, TestParks.line(ana));
+        assertThrows(ParkException.class, () -> restarted.create("Otra", "Persona", "12345678Z",
                 "otra@correo.com", "Clave1!", "600000000", "1111222233334444"));
     }
 
@@ -102,36 +108,36 @@ class UserServiceTest {
         createPedro();
         service.delete("pedro@correo.com", "Otra2#");
         assertNull(park().findUser("pedro@correo.com"));
-        assertEquals(List.of(ANA_LINE), Files.readAllLines(file));
+        assertEquals(List.of(ANA_LINE), TestParks.users(file));
     }
 
     @Test
     void doesNotDeleteWithWrongPassword() throws Exception {
         createAna();
-        assertThrows(ValidationException.class, () -> service.delete("ana@correo.com", "Wrong1!"));
+        assertThrows(ParkException.class, () -> service.delete("ana@correo.com", "Wrong1!"));
         assertNotNull(park().findUser("ana@correo.com"));
-        assertEquals(List.of(ANA_LINE), Files.readAllLines(file));
+        assertEquals(List.of(ANA_LINE), TestParks.users(file));
     }
 
     @Test
     void doesNotDeleteUnknownEmail() throws Exception {
         createAna();
-        assertThrows(ValidationException.class, () -> service.delete("nadie@correo.com", "Clave1!"));
+        assertThrows(ParkException.class, () -> service.delete("nadie@correo.com", "Clave1!"));
         assertEquals(1, park().getUsers().size());
     }
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            "NAME|Ana Maria|Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
-            "SURNAME|Garcia|Ana;Garcia;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
-            "PASSWORD|Nueva2#|Ana;Garcia Lopez;12345678Z;ana@correo.com;Nueva2#;612345678;1234567890123456",
-            "PHONE|699999999|Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
-            "CARD|9999888877776666|Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;9999888877776666",
-            "EMAIL|ana.nueva@correo.com|Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;612345678;1234567890123456"})
+            "NAME|Ana Maria|Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;*;612345678;1234567890123456",
+            "SURNAME|Garcia|Ana;Garcia;12345678Z;ana@correo.com;*;612345678;1234567890123456",
+            "PASSWORD|Nueva2#|Ana;Garcia Lopez;12345678Z;ana@correo.com;*;612345678;1234567890123456",
+            "PHONE|699999999|Ana;Garcia Lopez;12345678Z;ana@correo.com;*;699999999;1234567890123456",
+            "CARD|9999888877776666|Ana;Garcia Lopez;12345678Z;ana@correo.com;*;612345678;9999888877776666",
+            "EMAIL|ana.nueva@correo.com|Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;*;612345678;1234567890123456"})
     void updatesPermittedFieldsAndPersists(String field, String value, String expectedLine) throws Exception {
         createAna();
         service.update("ana@correo.com", "Clave1!", field, value);
-        assertEquals(List.of(expectedLine), Files.readAllLines(file));
+        assertEquals(List.of(expectedLine), TestParks.users(file));
         assertEquals(1, reload().getUsers().size());
     }
 
@@ -149,7 +155,7 @@ class UserServiceTest {
     void updatingEmailToItsOwnValueIsAllowed() throws Exception {
         createAna();
         service.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo.com");
-        assertEquals(List.of(ANA_LINE), Files.readAllLines(file));
+        assertEquals(List.of(ANA_LINE), TestParks.users(file));
     }
 
     @ParameterizedTest
@@ -165,41 +171,34 @@ class UserServiceTest {
     void rejectedUpdatesLeaveUserUnchanged(String password, String field, String value) throws Exception {
         createAna();
         createPedro();
-        List<String> before = Files.readAllLines(file);
-        assertThrows(ValidationException.class, () -> service.update("ana@correo.com", password, field, value));
-        assertEquals(ANA_LINE, UserRepository.toLine(park().findUser("ana@correo.com")));
-        assertEquals(before, Files.readAllLines(file));
+        List<String> before = TestParks.users(file);
+        assertThrows(ParkException.class, () -> service.update("ana@correo.com", password, field, value));
+        assertEquals(ANA_LINE, TestParks.line(park().findUser("ana@correo.com")));
+        assertEquals(before, TestParks.users(file));
     }
 
     @Test
     void updateOfUnknownUserIsRejected() {
-        assertThrows(ValidationException.class,
+        assertThrows(ParkException.class,
                 () -> service.update("nadie@correo.com", "Clave1!", "PHONE", "699999999"));
     }
 
     @Test
     void failedWriteRollsBackEveryOperation() throws Exception {
         createAna();
-        Park park = Park.getInstance();
-        park.start(new ParkStorage(dir) {
-            @Override
-            public void saveAll(java.util.Collection<User> u, java.util.Collection<Group> g,
-                                java.util.Collection<Ticket> t, java.util.Collection<Attraction> a) throws IOException {
-                throw new IOException("disk full");
-            }
-        }, LocalDate.of(2027, 4, 15));
-        UserService broken = new UserService(park);
-        assertThrows(ValidationException.class, () -> broken.create("Pedro", "Lopez Martin", "87654321X",
+        Park park = TestParks.start(new FailingRepository(dir));
+        UserController broken = UserController.getInstance();
+        assertThrows(ParkException.class, () -> broken.create("Pedro", "Lopez Martin", "87654321X",
                 "pedro@correo.com", "Otra2#", "623456789", "9876543210987654"));
         assertEquals(1, park.getUsers().size());
 
-        assertThrows(ValidationException.class, () -> broken.delete("ana@correo.com", "Clave1!"));
+        assertThrows(ParkException.class, () -> broken.delete("ana@correo.com", "Clave1!"));
         assertNotNull(park.findUser("ana@correo.com"));
 
-        assertThrows(ValidationException.class,
+        assertThrows(ParkException.class,
                 () -> broken.update("ana@correo.com", "Clave1!", "EMAIL", "ana.nueva@correo.com"));
         assertNotNull(park.findUser("ana@correo.com"));
         assertNull(park.findUser("ana.nueva@correo.com"));
-        assertEquals(ANA_LINE, UserRepository.toLine(park.findUser("ana@correo.com")));
+        assertEquals(ANA_LINE, TestParks.line(park.findUser("ana@correo.com")));
     }
 }

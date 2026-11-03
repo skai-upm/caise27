@@ -1,5 +1,9 @@
 package es.upm.etsisi.park;
 
+import es.upm.etsisi.park.business.*;
+import es.upm.etsisi.park.persistence.*;
+import es.upm.etsisi.park.presentation.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -102,7 +106,7 @@ class AttractionServiceTest {
         assertEquals("ATTRACTION EXITED", f.run("ATTRACTION EXIT;A01;ana@correo.com"));
         assertEquals(List.of("pedro@correo.com"), inside("A01"));
         String status = f.run("ATTRACTION STATUS;A01");
-        assertEquals(String.join(System.lineSeparator(), "ATTRACTION: A01", "NAME: Dragon Rojo", "CAPACITY: 20",
+        assertEquals(String.join(System.lineSeparator(), "ATTRACTION: A01", "NAME: Dragon Rojo", "TYPE: GENERAL", "CAPACITY: 20",
                 "INSIDE: 1", "AVAILABLE: 19", "USERS: pedro@correo.com"), status);
     }
 
