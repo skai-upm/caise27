@@ -1,0 +1,122 @@
+@startuml model
+' Delivery 2 class model of es.upm.etsisi.amusementpark (attributes only).
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package es.upm.etsisi.amusementpark {
+
+  class App {
+    {static} DATA_DIRECTORY : Path
+    {static} FLY_OPTION : String
+  }
+
+  class CommandProcessor {
+    - out : PrintStream
+  }
+
+  class ParkController <<singleton>> {
+    {static} INITIAL_PRICE : BigDecimal
+    {static} - INSTANCE : ParkController
+    - today : LocalDate
+    - basePrice : BigDecimal
+  }
+
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class UserValidator <<utility>>
+
+  class Group {
+    - identifier : String {readOnly}
+    - name : String {readOnly}
+  }
+
+  abstract class Ticket {
+    - identifier : String {readOnly}
+    - date : LocalDate {readOnly}
+  }
+
+  class IndividualTicket {
+    - basePrice : BigDecimal {readOnly}
+    - discount : BigDecimal {readOnly}
+  }
+
+  class GroupTicket {
+  }
+
+  class Attraction {
+    - identifier : String {readOnly}
+    - name : String {readOnly}
+    - capacity : int {readOnly}
+  }
+
+  class ParkException
+
+  class ParkRepositories
+  class UserRepository {
+    - file : Path
+  }
+  class GroupRepository {
+    - file : Path
+  }
+  class TicketRepository {
+    - file : Path
+  }
+  class AttractionRepository {
+    - file : Path
+  }
+  class FlyWorkspace {
+    - root : Path
+    - directory : Path
+  }
+}
+
+' ticket hierarchy
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' domain relationships (directions as implemented)
+IndividualTicket "*" --> "1" User : user
+GroupTicket "*" --> "0..1" Group : group
+GroupTicket "0..1" *--> "1..*" IndividualTicket : composition
+Group "*" --> "*" User : members
+Attraction "*" --> "*" User : occupants
+
+' central management
+ParkController "1" --> "*" User : users
+ParkController "1" --> "*" Group : groups
+ParkController "1" --> "*" Ticket : tickets
+ParkController "1" --> "*" Attraction : attractions
+ParkController "1" --> "1" ParkRepositories : repositories
+CommandProcessor "*" --> "1" ParkController : park
+
+' persistence
+ParkRepositories "1" *--> "1" UserRepository : userRepository
+ParkRepositories "1" *--> "1" GroupRepository : groupRepository
+ParkRepositories "1" *--> "1" TicketRepository : ticketRepository
+ParkRepositories "1" *--> "1" AttractionRepository : attractionRepository
+
+' dependencies
+App ..> CommandProcessor
+App ..> FlyWorkspace
+ParkController ..> UserField
+ParkController ..> UserValidator
+ParkController ..> ParkException
+Exception <|-- ParkException
+@enduml

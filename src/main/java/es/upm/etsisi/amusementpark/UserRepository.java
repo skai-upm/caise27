@@ -1,13 +1,7 @@
 package es.upm.etsisi.amusementpark;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -34,52 +28,34 @@ public class UserRepository {
      * Loads all stored users. A missing file means no users yet; lines that do not
      * describe a valid, unique user are skipped with a warning.
      */
-    public List<User> load() throws UserException {
+    public List<User> load() throws ParkException {
         List<User> users = new ArrayList<>();
-        if (!Files.exists(file)) {
-            return users;
-        }
         Set<String> dnis = new HashSet<>();
         Set<String> emails = new HashSet<>();
-        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            String line;
-            int lineNumber = 0;
-            while ((line = reader.readLine()) != null) {
-                lineNumber++;
-                if (!line.isBlank()) {
-                    User user = parse(line);
-                    if (user != null && !dnis.contains(user.getDni()) && !emails.contains(user.getEmail())) {
-                        dnis.add(user.getDni());
-                        emails.add(user.getEmail());
-                        users.add(user);
-                    } else {
-                        warnings.println("WARNING: skipping invalid user record at line " + lineNumber + " of " + file);
-                    }
+        int lineNumber = 0;
+        for (String line : TextFile.readLines(file)) {
+            lineNumber++;
+            if (!line.isBlank()) {
+                User user = parse(line);
+                if (user != null && !dnis.contains(user.getDni()) && !emails.contains(user.getEmail())) {
+                    dnis.add(user.getDni());
+                    emails.add(user.getEmail());
+                    users.add(user);
+                } else {
+                    warnings.println("WARNING: skipping invalid user record at line " + lineNumber + " of " + file);
                 }
             }
-        } catch (IOException e) {
-            throw new UserException("cannot read user file " + file, e);
         }
         return users;
     }
 
-    /**
-     * Replaces the file contents with the given users. The data is written to a
-     * temporary sibling file first, so a failed write leaves the old file intact.
-     */
-    public void save(List<User> users) throws UserException {
-        Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
-        try {
-            try (BufferedWriter writer = Files.newBufferedWriter(temporary, StandardCharsets.UTF_8)) {
-                for (User user : users) {
-                    writer.write(format(user));
-                    writer.newLine();
-                }
-            }
-            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new UserException("cannot write user file " + file, e);
+    /** Replaces the file contents with the given users. */
+    public void save(List<User> users) throws ParkException {
+        List<String> lines = new ArrayList<>();
+        for (User user : users) {
+            lines.add(format(user));
         }
+        TextFile.writeLines(file, lines);
     }
 
     static String format(User user) {

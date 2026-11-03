@@ -47,7 +47,7 @@ class UserRepositoryTest {
     }
 
     @Test
-    void missingFileMeansNoUsers() throws UserException {
+    void missingFileMeansNoUsers() throws ParkException {
         assertEquals(0, repository(dir.resolve("absent.txt")).load().size());
     }
 
@@ -64,9 +64,9 @@ class UserRepositoryTest {
     }
 
     @Test
-    void unreadableFileIsReportedAsUserException() throws IOException {
+    void unreadableFileIsReportedAsParkException() throws IOException {
         Path directory = Files.createDirectory(dir.resolve("users.txt"));
-        assertThrows(UserException.class, () -> repository(directory).load());
+        assertThrows(ParkException.class, () -> repository(directory).load());
     }
 
     @Test
@@ -75,7 +75,7 @@ class UserRepositoryTest {
         repository(file).save(List.of(UserRepository.parse(ANA)));
         Files.createDirectory(dir.resolve("users.txt.tmp"));
         Files.writeString(dir.resolve("users.txt.tmp").resolve("block"), "x");
-        assertThrows(UserException.class, () -> repository(file).save(List.of()));
+        assertThrows(ParkException.class, () -> repository(file).save(List.of()));
         assertEquals(List.of(ANA), Files.readAllLines(file));
     }
 }
