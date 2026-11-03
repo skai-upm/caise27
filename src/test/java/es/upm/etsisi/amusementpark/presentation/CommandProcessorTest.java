@@ -1,5 +1,7 @@
 package es.upm.etsisi.amusementpark.presentation;
 
+import es.upm.etsisi.amusementpark.business.controller.PassController;
+import es.upm.etsisi.amusementpark.persistence.PassFileStorage;
 import es.upm.etsisi.amusementpark.TestData;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.controller.AttractionController;
@@ -35,9 +37,11 @@ class CommandProcessorTest {
     void setUp() {
         service = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")), TestData.HASHER);
         GroupController groups = GroupController.initialize(new GroupFileStorage(dir.resolve("groups.txt")), service);
-        processor = TestData.processor(ParkController.initialize(service, groups, TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
-                new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups),
-                AttractionController.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")))));
+        TicketController tickets = TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
+                new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups);
+        processor = TestData.processor(ParkController.initialize(service, groups, tickets,
+                AttractionController.initialize(new AttractionFileStorage(dir.resolve("attractions.txt"))),
+                PassController.initialize(new PassFileStorage(dir.resolve("passes.txt")), tickets)));
     }
 
     @Test

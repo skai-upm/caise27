@@ -33,4 +33,10 @@ public class GroupInvoiceBuilder extends AbstractInvoiceBuilder {
                 t.getId() + " " + t.getDate() + " " + t.getTickets().size() + " members, "
                         + GroupTicket.discountFor(t.getTickets().size()) + "% discount", t.getPrice())).toList());
     }
+
+    /** Members' personal passes are charged to the members, not to the group. */
+    @Override
+    public void buildPersonalPasses() {
+        // not applicable to a group invoice
+    }
 }

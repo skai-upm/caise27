@@ -66,7 +66,16 @@ public class TicketController {
         return groupTickets.stream().filter(t -> t.getId().equals(id)).findFirst();
     }
 
-    /** An individual or group ticket that can be used to enter attractions (not a constituent ticket). */
+    /** An individual ticket bought directly or as a constituent of a group ticket. */
+    public Optional<Ticket> findIndividualTicket(String id) {
+        Optional<Ticket> direct = find(id);
+        if (direct.isPresent()) {
+            return direct;
+        }
+        return groupTickets.stream().flatMap(g -> g.getTickets().stream()).filter(t -> t.getId().equals(id)).findFirst();
+    }
+
+        /** An individual or group ticket that can be used to enter attractions (not a constituent ticket). */
     public Optional<ParkTicket> findUsable(String id) {
         Optional<ParkTicket> individual = find(id).map(ParkTicket.class::cast);
         return individual.isPresent() ? individual : findGroupTicket(id).map(ParkTicket.class::cast);

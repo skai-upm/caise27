@@ -3,6 +3,7 @@ package es.upm.etsisi.amusementpark;
 import es.upm.etsisi.amusementpark.business.controller.AttractionController;
 import es.upm.etsisi.amusementpark.business.controller.GroupController;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.controller.PassController;
 import es.upm.etsisi.amusementpark.business.controller.TicketController;
 import es.upm.etsisi.amusementpark.business.controller.UserController;
 import es.upm.etsisi.amusementpark.business.security.BCryptPasswordHasher;
@@ -12,6 +13,8 @@ import es.upm.etsisi.amusementpark.persistence.GroupFileStorage;
 import es.upm.etsisi.amusementpark.persistence.GroupRepository;
 import es.upm.etsisi.amusementpark.persistence.GroupTicketFileStorage;
 import es.upm.etsisi.amusementpark.persistence.GroupTicketRepository;
+import es.upm.etsisi.amusementpark.persistence.PassFileStorage;
+import es.upm.etsisi.amusementpark.persistence.PassRepository;
 import es.upm.etsisi.amusementpark.persistence.TicketFileStorage;
 import es.upm.etsisi.amusementpark.persistence.TicketRepository;
 import es.upm.etsisi.amusementpark.persistence.UserFileStorage;
@@ -43,7 +46,7 @@ import java.util.stream.Stream;
  * presentation, business and persistence layers.
  * Without arguments commands are read from standard input; with an argument, the first one is the
  * path of a text file with one command per line. Both sources share the same processing loop.
- * Data files ({@code users.txt}, {@code groups.txt}, {@code tickets.txt}, {@code grouptickets.txt}, {@code attractions.txt}) are kept in the working directory.
+ * Data files ({@code users.txt}, {@code groups.txt}, {@code tickets.txt}, {@code grouptickets.txt}, {@code attractions.txt}, {@code passes.txt}) are kept in the working directory.
  * With the {@code --fly} option they are kept instead in a new {@code tmp/yyyyMMdd_HHmmss/} directory that is
  * deleted when the application terminates, so the permanent data is never modified.
  */
@@ -155,12 +158,14 @@ public class App {
                 new GroupTicketFileStorage(dataDir.resolve(GroupTicketFileStorage.DEFAULT_FILE));
         AttractionRepository attractionRepository =
                 new AttractionFileStorage(dataDir.resolve(AttractionFileStorage.DEFAULT_FILE));
+        PassRepository passRepository = new PassFileStorage(dataDir.resolve(PassFileStorage.DEFAULT_FILE));
 
         UserController users = UserController.initialize(userRepository, new BCryptPasswordHasher());
         GroupController groups = GroupController.initialize(groupRepository, users);
         TicketController tickets = TicketController.initialize(ticketRepository, groupTicketRepository, users, groups);
         AttractionController attractions = AttractionController.initialize(attractionRepository);
-        ParkController.initialize(users, groups, tickets, attractions);
+        PassController passes = PassController.initialize(passRepository, tickets);
+        ParkController.initialize(users, groups, tickets, attractions, passes);
         HelpGenerator help = new HelpGenerator(CommandCatalog.COMMANDS, new SyntaxHelpFormatter());
         HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.COMMANDS, new ExtendedHelpFormatter());
         return new CommandProcessor(ParkController.getInstance(), help, extendedHelp);

@@ -18,6 +18,9 @@ public interface InvoiceBuilder {
     /** Adds the group tickets purchased by the recipient, if any. */
     void buildGroupTickets();
 
+    /** Adds the personal passes of the recipient's tickets, if any. */
+    void buildPersonalPasses();
+
     /** Returns the invoice assembled by the previous steps. */
     Invoice getResult();
 }

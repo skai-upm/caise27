@@ -23,7 +23,7 @@ class InvoiceBuilderTest {
     @Test
     void userBuilderOnlyAddsIndividualTickets() {
         User ana = TestData.user("12345678Z", "ana@correo.com");
-        UserInvoiceBuilder b = new UserInvoiceBuilder(ana, List.of(new Ticket("T001", ana, DAY, new BigDecimal("40.00"))));
+        UserInvoiceBuilder b = new UserInvoiceBuilder(ana, List.of(new Ticket("T001", ana, DAY, new BigDecimal("40.00"))), List.of());
         b.buildHeader(ISSUE);
         b.buildGroupTickets();
         assertTrue(b.getResult().getSections().isEmpty());
@@ -49,7 +49,7 @@ class InvoiceBuilderTest {
 
     @Test
     void emptySectionsAreOmitted() {
-        Invoice user = InvoiceDirector.construct(new UserInvoiceBuilder(TestData.user("12345678Z", "a@correo.com"), List.of()), ISSUE);
+        Invoice user = InvoiceDirector.construct(new UserInvoiceBuilder(TestData.user("12345678Z", "a@correo.com"), List.of(), List.of()), ISSUE);
         Invoice group = InvoiceDirector.construct(new GroupInvoiceBuilder(TestData.groupOf(2), List.of()), ISSUE);
         assertTrue(user.getSections().isEmpty());
         assertTrue(group.getSections().isEmpty());
@@ -59,7 +59,7 @@ class InvoiceBuilderTest {
     @Test
     void directorRunsAllStepsAndHeaderRestarts() {
         User ana = TestData.user("12345678Z", "ana@correo.com");
-        UserInvoiceBuilder b = new UserInvoiceBuilder(ana, List.of(new Ticket("T001", ana, DAY, new BigDecimal("40.00"))));
+        UserInvoiceBuilder b = new UserInvoiceBuilder(ana, List.of(new Ticket("T001", ana, DAY, new BigDecimal("40.00"))), List.of());
         assertThrows(IllegalStateException.class, b::getResult);
         assertEquals("40.00", InvoiceDirector.construct(b, ISSUE).getTotal().toPlainString());
         assertEquals("40.00", InvoiceDirector.construct(b, ISSUE).getTotal().toPlainString());

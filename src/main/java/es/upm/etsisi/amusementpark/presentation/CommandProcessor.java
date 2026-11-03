@@ -10,6 +10,9 @@ import es.upm.etsisi.amusementpark.business.model.Invoice;
 import es.upm.etsisi.amusementpark.business.model.InvoiceLine;
 import es.upm.etsisi.amusementpark.business.model.InvoiceSection;
 import es.upm.etsisi.amusementpark.business.model.ParkTicket;
+import es.upm.etsisi.amusementpark.business.model.Pass;
+import es.upm.etsisi.amusementpark.business.model.SpecialPass;
+import es.upm.etsisi.amusementpark.business.model.SpeedPass;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserField;
@@ -43,6 +46,10 @@ import java.util.Locale;
  * TICKET DELETE;Id
  * GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd
  * GROUPTICKET DELETE;Id
+ * SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad
+ * SPEEDPASS DELETE;IdPase
+ * SPECIALPASS CREATE;IdPase;IdTicket
+ * SPECIALPASS DELETE;IdPase
  * ATTRACTION CREATE;Id;Nombre;Capacidad
  * ATTRACTION ENTER;IdAtraccion;IdTicket
  * ATTRACTION EXIT;IdAtraccion;IdTicket
@@ -73,6 +80,9 @@ public class CommandProcessor {
     private static final int ATTRACTION_ACCESS_TOKENS = 3;
     private static final int ATTRACTION_STATUS_TOKENS = 2;
     private static final int INVOICE_TOKENS = 3;
+    private static final int SPEEDPASS_CREATE_TOKENS = 4;
+    private static final int SPECIALPASS_CREATE_TOKENS = 3;
+    private static final int PASS_DELETE_TOKENS = 2;
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
@@ -133,6 +143,10 @@ public class CommandProcessor {
                 case "TICKET DELETE" -> ticketDelete(tokens);
                 case "GROUPTICKET CREATE" -> groupTicketCreate(tokens);
                 case "GROUPTICKET DELETE" -> groupTicketDelete(tokens);
+                case "SPEEDPASS CREATE" -> speedPassCreate(tokens);
+                case "SPEEDPASS DELETE" -> passDelete(tokens, SpeedPass.TYPE, "SPEEDPASS DELETE;IdPase");
+                case "SPECIALPASS CREATE" -> specialPassCreate(tokens);
+                case "SPECIALPASS DELETE" -> passDelete(tokens, SpecialPass.TYPE, "SPECIALPASS DELETE;IdPase");
                 case "ATTRACTION CREATE" -> attractionCreate(tokens);
                 case "ATTRACTION ENTER" -> attractionEnter(tokens);
                 case "ATTRACTION EXIT" -> attractionExit(tokens);
@@ -242,6 +256,36 @@ public class CommandProcessor {
         }
         park.deleteGroupTicket(t[1]);
         return "OK: Group ticket " + t[1] + " deleted";
+    }
+
+    private String speedPassCreate(String[] t) {
+        if (t.length != SPEEDPASS_CREATE_TOKENS) {
+            return usage("SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad");
+        }
+        int quantity;
+        try {
+            quantity = Integer.parseInt(t[3]);
+        } catch (NumberFormatException e) {
+            return error("Invalid quantity " + t[3] + ": SpeedPasses can only be bought in quantities of 1 or 10");
+        }
+        List<Pass> bought = park.buySpeedPasses(t[1], t[2], quantity);
+        BigDecimal total = bought.stream().map(Pass::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return "OK SPEEDPASS CREATED -> " + total.toPlainString();
+    }
+
+    private String specialPassCreate(String[] t) {
+        if (t.length != SPECIALPASS_CREATE_TOKENS) {
+            return usage("SPECIALPASS CREATE;IdPase;IdTicket");
+        }
+        return "OK SPECIALPASS CREATED -> " + park.buySpecialPass(t[1], t[2]).getPrice().toPlainString();
+    }
+
+    private String passDelete(String[] t, String type, String format) {
+        if (t.length != PASS_DELETE_TOKENS) {
+            return usage(format);
+        }
+        Pass refunded = park.refundPass(type, t[1]);
+        return "OK: Pass " + refunded.getId() + " refunded (" + refunded.getPrice().toPlainString() + ")";
     }
 
     private String attractionCreate(String[] t) {

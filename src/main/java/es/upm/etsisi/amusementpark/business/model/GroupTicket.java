@@ -61,6 +61,12 @@ public class GroupTicket extends ParkTicket {
         return sum.multiply(factor).divide(HUNDRED, 2, RoundingMode.HALF_UP);
     }
 
+    /** Price stored in each constituent ticket: the individual price minus the group discount. */
+    public static BigDecimal memberShare(BigDecimal unitPrice, int members) {
+        BigDecimal factor = HUNDRED.subtract(BigDecimal.valueOf(discountFor(members)));
+        return unitPrice.multiply(factor).divide(HUNDRED, 2, RoundingMode.HALF_UP);
+    }
+
     /** Builds the constituent ticket identifiers {@code <id>-1 .. <id>-n}. */
     public static String constituentId(String groupTicketId, int position) {
         return groupTicketId + "-" + position;
@@ -68,8 +74,9 @@ public class GroupTicket extends ParkTicket {
 
     private static List<Ticket> constituents(String id, List<User> members, LocalDate date, BigDecimal unitPrice) {
         List<Ticket> result = new ArrayList<>(members.size());
+        BigDecimal share = memberShare(unitPrice, members.size());
         for (int i = 0; i < members.size(); i++) {
-            result.add(new Ticket(constituentId(id, i + 1), members.get(i), date, unitPrice));
+            result.add(new Ticket(constituentId(id, i + 1), members.get(i), date, share));
         }
         return result;
     }

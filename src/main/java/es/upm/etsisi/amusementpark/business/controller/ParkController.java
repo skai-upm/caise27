@@ -8,6 +8,7 @@ import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.Invoice;
 import es.upm.etsisi.amusementpark.business.model.ParkTicket;
+import es.upm.etsisi.amusementpark.business.model.Pass;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import java.math.BigDecimal;
@@ -30,6 +31,7 @@ public class ParkController {
     private final GroupController groups;
     private final TicketController tickets;
     private final AttractionController attractions;
+    private final PassController passes;
     private LocalDate currentDate;
     private BigDecimal currentPrice = DEFAULT_PRICE;
 
@@ -40,15 +42,15 @@ public class ParkController {
      * as current date and the injected controllers it collaborates with. Called once by the composition root.
      */
     public static ParkController initialize(UserController users, GroupController groups, TicketController tickets,
-                                            AttractionController attractions) {
-        return initialize(users, groups, tickets, attractions, LocalDate.now());
+                                            AttractionController attractions, PassController passes) {
+        return initialize(users, groups, tickets, attractions, passes, LocalDate.now());
     }
 
-    /** Same as {@link #initialize(UserController, GroupController, TicketController, AttractionController)} with a given start date. */
+    /** Same as the other {@code initialize} with a given start date. */
     public static synchronized ParkController initialize(UserController users, GroupController groups,
                                                          TicketController tickets, AttractionController attractions,
-                                                         LocalDate initialDate) {
-        instance = new ParkController(users, groups, tickets, attractions, initialDate);
+                                                         PassController passes, LocalDate initialDate) {
+        instance = new ParkController(users, groups, tickets, attractions, passes, initialDate);
         return instance;
     }
 
@@ -62,11 +64,12 @@ public class ParkController {
     }
 
     private ParkController(UserController users, GroupController groups, TicketController tickets,
-                           AttractionController attractions, LocalDate initialDate) {
+                           AttractionController attractions, PassController passes, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
+        this.passes = passes;
         this.currentDate = initialDate;
     }
 
@@ -84,6 +87,10 @@ public class ParkController {
 
     public AttractionController attractions() {
         return attractions;
+    }
+
+    public PassController passes() {
+        return passes;
     }
 
     /** The single current date of the execution; every time-dependent rule must use it. */
@@ -170,12 +177,28 @@ public class ParkController {
         return attractions.exit(attraction.getId(), leaving);
     }
 
-    /** Invoice of a registered user: the individual tickets bought directly for that user. */
+    /** Buys 1 or 10 SpeedPasses for an individual ticket dated on or after the system date. */
+    public List<Pass> buySpeedPasses(String id, String ticketId, int quantity) {
+        return passes.buySpeedPasses(id, ticketId, quantity, currentDate);
+    }
+
+    /** Buys the Special Pass of an individual ticket dated on or after the system date. */
+    public Pass buySpecialPass(String id, String ticketId) {
+        return passes.buySpecialPass(id, ticketId, currentDate);
+    }
+
+    /** Refunds an unconsumed pass of that type whose ticket is dated after the system date. */
+    public Pass refundPass(String type, String passId) {
+        return passes.refund(type, passId, currentDate);
+    }
+
+    /** Invoice of a registered user: tickets bought directly for that user and the passes of all its tickets. */
     public Invoice userInvoice(String email) {
         User user = users.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("No registered user with email " + email));
         List<Ticket> direct = tickets.getTickets().stream().filter(t -> t.belongsTo(user)).toList();
-        return InvoiceDirector.construct(new UserInvoiceBuilder(user, direct), currentDate);
+        List<Pass> personal = passes.getPasses().stream().filter(p -> p.getTicket().belongsTo(user)).toList();
+        return InvoiceDirector.construct(new UserInvoiceBuilder(user, direct, personal), currentDate);
     }
 
     /** Invoice of an existing group: its group tickets with their totals. */

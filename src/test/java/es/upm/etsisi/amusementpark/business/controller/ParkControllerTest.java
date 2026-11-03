@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.business.controller;
 
+import es.upm.etsisi.amusementpark.persistence.PassFileStorage;
 import es.upm.etsisi.amusementpark.TestData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,7 +33,8 @@ class ParkControllerTest {
         TicketController tickets = TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), users, groups);
         AttractionController attractions = AttractionController.initialize(new AttractionFileStorage(dir.resolve("a.txt")));
-        park = ParkController.initialize(users, groups, tickets, attractions, TODAY);
+        PassController passes = PassController.initialize(new PassFileStorage(dir.resolve("passes.txt")), tickets);
+        park = ParkController.initialize(users, groups, tickets, attractions, passes, TODAY);
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         groups.create("G01", "Familia");
     }

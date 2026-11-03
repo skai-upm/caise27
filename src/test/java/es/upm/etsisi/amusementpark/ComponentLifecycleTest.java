@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import es.upm.etsisi.amusementpark.business.controller.AttractionController;
 import es.upm.etsisi.amusementpark.business.controller.GroupController;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.controller.PassController;
 import es.upm.etsisi.amusementpark.business.controller.TicketController;
 import es.upm.etsisi.amusementpark.business.controller.UserController;
 import es.upm.etsisi.amusementpark.business.model.User;
@@ -33,7 +34,7 @@ import org.junit.jupiter.api.io.TempDir;
 class ComponentLifecycleTest {
 
     static final List<Class<?>> CONTROLLERS = List.of(UserController.class, GroupController.class,
-            TicketController.class, AttractionController.class, ParkController.class);
+            TicketController.class, AttractionController.class, PassController.class, ParkController.class);
 
     @TempDir
     Path dir;
@@ -65,6 +66,7 @@ class ComponentLifecycleTest {
         assertSame(GroupController.getInstance(), park.groups());
         assertSame(TicketController.getInstance(), park.tickets());
         assertSame(AttractionController.getInstance(), park.attractions());
+        assertSame(PassController.getInstance(), park.passes());
         processor.process(TestData.CREATE_ANA);
         assertTrue(UserController.getInstance().findByEmail("ana@correo.com").isPresent());
     }
@@ -147,7 +149,8 @@ class ComponentLifecycleTest {
                 String src = Files.readString(f);
                 String own = f.getFileName().toString().replace(".java", "");
                 for (String c : List.of("UserFileStorage", "GroupFileStorage", "TicketFileStorage",
-                        "GroupTicketFileStorage", "AttractionFileStorage", "UserController", "GroupController",
+                        "GroupTicketFileStorage", "AttractionFileStorage", "PassFileStorage", "UserController",
+                        "GroupController", "PassController",
                         "TicketController", "AttractionController", "ParkController")) {
                     if (!c.equals(own)) {
                         assertTrue(!src.contains("new " + c + "("), f + " constructs " + c);

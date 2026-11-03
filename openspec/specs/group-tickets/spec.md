@@ -19,7 +19,7 @@ The command `GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd` SHALL create a group tick
 - **THEN** an error is reported and no ticket is created
 
 ### Requirement: One individual ticket per member
-A group ticket SHALL be composed of exactly one individual ticket for each user belonging to the group at purchase time, each referring to that registered user, dated with the group ticket's date and priced at the individual price used for the purchase. Later membership changes SHALL NOT alter the composition.
+A group ticket SHALL be composed of exactly one individual ticket for each user belonging to the group at purchase time, each referring to that registered user, dated with the group ticket's date and priced at the member's discounted share: the individual price used for the purchase reduced by the group's discount percentage, rounded to two decimals. Later membership changes SHALL NOT alter the composition.
 
 #### Scenario: Composition matches members at purchase
 - **GIVEN** group `G01` with Ana and Pedro
@@ -30,6 +30,11 @@ A group ticket SHALL be composed of exactly one individual ticket for each user 
 - **GIVEN** `TG01` bought for `G01` with Ana and Pedro, now dated in the past
 - **WHEN** Luis is added to `G01`
 - **THEN** `TG01` still contains only the tickets of Ana and Pedro
+
+#### Scenario: Discounted share stored in constituent tickets
+- **GIVEN** an individual price of 40.00
+- **WHEN** a group of 3 members buys `TG01`
+- **THEN** each constituent ticket stores 36.00 and the group ticket total is 108.00
 
 ### Requirement: Size-based discount
 The total price SHALL be the individual price multiplied by the number of members, reduced by 0% for fewer than 3 members, 10% for 3 to 5, 20% for 6 to 10 and 50% for more than 10.

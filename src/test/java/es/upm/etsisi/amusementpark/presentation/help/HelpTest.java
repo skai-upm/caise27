@@ -33,8 +33,8 @@ class HelpTest {
     }
 
     @Test
-    void catalogHasTwentyTwoDescribedCommands() {
-        assertEquals(22, CommandCatalog.COMMANDS.size());
+    void catalogHasTwentySixDescribedCommands() {
+        assertEquals(26, CommandCatalog.COMMANDS.size());
         assertTrue(CommandCatalog.COMMANDS.stream().allMatch(c -> !c.getSyntax().isBlank() && !c.getDescription().isBlank()));
     }
 
@@ -74,7 +74,7 @@ class HelpTest {
         HelpFormatter upper = commands -> "COMMANDS: " + commands.size();
         CommandProcessor p = new CommandProcessor(ParkController.getInstance(),
                 new HelpGenerator(CommandCatalog.COMMANDS, upper), new HelpGenerator(TWO, upper));
-        assertEquals("COMMANDS: 22", p.process("HELP"));
+        assertEquals("COMMANDS: " + CommandCatalog.COMMANDS.size(), p.process("HELP"));
         assertEquals("COMMANDS: 2", p.process("HELP EXTENDED"));
         assertTrue(TestData.processor(ParkController.getInstance()).process("HELP").startsWith("Available commands:"));
     }

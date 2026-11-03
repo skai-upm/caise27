@@ -50,6 +50,7 @@ package es.upm.etsisi.amusementpark {
         - currentPrice : BigDecimal
       }
       class UserController
+      class PassController
       class GroupController
       class TicketController
       class AttractionController
@@ -95,6 +96,13 @@ package es.upm.etsisi.amusementpark {
         - name : String
         - capacity : int
       }
+      abstract class Pass {
+        - id : String
+        - price : BigDecimal
+        - consumed : boolean
+      }
+      class SpeedPass
+      class SpecialPass
       class Invoice {
         - recipient : String
         - issueDate : LocalDate
@@ -125,6 +133,7 @@ package es.upm.etsisi.amusementpark {
     interface TicketRepository
     interface GroupTicketRepository
     interface AttractionRepository
+    interface PassRepository
     class UserFileStorage {
       - file : Path
     }
@@ -138,6 +147,9 @@ package es.upm.etsisi.amusementpark {
       - file : Path
     }
     class AttractionFileStorage {
+      - file : Path
+    }
+    class PassFileStorage {
       - file : Path
     }
   }
@@ -167,6 +179,7 @@ ParkController x--> "1" UserController : users
 ParkController x--> "1" GroupController : groups
 ParkController x--> "1" TicketController : tickets
 ParkController x--> "1" AttractionController : attractions
+ParkController x--> "1" PassController : passes
 
 ' --- users
 UserController x--> "1" PasswordHasher : hasher
@@ -189,6 +202,15 @@ TicketController o--> "*" GroupTicket : groupTickets
 Ticket x--> "0..1" User : user
 GroupTicket o--> "0..1" Group : group
 GroupTicket *--> "1..*" Ticket : tickets
+
+' --- passes
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Pass x--> "1" Ticket : ticket
+PassController x--> "1" PassRepository : storage
+PassController x--> "1" TicketController : tickets
+PassController o--> "*" Pass : passes
+UserInvoiceBuilder o--> "*" Pass : passes
 
 ' --- attractions
 AttractionController x--> "1" AttractionRepository : storage
@@ -213,6 +235,7 @@ GroupRepository <|.. GroupFileStorage
 TicketRepository <|.. TicketFileStorage
 GroupTicketRepository <|.. GroupTicketFileStorage
 AttractionRepository <|.. AttractionFileStorage
+PassRepository <|.. PassFileStorage
 
 ' --- singleton controllers: unique instance per execution
 UserController x--> "0..1" UserController : instance
@@ -220,6 +243,7 @@ GroupController x--> "0..1" GroupController : instance
 TicketController x--> "0..1" TicketController : instance
 AttractionController x--> "0..1" AttractionController : instance
 ParkController x--> "0..1" ParkController : instance
+PassController x--> "0..1" PassController : instance
 
 ' --- usage of classes without incoming relationships
 App ..> UserFileStorage : creates
@@ -227,6 +251,7 @@ App ..> GroupFileStorage : creates
 App ..> TicketFileStorage : creates
 App ..> GroupTicketFileStorage : creates
 App ..> AttractionFileStorage : creates
+App ..> PassFileStorage : creates
 ParkController ..> InvoiceDirector
 InvoiceDirector ..> InvoiceBuilder
 AbstractInvoiceBuilder ..> Invoice : builds

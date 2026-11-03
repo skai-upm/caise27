@@ -1,5 +1,7 @@
 package es.upm.etsisi.amusementpark.presentation;
 
+import es.upm.etsisi.amusementpark.business.controller.PassController;
+import es.upm.etsisi.amusementpark.persistence.PassFileStorage;
 import es.upm.etsisi.amusementpark.TestData;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.controller.AttractionController;
@@ -33,6 +35,7 @@ class SystemDateTest {
     GroupController groups;
     TicketController tickets;
     AttractionController attractions;
+    PassController passes;
     CommandProcessor processor;
 
     @BeforeEach
@@ -41,14 +44,15 @@ class SystemDateTest {
         groups = GroupController.initialize(new GroupFileStorage(dir.resolve("groups.txt")), service);
         tickets = TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                         new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups);
+        passes = PassController.initialize(new PassFileStorage(dir.resolve("passes.txt")), tickets);
         attractions = AttractionController.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")));
-        processor = TestData.processor(ParkController.initialize(service, groups, tickets, attractions, START));
+        processor = TestData.processor(ParkController.initialize(service, groups, tickets, attractions, passes, START));
     }
 
     @Test
     void defaultStartsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = ParkController.initialize(service, groups, tickets, attractions).getCurrentDate();
+        LocalDate date = ParkController.initialize(service, groups, tickets, attractions, passes).getCurrentDate();
         LocalDate after = LocalDate.now();
         assertTrue(!date.isBefore(before) && !date.isAfter(after));
     }
@@ -60,7 +64,7 @@ class SystemDateTest {
 
     @Test
     void setsValidDate() {
-        CommandProcessor p = TestData.processor(ParkController.initialize(service, groups, tickets, attractions, LocalDate.of(2000, 1, 1)));
+        CommandProcessor p = TestData.processor(ParkController.initialize(service, groups, tickets, attractions, passes, LocalDate.of(2000, 1, 1)));
         assertEquals("OK: System date set to 2026-09-15", p.process("SYSTEM DATE;2026-09-15"));
         assertEquals(START, p.getPark().getCurrentDate());
     }

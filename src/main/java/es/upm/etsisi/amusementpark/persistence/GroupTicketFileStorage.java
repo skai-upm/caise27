@@ -71,13 +71,14 @@ public class GroupTicketFileStorage implements GroupTicketRepository {
         BigDecimal unitPrice = new BigDecimal(f[4]);
         Group group = groups.stream().filter(g -> g.getId().equals(f[1])).findFirst().orElse(null);
         String[] dnis = f[5].split(MEMBER_SEPARATOR);
+        BigDecimal share = GroupTicket.memberShare(unitPrice, dnis.length);
         List<Ticket> tickets = new ArrayList<>(dnis.length);
         for (int i = 0; i < dnis.length; i++) {
             String dni = dnis[i];
             String ticketId = GroupTicket.constituentId(id, i + 1);
             Optional<User> owner = users.stream().filter(u -> u.getDni().equals(dni)).findFirst();
-            tickets.add(owner.map(u -> new Ticket(ticketId, u, date, unitPrice))
-                    .orElseGet(() -> new Ticket(ticketId, dni, date, unitPrice)));
+            tickets.add(owner.map(u -> new Ticket(ticketId, u, date, share))
+                    .orElseGet(() -> new Ticket(ticketId, dni, date, share)));
         }
         return new GroupTicket(id, group, f[1], date, unitPrice, tickets, total);
     }
