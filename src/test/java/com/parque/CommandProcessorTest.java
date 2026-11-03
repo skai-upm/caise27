@@ -1,0 +1,70 @@
+package com.parque;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.file.Path;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+class CommandProcessorTest {
+
+    static final String CREATE_ANA =
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
+
+    @TempDir
+    Path dir;
+    UserService service;
+    CommandProcessor processor;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        service = new UserService(new UserRepository(dir.resolve("users.txt")));
+        processor = new CommandProcessor(service);
+    }
+
+    @Test
+    void createDeleteUpdateRespondOk() {
+        assertEquals("OK: User created", processor.process(CREATE_ANA));
+        assertEquals("OK: User updated", processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria"));
+        assertEquals("Ana Maria", service.findByEmail("ana@correo.com").getName());
+        assertEquals("OK: User deleted", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals(0, service.getUsers().size());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"HELLO", "USER RENAME;ana@correo.com", "USER", "USER CREATE", "", "   ", ";;;",
+            "USER CREATE;Ana;Garcia Lopez;12345678Z",
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456;extra",
+            "USER DELETE;ana@correo.com", "USER UPDATE;ana@correo.com;Clave1!;NAME",
+            "user create;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"})
+    void invalidCommandsAreRejectedSafely(String command) {
+        String response = processor.process(command);
+        assertTrue(response.startsWith("ERROR: "), response);
+        assertEquals(0, service.getUsers().size());
+    }
+
+    @Test
+    void dniFieldCannotBeUpdated() {
+        processor.process(CREATE_ANA);
+        String response = processor.process("USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X");
+        assertTrue(response.startsWith("ERROR: "), response);
+        assertEquals("12345678Z", service.findByEmail("ana@correo.com").getDni());
+    }
+
+    @Test
+    void validationErrorsReported() {
+        assertTrue(processor.process(
+                "USER CREATE;Ana;Garcia Lopez;12345678A;ana@correo.com;Clave1!;612345678;1234567890123456")
+                .startsWith("ERROR: Invalid DNI"));
+        processor.process(CREATE_ANA);
+        assertTrue(processor.process(
+                "USER CREATE;Otro;X;12345678Z;otro@correo.com;Clave1!;600000000;1234567890123456")
+                .startsWith("ERROR: "));
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Mala1!").startsWith("ERROR: "));
+        assertEquals(1, service.getUsers().size());
+    }
+}
