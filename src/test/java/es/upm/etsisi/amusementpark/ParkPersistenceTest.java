@@ -1,5 +1,15 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.attraction.Attraction;
+import es.upm.etsisi.amusementpark.persistence.FlyWorkspace;
+import es.upm.etsisi.amusementpark.business.group.Group;
+import es.upm.etsisi.amusementpark.business.ticket.GroupTicket;
+import es.upm.etsisi.amusementpark.business.ticket.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.ParkException;
+import es.upm.etsisi.amusementpark.business.ticket.Ticket;
+import es.upm.etsisi.amusementpark.business.User;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -38,13 +48,11 @@ class ParkPersistenceTest {
         park.createGroup("G01", "Familia Garcia");
         park.addToGroup("G01", "ana@correo.com");
         park.addToGroup("G01", "pedro@correo.com");
-        park.createAttraction("A01", "Dragon Rojo", "20");
+        park.createAttraction("A01", "Dragon Rojo", "20", null);
     }
 
     private ParkController restart() throws ParkException {
-        ParkController controller = ParkController.getInstance();
-        controller.initialize(new ParkRepositories(dir, new PrintStream(warnings, true)), ParkControllerTest.TODAY);
-        return controller;
+        return TestSupport.initialize(dir, new PrintStream(warnings, true));
     }
 
     @Test
@@ -52,7 +60,7 @@ class ParkPersistenceTest {
         park.createTicket("T001", "ana@correo.com", "2027-04-15");
         park.setPrice("45.50");
         park.createGroupTicket("TG01", "G01", "2027-04-15");
-        park.enter("A01", "T001");
+        park.enter("A01", "T001", null);
 
         ParkController reloaded = restart();
         User ana = reloaded.getUsers().get(0);
@@ -137,9 +145,7 @@ class ParkPersistenceTest {
         assertNotSame(first.getDirectory(), second.getDirectory());
         assertEquals(dir.resolve("tmp").resolve("20260826_190315_1"), second.getDirectory());
 
-        ParkController controller = ParkController.getInstance();
-        controller.initialize(new ParkRepositories(first.getDirectory(), new PrintStream(warnings)),
-                ParkControllerTest.TODAY);
+        ParkController controller = TestSupport.initialize(first.getDirectory());
         controller.createGroup("G01", "Fly");
         assertTrue(Files.exists(first.getDirectory().resolve("groups.txt")));
 

@@ -7,11 +7,11 @@ Preserves users between application runs in a plain text file, one user per line
 ## Requirements
 
 ### Requirement: Text file storage format
-Users SHALL be stored in a text file, one user per line, as `FirstName;Surnames;DNI;Email;Password;Phone;Card`.
+Users SHALL be stored in a text file, one user per line, as `FirstName;Surnames;DNI;Email;Password;Phone;Card`, where the Password column holds the BCrypt hash of the password, never the original password.
 
 #### Scenario: Stored line format
 - **WHEN** Ana is created with the source example data
-- **THEN** the file contains the line `Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456`
+- **THEN** the file contains a line starting `Ana;Garcia Lopez;12345678Z;ana@correo.com;` followed by a BCrypt hash of `Clave1!` and `;612345678;1234567890123456`
 
 ### Requirement: Load on start-up
 Previously stored users SHALL be loaded when the application starts, so users survive between runs.

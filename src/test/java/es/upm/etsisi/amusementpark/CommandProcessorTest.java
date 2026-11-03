@@ -1,5 +1,11 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.presentation.CommandCatalog;
+import es.upm.etsisi.amusementpark.presentation.HelpGenerator;
+import es.upm.etsisi.amusementpark.business.ParkException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,6 +16,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -34,15 +41,11 @@ class CommandProcessorTest {
     void setUp() throws ParkException {
         park = initialize(dir.resolve("main"));
         output = new ByteArrayOutputStream();
-        processor = new CommandProcessor(park, new PrintStream(output, true));
+        processor = TestSupport.processor(park, new PrintStream(output, true));
     }
 
     private static ParkController initialize(Path data) throws ParkException {
-        data.toFile().mkdirs();
-        ParkController controller = ParkController.getInstance();
-        controller.initialize(new ParkRepositories(data, new PrintStream(new ByteArrayOutputStream())),
-                ParkControllerTest.TODAY);
-        return controller;
+        return TestSupport.initialize(data);
     }
 
     private String run(String... lines) throws Exception {
@@ -167,12 +170,85 @@ class CommandProcessorTest {
         ParkController filePark = initialize(dir.resolve("file"));
         ByteArrayOutputStream fileOutput = new ByteArrayOutputStream();
         Path commands = Files.write(dir.resolve("input.txt"), List.of(sequence));
-        new CommandProcessor(filePark, new PrintStream(fileOutput, true)).runFile(commands);
+        TestSupport.processor(filePark, new PrintStream(fileOutput, true)).runFile(commands);
 
         assertEquals(interactive, fileOutput.toString());
-        for (String file : List.of("users.txt", "groups.txt")) {
-            assertEquals(Files.readAllLines(dir.resolve("main").resolve(file)),
-                    Files.readAllLines(dir.resolve("file").resolve(file)));
+        assertEquals(Files.readAllLines(dir.resolve("main").resolve("groups.txt")),
+                Files.readAllLines(dir.resolve("file").resolve("groups.txt")));
+        // BCrypt salts differ between runs, so users are compared without the password column
+        assertEquals(withoutPasswords(dir.resolve("main").resolve("users.txt")),
+                withoutPasswords(dir.resolve("file").resolve("users.txt")));
+    }
+
+    private static List<String> withoutPasswords(Path users) throws Exception {
+        List<String> lines = new ArrayList<>();
+        for (String line : Files.readAllLines(users)) {
+            String[] fields = line.split(";", -1);
+            fields[4] = "";
+            lines.add(String.join(";", fields));
         }
+        return lines;
+    }
+
+    @Test
+    void helpFormatsAreInjected() throws Exception {
+        String plain = run("HELP");
+        String extended = run("HELP EXTENDED").substring(plain.length());
+        for (String syntax : List.of("ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
+                "ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
+                "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>",
+                "SPEEDPASS DELETE;<speedPassIdentifier>", "SPECIALPASS CREATE;<identifier>;<individualTicket>",
+                "SPECIALPASS DELETE;<specialPassIdentifier>", "INVOICE CREATE;USER;<email>",
+                "INVOICE CREATE;GROUP;<groupIdentifier>", "HELP EXTENDED")) {
+            assertTrue(plain.contains(syntax), syntax);
+            assertTrue(extended.contains(syntax), syntax);
+        }
+        assertFalse(plain.contains("Registers a user"));
+        assertTrue(extended.contains("Registers a user"));
+        for (CommandCatalog.CommandInfo info : CommandCatalog.standard().getCommands()) {
+            assertTrue(extended.contains(info.syntax() + System.lineSeparator() + "      " + info.purpose()));
+        }
+        HelpGenerator custom = new HelpGenerator(CommandCatalog.standard(), commands -> commands.size() + " commands");
+        assertEquals(CommandCatalog.standard().getCommands().size() + " commands", custom.generate());
+        assertTrue(run("HELP EXTENDED;x").contains("ERROR: wrong number of arguments"));
+    }
+
+    @Test
+    void deliveryThreeCommands() throws Exception {
+        String result = run(CREATE_ANA, CREATE_PEDRO, "TICKET CREATE;T001;ana@correo.com;2027-04-15",
+                "TICKET CREATE;T002;ana@correo.com;2027-04-20",
+                "SPEEDPASS CREATE;SP01;T001;1", "SPEEDPASS CREATE;SP02;T001;10", "SPEEDPASS CREATE;SP03;T001;3",
+                "SPECIALPASS CREATE;PE01;T001", "SPECIALPASS CREATE;PE02;T002",
+                "ATTRACTION CREATE;A01;Dragon Rojo;20;GENERAL", "ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL",
+                "ATTRACTION CREATE;A05;X;5;VIP", "ATTRACTION ENTER;A01;T001;SPEED", "ATTRACTION ENTER;A04;T001",
+                "ATTRACTION STATUS;A04", "SPEEDPASS CREATE;SP04;T002;1", "SPEEDPASS DELETE;SP04:1", "SPECIALPASS DELETE;PE02",
+                "SPECIALPASS DELETE;PE01", "INVOICE CREATE;USER;ana@correo.com", "INVOICE CREATE;GROUP;G99");
+        assertTrue(result.contains("SPEEDPASS CREATED: SP01:1. TOTAL PRICE: 8.00 EUR"));
+        assertTrue(result.contains("SPEEDPASS CREATED: SP02:1 to SP02:10. TOTAL PRICE: 80.00 EUR"));
+        assertTrue(result.contains("SPECIAL PASS CREATED. PRICE: 40.00 EUR"));
+        assertTrue(result.contains("ATTRACTION CREATED (SPECIAL)"));
+        assertTrue(result.contains("SPEEDPASS CONSUMED: SP01:1"));
+        assertTrue(result.contains("SPECIAL PASS CONSUMED: PE01"));
+        assertTrue(result.contains("Type: SPECIAL"));
+        assertTrue(result.contains("SPEEDPASS DELETED"));
+        assertTrue(result.contains("SPECIAL PASS DELETED"));
+        assertTrue(result.contains("INVOICE - USER"));
+        assertTrue(result.contains("  Ticket T001 (2027-04-15): 40.00 EUR"));
+        assertTrue(result.contains("Special Passes:"));
+        assertTrue(result.contains("TOTAL: 208.00 EUR"));
+        // quantity 3, unknown type, refund of consumed PE01 (T001 is today), unknown group
+        assertEquals(4, count(result, "ERROR:"));
+    }
+
+    @Test
+    void groupInvoiceOutput() throws Exception {
+        String result = run(CREATE_ANA, CREATE_PEDRO, "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com",
+                "GROUP ADD;G01;pedro@correo.com", "GROUPTICKET CREATE;TG01;G01;2027-04-20",
+                "INVOICE CREATE;GROUP;G01");
+        assertTrue(result.contains("INVOICE - GROUP"));
+        assertTrue(result.contains("  Group: G01 - Familia Garcia"));
+        assertTrue(result.contains("  Group ticket TG01 (2027-04-20, 2 members): 80.00 EUR"));
+        assertTrue(result.contains("      TG01:12345678Z ana@correo.com 40.00 EUR (included)"));
+        assertTrue(result.contains("TOTAL: 80.00 EUR"));
     }
 }

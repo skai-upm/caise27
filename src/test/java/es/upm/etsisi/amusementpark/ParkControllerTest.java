@@ -1,5 +1,13 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.attraction.Attraction;
+import es.upm.etsisi.amusementpark.business.group.Group;
+import es.upm.etsisi.amusementpark.business.ticket.GroupTicket;
+import es.upm.etsisi.amusementpark.business.ticket.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.ParkException;
+import es.upm.etsisi.amusementpark.business.User;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -24,7 +32,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class ParkControllerTest {
 
-    static final LocalDate TODAY = LocalDate.of(2027, 4, 15);
+    static final LocalDate TODAY = TestSupport.TODAY;
 
     @TempDir
     Path dir;
@@ -39,9 +47,11 @@ class ParkControllerTest {
     }
 
     private ParkController restart() throws ParkException {
-        ParkController controller = ParkController.getInstance();
-        controller.initialize(new ParkRepositories(dir, new PrintStream(new ByteArrayOutputStream())), TODAY);
-        return controller;
+        return TestSupport.initialize(dir);
+    }
+
+    private int enter(String attraction, String ticket) throws ParkException {
+        return park.enter(attraction, ticket, null).admitted().size();
     }
 
     private void createPedro() throws ParkException {
@@ -114,7 +124,7 @@ class ParkControllerTest {
         assertEquals("Garcia", reloaded.getSurnames());
         assertEquals("699999999", reloaded.getPhone());
         assertEquals("9999888877776666", reloaded.getCard());
-        assertEquals("Nueva2#", reloaded.getPassword());
+        assertTrue(TestSupport.HASHER.matches("Nueva2#", reloaded.getPasswordHash()));
         assertEquals("ana.nueva@correo.com", reloaded.getEmail());
         assertEquals("12345678Z", reloaded.getDni());
     }
@@ -346,26 +356,26 @@ class ParkControllerTest {
     @Test
     void attractionsAndAccess() throws ParkException {
         createPedro();
-        park.createAttraction("A01", "Dragon Rojo", "2");
-        assertThrows(ParkException.class, () -> park.createAttraction("A01", "Otra", "5"));
-        assertThrows(ParkException.class, () -> park.createAttraction("A02", "Otra", "0"));
-        assertThrows(ParkException.class, () -> park.createAttraction("A02", "Otra", "x"));
-        assertThrows(ParkException.class, () -> park.createAttraction("A02", "", "5"));
+        park.createAttraction("A01", "Dragon Rojo", "2", null);
+        assertThrows(ParkException.class, () -> park.createAttraction("A01", "Otra", "5", null));
+        assertThrows(ParkException.class, () -> park.createAttraction("A02", "Otra", "0", null));
+        assertThrows(ParkException.class, () -> park.createAttraction("A02", "Otra", "x", null));
+        assertThrows(ParkException.class, () -> park.createAttraction("A02", "", "5", null));
         Attraction attraction = park.requireAttraction("A01");
         assertTrue(attraction.getOccupants().isEmpty());
 
         park.createTicket("T001", "ana@correo.com", "2027-04-15");
         park.createTicket("T002", "pedro@correo.com", "2027-04-16");
-        assertThrows(ParkException.class, () -> park.enter("A01", "T002"));
-        assertThrows(ParkException.class, () -> park.enter("A99", "T001"));
-        assertThrows(ParkException.class, () -> park.enter("A01", "T999"));
-        assertEquals(1, park.enter("A01", "T001"));
-        assertThrows(ParkException.class, () -> park.enter("A01", "T001"));
+        assertThrows(ParkException.class, () -> enter("A01", "T002"));
+        assertThrows(ParkException.class, () -> enter("A99", "T001"));
+        assertThrows(ParkException.class, () -> enter("A01", "T999"));
+        assertEquals(1, enter("A01", "T001"));
+        assertThrows(ParkException.class, () -> enter("A01", "T001"));
         assertEquals(List.of(ana()), attraction.getOccupants());
 
         park.setDate("2027-04-16");
         assertEquals(1, attraction.getOccupants().size());
-        assertEquals(1, park.enter("A01", "T002"));
+        assertEquals(1, enter("A01", "T002"));
         assertEquals(0, attraction.getAvailablePlaces());
 
         park.exit("A01", "ana@correo.com");
@@ -376,24 +386,24 @@ class ParkControllerTest {
     @Test
     void fullAttractionRejectsEntry() throws ParkException {
         createPedro();
-        park.createAttraction("A01", "Mini", "1");
+        park.createAttraction("A01", "Mini", "1", null);
         park.createTicket("T001", "ana@correo.com", "2027-04-15");
         park.createTicket("T002", "pedro@correo.com", "2027-04-15");
-        park.enter("A01", "T001");
-        assertThrows(ParkException.class, () -> park.enter("A01", "T002"));
+        enter("A01", "T001");
+        assertThrows(ParkException.class, () -> enter("A01", "T002"));
         assertEquals(1, park.requireAttraction("A01").getOccupants().size());
     }
 
     @Test
     void groupEntryIsAllOrNothing() throws ParkException {
         createMembers(4);
-        park.createAttraction("A01", "Small", "3");
-        park.createAttraction("A02", "Big", "4");
+        park.createAttraction("A01", "Small", "3", null);
+        park.createAttraction("A02", "Big", "4", null);
         park.createGroupTicket("TG01", "G", "2027-04-15");
-        assertThrows(ParkException.class, () -> park.enter("A01", "TG01"));
+        assertThrows(ParkException.class, () -> enter("A01", "TG01"));
         assertTrue(park.requireAttraction("A01").getOccupants().isEmpty());
 
-        assertEquals(4, park.enter("A02", "TG01"));
+        assertEquals(4, enter("A02", "TG01"));
         park.exit("A02", "u1@correo.com");
         assertEquals(3, park.requireAttraction("A02").getOccupants().size());
         assertEquals(1, park.requireAttraction("A02").getAvailablePlaces());
@@ -402,10 +412,10 @@ class ParkControllerTest {
     @Test
     void deletedHolderCannotEnter() throws ParkException {
         park.createTicket("T001", "ana@correo.com", "2027-04-15");
-        park.createAttraction("A01", "Dragon", "5");
+        park.createAttraction("A01", "Dragon", "5", null);
         park.setDate("2027-04-16");
         park.deleteUser("ana@correo.com", "Clave1!");
         park.setDate("2027-04-15");
-        assertThrows(ParkException.class, () -> park.enter("A01", "T001"));
+        assertThrows(ParkException.class, () -> enter("A01", "T001"));
     }
 }
