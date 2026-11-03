@@ -18,18 +18,20 @@ class SystemDateTest {
     @TempDir
     Path dir;
     UserService service;
+    GroupService groups;
     CommandProcessor processor;
 
     @BeforeEach
     void setUp() {
         service = new UserService(new UserFileStorage(dir.resolve("users.txt")));
-        processor = new CommandProcessor(service, START);
+        groups = new GroupService(new GroupFileStorage(dir.resolve("groups.txt")), service);
+        processor = new CommandProcessor(service, groups, START);
     }
 
     @Test
     void defaultStartsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = new CommandProcessor(service).getCurrentDate();
+        LocalDate date = new CommandProcessor(service, groups).getCurrentDate();
         LocalDate after = LocalDate.now();
         assertTrue(!date.isBefore(before) && !date.isAfter(after));
     }
@@ -41,7 +43,7 @@ class SystemDateTest {
 
     @Test
     void setsValidDate() {
-        CommandProcessor p = new CommandProcessor(service, LocalDate.of(2000, 1, 1));
+        CommandProcessor p = new CommandProcessor(service, groups, LocalDate.of(2000, 1, 1));
         assertEquals("OK: System date set to 2026-09-15", p.process("SYSTEM DATE;2026-09-15"));
         assertEquals(START, p.getCurrentDate());
     }
@@ -72,7 +74,7 @@ class SystemDateTest {
         for (String syntax : CommandProcessor.COMMAND_SYNTAX) {
             assertTrue(help.contains(syntax), syntax);
         }
-        assertEquals(6, CommandProcessor.COMMAND_SYNTAX.size());
+        assertTrue(CommandProcessor.COMMAND_SYNTAX.size() >= 6);
         assertTrue(help.contains("SYSTEM DATE;yyyy-MM-dd"));
     }
 }

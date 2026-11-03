@@ -24,7 +24,7 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() {
         service = new UserService(new UserFileStorage(dir.resolve("users.txt")));
-        processor = new CommandProcessor(service);
+        processor = new CommandProcessor(service, new GroupService(new GroupFileStorage(dir.resolve("groups.txt")), service));
     }
 
     @Test

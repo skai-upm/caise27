@@ -16,6 +16,10 @@ import java.util.Locale;
  * USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta
  * USER DELETE;Correo;Contraseña
  * USER UPDATE;Correo;Contraseña;Campo;NuevoValor
+ * GROUP CREATE;Id;Nombre
+ * GROUP ADD;Id;Correo
+ * GROUP REMOVE;Id;Correo
+ * GROUP DELETE;Id
  * SYSTEM DATE;yyyy-MM-dd
  * HELP
  * EXIT
@@ -28,6 +32,9 @@ public class CommandProcessor {
     private static final int DELETE_TOKENS = 3;
     private static final int UPDATE_TOKENS = 5;
     private static final int DATE_TOKENS = 2;
+    private static final int GROUP_CREATE_TOKENS = 3;
+    private static final int GROUP_MEMBER_TOKENS = 3;
+    private static final int GROUP_DELETE_TOKENS = 2;
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
@@ -36,21 +43,27 @@ public class CommandProcessor {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "GROUP CREATE;Id;Nombre",
+            "GROUP ADD;Id;Correo",
+            "GROUP REMOVE;Id;Correo",
+            "GROUP DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
 
     private final UserService users;
+    private final GroupService groups;
     private boolean exitRequested;
     private LocalDate currentDate;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserService users) {
-        this(users, LocalDate.now());
+    public CommandProcessor(UserService users, GroupService groups) {
+        this(users, groups, LocalDate.now());
     }
 
-    public CommandProcessor(UserService users, LocalDate initialDate) {
+    public CommandProcessor(UserService users, GroupService groups, LocalDate initialDate) {
         this.users = users;
+        this.groups = groups;
         this.currentDate = initialDate;
     }
 
@@ -78,6 +91,10 @@ public class CommandProcessor {
                 case "USER CREATE" -> create(tokens);
                 case "USER DELETE" -> delete(tokens);
                 case "USER UPDATE" -> update(tokens);
+                case "GROUP CREATE" -> groupCreate(tokens);
+                case "GROUP ADD" -> groupAdd(tokens);
+                case "GROUP REMOVE" -> groupRemove(tokens);
+                case "GROUP DELETE" -> groupDelete(tokens);
                 case "SYSTEM DATE" -> systemDate(tokens);
                 case "HELP" -> tokens.length == 1 ? help() : usage("HELP");
                 case "EXIT" -> tokens.length == 1 ? exit() : usage("EXIT");
@@ -102,7 +119,8 @@ public class CommandProcessor {
         if (t.length != DELETE_TOKENS) {
             return usage("USER DELETE;Correo;Contraseña");
         }
-        users.delete(t[1], t[2]);
+        User deleted = users.delete(t[1], t[2]);
+        groups.removeUserFromAll(deleted);
         return "OK: User " + t[1] + " deleted";
     }
 
@@ -116,6 +134,38 @@ public class CommandProcessor {
         }
         users.update(t[1], t[2], field, t[4]);
         return "OK: User " + t[1] + " updated (" + field + ")";
+    }
+
+    private String groupCreate(String[] t) {
+        if (t.length != GROUP_CREATE_TOKENS) {
+            return usage("GROUP CREATE;Id;Nombre");
+        }
+        groups.create(t[1], t[2]);
+        return "OK: Group " + t[1] + " created";
+    }
+
+    private String groupAdd(String[] t) {
+        if (t.length != GROUP_MEMBER_TOKENS) {
+            return usage("GROUP ADD;Id;Correo");
+        }
+        groups.addMember(t[1], t[2]);
+        return "OK: User " + t[2] + " added to group " + t[1];
+    }
+
+    private String groupRemove(String[] t) {
+        if (t.length != GROUP_MEMBER_TOKENS) {
+            return usage("GROUP REMOVE;Id;Correo");
+        }
+        groups.removeMember(t[1], t[2]);
+        return "OK: User " + t[2] + " removed from group " + t[1];
+    }
+
+    private String groupDelete(String[] t) {
+        if (t.length != GROUP_DELETE_TOKENS) {
+            return usage("GROUP DELETE;Id");
+        }
+        groups.delete(t[1]);
+        return "OK: Group " + t[1] + " deleted";
     }
 
     private String systemDate(String[] t) {

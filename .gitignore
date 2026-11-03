@@ -22,3 +22,4 @@ buildNumber.properties
 
 # Runtime data files of the application
 users.txt
+groups.txt

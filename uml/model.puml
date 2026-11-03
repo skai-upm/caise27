@@ -1,0 +1,113 @@
+@startuml model
+' Amusement park - class model of the implemented code (package es.upm.etsisi.amusementpark)
+hide empty members
+skinparam classAttributeIconSize 0
+
+package es.upm.etsisi.amusementpark {
+
+  class App {
+    + {static} main(args : String[]) : void
+    ~ {static} runStandardInput(in : BufferedReader, out : PrintStream, dataDir : Path) : void
+    ~ {static} runFile(commandFile : Path, out : PrintStream, dataDir : Path) : void
+    ~ {static} createProcessor(dataDir : Path) : CommandProcessor
+    ~ {static} run(reader : BufferedReader, out : PrintStream, dataDir : Path) : void
+  }
+
+  class CommandProcessor {
+    ~ {static} COMMAND_SYNTAX : List<String>
+    - exitRequested : boolean
+    - currentDate : LocalDate
+    + CommandProcessor(users : UserService, groups : GroupService)
+    + CommandProcessor(users : UserService, groups : GroupService, initialDate : LocalDate)
+    + process(line : String) : String
+    + isExitRequested() : boolean
+    + getCurrentDate() : LocalDate
+  }
+
+  class User {
+    - name : String
+    - surname : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+    + getDni() : String
+    + get(field : UserField) : String
+    + set(field : UserField, value : String) : void
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+    + {static} parse(token : String) : UserField
+  }
+
+  class UserValidator <<utility>> {
+    + {static} isValidDni(dni : String) : boolean
+    + {static} isValidEmail(email : String) : boolean
+    + {static} isValidPassword(password : String) : boolean
+    + {static} isValidCard(card : String) : boolean
+    + {static} isNotBlank(value : String) : boolean
+  }
+
+  class UserService {
+    + getUsers() : List<User>
+    + findByEmail(email : String) : Optional<User>
+    + create(name, surname, dni, email, password, phone, card : String) : User
+    + update(email : String, password : String, field : UserField, newValue : String) : void
+    + delete(email : String, password : String) : User
+  }
+
+  class UserFileStorage {
+    + {static} DEFAULT_FILE : String = "users.txt"
+    - file : Path
+    + load() : List<User>
+    + save(users : List<User>) : void
+  }
+
+  class Group {
+    - id : String {readOnly}
+    - name : String
+    + getMembers() : List<User>
+    + contains(user : User) : boolean
+    + addMember(user : User) : boolean
+    + removeMember(user : User) : boolean
+  }
+
+  class GroupService {
+    + getGroups() : List<Group>
+    + find(id : String) : Optional<Group>
+    + create(id : String, name : String) : Group
+    + addMember(id : String, email : String) : void
+    + removeMember(id : String, email : String) : void
+    + delete(id : String) : void
+    + removeUserFromAll(user : User) : void
+  }
+
+  class GroupFileStorage {
+    + {static} DEFAULT_FILE : String = "groups.txt"
+    - file : Path
+    + load(users : List<User>) : List<Group>
+    + save(groups : List<Group>) : void
+  }
+}
+
+App ..> CommandProcessor : creates
+CommandProcessor --> "1" UserService : users
+CommandProcessor --> "1" GroupService : groups
+UserService --> "1" UserFileStorage : storage
+UserService o--> "*" User : users
+UserService ..> UserValidator : validates with
+GroupService --> "1" GroupFileStorage : storage
+GroupService --> "1" UserService : users
+GroupService o--> "*" Group : groups
+Group o--> "*" User : members
+User ..> UserField
+UserFileStorage ..> User : reads/writes
+GroupFileStorage ..> Group : reads/writes
+@enduml

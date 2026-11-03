@@ -51,7 +51,8 @@ public class UserService {
         return user;
     }
 
-    public void delete(String email, String password) {
+    /** Deletes the authenticated user and returns the removed user object. */
+    public User delete(String email, String password) {
         User user = authenticate(email, password);
         int index = users.indexOf(user);
         users.remove(index);
@@ -61,6 +62,7 @@ public class UserService {
             users.add(index, user);
             throw e;
         }
+        return user;
     }
 
     public void update(String email, String password, UserField field, String newValue) {

@@ -26,16 +26,16 @@ class AppTest {
     @TempDir
     Path dir;
 
-    private List<String> runStdin(Path usersFile, String... lines) {
+    private List<String> runStdin(Path dataDir, String... lines) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         App.runStandardInput(new BufferedReader(new StringReader(String.join("\n", lines))),
-                new PrintStream(out, true, StandardCharsets.UTF_8), usersFile);
+                new PrintStream(out, true, StandardCharsets.UTF_8), dataDir);
         return out.toString(StandardCharsets.UTF_8).lines().toList();
     }
 
-    private List<String> runFile(Path commandFile, Path usersFile) {
+    private List<String> runFile(Path commandFile, Path dataDir) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        App.runFile(commandFile, new PrintStream(out, true, StandardCharsets.UTF_8), usersFile);
+        App.runFile(commandFile, new PrintStream(out, true, StandardCharsets.UTF_8), dataDir);
         return out.toString(StandardCharsets.UTF_8).lines().toList();
     }
 
@@ -48,7 +48,7 @@ class AppTest {
     @Test
     void interactiveSessionStopsAtExit() throws IOException {
         Path users = dir.resolve("users.txt");
-        List<String> out = runStdin(users, CREATE_ANA, "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
+        List<String> out = runStdin(dir, CREATE_ANA, "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
                 "HELP", "EXIT", CREATE_PEDRO);
         assertTrue(out.get(0).startsWith("OK:"));
         assertTrue(out.get(1).startsWith("OK:"));
@@ -61,7 +61,7 @@ class AppTest {
     @Test
     void endOfInputWithoutExitTerminates() throws IOException {
         Path users = dir.resolve("users.txt");
-        List<String> out = runStdin(users, CREATE_ANA, "", "NOT A COMMAND", CREATE_PEDRO);
+        List<String> out = runStdin(dir, CREATE_ANA, "", "NOT A COMMAND", CREATE_PEDRO);
         assertEquals(3, out.size());
         assertTrue(out.get(1).startsWith("ERROR:"));
         assertEquals(2, Files.readAllLines(users).size());
@@ -72,7 +72,7 @@ class AppTest {
         Path users = dir.resolve("users.txt");
         Path input = commandFile("input_basico.txt", CREATE_ANA, CREATE_PEDRO,
                 "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999", "EXIT");
-        List<String> out = runFile(input, users);
+        List<String> out = runFile(input, dir);
         assertEquals(List.of("OK: User ana@correo.com created", "OK: User pedro@correo.com created",
                 "OK: User ana@correo.com updated (PHONE)", "OK: Bye"), out);
         assertEquals(List.of(
@@ -85,7 +85,7 @@ class AppTest {
     void fileModeSkipsBlankLinesAndStopsAtExit() throws IOException {
         Path users = dir.resolve("users.txt");
         Path input = commandFile("in.txt", CREATE_ANA, "", "   ", "HELP", "EXIT", CREATE_PEDRO);
-        List<String> out = runFile(input, users);
+        List<String> out = runFile(input, dir);
         assertTrue(out.get(0).startsWith("OK:"));
         assertEquals("Available commands:", out.get(1));
         assertEquals("OK: Bye", out.get(out.size() - 1));
@@ -95,7 +95,7 @@ class AppTest {
 
     @Test
     void missingFileIsReportedInAControlledWay() {
-        List<String> out = runFile(dir.resolve("does-not-exist.txt"), dir.resolve("users.txt"));
+        List<String> out = runFile(dir.resolve("does-not-exist.txt"), dir);
         assertEquals(1, out.size());
         assertTrue(out.get(0).startsWith("ERROR: Cannot read command file"));
         assertFalse(Files.exists(dir.resolve("users.txt")));
@@ -103,7 +103,7 @@ class AppTest {
 
     @Test
     void directoryIsReportedInAControlledWay() {
-        List<String> out = runFile(dir, dir.resolve("users.txt"));
+        List<String> out = runFile(dir, dir);
         assertTrue(out.get(0).startsWith("ERROR: Cannot read command file"));
     }
 
@@ -111,7 +111,7 @@ class AppTest {
     void undecodableFileIsReportedInAControlledWay() throws IOException {
         Path input = dir.resolve("bad.txt");
         Files.write(input, new byte[] {(byte) 0xC3, (byte) 0x28, '\n'});
-        List<String> out = runFile(input, dir.resolve("users.txt"));
+        List<String> out = runFile(input, dir);
         assertTrue(out.get(out.size() - 1).startsWith("ERROR: Cannot read command file"));
     }
 
@@ -121,12 +121,12 @@ class AppTest {
             "USER CREATE;X;Y;12345678A;x@correo.com;Clave1!;6;1234567890123456", CREATE_PEDRO,
             "USER DELETE;pedro@correo.com;Otra2#", "HELP", "USER UPDATE;ana.nueva@correo.com;Clave1!;CARD;9999888877776666",
             "EXIT", CREATE_PEDRO};
-        Path usersA = dir.resolve("a.txt");
-        Path usersB = dir.resolve("b.txt");
+        Path usersA = dir.resolve("a");
+        Path usersB = dir.resolve("b");
         List<String> stdin = runStdin(usersA, commands);
         List<String> file = runFile(commandFile("cmds.txt", commands), usersB);
         assertEquals(stdin, file);
-        assertEquals(Files.readAllLines(usersA), Files.readAllLines(usersB));
+        assertEquals(Files.readAllLines(usersA.resolve("users.txt")), Files.readAllLines(usersB.resolve("users.txt")));
     }
 
     @Test
@@ -145,11 +145,35 @@ class AppTest {
     @Test
     void systemDateBehavesTheSameFromFileAndStandardInput() throws IOException {
         String[] commands = {"SYSTEM DATE;2026-09-15", "SYSTEM DATE;2026-02-30", "SYSTEM DATE;2020-01-01", "EXIT"};
-        List<String> stdin = runStdin(dir.resolve("a.txt"), commands);
-        List<String> file = runFile(commandFile("dates.txt", commands), dir.resolve("b.txt"));
+        List<String> stdin = runStdin(dir.resolve("a"), commands);
+        List<String> file = runFile(commandFile("dates.txt", commands), dir.resolve("b"));
         assertEquals(stdin, file);
         assertEquals(List.of("OK: System date set to 2026-09-15",
                 "ERROR: Invalid date 2026-02-30. Expected format yyyy-MM-dd",
                 "OK: System date set to 2020-01-01", "OK: Bye"), file);
+    }
+
+    @Test
+    void groupsAreRestoredAfterRestart() throws IOException {
+        runStdin(dir, CREATE_ANA, CREATE_PEDRO, "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com",
+                "GROUP ADD;G01;pedro@correo.com", "GROUP REMOVE;G01;pedro@correo.com", "GROUP CREATE;G02;Amigos",
+                "GROUP ADD;G02;pedro@correo.com", "EXIT");
+        List<String> out = runStdin(dir, "GROUP ADD;G01;ana@correo.com", "GROUP CREATE;G01;Otra",
+                "USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com", "GROUP REMOVE;G01;ana.nueva@correo.com",
+                "GROUP ADD;G01;ana.nueva@correo.com", "USER DELETE;pedro@correo.com;Otra2#", "EXIT");
+        assertTrue(out.get(0).startsWith("ERROR:"));  // membership restored: duplicate rejected
+        assertTrue(out.get(1).startsWith("ERROR:"));  // group id restored
+        assertTrue(out.get(3).startsWith("OK:"));     // restored member is the registered user object
+        assertEquals(List.of("G01;Familia Garcia;12345678Z", "G02;Amigos;"), Files.readAllLines(dir.resolve("groups.txt")));
+        CommandProcessor reloaded = App.createProcessor(dir);
+        assertTrue(reloaded.process("GROUP ADD;G01;ana.nueva@correo.com").startsWith("ERROR:"));
+    }
+
+    @Test
+    void malformedGroupCommandsAreRejected() {
+        List<String> out = runStdin(dir, "GROUP ADD;G01", "GROUP DELETE", "GROUP CREATE;G01;A;B", "GROUP REMOVE;G01");
+        assertEquals(4, out.size());
+        assertTrue(out.stream().allMatch(l -> l.startsWith("ERROR:")));
+        assertTrue(Files.notExists(dir.resolve("groups.txt")));
     }
 }
