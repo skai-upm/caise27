@@ -141,4 +141,15 @@ class AppTest {
         }
         assertTrue(out.toString(StandardCharsets.UTF_8).startsWith("ERROR: Cannot read command file"));
     }
+
+    @Test
+    void systemDateBehavesTheSameFromFileAndStandardInput() throws IOException {
+        String[] commands = {"SYSTEM DATE;2026-09-15", "SYSTEM DATE;2026-02-30", "SYSTEM DATE;2020-01-01", "EXIT"};
+        List<String> stdin = runStdin(dir.resolve("a.txt"), commands);
+        List<String> file = runFile(commandFile("dates.txt", commands), dir.resolve("b.txt"));
+        assertEquals(stdin, file);
+        assertEquals(List.of("OK: System date set to 2026-09-15",
+                "ERROR: Invalid date 2026-02-30. Expected format yyyy-MM-dd",
+                "OK: System date set to 2020-01-01", "OK: Bye"), file);
+    }
 }
