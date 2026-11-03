@@ -1,5 +1,5 @@
 @startuml model
-' Amusement park - class model of the current implementation (package es.upm.etsisi.amusementpark).
+' Amusement park - class model of the current implementation, organised in layers.
 ' Notation: no methods; attributes only of primitive, String, value or enum types; references to model
 ' classes drawn as lines named after the holder's attribute, with a cross (or diamond) at the holder end.
 hide empty members
@@ -11,89 +11,90 @@ package es.upm.etsisi.amusementpark {
   class App
 
   note top of App
-    Entry point: java -jar amusement-park.jar [commandFile]
+    Entry point and composition root:
+    java -jar amusement-park.jar [--fly] [commandFile]
   end note
 
-  class CommandProcessor {
-    - exitRequested : boolean
-    - currentDate : LocalDate
-    - currentPrice : BigDecimal
+  package presentation {
+    class CommandRunner
+    class CommandProcessor {
+      - exitRequested : boolean
+    }
   }
 
-  class User {
-    - name : String
-    - surname : String
-    - dni : String
-    - email : String
-    - password : String
-    - phone : String
-    - card : String
+  package business {
+    class UserValidator
+
+    package controller {
+      class ParkController {
+        - currentDate : LocalDate
+        - currentPrice : BigDecimal
+      }
+      class UserController
+      class GroupController
+      class TicketController
+      class AttractionController
+    }
+
+    package model {
+      class User {
+        - name : String
+        - surname : String
+        - dni : String
+        - email : String
+        - password : String
+        - phone : String
+        - card : String
+      }
+      enum UserField {
+        NAME
+        SURNAME
+        EMAIL
+        PASSWORD
+        PHONE
+        CARD
+      }
+      class Group {
+        - id : String
+        - name : String
+      }
+      abstract class ParkTicket {
+        - id : String
+        - date : LocalDate
+      }
+      class Ticket {
+        - price : BigDecimal
+        - ownerDni : String
+      }
+      class GroupTicket {
+        - groupId : String
+        - unitPrice : BigDecimal
+        - price : BigDecimal
+      }
+      class Attraction {
+        - id : String
+        - name : String
+        - capacity : int
+      }
+    }
   }
 
-  enum UserField {
-    NAME
-    SURNAME
-    EMAIL
-    PASSWORD
-    PHONE
-    CARD
-  }
-
-  class UserValidator
-
-  class UserService
-
-  class UserFileStorage {
-    - file : Path
-  }
-
-  class Group {
-    - id : String
-    - name : String
-  }
-
-  class GroupService
-
-  class GroupFileStorage {
-    - file : Path
-  }
-
-  abstract class ParkTicket {
-    - id : String
-    - date : LocalDate
-  }
-
-  class Ticket {
-    - price : BigDecimal
-    - ownerDni : String
-  }
-
-  class GroupTicket {
-    - groupId : String
-    - unitPrice : BigDecimal
-    - price : BigDecimal
-  }
-
-  class TicketService
-
-  class TicketFileStorage {
-    - file : Path
-  }
-
-  class GroupTicketFileStorage {
-    - file : Path
-  }
-
-  class Attraction {
-    - id : String
-    - name : String
-    - capacity : int
-  }
-
-  class AttractionService
-
-  class AttractionFileStorage {
-    - file : Path
+  package persistence {
+    class UserFileStorage {
+      - file : Path
+    }
+    class GroupFileStorage {
+      - file : Path
+    }
+    class TicketFileStorage {
+      - file : Path
+    }
+    class GroupTicketFileStorage {
+      - file : Path
+    }
+    class AttractionFileStorage {
+      - file : Path
+    }
   }
 }
 
@@ -101,44 +102,52 @@ package es.upm.etsisi.amusementpark {
 ParkTicket <|-- Ticket
 ParkTicket <|-- GroupTicket
 
-' --- controller
-CommandProcessor x--> "1" UserService : users
-CommandProcessor x--> "1" GroupService : groups
-CommandProcessor x--> "1" TicketService : tickets
-CommandProcessor x--> "1" AttractionService : attractions
+' --- presentation
+CommandProcessor x--> "1" ParkController : park
+CommandProcessor x--> "1" UserController : users
+CommandProcessor x--> "1" GroupController : groups
+CommandProcessor x--> "1" AttractionController : attractions
+
+' --- main controller
+ParkController x--> "1" UserController : users
+ParkController x--> "1" GroupController : groups
+ParkController x--> "1" TicketController : tickets
+ParkController x--> "1" AttractionController : attractions
 
 ' --- users
-UserService x--> "1" UserFileStorage : storage
-UserService o--> "*" User : users
+UserController x--> "1" UserFileStorage : storage
+UserController o--> "*" User : users
 
 ' --- groups
-GroupService x--> "1" GroupFileStorage : storage
-GroupService x--> "1" UserService : users
-GroupService o--> "*" Group : groups
+GroupController x--> "1" GroupFileStorage : storage
+GroupController x--> "1" UserController : users
+GroupController o--> "*" Group : groups
 Group o--> "*" User : members
 
 ' --- tickets
-TicketService x--> "1" TicketFileStorage : storage
-TicketService x--> "1" GroupTicketFileStorage : groupStorage
-TicketService x--> "1" UserService : users
-TicketService o--> "*" Ticket : tickets
-TicketService o--> "*" GroupTicket : groupTickets
+TicketController x--> "1" TicketFileStorage : storage
+TicketController x--> "1" GroupTicketFileStorage : groupStorage
+TicketController x--> "1" UserController : users
+TicketController o--> "*" Ticket : tickets
+TicketController o--> "*" GroupTicket : groupTickets
 Ticket x--> "0..1" User : user
 GroupTicket o--> "0..1" Group : group
 GroupTicket *--> "1..*" Ticket : tickets
 
 ' --- attractions
-AttractionService x--> "1" AttractionFileStorage : storage
-AttractionService o--> "*" Attraction : attractions
+AttractionController x--> "1" AttractionFileStorage : storage
+AttractionController o--> "*" Attraction : attractions
 Attraction o--> "*" User : present
 
 ' --- usage of classes without incoming relationships
+App ..> CommandRunner
 App ..> CommandProcessor : creates
-UserService ..> UserValidator
-GroupService ..> UserValidator
-TicketService ..> UserValidator
-AttractionService ..> UserValidator
+CommandRunner ..> CommandProcessor
+UserController ..> UserValidator
+GroupController ..> UserValidator
+TicketController ..> UserValidator
+AttractionController ..> UserValidator
 User ..> UserField
-UserService ..> UserField
+UserController ..> UserField
 CommandProcessor ..> UserField
 @enduml

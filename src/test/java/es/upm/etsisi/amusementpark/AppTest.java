@@ -1,5 +1,9 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+
+import es.upm.etsisi.amusementpark.business.model.User;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,10 +22,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 class AppTest {
 
-    static final String CREATE_ANA =
-            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
-    static final String CREATE_PEDRO =
-            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
 
     @TempDir
     Path dir;
@@ -48,8 +48,8 @@ class AppTest {
     @Test
     void interactiveSessionStopsAtExit() throws IOException {
         Path users = dir.resolve("users.txt");
-        List<String> out = runStdin(dir, CREATE_ANA, "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
-                "HELP", "EXIT", CREATE_PEDRO);
+        List<String> out = runStdin(dir, TestData.CREATE_ANA, "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
+                "HELP", "EXIT", TestData.CREATE_PEDRO);
         assertTrue(out.get(0).startsWith("OK:"));
         assertTrue(out.get(1).startsWith("OK:"));
         assertTrue(out.contains("  EXIT"));
@@ -61,7 +61,7 @@ class AppTest {
     @Test
     void endOfInputWithoutExitTerminates() throws IOException {
         Path users = dir.resolve("users.txt");
-        List<String> out = runStdin(dir, CREATE_ANA, "", "NOT A COMMAND", CREATE_PEDRO);
+        List<String> out = runStdin(dir, TestData.CREATE_ANA, "", "NOT A COMMAND", TestData.CREATE_PEDRO);
         assertEquals(3, out.size());
         assertTrue(out.get(1).startsWith("ERROR:"));
         assertEquals(2, Files.readAllLines(users).size());
@@ -70,7 +70,7 @@ class AppTest {
     @Test
     void fileModeRunsSampleInOrder() throws IOException {
         Path users = dir.resolve("users.txt");
-        Path input = commandFile("input_basico.txt", CREATE_ANA, CREATE_PEDRO,
+        Path input = commandFile("input_basico.txt", TestData.CREATE_ANA, TestData.CREATE_PEDRO,
                 "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999", "EXIT");
         List<String> out = runFile(input, dir);
         assertEquals(List.of("OK: User ana@correo.com created", "OK: User pedro@correo.com created",
@@ -84,7 +84,7 @@ class AppTest {
     @Test
     void fileModeSkipsBlankLinesAndStopsAtExit() throws IOException {
         Path users = dir.resolve("users.txt");
-        Path input = commandFile("in.txt", CREATE_ANA, "", "   ", "HELP", "EXIT", CREATE_PEDRO);
+        Path input = commandFile("in.txt", TestData.CREATE_ANA, "", "   ", "HELP", "EXIT", TestData.CREATE_PEDRO);
         List<String> out = runFile(input, dir);
         assertTrue(out.get(0).startsWith("OK:"));
         assertEquals("Available commands:", out.get(1));
@@ -117,10 +117,10 @@ class AppTest {
 
     @Test
     void fileAndStandardInputGiveIdenticalResults() throws IOException {
-        String[] commands = {CREATE_ANA, "", "USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com",
-            "USER CREATE;X;Y;12345678A;x@correo.com;Clave1!;6;1234567890123456", CREATE_PEDRO,
+        String[] commands = {TestData.CREATE_ANA, "", "USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com",
+            "USER CREATE;X;Y;12345678A;x@correo.com;Clave1!;6;1234567890123456", TestData.CREATE_PEDRO,
             "USER DELETE;pedro@correo.com;Otra2#", "HELP", "USER UPDATE;ana.nueva@correo.com;Clave1!;CARD;9999888877776666",
-            "EXIT", CREATE_PEDRO};
+            "EXIT", TestData.CREATE_PEDRO};
         Path usersA = dir.resolve("a");
         Path usersB = dir.resolve("b");
         List<String> stdin = runStdin(usersA, commands);
@@ -155,7 +155,7 @@ class AppTest {
 
     @Test
     void groupsAreRestoredAfterRestart() throws IOException {
-        runStdin(dir, CREATE_ANA, CREATE_PEDRO, "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com",
+        runStdin(dir, TestData.CREATE_ANA, TestData.CREATE_PEDRO, "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com",
                 "GROUP ADD;G01;pedro@correo.com", "GROUP REMOVE;G01;pedro@correo.com", "GROUP CREATE;G02;Amigos",
                 "GROUP ADD;G02;pedro@correo.com", "EXIT");
         List<String> out = runStdin(dir, "GROUP ADD;G01;ana@correo.com", "GROUP CREATE;G01;Otra",
@@ -179,7 +179,7 @@ class AppTest {
 
     @Test
     void ticketsAreRestoredAfterRestartIncludingHistory() throws IOException {
-        runStdin(dir, CREATE_ANA, CREATE_PEDRO, "SYSTEM DATE;2026-10-01", "TICKET CREATE;T001;ana@correo.com;2026-10-15",
+        runStdin(dir, TestData.CREATE_ANA, TestData.CREATE_PEDRO, "SYSTEM DATE;2026-10-01", "TICKET CREATE;T001;ana@correo.com;2026-10-15",
                 "SYSTEM PRICE;60.00", "TICKET CREATE;T002;pedro@correo.com;2026-10-02", "EXIT");
         List<String> out = runStdin(dir, "SYSTEM DATE;2026-10-01", "USER DELETE;ana@correo.com;Clave1!",
                 "TICKET CREATE;T001;ana@correo.com;2026-10-20", "TICKET CREATE;T003;ana@correo.com;2026-10-20",
@@ -197,7 +197,7 @@ class AppTest {
 
     @Test
     void groupTicketsSurviveRestartAndRestrictionsFollowTheDate() throws IOException {
-        runStdin(dir, CREATE_ANA, CREATE_PEDRO, "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com",
+        runStdin(dir, TestData.CREATE_ANA, TestData.CREATE_PEDRO, "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com",
                 "GROUP ADD;G01;pedro@correo.com", "SYSTEM DATE;2026-10-01", "GROUPTICKET CREATE;TG01;G01;2026-10-15",
                 "EXIT");
         List<String> out = runStdin(dir, "SYSTEM DATE;2026-10-01", "GROUP DELETE;G01", "USER DELETE;pedro@correo.com;Otra2#",
@@ -214,7 +214,7 @@ class AppTest {
 
     @Test
     void attractionsStartEmptyAfterRestart() throws IOException {
-        Path input = commandFile("park.txt", CREATE_ANA, "SYSTEM DATE;2026-10-15", "TICKET CREATE;T001;ana@correo.com;2026-10-15",
+        Path input = commandFile("park.txt", TestData.CREATE_ANA, "SYSTEM DATE;2026-10-15", "TICKET CREATE;T001;ana@correo.com;2026-10-15",
                 "ATTRACTION CREATE;A01;Tornado;20", "ATTRACTION ENTER;A01;T001", "ATTRACTION STATUS;A01", "EXIT");
         List<String> out = runFile(input, dir);
         assertTrue(out.contains("Users present: 1"));

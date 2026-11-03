@@ -1,5 +1,7 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.model.User;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -20,7 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class FlyModeTest {
 
-    static final String[] SESSION = {AppTest.CREATE_ANA, "GROUP CREATE;G01;Familia", "GROUP ADD;G01;ana@correo.com",
+    static final String[] SESSION = {TestData.CREATE_ANA, "GROUP CREATE;G01;Familia", "GROUP ADD;G01;ana@correo.com",
         "SYSTEM DATE;2026-10-15", "TICKET CREATE;T001;ana@correo.com;2026-10-15", "ATTRACTION CREATE;A01;Tornado;20",
         "ATTRACTION ENTER;A01;T001", "ATTRACTION STATUS;A01", "USER CREATE;Ana;X;12345678Z;ana@correo.com;Clave1!;6;1234567890123456"};
 
@@ -68,7 +70,7 @@ class FlyModeTest {
 
     @Test
     void flyOptionMayFollowTheFile() throws IOException {
-        Files.write(work.resolve("cmds.txt"), List.of(AppTest.CREATE_ANA, "EXIT"));
+        Files.write(work.resolve("cmds.txt"), List.of(TestData.CREATE_ANA, "EXIT"));
         List<String> out = execute("", "cmds.txt", "--fly");
         assertEquals(List.of("OK: User ana@correo.com created", "OK: Bye"), out);
         assertFalse(Files.exists(work.resolve("users.txt")));
@@ -76,7 +78,7 @@ class FlyModeTest {
 
     @Test
     void endOfInputAndMissingFileAlsoCleanUp() {
-        execute(lines(AppTest.CREATE_ANA), "--fly");
+        execute(lines(TestData.CREATE_ANA), "--fly");
         assertFalse(Files.exists(work.resolve("tmp")));
         List<String> out = execute("", "--fly", "missing.txt");
         assertTrue(out.get(0).startsWith("ERROR: Cannot read command file"));
@@ -116,14 +118,14 @@ class FlyModeTest {
             }
         };
         App.execute(new String[] {"--fly"},
-                new ByteArrayInputStream((AppTest.CREATE_ANA + "\nEXIT\n").getBytes(StandardCharsets.UTF_8)), spy, work);
+                new ByteArrayInputStream((TestData.CREATE_ANA + "\nEXIT\n").getBytes(StandardCharsets.UTF_8)), spy, work);
         assertTrue(seen.get());
         assertFalse(Files.exists(work.resolve("tmp")));
     }
 
     @Test
     void normalModeIsUnchanged() throws IOException {
-        List<String> out = execute(lines(AppTest.CREATE_ANA, "EXIT"));
+        List<String> out = execute(lines(TestData.CREATE_ANA, "EXIT"));
         assertEquals("OK: User ana@correo.com created", out.get(0));
         assertTrue(Files.exists(work.resolve("users.txt")));
         assertFalse(Files.exists(work.resolve("tmp")));

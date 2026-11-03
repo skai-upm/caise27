@@ -1,5 +1,18 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.AttractionController;
+import es.upm.etsisi.amusementpark.business.controller.GroupController;
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.controller.TicketController;
+import es.upm.etsisi.amusementpark.business.controller.UserController;
+import es.upm.etsisi.amusementpark.persistence.AttractionFileStorage;
+import es.upm.etsisi.amusementpark.persistence.GroupFileStorage;
+import es.upm.etsisi.amusementpark.persistence.GroupTicketFileStorage;
+import es.upm.etsisi.amusementpark.persistence.TicketFileStorage;
+import es.upm.etsisi.amusementpark.persistence.UserFileStorage;
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.presentation.CommandRunner;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +29,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Entry point: starts the application and handles terminal interaction.
+ * Entry point and composition root: selects the input mode and the data directory and wires the
+ * presentation, business and persistence layers.
  * Without arguments commands are read from standard input; with an argument, the first one is the
  * path of a text file with one command per line. Both sources share the same processing loop.
  * Data files ({@code users.txt}, {@code groups.txt}, {@code tickets.txt}, {@code grouptickets.txt}, {@code attractions.txt}) are kept in the working directory.
@@ -108,50 +122,24 @@ public class App {
         }
     }
 
-    /** Runs the commands typed on standard input. */
+    /** Runs the commands typed on standard input over the data kept in {@code dataDir}. */
     static void runStandardInput(BufferedReader in, PrintStream out, Path dataDir) {
-        try {
-            run(in, out, dataDir);
-        } catch (IOException e) {
-            out.println("ERROR: Cannot read standard input: " + e.getMessage());
-        }
+        CommandRunner.runStandardInput(in, out, createProcessor(dataDir));
     }
 
-    /** Runs the commands of a file, reporting a missing or unreadable file without an exception. */
+    /** Runs the commands of a file over the data kept in {@code dataDir}. */
     static void runFile(Path commandFile, PrintStream out, Path dataDir) {
-        if (!Files.isRegularFile(commandFile) || !Files.isReadable(commandFile)) {
-            out.println("ERROR: Cannot read command file " + commandFile + ": it does not exist or is not a readable file");
-            return;
-        }
-        try (BufferedReader reader = Files.newBufferedReader(commandFile, StandardCharsets.UTF_8)) {
-            run(reader, out, dataDir);
-        } catch (IOException e) {
-            out.println("ERROR: Cannot read command file " + commandFile + ": " + e.getMessage());
-        }
+        CommandRunner.runFile(commandFile, out, createProcessor(dataDir));
     }
 
-    /** Builds the controller and its services over the data files kept in {@code dataDir}. */
-    static CommandProcessor createProcessor(Path dataDir) {
-        UserService users = new UserService(new UserFileStorage(dataDir.resolve(UserFileStorage.DEFAULT_FILE)));
-        GroupService groups = new GroupService(new GroupFileStorage(dataDir.resolve(GroupFileStorage.DEFAULT_FILE)), users);
-        TicketService tickets = new TicketService(new TicketFileStorage(dataDir.resolve(TicketFileStorage.DEFAULT_FILE)),
+    /** Composition root: builds the repositories, controllers and the command processor over {@code dataDir}. */
+    public static CommandProcessor createProcessor(Path dataDir) {
+        UserController users = new UserController(new UserFileStorage(dataDir.resolve(UserFileStorage.DEFAULT_FILE)));
+        GroupController groups = new GroupController(new GroupFileStorage(dataDir.resolve(GroupFileStorage.DEFAULT_FILE)), users);
+        TicketController tickets = new TicketController(new TicketFileStorage(dataDir.resolve(TicketFileStorage.DEFAULT_FILE)),
                 new GroupTicketFileStorage(dataDir.resolve(GroupTicketFileStorage.DEFAULT_FILE)), users, groups);
-        AttractionService attractions =
-                new AttractionService(new AttractionFileStorage(dataDir.resolve(AttractionFileStorage.DEFAULT_FILE)));
-        return new CommandProcessor(users, groups, tickets, attractions);
-    }
-
-    /**
-     * Shared command loop for both input modes: processes each non-blank line in order and stops
-     * after EXIT or at the end of the input.
-     */
-    static void run(BufferedReader reader, PrintStream out, Path dataDir) throws IOException {
-        CommandProcessor processor = createProcessor(dataDir);
-        String line;
-        while (!processor.isExitRequested() && (line = reader.readLine()) != null) {
-            if (!line.isBlank()) {
-                out.println(processor.process(line));
-            }
-        }
+        AttractionController attractions =
+                new AttractionController(new AttractionFileStorage(dataDir.resolve(AttractionFileStorage.DEFAULT_FILE)));
+        return new CommandProcessor(new ParkController(users, groups, tickets, attractions));
     }
 }
