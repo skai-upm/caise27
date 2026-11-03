@@ -7,20 +7,43 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Individual ticket operations. Every date check uses the system date supplied by the controller.
+ * Individual and group ticket operations. Every date check uses the system date supplied by the controller.
  * Persists the tickets after every successful change. Rule violations are reported with
  * {@link IllegalArgumentException}.
  */
 public class TicketService {
 
     private final TicketFileStorage storage;
+    private final GroupTicketFileStorage groupStorage;
     private final UserService users;
     private final List<Ticket> tickets;
+    private final List<GroupTicket> groupTickets;
 
-    public TicketService(TicketFileStorage storage, UserService users) {
+    public TicketService(TicketFileStorage storage, GroupTicketFileStorage groupStorage,
+                         UserService users, GroupService groups) {
         this.storage = storage;
+        this.groupStorage = groupStorage;
         this.users = users;
         this.tickets = new ArrayList<>(storage.load(users.getUsers()));
+        this.groupTickets = new ArrayList<>(groupStorage.load(users.getUsers(), groups.getGroups()));
+    }
+
+    public List<GroupTicket> getGroupTickets() {
+        return List.copyOf(groupTickets);
+    }
+
+    public Optional<GroupTicket> findGroupTicket(String id) {
+        return groupTickets.stream().filter(t -> t.getId().equals(id)).findFirst();
+    }
+
+    /** Every ticket of the park through the common abstraction: individual, group and constituent tickets. */
+    public List<ParkTicket> getAllTickets() {
+        List<ParkTicket> all = new ArrayList<>(tickets);
+        for (GroupTicket g : groupTickets) {
+            all.add(g);
+            all.addAll(g.getTickets());
+        }
+        return all;
     }
 
     public List<Ticket> getTickets() {
@@ -34,7 +57,7 @@ public class TicketService {
     /** Buys a ticket for a registered user, for a date on or after {@code today}, at {@code price}. */
     public Ticket create(String id, String email, LocalDate date, LocalDate today, BigDecimal price) {
         require(UserValidator.isNotBlank(id), "Ticket identifier must not be empty");
-        require(find(id).isEmpty(), "A ticket with identifier " + id + " already exists");
+        requireUnusedId(id);
         User user = users.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("No registered user with email " + email));
         require(!date.isBefore(today), "Ticket date " + date + " is before the system date " + today);
@@ -54,14 +77,57 @@ public class TicketService {
         saveOrRevert(() -> tickets.add(index, ticket));
     }
 
-    /** True if the user owns a ticket dated on or after {@code today}. */
+    /** Buys a group ticket: one constituent ticket per current member, discounted by group size. */
+    public GroupTicket createGroupTicket(String id, Group group, LocalDate date, LocalDate today, BigDecimal price) {
+        require(UserValidator.isNotBlank(id), "Ticket identifier must not be empty");
+        requireUnusedId(id);
+        require(!group.getMembers().isEmpty(), "Group " + group.getId() + " has no members");
+        require(!date.isBefore(today), "Ticket date " + date + " is before the system date " + today);
+        GroupTicket ticket = new GroupTicket(id, group, date, price);
+        groupTickets.add(ticket);
+        saveGroupsOrRevert(() -> groupTickets.remove(ticket));
+        return ticket;
+    }
+
+    /** Deletes a group ticket, with all its constituent tickets, if dated strictly after {@code today}. */
+    public void deleteGroupTicket(String id, LocalDate today) {
+        GroupTicket ticket = findGroupTicket(id)
+                .orElseThrow(() -> new IllegalArgumentException("No group ticket with identifier " + id));
+        require(ticket.getDate().isAfter(today),
+                "Group ticket " + id + " cannot be deleted: its date " + ticket.getDate() + " is not after " + today);
+        int index = groupTickets.indexOf(ticket);
+        groupTickets.remove(index);
+        saveGroupsOrRevert(() -> groupTickets.add(index, ticket));
+    }
+
+    /** True if the user owns an individual or constituent ticket dated on or after {@code today}. */
     public boolean hasActiveTickets(User user, LocalDate today) {
-        return tickets.stream().anyMatch(t -> t.belongsTo(user) && !t.getDate().isBefore(today));
+        return getAllTickets().stream().anyMatch(t -> t instanceof Ticket ticket
+                && ticket.belongsTo(user) && ticket.isValidOn(today));
+    }
+
+    /** True while the group has a group ticket dated on or after {@code today}. */
+    public boolean isGroupLocked(Group group, LocalDate today) {
+        return groupTickets.stream().anyMatch(t -> t.belongsTo(group) && t.isValidOn(today));
+    }
+
+    private void requireUnusedId(String id) {
+        require(getAllTickets().stream().noneMatch(t -> t.getId().equals(id)),
+                "A ticket with identifier " + id + " already exists");
     }
 
     private void saveOrRevert(Runnable revert) {
         try {
             storage.save(tickets);
+        } catch (RuntimeException e) {
+            revert.run();
+            throw e;
+        }
+    }
+
+    private void saveGroupsOrRevert(Runnable revert) {
+        try {
+            groupStorage.save(groupTickets);
         } catch (RuntimeException e) {
             revert.run();
             throw e;

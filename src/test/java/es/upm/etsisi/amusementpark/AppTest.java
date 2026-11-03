@@ -194,4 +194,21 @@ class AppTest {
         runStdin(dir, "SYSTEM DATE;2026-10-01", "TICKET CREATE;T004;ana@correo.com;2026-10-21", "EXIT");
         assertTrue(Files.readAllLines(dir.resolve("tickets.txt")).contains("T002;87654321X;2026-10-02;60.00"));
     }
+
+    @Test
+    void groupTicketsSurviveRestartAndRestrictionsFollowTheDate() throws IOException {
+        runStdin(dir, CREATE_ANA, CREATE_PEDRO, "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com",
+                "GROUP ADD;G01;pedro@correo.com", "SYSTEM DATE;2026-10-01", "GROUPTICKET CREATE;TG01;G01;2026-10-15",
+                "EXIT");
+        List<String> out = runStdin(dir, "SYSTEM DATE;2026-10-01", "GROUP DELETE;G01", "USER DELETE;pedro@correo.com;Otra2#",
+                "GROUPTICKET CREATE;TG01;G01;2026-10-20", "SYSTEM DATE;2026-10-16", "GROUP REMOVE;G01;pedro@correo.com",
+                "USER DELETE;pedro@correo.com;Otra2#", "EXIT");
+        assertTrue(out.get(1).startsWith("ERROR:"));
+        assertTrue(out.get(2).startsWith("ERROR:"));
+        assertTrue(out.get(3).startsWith("ERROR:"));
+        assertTrue(out.get(5).startsWith("OK:"));
+        assertTrue(out.get(6).startsWith("OK:"));
+        assertEquals(List.of("TG01;G01;2026-10-15;80.00;40.00;12345678Z,87654321X"),
+                Files.readAllLines(dir.resolve("grouptickets.txt")));
+    }
 }

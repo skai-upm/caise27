@@ -26,7 +26,8 @@ class SystemDateTest {
     void setUp() {
         service = new UserService(new UserFileStorage(dir.resolve("users.txt")));
         groups = new GroupService(new GroupFileStorage(dir.resolve("groups.txt")), service);
-        tickets = new TicketService(new TicketFileStorage(dir.resolve("tickets.txt")), service);
+        tickets = new TicketService(new TicketFileStorage(dir.resolve("tickets.txt")),
+                        new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups);
         processor = new CommandProcessor(service, groups, tickets, START);
     }
 

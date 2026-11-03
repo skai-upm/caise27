@@ -100,21 +100,52 @@ package es.upm.etsisi.amusementpark {
     + save(groups : List<Group>) : void
   }
 
-  class Ticket {
+  abstract class ParkTicket {
     - id : String {readOnly}
     - date : LocalDate {readOnly}
+    + getId() : String
+    + getDate() : LocalDate
+    + isValidOn(today : LocalDate) : boolean
+    + {abstract} getPrice() : BigDecimal
+  }
+
+  class Ticket {
     - price : BigDecimal {readOnly}
     - ownerDni : String {readOnly}
     + getUser() : Optional<User>
     + belongsTo(candidate : User) : boolean
   }
 
+  class GroupTicket {
+    - groupId : String {readOnly}
+    - unitPrice : BigDecimal {readOnly}
+    - price : BigDecimal {readOnly}
+    + {static} discountFor(members : int) : int
+    + {static} total(unitPrice : BigDecimal, members : int) : BigDecimal
+    + getGroup() : Optional<Group>
+    + getTickets() : List<Ticket>
+    + belongsTo(candidate : Group) : boolean
+    + getPrice() : BigDecimal
+  }
+
+  class GroupTicketFileStorage {
+    + {static} DEFAULT_FILE : String = "grouptickets.txt"
+    - file : Path
+    + load(users : List<User>, groups : List<Group>) : List<GroupTicket>
+    + save(groupTickets : List<GroupTicket>) : void
+  }
+
   class TicketService {
     + getTickets() : List<Ticket>
+    + getGroupTickets() : List<GroupTicket>
+    + getAllTickets() : List<ParkTicket>
     + find(id : String) : Optional<Ticket>
     + create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Ticket
     + delete(id : String, today : LocalDate) : void
     + hasActiveTickets(user : User, today : LocalDate) : boolean
+    + createGroupTicket(id : String, group : Group, date : LocalDate, today : LocalDate, price : BigDecimal) : GroupTicket
+    + deleteGroupTicket(id : String, today : LocalDate) : void
+    + isGroupLocked(group : Group, today : LocalDate) : boolean
   }
 
   class TicketFileStorage {
@@ -144,4 +175,12 @@ TicketService --> "1" UserService : users
 TicketService o--> "*" Ticket : tickets
 Ticket --> "0..1" User : user
 TicketFileStorage ..> Ticket : reads/writes
+ParkTicket <|-- Ticket
+ParkTicket <|-- GroupTicket
+GroupTicket o--> "0..1" Group : group
+GroupTicket *--> "1..*" Ticket : tickets
+TicketService --> "1" GroupTicketFileStorage : groupStorage
+TicketService o--> "*" GroupTicket : groupTickets
+TicketService ..> GroupService : restores with
+GroupTicketFileStorage ..> GroupTicket : reads/writes
 @enduml

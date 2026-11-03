@@ -33,7 +33,8 @@ class TicketServiceTest {
         users = new UserService(new UserFileStorage(dir.resolve("users.txt")));
         ana = users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         file = dir.resolve("tickets.txt");
-        tickets = new TicketService(new TicketFileStorage(file), users);
+        tickets = new TicketService(new TicketFileStorage(file), new GroupTicketFileStorage(dir.resolve("grouptickets.txt")),
+                users, new GroupService(new GroupFileStorage(dir.resolve("groups.txt")), users));
     }
 
     @Test

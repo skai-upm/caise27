@@ -24,6 +24,8 @@ import java.util.Locale;
  * GROUP DELETE;Id
  * TICKET CREATE;Id;Correo;yyyy-MM-dd
  * TICKET DELETE;Id
+ * GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd
+ * GROUPTICKET DELETE;Id
  * SYSTEM DATE;yyyy-MM-dd
  * SYSTEM PRICE;Precio
  * HELP
@@ -60,6 +62,8 @@ public class CommandProcessor {
             "GROUP DELETE;Id",
             "TICKET CREATE;Id;Correo;yyyy-MM-dd",
             "TICKET DELETE;Id",
+            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
+            "GROUPTICKET DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -119,6 +123,8 @@ public class CommandProcessor {
                 case "GROUP DELETE" -> groupDelete(tokens);
                 case "TICKET CREATE" -> ticketCreate(tokens);
                 case "TICKET DELETE" -> ticketDelete(tokens);
+                case "GROUPTICKET CREATE" -> groupTicketCreate(tokens);
+                case "GROUPTICKET DELETE" -> groupTicketDelete(tokens);
                 case "SYSTEM DATE" -> systemDate(tokens);
                 case "SYSTEM PRICE" -> systemPrice(tokens);
                 case "HELP" -> tokens.length == 1 ? help() : usage("HELP");
@@ -177,6 +183,7 @@ public class CommandProcessor {
         if (t.length != GROUP_MEMBER_TOKENS) {
             return usage("GROUP ADD;Id;Correo");
         }
+        requireUnlocked(t[1]);
         groups.addMember(t[1], t[2]);
         return "OK: User " + t[2] + " added to group " + t[1];
     }
@@ -185,6 +192,7 @@ public class CommandProcessor {
         if (t.length != GROUP_MEMBER_TOKENS) {
             return usage("GROUP REMOVE;Id;Correo");
         }
+        requireUnlocked(t[1]);
         groups.removeMember(t[1], t[2]);
         return "OK: User " + t[2] + " removed from group " + t[1];
     }
@@ -193,6 +201,7 @@ public class CommandProcessor {
         if (t.length != GROUP_DELETE_TOKENS) {
             return usage("GROUP DELETE;Id");
         }
+        requireUnlocked(t[1]);
         groups.delete(t[1]);
         return "OK: Group " + t[1] + " deleted";
     }
@@ -211,6 +220,32 @@ public class CommandProcessor {
         }
         tickets.delete(t[1], currentDate);
         return "OK: Ticket " + t[1] + " deleted";
+    }
+
+    /** Rejects changes to a group that has a group ticket dated on or after the system date. */
+    private void requireUnlocked(String groupId) {
+        groups.find(groupId).filter(g -> tickets.isGroupLocked(g, currentDate)).ifPresent(g -> {
+            throw new IllegalArgumentException("Group " + groupId + " is locked by a group ticket dated on or after "
+                    + currentDate);
+        });
+    }
+
+    private String groupTicketCreate(String[] t) {
+        if (t.length != TICKET_CREATE_TOKENS) {
+            return usage("GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd");
+        }
+        Group group = groups.find(t[2])
+                .orElseThrow(() -> new IllegalArgumentException("No group with identifier " + t[2]));
+        GroupTicket ticket = tickets.createGroupTicket(t[1], group, parseDate(t[3]), currentDate, currentPrice);
+        return "OK GROUP TICKET CREATED -> " + ticket.getPrice().toPlainString();
+    }
+
+    private String groupTicketDelete(String[] t) {
+        if (t.length != TICKET_DELETE_TOKENS) {
+            return usage("GROUPTICKET DELETE;Id");
+        }
+        tickets.deleteGroupTicket(t[1], currentDate);
+        return "OK: Group ticket " + t[1] + " deleted";
     }
 
     private String systemDate(String[] t) {

@@ -10,10 +10,8 @@ import java.util.Optional;
  * The owner's DNI is kept as well, so a historical ticket remains identifiable after its user has been
  * deleted. Holds state only; it knows nothing about persistence.
  */
-public class Ticket {
+public class Ticket extends ParkTicket {
 
-    private final String id;
-    private final LocalDate date;
     private final BigDecimal price;
     private final User user;
     private final String ownerDni;
@@ -29,21 +27,13 @@ public class Ticket {
     }
 
     private Ticket(String id, User user, String ownerDni, LocalDate date, BigDecimal price) {
-        this.id = id;
+        super(id, date);
         this.user = user;
         this.ownerDni = ownerDni;
-        this.date = date;
         this.price = price.setScale(2, RoundingMode.UNNECESSARY);
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public LocalDate getDate() {
-        return date;
-    }
-
+    @Override
     public BigDecimal getPrice() {
         return price;
     }
