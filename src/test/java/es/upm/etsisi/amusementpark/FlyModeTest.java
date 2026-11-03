@@ -130,4 +130,17 @@ class FlyModeTest {
         assertTrue(Files.exists(work.resolve("users.txt")));
         assertFalse(Files.exists(work.resolve("tmp")));
     }
+
+    @Test
+    void delivery3DataIsIsolatedToo() throws IOException {
+        Files.write(work.resolve("passes.txt"), List.of("X1;SPEED;T900;8.00;false"));
+        Files.write(work.resolve("attractions.txt"), List.of("A09;Antigua;5"));
+        List<String> out = execute(lines(TestData.CREATE_ANA, "SYSTEM DATE;2026-10-15",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15", "SPECIALPASS CREATE;SP1;T001",
+                "ATTRACTION CREATE;A04;Vip;5;SPECIAL", "ATTRACTION ENTER;A04;T001", "EXIT"), "--fly");
+        assertTrue(out.get(5).endsWith("consumed Special Pass SP1"));
+        assertEquals(List.of("X1;SPEED;T900;8.00;false"), Files.readAllLines(work.resolve("passes.txt")));
+        assertEquals(List.of("A09;Antigua;5"), Files.readAllLines(work.resolve("attractions.txt")));
+        assertFalse(Files.exists(work.resolve("tmp")));
+    }
 }

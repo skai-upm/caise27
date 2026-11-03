@@ -149,8 +149,13 @@ public class ParkController {
         return tickets.create(id, email, date, currentDate, currentPrice);
     }
 
+    /**
+     * Deletes a future individual ticket together with its passes: passes first, then the ticket. Validation
+     * happens before any change; if the ticket cannot be stored as deleted, the passes are restored.
+     */
     public void deleteTicket(String id) {
-        tickets.delete(id, currentDate);
+        Ticket ticket = tickets.requireDeletable(id, currentDate);
+        cascade(List.of(ticket), () -> tickets.delete(id, currentDate));
     }
 
     public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) {
@@ -159,8 +164,25 @@ public class ParkController {
         return tickets.createGroupTicket(id, group, date, currentDate, currentPrice);
     }
 
+    /**
+     * Deletes a future group ticket: the passes of every constituent ticket first, then the constituent tickets
+     * with the group ticket. Validation happens before any change; on failure the passes are restored.
+     */
     public void deleteGroupTicket(String id) {
-        tickets.deleteGroupTicket(id, currentDate);
+        GroupTicket groupTicket = tickets.requireGroupDeletable(id, currentDate);
+        cascade(groupTicket.getTickets(), () -> tickets.deleteGroupTicket(id, currentDate));
+    }
+
+    /** Removes the passes of {@code deletedTickets}, then runs the ticket deletion; undoes the first on failure. */
+    private void cascade(List<Ticket> deletedTickets, Runnable deleteTickets) {
+        List<Pass> previousOrder = passes.getPasses();
+        List<Pass> removed = passes.removeFor(deletedTickets);
+        try {
+            deleteTickets.run();
+        } catch (RuntimeException e) {
+            passes.restore(removed, previousOrder);
+            throw e;
+        }
     }
 
     /** Admits the users of an individual or group ticket valid for the system date (no SpeedPass requested). */

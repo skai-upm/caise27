@@ -114,9 +114,7 @@ public class TicketController {
 
     /** Deletes a ticket whose date is strictly later than {@code today}. */
     public void delete(String id, LocalDate today) {
-        Ticket ticket = find(id).orElseThrow(() -> new IllegalArgumentException("No ticket with identifier " + id));
-        require(ticket.getDate().isAfter(today),
-                "Ticket " + id + " cannot be deleted: its date " + ticket.getDate() + " is not after " + today);
+        Ticket ticket = requireDeletable(id, today);
         int index = tickets.indexOf(ticket);
         tickets.remove(index);
         saveOrRevert(() -> tickets.add(index, ticket));
@@ -136,13 +134,27 @@ public class TicketController {
 
     /** Deletes a group ticket, with all its constituent tickets, if dated strictly after {@code today}. */
     public void deleteGroupTicket(String id, LocalDate today) {
+        GroupTicket ticket = requireGroupDeletable(id, today);
+        int index = groupTickets.indexOf(ticket);
+        groupTickets.remove(index);
+        saveGroupsOrRevert(() -> groupTickets.add(index, ticket));
+    }
+
+    /** Checks, without changing anything, that the individual ticket exists and is dated after {@code today}. */
+    public Ticket requireDeletable(String id, LocalDate today) {
+        Ticket ticket = find(id).orElseThrow(() -> new IllegalArgumentException("No ticket with identifier " + id));
+        require(ticket.getDate().isAfter(today),
+                "Ticket " + id + " cannot be deleted: its date " + ticket.getDate() + " is not after " + today);
+        return ticket;
+    }
+
+    /** Checks, without changing anything, that the group ticket exists and is dated after {@code today}. */
+    public GroupTicket requireGroupDeletable(String id, LocalDate today) {
         GroupTicket ticket = findGroupTicket(id)
                 .orElseThrow(() -> new IllegalArgumentException("No group ticket with identifier " + id));
         require(ticket.getDate().isAfter(today),
                 "Group ticket " + id + " cannot be deleted: its date " + ticket.getDate() + " is not after " + today);
-        int index = groupTickets.indexOf(ticket);
-        groupTickets.remove(index);
-        saveGroupsOrRevert(() -> groupTickets.add(index, ticket));
+        return ticket;
     }
 
     /** True if the user owns an individual or constituent ticket dated on or after {@code today}. */

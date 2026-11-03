@@ -83,6 +83,35 @@ public class PassController {
         }
     }
 
+    /**
+     * Deletes every pass associated with the given tickets (cascade of a ticket deletion) and returns them,
+     * so that {@link #restore} can undo the deletion if the rest of the cascade fails.
+     */
+    public List<Pass> removeFor(List<Ticket> deletedTickets) {
+        List<Pass> before = new ArrayList<>(passes);
+        List<Pass> removed = passes.stream().filter(p -> deletedTickets.stream().anyMatch(t -> t == p.getTicket()))
+                .toList();
+        if (removed.isEmpty()) {
+            return removed;
+        }
+        passes.removeAll(removed);
+        saveOrRevert(() -> {
+            passes.clear();
+            passes.addAll(before);
+        });
+        return removed;
+    }
+
+    /** Puts back passes removed by {@link #removeFor} (the cascade could not be completed). */
+    public void restore(List<Pass> removed, List<Pass> previousOrder) {
+        if (removed.isEmpty()) {
+            return;
+        }
+        passes.clear();
+        passes.addAll(previousOrder);
+        storage.save(passes);
+    }
+
     /** Buys 1 or 10 SpeedPasses {@code <id>-1..n}; all identifiers are checked before anything is created. */
     public List<Pass> buySpeedPasses(String id, String ticketId, int quantity, LocalDate today) {
         require(quantity == SINGLE || quantity == PACK, "SpeedPasses can only be bought in quantities of 1 or 10");

@@ -20,3 +20,8 @@ On startup the system SHALL load the passes after the tickets and link each to i
 - **GIVEN** a previous run bought `S1-1` and `SP1` for `T001`
 - **WHEN** the application restarts
 - **THEN** both passes exist with their prices, `SPECIALPASS CREATE;SP2;T001` is rejected and `SPEEDPASS CREATE;S1;T001;1` is rejected as a duplicate identifier
+
+#### Scenario: Consumed pass restored
+- **GIVEN** `S1-1` was consumed by a SPEED entry
+- **WHEN** the application restarts
+- **THEN** `S1-1` keeps its identifier, price 8.00, ticket `T001` and consumed status
