@@ -1,6 +1,8 @@
 package com.parque;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,37 +15,123 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Runs the terminal loop end to end with in-memory input/output.
+ * Runs the application end to end with in-memory standard streams, in both input modes.
  */
 class AppTest {
+
+    static final String ANA =
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
+    static final String PEDRO =
+            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
 
     @TempDir
     Path dir;
 
-    private List<String> run(String input, Path file) throws Exception {
+    /** Result of one application run. */
+    record Run(int status, List<String> out, String err) {
+    }
+
+    private Run run(String[] args, String stdin, Path usersFile) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        App.run(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(out, true, StandardCharsets.UTF_8), file);
-        return out.toString(StandardCharsets.UTF_8).lines().toList();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int status = App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
+                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8),
+                usersFile);
+        return new Run(status, out.toString(StandardCharsets.UTF_8).lines().toList(),
+                err.toString(StandardCharsets.UTF_8));
+    }
+
+    private Path commandFile(String name, String content) throws Exception {
+        Path f = dir.resolve(name);
+        Files.writeString(f, content, StandardCharsets.UTF_8);
+        return f;
     }
 
     @Test
-    void oneResponsePerCommandAndStateSurvivesRestart() throws Exception {
-        Path file = dir.resolve("users.txt");
-        List<String> first = run("""
-                USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456
-                USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654
-                NOT A COMMAND
+    void interactiveSessionStopsAtExit() throws Exception {
+        Path users = dir.resolve("users.txt");
+        Run r = run(new String[0], String.join("\n", ANA, "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
+                "HELP", "EXIT", PEDRO) + "\n", users);
+        assertEquals(0, r.status());
+        assertEquals("OK: User created", r.out().get(0));
+        assertEquals("OK: User updated", r.out().get(1));
+        assertEquals("OK: Available commands:", r.out().get(2));
+        assertEquals("OK: Exiting", r.out().get(r.out().size() - 1));
+        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456"),
+                Files.readAllLines(users));
+    }
 
-                USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com
-                USER DELETE;pedro@correo.com;Otra2#
-                """, file);
-        assertEquals(List.of("OK: User created", "OK: User created", "ERROR: Unknown command: NOT A COMMAND",
-                "OK: User updated", "OK: User deleted"), first);
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;612345678;1234567890123456"),
-                Files.readAllLines(file));
+    @Test
+    void interactiveEndsAtEndOfInput() {
+        Run r = run(new String[0], ANA + "\n", dir.resolve("users.txt"));
+        assertEquals(0, r.status());
+        assertEquals(List.of("OK: User created"), r.out());
+    }
 
-        List<String> second = run("USER DELETE;ana.nueva@correo.com;Clave1!\n", file);
-        assertEquals(List.of("OK: User deleted"), second);
+    @Test
+    void fileExecutedInOrderAndStopsAtExit() throws Exception {
+        Path users = dir.resolve("users.txt");
+        Path file = commandFile("input_basico.txt", String.join("\n", ANA, PEDRO,
+                "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999", "EXIT",
+                "USER DELETE;pedro@correo.com;Otra2#") + "\n");
+        Run r = run(new String[] {file.toString()}, "", users);
+        assertEquals(0, r.status());
+        assertEquals(List.of("OK: User created", "OK: User created", "OK: User updated", "OK: Exiting"), r.out());
+        assertEquals(List.of(
+                "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
+                "Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"),
+                Files.readAllLines(users));
+    }
+
+    @Test
+    void commandAfterExitNotExecuted() throws Exception {
+        Path users = dir.resolve("users.txt");
+        Path file = commandFile("cmds.txt", ANA + "\nEXIT\n" + PEDRO + "\n");
+        Run r = run(new String[] {file.toString()}, "", users);
+        assertEquals(List.of("OK: User created", "OK: Exiting"), r.out());
+        assertEquals(1, Files.readAllLines(users).size());
+    }
+
+    @Test
+    void blankLinesIgnored() throws Exception {
+        Path file = commandFile("blank.txt", ANA + "\n\n   \nHELP\n\nEXIT\n");
+        Run r = run(new String[] {file.toString()}, "", dir.resolve("users.txt"));
+        assertEquals(0, r.status());
+        assertFalse(r.out().stream().anyMatch(l -> l.startsWith("ERROR")), r.out().toString());
+        assertEquals("OK: User created", r.out().get(0));
+        assertEquals("OK: Exiting", r.out().get(r.out().size() - 1));
+    }
+
+    @Test
+    void sameSequenceSameResultInBothModes() throws Exception {
+        String sequence = String.join("\n", ANA, PEDRO, "USER CREATE;X;Y;12345678A;x@correo.com;Clave1!;1;1",
+                "USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com", "USER DELETE;pedro@correo.com;Mala1!",
+                "HELP", "USER DELETE;pedro@correo.com;Otra2#", "EXIT") + "\n";
+        Path usersA = dir.resolve("a/users.txt");
+        Path usersB = dir.resolve("b/users.txt");
+        Run interactive = run(new String[0], sequence, usersA);
+        Run fromFile = run(new String[] {commandFile("seq.txt", sequence).toString()}, "", usersB);
+        assertEquals(interactive.out(), fromFile.out());
+        assertEquals(Files.readAllLines(usersA), Files.readAllLines(usersB));
+    }
+
+    @Test
+    void missingFileHandled() {
+        Path users = dir.resolve("users.txt");
+        Run r = run(new String[] {dir.resolve("nope.txt").toString()}, ANA + "\n", users);
+        assertEquals(1, r.status());
+        assertTrue(r.err().startsWith("ERROR: Cannot read command file"), r.err());
+        assertTrue(r.err().contains("nope.txt"));
+        assertFalse(r.err().contains("\tat "), "no stack trace");
+        assertEquals(List.of(), r.out());
+        assertFalse(Files.exists(users));
+    }
+
+    @Test
+    void directoryPathHandled() {
+        Run r = run(new String[] {dir.toString()}, "", dir.resolve("users.txt"));
+        assertEquals(1, r.status());
+        assertTrue(r.err().startsWith("ERROR: Cannot read command file"), r.err());
+        assertFalse(r.err().contains("\tat "));
     }
 }

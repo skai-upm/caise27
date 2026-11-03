@@ -67,4 +67,32 @@ class CommandProcessorTest {
         assertTrue(processor.process("USER DELETE;ana@correo.com;Mala1!").startsWith("ERROR: "));
         assertEquals(1, service.getUsers().size());
     }
+
+    @Test
+    void helpListsDeliveryOneCommands() {
+        String response = processor.process("HELP");
+        java.util.List<String> lines = response.lines().map(String::trim).toList();
+        assertEquals("OK: Available commands:", lines.get(0));
+        for (String syntax : java.util.List.of(
+                "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+                "USER DELETE;Correo;Contraseña",
+                "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT")) {
+            assertTrue(lines.contains(syntax), "HELP must list " + syntax);
+        }
+        assertEquals(false, processor.isExitRequested());
+    }
+
+    @Test
+    void exitSetsFlag() {
+        assertEquals(false, processor.isExitRequested());
+        assertEquals("OK: Exiting", processor.process("EXIT"));
+        assertTrue(processor.isExitRequested());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"HELP;extra", "EXIT;now", "HELP;"})
+    void generalCommandsRejectParameters(String command) {
+        assertTrue(processor.process(command).startsWith("ERROR: "));
+        assertEquals(false, processor.isExitRequested());
+    }
 }
