@@ -134,4 +134,14 @@ class AppTest {
         assertTrue(r.err().startsWith("ERROR: Cannot read command file"), r.err());
         assertFalse(r.err().contains("\tat "));
     }
+
+    @Test
+    void systemDateCommandFromFile() throws Exception {
+        Path file = commandFile("dates.txt", "SYSTEM DATE;2026-09-15\nSYSTEM DATE;2026-02-30\nSYSTEM DATE;2025-01-01\nEXIT\n");
+        Run r = run(new String[] {file.toString()}, "", dir.resolve("users.txt"));
+        assertEquals(0, r.status());
+        assertEquals("OK: System date set to 2026-09-15", r.out().get(0));
+        assertTrue(r.out().get(1).startsWith("ERROR: Invalid date"));
+        assertEquals("OK: System date set to 2025-01-01", r.out().get(2));
+    }
 }

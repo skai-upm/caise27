@@ -1,11 +1,17 @@
 package com.parque;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.List;
 
 /**
  * Interprets text commands ({@code OPERATION;param;param...}) using String.split and answers with
  * a response whose first line starts with {@code OK:} or {@code ERROR:}. No exception escapes
  * {@link #process(String)}. The same instance serves both interactive and file input.
+ * <p>
+ * It is the application's main controller and owns the single current system date of the execution.
  */
 public class CommandProcessor {
     /** Syntax of every available command, shown by HELP. Add new commands here. */
@@ -13,14 +19,30 @@ public class CommandProcessor {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
 
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
+
     private final UserService users;
     private boolean exitRequested;
+    private LocalDate currentDate;
 
+    /** Creates the controller with the operating system's local date as the current date. */
     public CommandProcessor(UserService users) {
+        this(users, LocalDate.now());
+    }
+
+    public CommandProcessor(UserService users, LocalDate initialDate) {
         this.users = users;
+        this.currentDate = initialDate;
+    }
+
+    /** The single current date of the execution; every date-dependent rule must use it. */
+    public LocalDate getCurrentDate() {
+        return currentDate;
     }
 
     /** True once an EXIT command has been processed; no further commands must be executed. */
@@ -51,22 +73,23 @@ public class CommandProcessor {
             exitRequested = true;
             return "Exiting";
         }
-        String[] words = operation.split(" ");
-        if (words.length != 2 || !words[0].equals("USER")) {
-            throw new IllegalArgumentException("Unknown command: " + operation);
-        }
-        switch (words[1]) {
-            case "CREATE" -> {
+        switch (operation) {
+            case "SYSTEM DATE" -> {
+                expectParameters(parts, 1, "SYSTEM DATE;yyyy-MM-dd");
+                currentDate = parseDate(parts[1]);
+                return "System date set to " + currentDate;
+            }
+            case "USER CREATE" -> {
                 expectParameters(parts, 7, COMMAND_SYNTAX.get(0));
                 users.create(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
                 return "User created";
             }
-            case "DELETE" -> {
+            case "USER DELETE" -> {
                 expectParameters(parts, 2, COMMAND_SYNTAX.get(1));
                 users.delete(parts[1], parts[2]);
                 return "User deleted";
             }
-            case "UPDATE" -> {
+            case "USER UPDATE" -> {
                 expectParameters(parts, 4, COMMAND_SYNTAX.get(2));
                 UserField field = UserField.fromName(parts[3]);
                 if (field == null) {
@@ -77,6 +100,17 @@ public class CommandProcessor {
                 return "User updated";
             }
             default -> throw new IllegalArgumentException("Unknown command: " + operation);
+        }
+    }
+
+    private static LocalDate parseDate(String value) {
+        try {
+            if (value.length() != 10) {
+                throw new DateTimeParseException("wrong length", value, 0);
+            }
+            return LocalDate.parse(value, DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date: '" + value + "' (expected a valid date as yyyy-MM-dd)");
         }
     }
 
