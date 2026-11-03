@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.business.controller;
 
+import es.upm.etsisi.amusementpark.TestData;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.persistence.GroupFileStorage;
@@ -37,7 +38,7 @@ class TicketControllerTest {
 
     @BeforeEach
     void setUp() {
-        users = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        users = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")), TestData.HASHER);
         ana = users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         file = dir.resolve("tickets.txt");
         tickets = TicketController.initialize(new TicketFileStorage(file), new GroupTicketFileStorage(dir.resolve("grouptickets.txt")),

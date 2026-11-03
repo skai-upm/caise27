@@ -54,7 +54,7 @@ class AppTest {
         assertTrue(out.get(1).startsWith("OK:"));
         assertTrue(out.contains("  EXIT"));
         assertEquals("OK: Bye", out.get(out.size() - 1));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456"),
+        TestData.assertUserLines(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456"),
                 Files.readAllLines(users));
     }
 
@@ -75,7 +75,7 @@ class AppTest {
         List<String> out = runFile(input, dir);
         assertEquals(List.of("OK: User ana@correo.com created", "OK: User pedro@correo.com created",
                 "OK: User ana@correo.com updated (PHONE)", "OK: Bye"), out);
-        assertEquals(List.of(
+        TestData.assertUserLines(List.of(
                 "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
                 "Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"),
                 Files.readAllLines(users));
@@ -126,7 +126,8 @@ class AppTest {
         List<String> stdin = runStdin(usersA, commands);
         List<String> file = runFile(commandFile("cmds.txt", commands), usersB);
         assertEquals(stdin, file);
-        assertEquals(Files.readAllLines(usersA.resolve("users.txt")), Files.readAllLines(usersB.resolve("users.txt")));
+        assertEquals(TestData.maskPasswords(Files.readAllLines(usersA.resolve("users.txt"))),
+                TestData.maskPasswords(Files.readAllLines(usersB.resolve("users.txt"))));
     }
 
     @Test

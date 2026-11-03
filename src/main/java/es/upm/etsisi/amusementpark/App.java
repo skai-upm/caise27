@@ -5,6 +5,7 @@ import es.upm.etsisi.amusementpark.business.controller.GroupController;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.controller.TicketController;
 import es.upm.etsisi.amusementpark.business.controller.UserController;
+import es.upm.etsisi.amusementpark.business.security.BCryptPasswordHasher;
 import es.upm.etsisi.amusementpark.persistence.AttractionFileStorage;
 import es.upm.etsisi.amusementpark.persistence.AttractionRepository;
 import es.upm.etsisi.amusementpark.persistence.GroupFileStorage;
@@ -155,7 +156,7 @@ public class App {
         AttractionRepository attractionRepository =
                 new AttractionFileStorage(dataDir.resolve(AttractionFileStorage.DEFAULT_FILE));
 
-        UserController users = UserController.initialize(userRepository);
+        UserController users = UserController.initialize(userRepository, new BCryptPasswordHasher());
         GroupController groups = GroupController.initialize(groupRepository, users);
         TicketController tickets = TicketController.initialize(ticketRepository, groupTicketRepository, users, groups);
         AttractionController attractions = AttractionController.initialize(attractionRepository);

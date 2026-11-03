@@ -108,7 +108,7 @@ class ComponentLifecycleTest {
     void alternativeRepositoryWorksWithoutChangingTheController() {
         InMemoryUserRepository repository = new InMemoryUserRepository();
         repository.stored.add(TestData.user("87654321X", "pedro@correo.com"));
-        UserController users = UserController.initialize(repository);
+        UserController users = UserController.initialize(repository, TestData.HASHER);
         assertEquals(1, users.getUsers().size());
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         assertEquals(2, repository.stored.size());

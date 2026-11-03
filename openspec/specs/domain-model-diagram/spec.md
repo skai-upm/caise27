@@ -64,3 +64,10 @@ The class diagram SHALL show the repository interfaces realised by the file repo
 #### Scenario: Repository interfaces shown
 - **WHEN** the diagram is reviewed
 - **THEN** `UserFileStorage` realises `UserRepository` (and likewise for groups, tickets, group tickets and attractions) and `UserController` is associated with `UserRepository`, not with the file class
+
+### Requirement: Password hasher in the diagram
+The class diagram SHALL show the `PasswordHasher` abstraction, its BCrypt implementation and the user controller's association with the abstraction.
+
+#### Scenario: Hasher shown
+- **WHEN** the diagram is reviewed
+- **THEN** `BCryptPasswordHasher` realises `PasswordHasher` and `UserController` is associated with `PasswordHasher`

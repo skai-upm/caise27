@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.business.controller;
 
+import es.upm.etsisi.amusementpark.TestData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,7 +27,7 @@ class ParkControllerTest {
 
     @BeforeEach
     void setUp() {
-        UserController users = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        UserController users = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")), TestData.HASHER);
         GroupController groups = GroupController.initialize(new GroupFileStorage(dir.resolve("groups.txt")), users);
         TicketController tickets = TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), users, groups);

@@ -37,7 +37,7 @@ class SystemDateTest {
 
     @BeforeEach
     void setUp() {
-        service = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        service = UserController.initialize(new UserFileStorage(dir.resolve("users.txt")), TestData.HASHER);
         groups = GroupController.initialize(new GroupFileStorage(dir.resolve("groups.txt")), service);
         tickets = TicketController.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                         new GroupTicketFileStorage(dir.resolve("grouptickets.txt")), service, groups);

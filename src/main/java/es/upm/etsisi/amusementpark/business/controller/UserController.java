@@ -3,6 +3,7 @@ package es.upm.etsisi.amusementpark.business.controller;
 import es.upm.etsisi.amusementpark.business.UserValidator;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserField;
+import es.upm.etsisi.amusementpark.business.security.PasswordHasher;
 import es.upm.etsisi.amusementpark.persistence.UserRepository;
 
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.Optional;
 public class UserController {
 
     private final UserRepository storage;
+    private final PasswordHasher hasher;
     private final List<User> users;
 
     private static volatile UserController instance;
@@ -25,8 +27,8 @@ public class UserController {
      * Creates the unique instance of this controller for the current execution with its injected
      * dependencies. Called once by the composition root at startup; calling it again starts a new execution.
      */
-    public static synchronized UserController initialize(UserRepository storage) {
-        instance = new UserController(storage);
+    public static synchronized UserController initialize(UserRepository storage, PasswordHasher hasher) {
+        instance = new UserController(storage, hasher);
         return instance;
     }
 
@@ -39,8 +41,9 @@ public class UserController {
         return current;
     }
 
-    private UserController(UserRepository storage) {
+    private UserController(UserRepository storage, PasswordHasher hasher) {
         this.storage = storage;
+        this.hasher = hasher;
         this.users = new ArrayList<>(storage.load());
     }
 
@@ -65,7 +68,7 @@ public class UserController {
         require(users.stream().noneMatch(u -> u.getDni().equals(dni)), "A user with DNI " + dni + " already exists");
         require(findByEmail(email).isEmpty(), "A user with email " + email + " already exists");
 
-        User user = new User(name, surname, dni, email, password, phone, card);
+        User user = new User(name, surname, dni, email, hasher.hash(password), phone, card);
         users.add(user);
         try {
             storage.save(users);
@@ -105,7 +108,7 @@ public class UserController {
                     "Invalid card number: it must have exactly 16 digits");
         }
         String previous = user.get(field);
-        user.set(field, newValue);
+        user.set(field, field == UserField.PASSWORD ? hasher.hash(newValue) : newValue);
         try {
             storage.save(users);
         } catch (RuntimeException e) {
@@ -118,7 +121,7 @@ public class UserController {
     public User authenticate(String email, String password) {
         User user = findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("No user with email " + email));
-        require(user.getPassword().equals(password), "Incorrect password");
+        require(hasher.matches(password, user.getPassword()), "Incorrect password");
         return user;
     }
 

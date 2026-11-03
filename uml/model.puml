@@ -37,6 +37,13 @@ package es.upm.etsisi.amusementpark {
   package business {
     class UserValidator
 
+    package security {
+      interface PasswordHasher
+      class BCryptPasswordHasher {
+        - logRounds : int
+      }
+    }
+
     package controller {
       class ParkController {
         - currentDate : LocalDate
@@ -162,6 +169,8 @@ ParkController x--> "1" TicketController : tickets
 ParkController x--> "1" AttractionController : attractions
 
 ' --- users
+UserController x--> "1" PasswordHasher : hasher
+PasswordHasher <|.. BCryptPasswordHasher
 UserController x--> "1" UserRepository : storage
 UserController o--> "*" User : users
 
@@ -226,6 +235,7 @@ App ..> CommandProcessor : creates
 App ..> SyntaxHelpFormatter : creates
 App ..> ExtendedHelpFormatter : creates
 App ..> CommandCatalog
+App ..> BCryptPasswordHasher : creates
 CommandRunner ..> CommandProcessor
 UserController ..> UserValidator
 GroupController ..> UserValidator

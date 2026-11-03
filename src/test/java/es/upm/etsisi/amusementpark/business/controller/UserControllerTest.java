@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.business.controller;
 
+import es.upm.etsisi.amusementpark.TestData;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserField;
 import es.upm.etsisi.amusementpark.persistence.UserFileStorage;
@@ -28,7 +29,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         file = dir.resolve("users.txt");
-        service = UserController.initialize(new UserFileStorage(file));
+        service = UserController.initialize(new UserFileStorage(file), TestData.HASHER);
         service.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
     }
 
@@ -39,7 +40,8 @@ class UserControllerTest {
     @Test
     void validCreationIsStoredAndPersisted() throws IOException {
         assertEquals(1, service.getUsers().size());
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"), fileLines());
+        TestData.assertUserLines(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
+                fileLines());
     }
 
     @ParameterizedTest
@@ -84,7 +86,7 @@ class UserControllerTest {
         service.update("ana.nueva@correo.com", "Nueva2#", UserField.CARD, "9999888877776666");
         User u = service.getUsers().get(0);
         assertEquals("12345678Z", u.getDni());
-        assertEquals(List.of("Ana Maria;Garcia;12345678Z;ana.nueva@correo.com;Nueva2#;699999999;9999888877776666"),
+        TestData.assertUserLines(List.of("Ana Maria;Garcia;12345678Z;ana.nueva@correo.com;Nueva2#;699999999;9999888877776666"),
                 fileLines());
         assertThrows(IllegalArgumentException.class, () -> service.delete("ana.nueva@correo.com", "Clave1!"));
     }
