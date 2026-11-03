@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,13 +24,13 @@ class CommandProcessorTest {
 
     @TempDir
     Path dir;
-    private UserService service;
+    private Park service;
     private ByteArrayOutputStream buffer;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws IOException {
-        service = new UserService(new UserRepository(dir.resolve("users.txt")));
+        service = TestParks.start(dir);
         buffer = new ByteArrayOutputStream();
         processor = new CommandProcessor(service, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
@@ -91,7 +92,7 @@ class CommandProcessorTest {
         processor.process(CREATE_ANA);
         processor.process("USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999");
         assertTrue(output().contains("USER UPDATED"));
-        assertEquals("699999999", service.findByEmail("ana@correo.com").getPhone());
+        assertEquals("699999999", service.findUser("ana@correo.com").getPhone());
     }
 
     @Test
@@ -99,16 +100,16 @@ class CommandProcessorTest {
         processor.process(CREATE_ANA);
         processor.process("USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X");
         assertTrue(output().contains("ERROR: field DNI cannot be modified"));
-        assertEquals("12345678Z", service.findByEmail("ana@correo.com").getDni());
+        assertEquals("12345678Z", service.findUser("ana@correo.com").getDni());
     }
 
     @Test
     void helpListsAllCommands() {
         assertTrue(processor.process("HELP"));
         String out = output();
-        assertTrue(out.contains("USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>"));
-        assertTrue(out.contains("USER DELETE;<email>;<password>"));
-        assertTrue(out.contains("USER UPDATE;<email>;<password>;<field>;<value>"));
+        assertTrue(out.contains("USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>"));
+        assertTrue(out.contains("USER DELETE;<Email>;<Password>"));
+        assertTrue(out.contains("USER UPDATE;<Email>;<Password>;<Field>;<NewValue>"));
         assertTrue(out.contains("HELP"));
         assertTrue(out.contains("EXIT"));
     }
@@ -116,5 +117,31 @@ class CommandProcessorTest {
     @Test
     void exitStopsProcessing() {
         assertFalse(processor.process("EXIT"));
+    }
+
+    @Test
+    void helpListsPhaseOneAndTwoCommandsInOrder() {
+        processor.process("HELP");
+        assertEquals(List.of(
+                "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+                "USER DELETE;<Email>;<Password>",
+                "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
+                "SYSTEM DATE;<yyyy-MM-dd>",
+                "SYSTEM PRICE;<Price>",
+                "GROUP CREATE;<Identifier>;<Name>",
+                "GROUP ADD;<Identifier>;<Email>",
+                "GROUP REMOVE;<Identifier>;<Email>",
+                "GROUP DELETE;<Identifier>",
+                "TICKET CREATE;<identifier>;<email>;<date>",
+                "TICKET DELETE;<identifier>",
+                "GROUPTICKET CREATE;<identifier>;<group>;<date>",
+                "GROUPTICKET DELETE;<identifier>",
+                "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+                "ATTRACTION ENTER;<attraction>;<ticket>",
+                "ATTRACTION EXIT;<attraction>;<email>",
+                "ATTRACTION LIST;<attraction>",
+                "ATTRACTION STATUS;<attractionIdentifier>",
+                "HELP",
+                "EXIT"), output().lines().toList());
     }
 }

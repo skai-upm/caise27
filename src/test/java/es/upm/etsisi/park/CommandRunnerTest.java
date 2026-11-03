@@ -35,23 +35,23 @@ class CommandRunnerTest {
     }
 
     private Outcome runFrom(BufferedReader reader, String dataName) throws IOException {
-        Path data = dir.resolve(dataName);
-        UserService service = new UserService(new UserRepository(data));
+        Path dataDir = dir.resolve(dataName);
+        Park park = TestParks.start(dataDir);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        CommandProcessor processor = new CommandProcessor(service, new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        CommandProcessor processor = new CommandProcessor(park, new PrintStream(buffer, true, StandardCharsets.UTF_8));
         new CommandRunner(processor).run(reader);
-        return new Outcome(buffer.toString(StandardCharsets.UTF_8), Files.readAllLines(data));
+        return new Outcome(buffer.toString(StandardCharsets.UTF_8), Files.readAllLines(dataDir.resolve("users.txt")));
     }
 
     @Test
     void interactiveAndFileInputBehaveIdentically() throws IOException {
-        Outcome interactive = runFrom(new BufferedReader(new StringReader(SEQUENCE)), "interactive.txt");
+        Outcome interactive = runFrom(new BufferedReader(new StringReader(SEQUENCE)), "interactive");
 
         Path commands = dir.resolve("input.txt");
         Files.writeString(commands, SEQUENCE);
         Outcome file;
         try (BufferedReader reader = Files.newBufferedReader(commands)) {
-            file = runFrom(reader, "file.txt");
+            file = runFrom(reader, "file");
         }
 
         assertEquals(interactive, file);
@@ -63,7 +63,7 @@ class CommandRunnerTest {
 
     @Test
     void blankLinesProduceNoOutput() throws IOException {
-        Outcome outcome = runFrom(new BufferedReader(new StringReader(SEQUENCE)), "users.txt");
+        Outcome outcome = runFrom(new BufferedReader(new StringReader(SEQUENCE)), "data");
         List<String> lines = outcome.output().lines().toList();
         assertEquals(List.of("USER CREATED", "USER CREATED", "USER UPDATED"), lines.subList(0, 3));
         assertEquals("ERROR: invalid DNI 12345678A", lines.get(3));
@@ -71,15 +71,14 @@ class CommandRunnerTest {
 
     @Test
     void commandsAfterExitAreNotExecuted() throws IOException {
-        Path data = dir.resolve("users.txt");
-        UserService service = new UserService(new UserRepository(data));
+        Park service = TestParks.start(dir);
         CommandProcessor processor = new CommandProcessor(service, new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
         String file = String.join("\n",
                 "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
                 "EXIT",
                 "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
         new CommandRunner(processor).run(new BufferedReader(new StringReader(file)));
-        assertNotNull(service.findByEmail("ana@correo.com"));
-        assertNull(service.findByEmail("pedro@correo.com"));
+        assertNotNull(service.findUser("ana@correo.com"));
+        assertNull(service.findUser("pedro@correo.com"));
     }
 }

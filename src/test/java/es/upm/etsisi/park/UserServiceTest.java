@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,11 @@ class UserServiceTest {
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        service = new UserService(new UserRepository(file));
+        service = new UserService(TestParks.start(dir));
+    }
+
+    private static Park park() {
+        return Park.getInstance();
     }
 
     private void createAna() throws ValidationException {
@@ -40,14 +45,14 @@ class UserServiceTest {
         service.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
     }
 
-    private UserService reload() throws IOException {
-        return new UserService(new UserRepository(file));
+    private Park reload() throws IOException {
+        return TestParks.start(dir);
     }
 
     @Test
     void createsValidUniqueUser() throws Exception {
         createAna();
-        assertEquals(1, service.getUsers().size());
+        assertEquals(1, park().getUsers().size());
         assertEquals(List.of(ANA_LINE), Files.readAllLines(file));
     }
 
@@ -60,7 +65,7 @@ class UserServiceTest {
     void rejectsInvalidData(String dni, String email, String password, String card) {
         assertThrows(ValidationException.class,
                 () -> service.create("Ana", "Garcia Lopez", dni, email, password, "612345678", card));
-        assertTrue(service.getUsers().isEmpty());
+        assertTrue(park().getUsers().isEmpty());
         assertTrue(Files.notExists(file));
     }
 
@@ -69,7 +74,7 @@ class UserServiceTest {
         createAna();
         assertThrows(ValidationException.class, () -> service.create("Otra", "Persona", "12345678Z",
                 "otra@correo.com", "Clave1!", "600000000", "1111222233334444"));
-        assertEquals(1, service.getUsers().size());
+        assertEquals(1, park().getUsers().size());
     }
 
     @Test
@@ -77,14 +82,14 @@ class UserServiceTest {
         createAna();
         assertThrows(ValidationException.class, () -> service.create("Otra", "Persona", "87654321X",
                 "ana@correo.com", "Clave1!", "600000000", "1111222233334444"));
-        assertEquals(1, service.getUsers().size());
+        assertEquals(1, park().getUsers().size());
     }
 
     @Test
     void usersSurviveRestartAndStillCountForUniqueness() throws Exception {
         createAna();
-        UserService restarted = reload();
-        User ana = restarted.findByEmail("ana@correo.com");
+        UserService restarted = new UserService(reload());
+        User ana = park().findUser("ana@correo.com");
         assertNotNull(ana);
         assertEquals(ANA_LINE, UserRepository.toLine(ana));
         assertThrows(ValidationException.class, () -> restarted.create("Otra", "Persona", "12345678Z",
@@ -96,7 +101,7 @@ class UserServiceTest {
         createAna();
         createPedro();
         service.delete("pedro@correo.com", "Otra2#");
-        assertNull(service.findByEmail("pedro@correo.com"));
+        assertNull(park().findUser("pedro@correo.com"));
         assertEquals(List.of(ANA_LINE), Files.readAllLines(file));
     }
 
@@ -104,7 +109,7 @@ class UserServiceTest {
     void doesNotDeleteWithWrongPassword() throws Exception {
         createAna();
         assertThrows(ValidationException.class, () -> service.delete("ana@correo.com", "Wrong1!"));
-        assertNotNull(service.findByEmail("ana@correo.com"));
+        assertNotNull(park().findUser("ana@correo.com"));
         assertEquals(List.of(ANA_LINE), Files.readAllLines(file));
     }
 
@@ -112,7 +117,7 @@ class UserServiceTest {
     void doesNotDeleteUnknownEmail() throws Exception {
         createAna();
         assertThrows(ValidationException.class, () -> service.delete("nadie@correo.com", "Clave1!"));
-        assertEquals(1, service.getUsers().size());
+        assertEquals(1, park().getUsers().size());
     }
 
     @ParameterizedTest
@@ -134,10 +139,10 @@ class UserServiceTest {
     void updatedEmailIsUsedForLaterCommands() throws Exception {
         createAna();
         service.update("ana@correo.com", "Clave1!", "EMAIL", "ana.nueva@correo.com");
-        assertNull(service.findByEmail("ana@correo.com"));
-        assertNotNull(reload().findByEmail("ana.nueva@correo.com"));
+        assertNull(park().findUser("ana@correo.com"));
+        assertNotNull(reload().findUser("ana.nueva@correo.com"));
         service.delete("ana.nueva@correo.com", "Clave1!");
-        assertTrue(service.getUsers().isEmpty());
+        assertTrue(park().getUsers().isEmpty());
     }
 
     @Test
@@ -162,7 +167,7 @@ class UserServiceTest {
         createPedro();
         List<String> before = Files.readAllLines(file);
         assertThrows(ValidationException.class, () -> service.update("ana@correo.com", password, field, value));
-        assertEquals(ANA_LINE, UserRepository.toLine(service.findByEmail("ana@correo.com")));
+        assertEquals(ANA_LINE, UserRepository.toLine(park().findUser("ana@correo.com")));
         assertEquals(before, Files.readAllLines(file));
     }
 
@@ -175,23 +180,26 @@ class UserServiceTest {
     @Test
     void failedWriteRollsBackEveryOperation() throws Exception {
         createAna();
-        UserService broken = new UserService(new UserRepository(file) {
+        Park park = Park.getInstance();
+        park.start(new ParkStorage(dir) {
             @Override
-            public void saveAll(java.util.Collection<User> users) throws IOException {
+            public void saveAll(java.util.Collection<User> u, java.util.Collection<Group> g,
+                                java.util.Collection<Ticket> t, java.util.Collection<Attraction> a) throws IOException {
                 throw new IOException("disk full");
             }
-        });
+        }, LocalDate.of(2027, 4, 15));
+        UserService broken = new UserService(park);
         assertThrows(ValidationException.class, () -> broken.create("Pedro", "Lopez Martin", "87654321X",
                 "pedro@correo.com", "Otra2#", "623456789", "9876543210987654"));
-        assertEquals(1, broken.getUsers().size());
+        assertEquals(1, park.getUsers().size());
 
         assertThrows(ValidationException.class, () -> broken.delete("ana@correo.com", "Clave1!"));
-        assertNotNull(broken.findByEmail("ana@correo.com"));
+        assertNotNull(park.findUser("ana@correo.com"));
 
         assertThrows(ValidationException.class,
                 () -> broken.update("ana@correo.com", "Clave1!", "EMAIL", "ana.nueva@correo.com"));
-        assertNotNull(broken.findByEmail("ana@correo.com"));
-        assertNull(broken.findByEmail("ana.nueva@correo.com"));
-        assertEquals(ANA_LINE, UserRepository.toLine(broken.findByEmail("ana@correo.com")));
+        assertNotNull(park.findUser("ana@correo.com"));
+        assertNull(park.findUser("ana.nueva@correo.com"));
+        assertEquals(ANA_LINE, UserRepository.toLine(park.findUser("ana@correo.com")));
     }
 }

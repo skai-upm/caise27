@@ -1,7 +1,5 @@
 package es.upm.etsisi.park;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,22 +10,10 @@ import java.util.Map;
  */
 public class UserService {
 
-    private final UserRepository repository;
-    private final Map<String, User> usersByEmail = new LinkedHashMap<>();
+    private final Park park;
 
-    public UserService(UserRepository repository) throws IOException {
-        this.repository = repository;
-        for (User u : repository.load()) {
-            usersByEmail.put(u.getEmail(), u);
-        }
-    }
-
-    public List<User> getUsers() {
-        return new ArrayList<>(usersByEmail.values());
-    }
-
-    public User findByEmail(String email) {
-        return usersByEmail.get(email);
+    public UserService(Park park) {
+        this.park = park;
     }
 
     public void create(String firstName, String surnames, String dni, String email,
@@ -36,34 +22,48 @@ public class UserService {
         validateEmail(email);
         validatePassword(password);
         validateCard(card);
-        for (User u : usersByEmail.values()) {
-            if (u.getDni().equals(dni)) {
-                throw new ValidationException("a user with DNI " + dni + " already exists");
-            }
+        if (park.findUserByDni(dni) != null) {
+            throw new ValidationException("a user with DNI " + dni + " already exists");
         }
-        if (usersByEmail.containsKey(email)) {
+        if (park.findUser(email) != null) {
             throw new ValidationException("a user with email " + email + " already exists");
         }
         User user = new User(firstName, surnames, dni, email, password, phone, card);
-        usersByEmail.put(email, user);
-        try {
-            persist();
-        } catch (ValidationException e) {
-            usersByEmail.remove(email);
-            throw e;
-        }
+        park.addUser(user);
+        park.commit(() -> park.removeUser(user));
     }
 
     public void delete(String email, String password) throws ValidationException {
         User user = authenticate(email, password);
-        Map<String, User> backup = new LinkedHashMap<>(usersByEmail);
-        usersByEmail.remove(user.getEmail());
-        try {
-            persist();
-        } catch (ValidationException e) {
-            restore(backup);
-            throw e;
+        if (park.hasActiveTicket(user)) {
+            throw new ValidationException("user " + email + " has active tickets and cannot be deleted");
         }
+        List<Group> groups = park.groupsOf(user);
+        for (Group g : groups) {
+            if (park.isGroupLocked(g)) {
+                throw new ValidationException("user " + email + " belongs to group " + g.getId()
+                        + ", which is locked by an active group ticket");
+            }
+        }
+        Map<String, User> usersBefore = park.snapshotUsers();
+        Map<Group, Integer> positions = new LinkedHashMap<>();
+        for (Group g : groups) {
+            positions.put(g, g.indexOf(user));
+            g.remove(user);
+        }
+        Map<Attraction, List<User>> occupancy = new LinkedHashMap<>();
+        for (Attraction a : park.getAttractions()) {
+            if (a.isInside(user)) {
+                occupancy.put(a, a.getOccupants());
+                a.exit(user);
+            }
+        }
+        park.removeUser(user);
+        park.commit(() -> {
+            park.replaceUsers(usersBefore);
+            positions.forEach((g, index) -> g.add(index, user));
+            occupancy.forEach(Attraction::restore);
+        });
     }
 
     public void update(String email, String password, String fieldName, String value)
@@ -75,26 +75,23 @@ public class UserService {
         }
         validateNewValue(user, field, value);
 
-        Map<String, User> backup = new LinkedHashMap<>(usersByEmail);
+        Map<String, User> usersBefore = park.snapshotUsers();
         User original = new User(user);
         applyField(user, field, value);
         if (field == UserField.EMAIL) {
             rekey(email, user);
         }
-        try {
-            persist();
-        } catch (ValidationException e) {
+        park.commit(() -> {
             applyAll(user, original);
-            restore(backup);
-            throw e;
-        }
+            park.replaceUsers(usersBefore);
+        });
     }
 
     private void validateNewValue(User user, UserField field, String value) throws ValidationException {
         switch (field) {
             case EMAIL -> {
                 validateEmail(value);
-                User other = usersByEmail.get(value);
+                User other = park.findUser(value);
                 if (other != null && other != user) {
                     throw new ValidationException("a user with email " + value + " already exists");
                 }
@@ -130,23 +127,14 @@ public class UserService {
     /** Re-inserts the user under its new email, keeping the original order. */
     private void rekey(String oldEmail, User user) {
         Map<String, User> reordered = new LinkedHashMap<>();
-        for (Map.Entry<String, User> e : usersByEmail.entrySet()) {
-            if (e.getKey().equals(oldEmail)) {
-                reordered.put(user.getEmail(), user);
-            } else {
-                reordered.put(e.getKey(), e.getValue());
-            }
+        for (Map.Entry<String, User> e : park.snapshotUsers().entrySet()) {
+            reordered.put(e.getKey().equals(oldEmail) ? user.getEmail() : e.getKey(), e.getValue());
         }
-        restore(reordered);
-    }
-
-    private void restore(Map<String, User> snapshot) {
-        usersByEmail.clear();
-        usersByEmail.putAll(snapshot);
+        park.replaceUsers(reordered);
     }
 
     private User authenticate(String email, String password) throws ValidationException {
-        User user = usersByEmail.get(email);
+        User user = park.findUser(email);
         if (user == null) {
             throw new ValidationException("no user with email " + email);
         }
@@ -154,14 +142,6 @@ public class UserService {
             throw new ValidationException("incorrect password");
         }
         return user;
-    }
-
-    private void persist() throws ValidationException {
-        try {
-            repository.saveAll(usersByEmail.values());
-        } catch (IOException e) {
-            throw new ValidationException("could not save users: " + e.getMessage());
-        }
     }
 
     private static void validateDni(String dni) throws ValidationException {

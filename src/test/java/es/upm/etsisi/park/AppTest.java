@@ -41,12 +41,12 @@ class AppTest {
     @BeforeEach
     void setUp() {
         data = dir.resolve("users.txt");
-        System.setProperty(App.USERS_FILE_PROPERTY, data.toString());
+        System.setProperty(App.DATA_DIR_PROPERTY, dir.toString());
     }
 
     @AfterEach
     void tearDown() {
-        System.clearProperty(App.USERS_FILE_PROPERTY);
+        System.clearProperty(App.DATA_DIR_PROPERTY);
     }
 
     private static InputStream stdin(String text) {
@@ -78,12 +78,12 @@ class AppTest {
     }
 
     private String stdinOutputForSameSequence() throws IOException {
-        Path otherData = dir.resolve("other.txt");
-        System.setProperty(App.USERS_FILE_PROPERTY, otherData.toString());
+        Path otherData = dir.resolve("other");
+        System.setProperty(App.DATA_DIR_PROPERTY, otherData.toString());
         try {
             return run(new String[0], stdin(INPUT), 0);
         } finally {
-            System.setProperty(App.USERS_FILE_PROPERTY, data.toString());
+            System.setProperty(App.DATA_DIR_PROPERTY, dir.toString());
         }
     }
 
@@ -112,7 +112,7 @@ class AppTest {
     void unreadableUsersFileIsReportedInAControlledWay() throws IOException {
         Files.createDirectories(data);
         String out = run(new String[0], stdin("EXIT"), 1);
-        assertTrue(out.startsWith("ERROR: cannot load users"));
+        assertTrue(out.startsWith("ERROR: cannot load park data"));
     }
 
     @Test
@@ -121,5 +121,82 @@ class AppTest {
         assertFalse(source.contains("newBufferedWriter"));
         assertFalse(source.contains("Files.write"));
         assertFalse(source.contains("readAllLines"));
+    }
+
+    private static final String PHASE2 = String.join("\n",
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+            "GROUP CREATE;G01;Familia Garcia",
+            "GROUP ADD;G01;ana@correo.com",
+            "ATTRACTION CREATE;A01;Dragon Rojo;20",
+            "SYSTEM DATE;2027-04-15",
+            "GROUPTICKET CREATE;TG01;G01;2027-04-15",
+            "ATTRACTION ENTER;A01;TG01",
+            "ATTRACTION STATUS;A01");
+
+    @Test
+    void flyModeWithFileLeavesNoData() throws IOException {
+        Path input = dir.resolve("input_fase2.txt");
+        Files.writeString(input, PHASE2);
+        String out = run(new String[] {App.FLY, input.toString()}, stdin(""), 0);
+        assertTrue(out.contains("GROUPTICKET CREATED. TOTAL PRICE: 40.00 EUR"));
+        assertTrue(out.contains("INSIDE: 1"));
+        assertFalse(Files.exists(dir.resolve("tmp")));
+        assertFalse(Files.exists(data));
+        assertFalse(Files.exists(dir.resolve("groups.txt")));
+    }
+
+    @Test
+    void flyModeInteractiveUsesEmptyTemporaryData() throws IOException {
+        run(new String[0], stdin(INPUT), 0);
+        List<String> before = Files.readAllLines(data);
+        String out = run(new String[] {App.FLY}, stdin("USER DELETE;ana.nueva@correo.com;Clave1!\n" + PHASE2 + "\nEXIT"), 0);
+        assertTrue(out.startsWith("ERROR: no user with email ana.nueva@correo.com"));
+        assertTrue(out.strip().endsWith("BYE"));
+        assertEquals(before, Files.readAllLines(data));
+        assertFalse(Files.exists(dir.resolve("tmp")));
+    }
+
+    @Test
+    void flyModeKeepsExistingTmpDirectory() throws IOException {
+        Path tmp = Files.createDirectories(dir.resolve("tmp"));
+        Files.writeString(tmp.resolve("keep.txt"), "x");
+        run(new String[] {App.FLY}, stdin("EXIT"), 0);
+        try (var entries = Files.list(tmp)) {
+            assertEquals(List.of(tmp.resolve("keep.txt")), entries.toList());
+        }
+    }
+
+    @Test
+    void flyDirectoryIsTimestampedAndUnique() throws IOException {
+        java.time.LocalDateTime now = java.time.LocalDateTime.of(2026, 8, 26, 19, 3, 15);
+        App.FlyDirectory first = App.FlyDirectory.create(dir.resolve("tmp"), now);
+        App.FlyDirectory second = App.FlyDirectory.create(dir.resolve("tmp"), now);
+        assertEquals(dir.resolve("tmp").resolve("20260826_190315"), first.getDirectory());
+        assertEquals(dir.resolve("tmp").resolve("20260826_190315_1"), second.getDirectory());
+        Files.writeString(first.getDirectory().resolve("users.txt"), "x");
+        first.delete(System.out);
+        assertTrue(Files.exists(dir.resolve("tmp")));
+        second.delete(System.out);
+        // only the run that created tmp/ removes it, and only when it is empty at that moment
+        assertTrue(Files.exists(dir.resolve("tmp")));
+        App.FlyDirectory third = App.FlyDirectory.create(dir.resolve("other"), now);
+        third.delete(System.out);
+        assertFalse(Files.exists(dir.resolve("other")));
+    }
+
+    @Test
+    void normalFileModeKeepsPermanentData() throws IOException {
+        Path input = dir.resolve("input_fase2.txt");
+        Files.writeString(input, PHASE2);
+        run(new String[] {input.toString()}, stdin(""), 0);
+        assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(dir.resolve("groups.txt")));
+        assertEquals(List.of("A01;Dragon Rojo;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+    }
+
+    @Test
+    void flyModeWithMissingFileStillCleansUp() {
+        String out = run(new String[] {App.FLY, dir.resolve("missing.txt").toString()}, stdin(""), 1);
+        assertTrue(out.startsWith("ERROR: cannot read file"));
+        assertFalse(Files.exists(dir.resolve("tmp")));
     }
 }
