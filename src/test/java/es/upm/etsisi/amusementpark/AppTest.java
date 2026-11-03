@@ -176,4 +176,22 @@ class AppTest {
         assertTrue(out.stream().allMatch(l -> l.startsWith("ERROR:")));
         assertTrue(Files.notExists(dir.resolve("groups.txt")));
     }
+
+    @Test
+    void ticketsAreRestoredAfterRestartIncludingHistory() throws IOException {
+        runStdin(dir, CREATE_ANA, CREATE_PEDRO, "SYSTEM DATE;2026-10-01", "TICKET CREATE;T001;ana@correo.com;2026-10-15",
+                "SYSTEM PRICE;60.00", "TICKET CREATE;T002;pedro@correo.com;2026-10-02", "EXIT");
+        List<String> out = runStdin(dir, "SYSTEM DATE;2026-10-01", "USER DELETE;ana@correo.com;Clave1!",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-20", "TICKET CREATE;T003;ana@correo.com;2026-10-20",
+                "SYSTEM DATE;2026-10-03", "USER DELETE;pedro@correo.com;Otra2#", "EXIT");
+        assertTrue(out.get(1).startsWith("ERROR:"));                 // restored ticket still blocks deletion
+        assertTrue(out.get(2).startsWith("ERROR:"));                 // restored id is unique
+        assertEquals("OK TICKET CREATED -> 40.00", out.get(3));      // price is not persisted
+        assertTrue(out.get(5).startsWith("OK:"));                    // past ticket does not block
+        assertEquals(List.of("T001;12345678Z;2026-10-15;40.00", "T002;87654321X;2026-10-02;60.00",
+                "T003;12345678Z;2026-10-20;40.00"), Files.readAllLines(dir.resolve("tickets.txt")));
+        // third run: the historical ticket of the deleted user is kept unchanged
+        runStdin(dir, "SYSTEM DATE;2026-10-01", "TICKET CREATE;T004;ana@correo.com;2026-10-21", "EXIT");
+        assertTrue(Files.readAllLines(dir.resolve("tickets.txt")).contains("T002;87654321X;2026-10-02;60.00"));
+    }
 }

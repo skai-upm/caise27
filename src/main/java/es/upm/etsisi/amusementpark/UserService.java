@@ -89,7 +89,8 @@ public class UserService {
         }
     }
 
-    private User authenticate(String email, String password) {
+    /** Returns the user with that email if the password matches; otherwise throws. */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("No user with email " + email));
         require(user.getPassword().equals(password), "Incorrect password");

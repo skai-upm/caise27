@@ -15,13 +15,16 @@ package es.upm.etsisi.amusementpark {
 
   class CommandProcessor {
     ~ {static} COMMAND_SYNTAX : List<String>
+    ~ {static} DEFAULT_PRICE : BigDecimal = 40.00
     - exitRequested : boolean
     - currentDate : LocalDate
-    + CommandProcessor(users : UserService, groups : GroupService)
-    + CommandProcessor(users : UserService, groups : GroupService, initialDate : LocalDate)
+    - currentPrice : BigDecimal
+    + CommandProcessor(users : UserService, groups : GroupService, tickets : TicketService)
+    + CommandProcessor(users : UserService, groups : GroupService, tickets : TicketService, initialDate : LocalDate)
     + process(line : String) : String
     + isExitRequested() : boolean
     + getCurrentDate() : LocalDate
+    + getCurrentPrice() : BigDecimal
   }
 
   class User {
@@ -60,6 +63,7 @@ package es.upm.etsisi.amusementpark {
     + findByEmail(email : String) : Optional<User>
     + create(name, surname, dni, email, password, phone, card : String) : User
     + update(email : String, password : String, field : UserField, newValue : String) : void
+    + authenticate(email : String, password : String) : User
     + delete(email : String, password : String) : User
   }
 
@@ -95,6 +99,30 @@ package es.upm.etsisi.amusementpark {
     + load(users : List<User>) : List<Group>
     + save(groups : List<Group>) : void
   }
+
+  class Ticket {
+    - id : String {readOnly}
+    - date : LocalDate {readOnly}
+    - price : BigDecimal {readOnly}
+    - ownerDni : String {readOnly}
+    + getUser() : Optional<User>
+    + belongsTo(candidate : User) : boolean
+  }
+
+  class TicketService {
+    + getTickets() : List<Ticket>
+    + find(id : String) : Optional<Ticket>
+    + create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Ticket
+    + delete(id : String, today : LocalDate) : void
+    + hasActiveTickets(user : User, today : LocalDate) : boolean
+  }
+
+  class TicketFileStorage {
+    + {static} DEFAULT_FILE : String = "tickets.txt"
+    - file : Path
+    + load(users : List<User>) : List<Ticket>
+    + save(tickets : List<Ticket>) : void
+  }
 }
 
 App ..> CommandProcessor : creates
@@ -110,4 +138,10 @@ Group o--> "*" User : members
 User ..> UserField
 UserFileStorage ..> User : reads/writes
 GroupFileStorage ..> Group : reads/writes
+CommandProcessor --> "1" TicketService : tickets
+TicketService --> "1" TicketFileStorage : storage
+TicketService --> "1" UserService : users
+TicketService o--> "*" Ticket : tickets
+Ticket --> "0..1" User : user
+TicketFileStorage ..> Ticket : reads/writes
 @enduml
