@@ -8,6 +8,8 @@ package es.upm.etsisi.amusementpark;
  * USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta
  * USER DELETE;Correo;Contraseña
  * USER UPDATE;Correo;Contraseña;Campo;NuevoValor
+ * HELP
+ * EXIT
  * </pre>
  */
 public class CommandProcessor {
@@ -18,10 +20,24 @@ public class CommandProcessor {
     private static final int DELETE_TOKENS = 3;
     private static final int UPDATE_TOKENS = 5;
 
+    /** Syntax of every available command, shown by HELP. Extend it when new commands are added. */
+    static final java.util.List<String> COMMAND_SYNTAX = java.util.List.of(
+            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+            "USER DELETE;Correo;Contraseña",
+            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "HELP",
+            "EXIT");
+
     private final UserService users;
+    private boolean exitRequested;
 
     public CommandProcessor(UserService users) {
         this.users = users;
+    }
+
+    /** True once EXIT has been processed: no further command must be executed. */
+    public boolean isExitRequested() {
+        return exitRequested;
     }
 
     public String process(String line) {
@@ -31,6 +47,13 @@ public class CommandProcessor {
         String[] tokens = line.split(PARAM_SEPARATOR, -1);
         for (int i = 0; i < tokens.length; i++) {
             tokens[i] = tokens[i].trim();
+        }
+        String operation = tokens[0].toUpperCase(java.util.Locale.ROOT);
+        if (operation.equals("HELP") || operation.equals("EXIT")) {
+            if (tokens.length != 1) {
+                return usage(operation);
+            }
+            return operation.equals("HELP") ? help() : exit();
         }
         String[] words = tokens[0].split(WORD_SEPARATOR);
         if (words.length != 2 || !words[0].equalsIgnoreCase("USER")) {
@@ -76,6 +99,16 @@ public class CommandProcessor {
         }
         users.update(t[1], t[2], field, t[4]);
         return "OK: User " + t[1] + " updated (" + field + ")";
+    }
+
+    private static String help() {
+        return "Available commands:" + System.lineSeparator() + "  "
+                + String.join(System.lineSeparator() + "  ", COMMAND_SYNTAX);
+    }
+
+    private String exit() {
+        exitRequested = true;
+        return "OK: Bye";
     }
 
     private static String usage(String format) {

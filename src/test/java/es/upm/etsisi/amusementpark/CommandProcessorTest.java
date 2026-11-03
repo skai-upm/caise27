@@ -76,4 +76,31 @@ class CommandProcessorTest {
         assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X").startsWith("ERROR:"));
         assertEquals("12345678Z", service.getUsers().get(0).getDni());
     }
+
+    @Test
+    void helpListsAllCommandsAndChangesNothing() {
+        processor.process(CREATE_ANA);
+        String help = processor.process("HELP");
+        for (String syntax : new String[] {
+            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+            "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT"}) {
+            assertTrue(help.contains(syntax), syntax);
+        }
+        assertEquals(1, service.getUsers().size());
+        assertEquals(false, processor.isExitRequested());
+    }
+
+    @Test
+    void exitSetsTheExitFlag() {
+        assertEquals(false, processor.isExitRequested());
+        assertEquals("OK: Bye", processor.process(" exit "));
+        assertTrue(processor.isExitRequested());
+    }
+
+    @Test
+    void generalCommandsRejectParameters() {
+        assertTrue(processor.process("EXIT;now").startsWith("ERROR:"));
+        assertTrue(processor.process("HELP;USER").startsWith("ERROR:"));
+        assertEquals(false, processor.isExitRequested());
+    }
 }

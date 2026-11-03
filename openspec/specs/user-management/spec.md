@@ -7,7 +7,7 @@ Defines the text-command contract through which terminal users create, update an
 ## Requirements
 
 ### Requirement: Text command interpretation
-The application SHALL read commands as text lines from the terminal, split them into components with `String.split` on `;` (the first component holding the operation words separated by a space), and SHALL report invalid operations or wrong parameter counts as errors without terminating.
+The application SHALL read commands as text lines from the active input source (the terminal, or the command file given as first launch argument), split them into components with `String.split` on `;` (the first component holding the operation words separated by a space), and SHALL report invalid operations or wrong parameter counts as errors without terminating.
 
 #### Scenario: Unknown operation
 - **WHEN** `USER RENAME;ana@correo.com` is processed
@@ -16,6 +16,11 @@ The application SHALL read commands as text lines from the terminal, split them 
 #### Scenario: Insufficient parameters
 - **WHEN** `USER CREATE;Ana;Garcia Lopez` is processed
 - **THEN** an error is reported and no user is created
+
+#### Scenario: Same interpretation from a file
+- **GIVEN** a command file containing `USER CREATE;Ana;Garcia Lopez`
+- **WHEN** the application runs with that file
+- **THEN** the same error is reported as when the line is typed in the terminal and no user is created
 
 ### Requirement: User creation
 The system SHALL process `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta` by validating every field before storing anything; if any field is invalid the user SHALL NOT be stored.
