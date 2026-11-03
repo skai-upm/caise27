@@ -1,8 +1,12 @@
 package es.upm.etsisi.amusementpark.business.controller;
 
+import es.upm.etsisi.amusementpark.business.invoice.GroupInvoiceBuilder;
+import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
+import es.upm.etsisi.amusementpark.business.invoice.UserInvoiceBuilder;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
+import es.upm.etsisi.amusementpark.business.model.Invoice;
 import es.upm.etsisi.amusementpark.business.model.ParkTicket;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
@@ -142,6 +146,22 @@ public class ParkController {
                 .or(() -> users.findByEmail(ticketOrEmail).map(List::of))
                 .orElseThrow(() -> new IllegalArgumentException("No ticket or user " + ticketOrEmail));
         return attractions.exit(attraction.getId(), leaving);
+    }
+
+    /** Invoice of a registered user: the individual tickets bought directly for that user. */
+    public Invoice userInvoice(String email) {
+        User user = users.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("No registered user with email " + email));
+        List<Ticket> direct = tickets.getTickets().stream().filter(t -> t.belongsTo(user)).toList();
+        return InvoiceDirector.construct(new UserInvoiceBuilder(user, direct), currentDate);
+    }
+
+    /** Invoice of an existing group: its group tickets with their totals. */
+    public Invoice groupInvoice(String groupId) {
+        Group group = groups.find(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("No group with identifier " + groupId));
+        List<GroupTicket> bought = tickets.getGroupTickets().stream().filter(t -> t.belongsTo(group)).toList();
+        return InvoiceDirector.construct(new GroupInvoiceBuilder(group, bought), currentDate);
     }
 
     /** Rejects changes to a group that has a group ticket dated on or after the system date. */

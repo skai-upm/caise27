@@ -76,6 +76,27 @@ package es.upm.etsisi.amusementpark {
         - name : String
         - capacity : int
       }
+      class Invoice {
+        - recipient : String
+        - issueDate : LocalDate
+      }
+      class InvoiceSection {
+        - title : String
+      }
+      class InvoiceLine {
+        - description : String
+        - amount : BigDecimal
+      }
+    }
+
+    package invoice {
+      interface InvoiceBuilder
+      abstract class AbstractInvoiceBuilder {
+        - issueDate : LocalDate
+      }
+      class UserInvoiceBuilder
+      class GroupInvoiceBuilder
+      class InvoiceDirector
     }
   }
 
@@ -139,7 +160,22 @@ AttractionController x--> "1" AttractionFileStorage : storage
 AttractionController o--> "*" Attraction : attractions
 Attraction o--> "*" User : present
 
+' --- invoices (Builder)
+InvoiceBuilder <|.. AbstractInvoiceBuilder
+AbstractInvoiceBuilder <|-- UserInvoiceBuilder
+AbstractInvoiceBuilder <|-- GroupInvoiceBuilder
+AbstractInvoiceBuilder o--> "*" InvoiceSection : sections
+UserInvoiceBuilder x--> "1" User : user
+UserInvoiceBuilder o--> "*" Ticket : directTickets
+GroupInvoiceBuilder x--> "1" Group : group
+GroupInvoiceBuilder o--> "*" GroupTicket : groupTickets
+Invoice *--> "*" InvoiceSection : sections
+InvoiceSection *--> "*" InvoiceLine : lines
+
 ' --- usage of classes without incoming relationships
+ParkController ..> InvoiceDirector
+InvoiceDirector ..> InvoiceBuilder
+AbstractInvoiceBuilder ..> Invoice : builds
 App ..> CommandRunner
 App ..> CommandProcessor : creates
 CommandRunner ..> CommandProcessor

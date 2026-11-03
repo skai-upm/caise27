@@ -6,6 +6,9 @@ import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.controller.UserController;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
+import es.upm.etsisi.amusementpark.business.model.Invoice;
+import es.upm.etsisi.amusementpark.business.model.InvoiceLine;
+import es.upm.etsisi.amusementpark.business.model.InvoiceSection;
 import es.upm.etsisi.amusementpark.business.model.ParkTicket;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
@@ -41,6 +44,8 @@ import java.util.Locale;
  * ATTRACTION ENTER;IdAtraccion;IdTicket
  * ATTRACTION EXIT;IdAtraccion;IdTicket
  * ATTRACTION STATUS;IdAtraccion
+ * INVOICE CREATE;USER;correo
+ * INVOICE CREATE;GROUP;identificadorGrupo
  * SYSTEM DATE;yyyy-MM-dd
  * SYSTEM PRICE;Precio
  * HELP
@@ -63,6 +68,7 @@ public class CommandProcessor {
     private static final int ATTRACTION_CREATE_TOKENS = 4;
     private static final int ATTRACTION_ACCESS_TOKENS = 3;
     private static final int ATTRACTION_STATUS_TOKENS = 2;
+    private static final int INVOICE_TOKENS = 3;
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
@@ -83,6 +89,8 @@ public class CommandProcessor {
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
             "ATTRACTION STATUS;IdAtraccion",
+            "INVOICE CREATE;USER;<correo>",
+            "INVOICE CREATE;GROUP;<identificadorGrupo>",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -136,6 +144,7 @@ public class CommandProcessor {
                 case "ATTRACTION ENTER" -> attractionEnter(tokens);
                 case "ATTRACTION EXIT" -> attractionExit(tokens);
                 case "ATTRACTION STATUS" -> attractionStatus(tokens);
+                case "INVOICE CREATE" -> invoiceCreate(tokens);
                 case "SYSTEM DATE" -> systemDate(tokens);
                 case "SYSTEM PRICE" -> systemPrice(tokens);
                 case "HELP" -> tokens.length == 1 ? help() : usage("HELP");
@@ -282,6 +291,28 @@ public class CommandProcessor {
                 + "Users present: " + a.getPresent().size() + nl
                 + "Available places: " + a.getAvailable() + nl
                 + "Present: " + people;
+    }
+
+    private String invoiceCreate(String[] t) {
+        if (t.length != INVOICE_TOKENS) {
+            return usage("INVOICE CREATE;USER;<correo> | INVOICE CREATE;GROUP;<identificadorGrupo>");
+        }
+        Invoice invoice = switch (t[1].toUpperCase(Locale.ROOT)) {
+            case "USER" -> park.userInvoice(t[2]);
+            case "GROUP" -> park.groupInvoice(t[2]);
+            default -> throw new IllegalArgumentException("Unknown invoice recipient type " + t[1] + " (USER or GROUP)");
+        };
+        String nl = System.lineSeparator();
+        StringBuilder text = new StringBuilder("INVOICE ").append(invoice.getRecipient()).append(" - ")
+                .append(invoice.getIssueDate()).append(nl);
+        for (InvoiceSection section : invoice.getSections()) {
+            text.append(section.getTitle()).append(':').append(nl);
+            for (InvoiceLine line : section.getLines()) {
+                text.append("  ").append(line.getDescription()).append(' ')
+                        .append(line.getAmount().toPlainString()).append(nl);
+            }
+        }
+        return text.append("Total: ").append(invoice.getTotal().toPlainString()).toString();
     }
 
     private String systemDate(String[] t) {
