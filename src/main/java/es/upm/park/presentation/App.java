@@ -67,11 +67,18 @@ public class App {
 
     /** Runs the commands against {@code park} and returns the exit status (0 on success). */
     static int run(String[] args, ParkController park, InputStream stdin, PrintStream out, PrintStream err) {
-        CommandRunner runner = new CommandRunner(new CommandProcessor(park));
+        CommandRunner runner = new CommandRunner(newCommandProcessor(park));
         if (args.length == 0) {
             return runInteractive(runner, stdin, out, err);
         }
         return runFile(runner, args[0], out, err);
+    }
+
+    /** Presentation wiring: the processor with its injected help generators. */
+    static CommandProcessor newCommandProcessor(ParkController park) {
+        return new CommandProcessor(park,
+                new HelpGenerator(CommandCatalog.commands(), new SyntaxHelpFormatter()),
+                new HelpGenerator(CommandCatalog.commands(), new ExtendedHelpFormatter()));
     }
 
     private static int runInteractive(CommandRunner runner, InputStream stdin, PrintStream out, PrintStream err) {

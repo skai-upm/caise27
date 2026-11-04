@@ -58,7 +58,7 @@ class CommandProcessorTest {
                 new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups);
         attractions = AttractionManager.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")));
         park = ParkController.initialize(manager, groups, tickets, attractions, new InvoiceDirector());
-        processor = new CommandProcessor(park);
+        processor = App.newCommandProcessor(park);
     }
 
     @Test
@@ -117,7 +117,7 @@ class CommandProcessorTest {
             "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;IdTicket",
             "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket", "ATTRACTION STATUS;IdAtraccion",
-            "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo",
+            "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo", "HELP EXTENDED",
             "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Precio", "HELP", "EXIT",
             "NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD"}) {
             assertTrue(help.contains(usage), usage);
@@ -520,5 +520,14 @@ class CommandProcessorTest {
     void invalidInvoiceRequestsRejected(String command) {
         processor.process(CREATE_ANA);
         assertTrue(processor.process(command).startsWith("ERROR"), command);
+    }
+
+    @Test
+    void helpExtendedExplainsCommands() {
+        String help = processor.process("HELP EXTENDED");
+        assertTrue(help.startsWith("OK: available commands (extended):"), help);
+        assertTrue(help.contains("TICKET DELETE;Id") && help.contains("Deletes an individual ticket"), help);
+        assertTrue(processor.process("HELP EXTENDED;x").startsWith("ERROR"));
+        assertTrue(processor.process("HELP").contains("  HELP EXTENDED"));
     }
 }

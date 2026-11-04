@@ -49,7 +49,7 @@ class CommandRunnerTest {
     void setUp() {
         manager = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")));
         GroupManager groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), manager);
-        runner = new CommandRunner(new CommandProcessor(ParkController.initialize(manager, groups,
+        runner = new CommandRunner(App.newCommandProcessor(ParkController.initialize(manager, groups,
                 TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                         new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups),
                 AttractionManager.initialize(new AttractionFileStorage(dir.resolve("attractions.txt"))),

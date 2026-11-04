@@ -15,6 +15,21 @@ package es.upm.park.presentation {
   class CommandProcessor {
     -exitRequested : boolean
   }
+
+  class HelpGenerator
+
+  interface HelpFormatter
+
+  class SyntaxHelpFormatter
+
+  class ExtendedHelpFormatter
+
+  class CommandCatalog
+
+  class CommandInfo {
+    -syntax : String
+    -description : String
+  }
 }
 
 package es.upm.park.business.service {
@@ -149,6 +164,11 @@ note top of App : Entry point (main); not used by other classes.
 ' --- associations (holder x--> target : attribute)
 CommandRunner "0..*" x--> "1" CommandProcessor : processor
 CommandProcessor "0..*" x--> "1" ParkController : park
+CommandProcessor "0..*" x--> "1" HelpGenerator : help
+CommandProcessor "0..*" x--> "1" HelpGenerator : extendedHelp
+HelpGenerator "0..*" x--> "0..*" CommandInfo : commands
+HelpGenerator "0..*" x--> "1" HelpFormatter : formatter
+CommandCatalog "1" x--> "1..*" CommandInfo : COMMANDS
 ParkSession "0..1" x--> "1" ParkController : controller
 ParkController "0..*" x--> "1" InvoiceDirector : director
 ParkController "0..*" x--> "1" UserManager : users
@@ -194,10 +214,17 @@ Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 InvoiceBuilder <|-- UserInvoiceBuilder
 InvoiceBuilder <|-- GroupInvoiceBuilder
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
 
 ' --- usage, only for classes without incoming relationships
 App ..> CommandRunner : <<use>>
 App ..> ParkSession : <<use>>
+App ..> CommandCatalog : <<use>>
+App ..> SyntaxHelpFormatter : <<use>>
+App ..> ExtendedHelpFormatter : <<use>>
+SyntaxHelpFormatter ..> CommandCatalog : <<use>>
+CommandCatalog ..> UserField : <<use>>
 ParkSession ..> DataFiles : <<use>>
 ParkSession ..> TemporaryDataDirectory : <<use>>
 UserManager ..> UserValidator : <<use>>

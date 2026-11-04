@@ -13,8 +13,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 
 /**
@@ -26,39 +24,20 @@ public class CommandProcessor {
 
     private static final String SEPARATOR = ";";
 
-    /** Syntax of every available command, shown by HELP. Extend when adding commands. */
-    static final List<String> USAGE = List.of(
-            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "USER DELETE;Correo;Contraseña",
-            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
-            "GROUP CREATE;Id;Nombre",
-            "GROUP ADD;Id;Correo",
-            "GROUP REMOVE;Id;Correo",
-            "GROUP DELETE;Id",
-            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
-            "TICKET DELETE;Id",
-            "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd",
-            "GROUPTICKET DELETE;IdTicket",
-            "ATTRACTION CREATE;Id;Nombre;Capacidad",
-            "ATTRACTION ENTER;IdAtraccion;IdTicket",
-            "ATTRACTION EXIT;IdAtraccion;IdTicket",
-            "ATTRACTION STATUS;IdAtraccion",
-            "INVOICE CREATE;USER;Correo",
-            "INVOICE CREATE;GROUP;IdGrupo",
-            "SYSTEM DATE;yyyy-MM-dd",
-            "SYSTEM PRICE;Precio",
-            "HELP",
-            "EXIT");
-
     private static final int PRICE_DECIMALS = 2;
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private final ParkController park;
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
     private boolean exitRequested;
 
-    public CommandProcessor(ParkController park) {
+    /** Receives the business controller and the concise and extended help generators. */
+    public CommandProcessor(ParkController park, HelpGenerator help, HelpGenerator extendedHelp) {
         this.park = park;
+        this.help = help;
+        this.extendedHelp = extendedHelp;
     }
 
     public String process(String line) {
@@ -88,6 +67,7 @@ public class CommandProcessor {
                 case "SYSTEM DATE" -> systemDate(parts);
                 case "SYSTEM PRICE" -> systemPrice(parts);
                 case "HELP" -> help(parts);
+                case "HELP EXTENDED" -> helpExtended(parts);
                 case "EXIT" -> exit(parts);
                 default -> "ERROR: unknown command '" + operation + "'";
             };
@@ -255,13 +235,12 @@ public class CommandProcessor {
 
     private String help(String[] p) {
         requireParams(p, 0, "HELP");
-        StringBuilder sb = new StringBuilder("OK: available commands:");
-        for (String usage : USAGE) {
-            sb.append(System.lineSeparator()).append("  ").append(usage);
-        }
-        sb.append(System.lineSeparator()).append("  Campo (USER UPDATE): ")
-                .append(String.join(", ", Arrays.stream(UserField.values()).map(Enum::name).toList()));
-        return sb.toString();
+        return help.generate();
+    }
+
+    private String helpExtended(String[] p) {
+        requireParams(p, 0, "HELP EXTENDED");
+        return extendedHelp.generate();
     }
 
     private String exit(String[] p) {
