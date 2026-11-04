@@ -37,10 +37,3 @@ The project SHALL include a test framework dependency and at least one automated
 #### Scenario: Tests are executed by Maven
 - **WHEN** `mvn test` is run
 - **THEN** the Maven test report shows at least one test executed and zero failures
-
-### Requirement: No domain functionality in the bootstrap
-The bootstrap SHALL NOT contain amusement-park business functionality such as users, commands, tickets, groups or attractions.
-
-#### Scenario: Production code review
-- **WHEN** the production sources are reviewed after this change
-- **THEN** they contain only the generated entry-point class and no domain model or command handling
