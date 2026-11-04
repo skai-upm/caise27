@@ -19,6 +19,7 @@ public class App {
 
     static final Path USERS_FILE = Path.of("users.txt");
     static final String GROUPS_FILE_NAME = "groups.txt";
+    static final String TICKETS_FILE_NAME = "tickets.txt";
 
     public static void main(String[] args) {
         int status = run(args, System.in, System.out, USERS_FILE);
@@ -30,18 +31,21 @@ public class App {
     /**
      * Runs the application.
      *
-     * @param usersFile users file; the groups file is {@value #GROUPS_FILE_NAME} in the same directory
+     * @param usersFile users file; the groups and tickets files ({@value #GROUPS_FILE_NAME},
+     *                  {@value #TICKETS_FILE_NAME}) are in the same directory
      * @return 0 on normal termination, 1 if the stored data or the command file could not be read
      */
     static int run(String[] args, InputStream stdin, PrintStream out, Path usersFile) {
         CommandRunner runner;
-        Path groupsFile = usersFile.resolveSibling(GROUPS_FILE_NAME);
         try {
             UserManager users = new UserManager(new UserFileRepository(usersFile));
-            GroupManager groups = new GroupManager(new GroupFileRepository(groupsFile), users);
-            runner = new CommandRunner(new CommandProcessor(users, groups));
+            GroupManager groups = new GroupManager(
+                    new GroupFileRepository(usersFile.resolveSibling(GROUPS_FILE_NAME)), users);
+            TicketManager tickets = new TicketManager(
+                    new TicketFileRepository(usersFile.resolveSibling(TICKETS_FILE_NAME)), users);
+            runner = new CommandRunner(new CommandProcessor(users, groups, tickets));
         } catch (IOException e) {
-            out.println("ERROR: Could not load stored data from '" + usersFile + "' / '" + groupsFile + "': " + e);
+            out.println("ERROR: Could not load stored data next to '" + usersFile + "': " + e);
             return 1;
         }
         if (args.length == 0) {

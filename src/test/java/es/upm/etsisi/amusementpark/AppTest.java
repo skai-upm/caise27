@@ -91,6 +91,23 @@ class AppTest {
     }
 
     @Test
+    void ticketsSurviveRestartAndPriceResets() throws Exception {
+        Path users = dir.resolve("users.txt");
+        Run first = run(new String[0], String.join("\n", BASIC.get(0), "SYSTEM DATE;2026-10-01", "SYSTEM PRICE;60.00",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15"), users);
+        assertTrue(first.output().contains("OK TICKET CREATED -> 60.00"));
+        Run second = run(new String[0], String.join("\n", "SYSTEM DATE;2026-10-01",
+                "USER DELETE;ana@correo.com;Clave1!", "TICKET CREATE;T002;ana@correo.com;2026-10-20",
+                "SYSTEM DATE;2026-10-16", "USER DELETE;ana@correo.com;Clave1!"), users);
+        List<String> lines = second.output().lines().toList();
+        assertTrue(lines.get(1).startsWith("ERROR"), lines.get(1));
+        assertEquals("OK TICKET CREATED -> 40.00", lines.get(2));
+        assertTrue(lines.get(4).startsWith("ERROR"), "T002 (2026-10-20) still blocks deletion: " + lines.get(4));
+        assertEquals(List.of("T001;2026-10-15;12345678Z;60.00", "T002;2026-10-20;12345678Z;40.00"),
+                Files.readAllLines(dir.resolve("tickets.txt")));
+    }
+
+    @Test
     void interactiveModeEndsAtEndOfInput() throws Exception {
         Path users = dir.resolve("users.txt");
         Run r = run(new String[0], BASIC.get(0) + "\n", users);

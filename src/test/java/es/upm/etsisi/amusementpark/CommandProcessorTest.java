@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +23,8 @@ class CommandProcessorTest {
     private static final String CREATE_ANA =
             "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
 
+    private static final LocalDate START = LocalDate.of(2026, 10, 1);
+
     @TempDir
     Path dir;
 
@@ -36,7 +39,8 @@ class CommandProcessorTest {
 
     private CommandProcessor newProcessor() throws Exception {
         UserManager users = new UserManager(new UserFileRepository(file));
-        return new CommandProcessor(users, new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users));
+        return new CommandProcessor(users, new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users),
+                new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")), users), START);
     }
 
     private static void assertOk(String result) {
@@ -130,9 +134,10 @@ class CommandProcessorTest {
     void startupDateIsTheInjectedDateOrToday() throws Exception {
         UserManager m = new UserManager(new UserFileRepository(dir.resolve("other.txt")));
         GroupManager g = new GroupManager(new GroupFileRepository(dir.resolve("other-groups.txt")), m);
-        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(m, g, LocalDate.of(2026, 1, 1)).getCurrentDate());
+        TicketManager t = new TicketManager(new TicketFileRepository(dir.resolve("other-tickets.txt")), m);
+        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(m, g, t, LocalDate.of(2026, 1, 1)).getCurrentDate());
         LocalDate before = LocalDate.now();
-        LocalDate actual = new CommandProcessor(m, g).getCurrentDate();
+        LocalDate actual = new CommandProcessor(m, g, t).getCurrentDate();
         assertFalse(actual.isBefore(before));
         assertFalse(actual.isAfter(LocalDate.now()));
     }
@@ -214,6 +219,87 @@ class CommandProcessorTest {
     void helpListsGroupCommands() {
         String help = processor.process("HELP");
         for (String syntax : List.of("GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id")) {
+            assertTrue(help.contains(syntax), syntax);
+        }
+    }
+
+    @Test
+    void ticketCreationReportsPrice() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T002;ana@correo.com;2026-10-01"));
+        assertEquals(List.of("T001;2026-10-15;12345678Z;40.00", "T002;2026-10-01;12345678Z;40.00"),
+                Files.readAllLines(dir.resolve("tickets.txt")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"TICKET CREATE;T009;nadie@correo.com;2026-10-15", "TICKET CREATE;T009;ana@correo.com;2026-09-30",
+        "TICKET CREATE;T001;ana@correo.com;2026-10-20", "TICKET CREATE;;ana@correo.com;2026-10-20",
+        "TICKET CREATE;T009;ana@correo.com;2026-10-32", "TICKET CREATE;T009;ana@correo.com;15-10-2026",
+        "TICKET CREATE;T009;ana@correo.com", "TICKET CREATE;T009;ana@correo.com;2026-10-20;x",
+        "TICKET DELETE", "TICKET DELETE;T001;x", "TICKET DELETE;T999"})
+    void invalidTicketCommandsChangeNothing(String command) throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        List<String> before = Files.readAllLines(dir.resolve("tickets.txt"));
+        assertError(processor.process(command));
+        assertEquals(before, Files.readAllLines(dir.resolve("tickets.txt")));
+    }
+
+    @Test
+    void systemPriceAppliesToLaterTicketsAndResetsOnRestart() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertOk(processor.process("SYSTEM PRICE;60.00"));
+        assertEquals("OK TICKET CREATED -> 60.00", processor.process("TICKET CREATE;T002;ana@correo.com;2026-10-20"));
+        assertOk(processor.process("SYSTEM PRICE;55"));
+        assertEquals(new BigDecimal("55.00"), processor.getTicketPrice());
+        assertEquals(List.of("T001;2026-10-15;12345678Z;40.00", "T002;2026-10-20;12345678Z;60.00"),
+                Files.readAllLines(dir.resolve("tickets.txt")));
+        assertEquals(new BigDecimal("40.00"), newProcessor().getTicketPrice());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SYSTEM PRICE;0", "SYSTEM PRICE;0.00", "SYSTEM PRICE;-5.00", "SYSTEM PRICE;abc",
+        "SYSTEM PRICE;60,00", "SYSTEM PRICE;60.001", "SYSTEM PRICE;.50", "SYSTEM PRICE;60.", "SYSTEM PRICE;1e2",
+        "SYSTEM PRICE", "SYSTEM PRICE;60.00;1"})
+    void invalidPricesAreRejected(String command) {
+        assertOk(processor.process("SYSTEM PRICE;60.00"));
+        assertError(processor.process(command));
+        assertEquals(new BigDecimal("60.00"), processor.getTicketPrice());
+    }
+
+    @Test
+    void ticketDeletionOnlyForFutureTickets() {
+        assertOk(processor.process(CREATE_ANA));
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("TICKET CREATE;T002;ana@correo.com;2026-10-15");
+        assertOk(processor.process("TICKET DELETE;T001"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-15"));
+        assertError(processor.process("TICKET DELETE;T002"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-16"));
+        assertError(processor.process("TICKET DELETE;T002"));
+    }
+
+    @Test
+    void sourceExampleUserDeletionWithTickets() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        assertOk(processor.process("SYSTEM DATE;2026-10-01"));
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertError(processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-15"));
+        assertError(processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertError(processor.process("USER DELETE;ana@correo.com;Wrong1!"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-16"));
+        assertOk(processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(Files.readAllLines(dir.resolve("users.txt")).isEmpty());
+        assertEquals(List.of("T001;2026-10-15;12345678Z;40.00"), Files.readAllLines(dir.resolve("tickets.txt")));
+    }
+
+    @Test
+    void helpListsTicketCommands() {
+        String help = processor.process("HELP");
+        for (String syntax : List.of("TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id", "SYSTEM PRICE;Precio")) {
             assertTrue(help.contains(syntax), syntax);
         }
     }

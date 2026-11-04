@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -32,25 +33,41 @@ public class CommandProcessor {
             "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo",
             "GROUP DELETE;Id",
+            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
+            "TICKET DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
+            "SYSTEM PRICE;Precio",
             "HELP",
             "EXIT");
 
     private final UserManager users;
     private final GroupManager groups;
+    private final TicketManager tickets;
     private boolean exitRequested;
     /** The single simulated current date of this run; never persisted. */
     private LocalDate currentDate;
+    /** Price of new individual tickets; starts at 40.00 on every run, never persisted. */
+    private BigDecimal ticketPrice = DEFAULT_TICKET_PRICE;
+
+    static final BigDecimal DEFAULT_TICKET_PRICE = new BigDecimal("40.00");
+    private static final int PRICE_DECIMALS = 2;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserManager users, GroupManager groups) {
-        this(users, groups, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets) {
+        this(users, groups, tickets, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, GroupManager groups, LocalDate startupDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
+                            LocalDate startupDate) {
         this.users = users;
         this.groups = groups;
+        this.tickets = tickets;
         this.currentDate = startupDate;
+    }
+
+    /** The price that the next individual ticket will be charged. */
+    public BigDecimal getTicketPrice() {
+        return ticketPrice;
     }
 
     /** The current system date that all time-dependent operations must use. */
@@ -87,7 +104,10 @@ public class CommandProcessor {
                 case "GROUP ADD" -> groupAdd(params);
                 case "GROUP REMOVE" -> groupRemove(params);
                 case "GROUP DELETE" -> groupDelete(params);
+                case "TICKET CREATE" -> ticketCreate(params);
+                case "TICKET DELETE" -> ticketDelete(params);
                 case "SYSTEM DATE" -> systemDate(params);
+                case "SYSTEM PRICE" -> systemPrice(params);
                 case "HELP" -> help(params);
                 case "EXIT" -> exit(params);
                 default -> error("Unknown command: " + parts[0].trim());
@@ -101,11 +121,7 @@ public class CommandProcessor {
 
     private String systemDate(String[] p) throws UserException {
         requireParams(p, 1, "SYSTEM DATE;yyyy-MM-dd");
-        try {
-            currentDate = LocalDate.parse(p[0], DATE_FORMAT);
-        } catch (DateTimeParseException e) {
-            throw new UserException("Invalid date '" + p[0] + "', expected yyyy-MM-dd");
-        }
+        currentDate = parseDate(p[0]);
         return ok("System date set to " + currentDate);
     }
 
@@ -132,9 +148,68 @@ public class CommandProcessor {
 
     private String delete(String[] p) throws UserException {
         requireParams(p, DELETE_PARAMS, "USER DELETE;Correo;Contraseña");
+        User user = users.authenticate(p[0], p[1]);
+        if (tickets.hasTicketOnOrAfter(user, currentDate)) {
+            throw new UserException("User " + p[0] + " has a ticket dated on or after " + currentDate
+                    + " and cannot be deleted");
+        }
         User deleted = users.delete(p[0], p[1]);
+        tickets.detachUser(deleted);
         groups.removeUserEverywhere(deleted);
         return ok("User " + p[0] + " deleted");
+    }
+
+    private String ticketCreate(String[] p) throws UserException {
+        requireParams(p, 3, "TICKET CREATE;Id;Correo;yyyy-MM-dd");
+        Ticket ticket = tickets.create(p[0], p[1], parseDate(p[2]), currentDate, ticketPrice);
+        return "OK TICKET CREATED -> " + ticket.getPrice().toPlainString();
+    }
+
+    private String ticketDelete(String[] p) throws UserException {
+        requireParams(p, 1, "TICKET DELETE;Id");
+        tickets.delete(p[0], currentDate);
+        return ok("Ticket " + p[0] + " deleted");
+    }
+
+    private String systemPrice(String[] p) throws UserException {
+        requireParams(p, 1, "SYSTEM PRICE;Precio");
+        ticketPrice = parsePrice(p[0]);
+        return ok("Ticket price set to " + ticketPrice.toPlainString());
+    }
+
+    /** Positive decimal with '.' as separator and at most two decimals (no regex). */
+    private static BigDecimal parsePrice(String text) throws UserException {
+        UserException invalid = new UserException("Invalid price '" + text
+                + "', expected a positive amount such as 60.00");
+        int dot = text.indexOf('.');
+        String integerPart = dot < 0 ? text : text.substring(0, dot);
+        String decimals = dot < 0 ? "" : text.substring(dot + 1);
+        if (integerPart.isEmpty() || !isDigits(integerPart) || (dot >= 0 && (decimals.isEmpty()
+                || decimals.length() > PRICE_DECIMALS || !isDigits(decimals)))) {
+            throw invalid;
+        }
+        BigDecimal price = new BigDecimal(text).setScale(PRICE_DECIMALS);
+        if (price.signum() <= 0) {
+            throw invalid;
+        }
+        return price;
+    }
+
+    private static boolean isDigits(String value) {
+        for (char c : value.toCharArray()) {
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static LocalDate parseDate(String text) throws UserException {
+        try {
+            return LocalDate.parse(text, DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new UserException("Invalid date '" + text + "', expected yyyy-MM-dd");
+        }
     }
 
     private String groupCreate(String[] p) throws UserException {

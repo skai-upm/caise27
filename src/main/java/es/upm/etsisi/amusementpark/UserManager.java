@@ -108,7 +108,8 @@ public class UserManager {
         }
     }
 
-    private User authenticate(String email, String password) throws UserException {
+    /** Returns the user with that email if the password matches, otherwise rejects. */
+    public User authenticate(String email, String password) throws UserException {
         Optional<User> user = findByEmail(email);
         if (user.isEmpty() || !user.get().getPassword().equals(password)) {
             throw new UserException("Incorrect email or password");
