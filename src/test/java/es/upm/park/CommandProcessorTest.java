@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -76,7 +77,8 @@ class CommandProcessorTest {
         assertTrue(help.startsWith("OK"));
         for (String usage : new String[] {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT",
+            "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "SYSTEM DATE;yyyy-MM-dd", "HELP", "EXIT",
             "NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD"}) {
             assertTrue(help.contains(usage), usage);
         }
@@ -94,5 +96,39 @@ class CommandProcessorTest {
     void exitSetsFlag() {
         assertTrue(processor.process("EXIT").startsWith("OK"));
         assertTrue(processor.isExitRequested());
+    }
+
+    @Test
+    void startsWithLocalDate() {
+        LocalDate before = LocalDate.now();
+        LocalDate date = new CommandProcessor(manager).getCurrentDate();
+        LocalDate after = LocalDate.now();
+        assertTrue(!date.isBefore(before) && !date.isAfter(after));
+    }
+
+    @Test
+    void systemDateCanMoveBackwardAndForward() {
+        assertEquals("OK: system date set to 2026-09-15", processor.process("SYSTEM DATE;2026-09-15"));
+        assertEquals(LocalDate.of(2026, 9, 15), processor.getCurrentDate());
+        assertTrue(processor.process("SYSTEM DATE;2020-01-01").startsWith("OK"));
+        assertEquals(LocalDate.of(2020, 1, 1), processor.getCurrentDate());
+        assertTrue(processor.process("SYSTEM DATE;2031-12-31").startsWith("OK"));
+        assertEquals(LocalDate.of(2031, 12, 31), processor.getCurrentDate());
+        assertTrue(processor.process("SYSTEM DATE;2028-02-29").startsWith("OK"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SYSTEM DATE;15-09-2026", "SYSTEM DATE;2026-9-15", "SYSTEM DATE;2026-02-30",
+        "SYSTEM DATE;2026-13-01", "SYSTEM DATE;hoy", "SYSTEM DATE;", "SYSTEM DATE", "SYSTEM DATE;2026-09-15;x",
+        "SYSTEM DATE;2027-02-29", "SYSTEM DATE; 2026-09-16"})
+    void invalidDatesAreRejectedWithoutChange(String command) {
+        processor.process("SYSTEM DATE;2026-09-15");
+        assertTrue(processor.process(command).startsWith("ERROR"), command);
+        assertEquals(LocalDate.of(2026, 9, 15), processor.getCurrentDate());
+    }
+
+    @Test
+    void injectedInitialDateIsUsed() {
+        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(manager, LocalDate.of(2026, 1, 1)).getCurrentDate());
     }
 }

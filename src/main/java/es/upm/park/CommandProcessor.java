@@ -1,5 +1,9 @@
 package es.upm.park;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -17,14 +21,30 @@ public class CommandProcessor {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
 
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
+
     private final UserManager users;
     private boolean exitRequested;
+    /** The single current date of the application; time-dependent rules must use it. */
+    private LocalDate currentDate;
 
+    /** Creates the controller with the operating system's local date as current date. */
     public CommandProcessor(UserManager users) {
+        this(users, LocalDate.now());
+    }
+
+    public CommandProcessor(UserManager users, LocalDate initialDate) {
         this.users = users;
+        this.currentDate = initialDate;
+    }
+
+    public LocalDate getCurrentDate() {
+        return currentDate;
     }
 
     public String process(String line) {
@@ -38,6 +58,7 @@ public class CommandProcessor {
                 case "USER CREATE" -> create(parts);
                 case "USER DELETE" -> delete(parts);
                 case "USER UPDATE" -> update(parts);
+                case "SYSTEM DATE" -> systemDate(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> "ERROR: unknown command '" + operation + "'";
@@ -63,6 +84,16 @@ public class CommandProcessor {
         sb.append(System.lineSeparator()).append("  Campo (USER UPDATE): ")
                 .append(String.join(", ", Arrays.stream(UserField.values()).map(Enum::name).toList()));
         return sb.toString();
+    }
+
+    private String systemDate(String[] p) {
+        requireParams(p, 1, "SYSTEM DATE;yyyy-MM-dd");
+        try {
+            currentDate = LocalDate.parse(p[1], DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("invalid date '" + p[1] + "', expected format yyyy-MM-dd");
+        }
+        return "OK: system date set to " + currentDate;
     }
 
     private String exit(String[] p) {
