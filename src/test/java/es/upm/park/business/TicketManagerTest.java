@@ -40,7 +40,7 @@ class TicketManagerTest {
     void setUp() throws IOException {
         usersFile = dir.resolve("users.txt");
         ticketsFile = dir.resolve("tickets.txt");
-        users = UserManager.configure(new UserFileStore(usersFile));
+        users = UserManager.configure(new UserFileStore(usersFile), new BCryptPasswordHasher(4));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         tickets = newTickets(users);
     }
@@ -115,7 +115,7 @@ class TicketManagerTest {
         tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
         assertTrue(users.delete("ana@correo.com", "Clave1!").success());
 
-        UserManager users2 = UserManager.configure(new UserFileStore(usersFile));
+        UserManager users2 = UserManager.configure(new UserFileStore(usersFile), new BCryptPasswordHasher(4));
         TicketManager tickets2 = newTickets(users2);
         assertTrue(tickets2.getTickets().isEmpty());
         users2.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
@@ -127,7 +127,7 @@ class TicketManagerTest {
     @Test
     void restartRestoresLinkedTickets() throws IOException {
         tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
-        UserManager users2 = UserManager.configure(new UserFileStore(usersFile));
+        UserManager users2 = UserManager.configure(new UserFileStore(usersFile), new BCryptPasswordHasher(4));
         TicketManager tickets2 = newTickets(users2);
         IndividualTicket t = tickets2.find("T001").orElseThrow();
         assertSame(users2.findByEmail("ana@correo.com").orElseThrow(), t.getUser());

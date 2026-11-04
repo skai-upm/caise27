@@ -37,7 +37,7 @@ class GroupTicketManagerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        users = UserManager.configure(new UserFileStore(dir.resolve("users.txt")));
+        users = UserManager.configure(new UserFileStore(dir.resolve("users.txt")), new BCryptPasswordHasher(4));
         users.create("Ana", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
         users.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "6", "9876543210987654");
         groups = GroupManager.configure(new GroupFileStore(dir.resolve("groups.txt")), users);

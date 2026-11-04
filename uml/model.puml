@@ -47,6 +47,12 @@ package es.upm.park.business {
 
   class UserValidator
 
+  interface PasswordHasher
+
+  class BCryptPasswordHasher {
+    - logRounds : int
+  }
+
   class UserManager <<singleton>>
 
   class GroupManager <<singleton>>
@@ -204,6 +210,8 @@ AttractionRepository <|.. AttractionFileStore
 
 ' ---- Users ----
 UserManager "0..1" x--> "1" UserRepository : store
+UserManager "0..1" x--> "1" PasswordHasher : hasher
+PasswordHasher <|.. BCryptPasswordHasher
 UserManager "1" *--> "0..*" User : users
 
 ' ---- Groups ----
@@ -244,6 +252,7 @@ App ..> SyntaxHelpFormatter : creates
 App ..> ExtendedHelpFormatter : creates
 App ..> ApplicationContext
 ApplicationContext ..> DataDirectory
+ApplicationContext ..> BCryptPasswordHasher : creates
 ApplicationContext ..> UserFileStore : creates
 ApplicationContext ..> GroupFileStore : creates
 ApplicationContext ..> TicketFileStore : creates

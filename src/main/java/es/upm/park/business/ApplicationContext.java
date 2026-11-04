@@ -52,7 +52,8 @@ public final class ApplicationContext implements AutoCloseable {
 
     /** Creates the file repositories for {@code dataDir} and injects them and all collaborators. */
     private static ParkController configure(Path dataDir, LocalDate date) throws IOException {
-        UserManager users = UserManager.configure(new UserFileStore(dataDir.resolve(DataDirectory.USERS_FILE)));
+        UserManager users = UserManager.configure(
+                new UserFileStore(dataDir.resolve(DataDirectory.USERS_FILE)), new BCryptPasswordHasher());
         GroupManager groups = GroupManager.configure(
                 new GroupFileStore(dataDir.resolve(DataDirectory.GROUPS_FILE)), users);
         TicketManager tickets = TicketManager.configure(

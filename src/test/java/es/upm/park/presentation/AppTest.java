@@ -79,7 +79,7 @@ class AppTest {
 
         assertEquals(0, fromFile.status());
         assertEquals(fromStdin.out(), fromFile.out());
-        assertEquals(Files.readAllLines(stdinData.resolve("users.txt")), Files.readAllLines(fileData.resolve("users.txt")));
+        assertEquals(withoutPasswords(stdinData.resolve("users.txt")), withoutPasswords(fileData.resolve("users.txt")));
         assertTrue(Files.readString(fileData.resolve("users.txt")).contains("699999999"));
     }
 
@@ -248,5 +248,22 @@ class AppTest {
         fly(new String[0], CommandRunnerTest.CREATE_ANA, dir, tmpRoot);
         assertFalse(Files.exists(tmpRoot));
         assertTrue(Files.exists(dir.resolve("users.txt")));
+    }
+
+    /** User records with the password column (a salted hash, different on every run) removed. */
+    private static List<String> withoutPasswords(Path usersFile) throws IOException {
+        return Files.readAllLines(usersFile).stream()
+                .map(l -> l.replaceFirst("^((?:[^;]*;){4})[^;]*", "$1<hash>"))
+                .toList();
+    }
+
+    @Test
+    void storedPasswordsAreHashes() throws IOException {
+        interactive(CommandRunnerTest.CREATE_ANA, "EXIT");
+        String line = Files.readAllLines(dir.resolve("users.txt")).get(0);
+        assertFalse(line.contains("Clave1!"));
+        assertTrue(line.split(";")[4].startsWith("$2a$10$"));
+        Run second = interactive("USER DELETE;ana@correo.com;Clave1!", "EXIT");
+        assertTrue(second.out().startsWith("OK: User ana@correo.com deleted."));
     }
 }

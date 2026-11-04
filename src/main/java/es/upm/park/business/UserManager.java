@@ -19,6 +19,7 @@ public final class UserManager {
     private static final UserManager INSTANCE = new UserManager();
 
     private UserRepository store;
+    private PasswordHasher hasher;
     private List<User> users = new ArrayList<>();
 
     private UserManager() {
@@ -30,12 +31,13 @@ public final class UserManager {
     }
 
     /**
-     * Injects the repository into the single instance and loads its users. Called at startup
-     * by {@link ApplicationContext}.
+     * Injects the repository and the password hasher into the single instance and loads its
+     * users. Called at startup by {@link ApplicationContext}.
      */
-    public static UserManager configure(UserRepository store) throws IOException {
+    public static UserManager configure(UserRepository store, PasswordHasher hasher) throws IOException {
         List<User> loaded = new ArrayList<>(store.load());
         INSTANCE.store = store;
+        INSTANCE.hasher = hasher;
         INSTANCE.users = loaded;
         return INSTANCE;
     }
@@ -92,7 +94,7 @@ public final class UserManager {
             }
         }
         List<User> updated = new ArrayList<>(users);
-        updated.add(new User(firstName, surnames, dni, email, password, phone, card));
+        updated.add(new User(firstName, surnames, dni, email, hasher.hash(password), phone, card));
         return commit(updated, "User " + email + " created.");
     }
 
@@ -117,7 +119,9 @@ public final class UserManager {
         }
         User original = users.get(index);
         User changed = new User(original);
-        apply(changed, field, newValue);
+        // only the hash of a new password is ever stored
+        String storedValue = field == UserField.PASSWORD ? hasher.hash(newValue) : newValue;
+        apply(changed, field, storedValue);
         List<User> candidate = new ArrayList<>(users);
         candidate.set(index, changed);
         try {
@@ -126,7 +130,7 @@ public final class UserManager {
             return Result.error("Could not save users: " + e.getMessage());
         }
         // Keep the same instance so every object referring to this user sees the change.
-        apply(original, field, newValue);
+        apply(original, field, storedValue);
         return Result.ok("User " + original.getEmail() + " updated (" + field + ").");
     }
 
@@ -172,7 +176,7 @@ public final class UserManager {
         for (int i = 0; i < users.size(); i++) {
             User u = users.get(i);
             if (u.getEmail().equalsIgnoreCase(email)) {
-                return u.getPassword().equals(password) ? i : -1;
+                return hasher.matches(password, u.getPassword()) ? i : -1;
             }
         }
         return -1;

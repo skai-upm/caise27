@@ -42,7 +42,7 @@ class RepositorySubstitutionTest {
     @Test
     void userManagerWorksWithAnotherRepositoryImplementation() throws IOException {
         InMemoryUserRepository repo = new InMemoryUserRepository();
-        UserManager users = UserManager.configure(repo);
+        UserManager users = UserManager.configure(repo, new BCryptPasswordHasher(4));
         assertTrue(users.create("Ana", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456").success());
         assertTrue(users.update("ana@correo.com", "Clave1!", UserField.PHONE, "699999999").success());
         assertFalse(users.create("Otra", "X", "12345678Z", "otra@correo.com", "Clave1!", "6", "1234567890123456").success());

@@ -13,12 +13,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class UserManagerTest {
+
+    private static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
 
     @TempDir
     Path dir;
@@ -28,7 +31,7 @@ class UserManagerTest {
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        manager = UserManager.configure(new UserFileStore(file));
+        manager = UserManager.configure(new UserFileStore(file), new BCryptPasswordHasher(4));
     }
 
     private Result createAna() {
@@ -42,7 +45,7 @@ class UserManagerTest {
     }
 
     private UserManager restart() throws IOException {
-        return UserManager.configure(new UserFileStore(file));
+        return UserManager.configure(new UserFileStore(file), new BCryptPasswordHasher(4));
     }
 
     private List<String> fileLines() throws IOException {
@@ -55,8 +58,11 @@ class UserManagerTest {
     void validCreationIsStoredAndPersisted() throws IOException {
         assertTrue(createAna().success());
         assertEquals(1, manager.getUsers().size());
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
-                fileLines());
+        List<String> lines = fileLines();
+        assertEquals(1, lines.size());
+        assertTrue(Pattern.matches("Ana;Garcia Lopez;12345678Z;ana@correo\\.com;\\$2a\\$04\\$[./A-Za-z0-9]{53};612345678;1234567890123456",
+                lines.get(0)), lines.get(0));
+        assertFalse(lines.get(0).contains("Clave1!"), "no plaintext password");
         assertEquals("ana@correo.com", restart().getUsers().get(0).getEmail());
     }
 
@@ -133,7 +139,7 @@ class UserManagerTest {
         assertEquals("Garcia Ruiz", u.getSurnames());
         assertEquals("699999999", u.getPhone());
         assertEquals("ana.nueva@correo.com", u.getEmail());
-        assertEquals("Nueva2#", u.getPassword());
+        assertTrue(HASHER.matches("Nueva2#", u.getPassword()));
         assertEquals("9999888877776666", u.getCardNumber());
         assertEquals("12345678Z", u.getDni());
     }
@@ -164,7 +170,7 @@ class UserManagerTest {
         assertEquals(before, fileLines());
         User ana = manager.getUsers().get(0);
         assertEquals("ana@correo.com", ana.getEmail());
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(HASHER.matches("Clave1!", ana.getPassword()));
         assertEquals("1234567890123456", ana.getCardNumber());
     }
 
@@ -226,5 +232,47 @@ class UserManagerTest {
         assertSame(manager.getUsers().get(0), manager.authenticate("ana@correo.com", "Clave1!").orElseThrow());
         assertTrue(manager.authenticate("ana@correo.com", "Mala1!").isEmpty());
         assertTrue(manager.authenticate("nadie@correo.com", "Clave1!").isEmpty());
+    }
+
+    // ---- password storage ----
+
+    @Test
+    void passwordChangeStoresNewHashThatWorksAfterRestart() throws IOException {
+        createAna();
+        String firstHash = manager.getUsers().get(0).getPassword();
+        assertTrue(manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "Nueva2#").success());
+        UserManager again = restart();
+        String newHash = again.getUsers().get(0).getPassword();
+        assertFalse(firstHash.equals(newHash));
+        assertTrue(again.authenticate("ana@correo.com", "Nueva2#").isPresent());
+        assertTrue(again.authenticate("ana@correo.com", "Clave1!").isEmpty());
+        assertFalse(String.join("\n", fileLines()).contains("Nueva2#"));
+    }
+
+    @Test
+    void wrongPasswordDoesNotChangeStoredData() throws IOException {
+        createAna();
+        List<String> before = fileLines();
+        assertFalse(manager.update("ana@correo.com", "Mala1!", UserField.PHONE, "699999999").success());
+        assertFalse(manager.delete("ana@correo.com", "Mala1!").success());
+        assertEquals(before, fileLines());
+        assertTrue(manager.delete("ana@correo.com", "Clave1!").success());
+    }
+
+    @Test
+    void invalidNewPasswordIsNotHashedOrStored() throws IOException {
+        createAna();
+        List<String> before = fileLines();
+        assertFalse(manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "clave1!").success());
+        assertFalse(manager.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "CLAVE1!", "6", "9876543210987654").success());
+        assertEquals(before, fileLines());
+    }
+
+    @Test
+    void legacyPlaintextRecordDoesNotAuthenticate() throws IOException {
+        java.nio.file.Files.write(file, List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"));
+        UserManager legacy = restart();
+        assertFalse(legacy.delete("ana@correo.com", "Clave1!").success());
+        assertEquals(1, legacy.getUsers().size());
     }
 }
