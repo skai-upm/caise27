@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -108,6 +109,7 @@ class CommandProcessorTest {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT"}) {
             assertTrue(r.message().contains(syntax), syntax);
@@ -134,5 +136,72 @@ class CommandProcessorTest {
     void userCommandsDoNotTerminate() {
         assertFalse(processor.process(CREATE_ANA).terminate());
         assertFalse(processor.process("FOO").terminate());
+    }
+
+    // ---- system date ----
+
+    private static final LocalDate START = LocalDate.of(2026, 9, 15);
+
+    private CommandProcessor processorAt(LocalDate date) {
+        return new CommandProcessor(manager, date);
+    }
+
+    @Test
+    void defaultControllerStartsWithLocalDate() {
+        LocalDate before = LocalDate.now();
+        LocalDate date = processor.getCurrentDate();
+        LocalDate after = LocalDate.now();
+        assertTrue(!date.isBefore(before) && !date.isAfter(after));
+    }
+
+    @Test
+    void injectedInitialDateIsReported() {
+        assertEquals(START, processorAt(START).getCurrentDate());
+    }
+
+    @Test
+    void systemDateSetsCurrentDate() {
+        CommandProcessor p = processorAt(LocalDate.of(2025, 1, 1));
+        Result r = p.process("SYSTEM DATE;2026-09-15");
+        assertTrue(r.success(), r.message());
+        assertEquals(START, p.getCurrentDate());
+    }
+
+    @Test
+    void dateCanMoveBackwardAndForward() {
+        CommandProcessor p = processorAt(START);
+        assertTrue(p.process("SYSTEM DATE;2020-01-01").success());
+        assertEquals(LocalDate.of(2020, 1, 1), p.getCurrentDate());
+        assertTrue(p.process("SYSTEM DATE;2030-12-31").success());
+        assertEquals(LocalDate.of(2030, 12, 31), p.getCurrentDate());
+    }
+
+    @Test
+    void leapDayAccepted() {
+        CommandProcessor p = processorAt(START);
+        assertTrue(p.process("SYSTEM DATE;2028-02-29").success());
+        assertEquals(LocalDate.of(2028, 2, 29), p.getCurrentDate());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "SYSTEM DATE;15-09-2026", "SYSTEM DATE;2026/09/15", "SYSTEM DATE;2026-9-15",
+        "SYSTEM DATE;2026-02-30", "SYSTEM DATE;2027-02-29", "SYSTEM DATE;hoy",
+        "SYSTEM DATE;2026-13-01", "SYSTEM DATE;+2026-09-15", "SYSTEM DATE;20260915",
+        "SYSTEM DATE", "SYSTEM DATE;", "SYSTEM DATE;2026-09-15;x", "SYSTEM;2026-09-15",
+        "SYSTEM TIME;2026-09-15"})
+    void invalidDatesLeaveDateUnchanged(String command) {
+        CommandProcessor p = processorAt(START);
+        Result r = p.process(command);
+        assertFalse(r.success());
+        assertFalse(r.terminate());
+        assertEquals(START, p.getCurrentDate());
+    }
+
+    @Test
+    void helpDoesNotChangeDate() {
+        CommandProcessor p = processorAt(START);
+        p.process("HELP");
+        assertEquals(START, p.getCurrentDate());
     }
 }

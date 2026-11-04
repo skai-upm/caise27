@@ -1,9 +1,15 @@
 package es.upm.park;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Main controller of the application: interprets API-like text commands and owns the single
+ * current system date used by every time-dependent operation.
+ * <p>
  * Interprets API-like text commands. A command is split on {@code ;} into the operation and
  * its parameters; the operation is split on spaces into its words. Invalid input always
  * produces an error result and never throws.
@@ -18,13 +24,28 @@ public class CommandProcessor {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
 
-    private final UserManager users;
+    private static final int DATE_LENGTH = "yyyy-MM-dd".length();
 
+    private final UserManager users;
+    private LocalDate currentDate;
+
+    /** Creates the controller with the operating system's local date as current date. */
     public CommandProcessor(UserManager users) {
+        this(users, LocalDate.now());
+    }
+
+    public CommandProcessor(UserManager users, LocalDate initialDate) {
         this.users = users;
+        this.currentDate = initialDate;
+    }
+
+    /** The current system date; time-dependent operations must use this, never the real clock. */
+    public LocalDate getCurrentDate() {
+        return currentDate;
     }
 
     public Result process(String line) {
@@ -48,6 +69,9 @@ public class CommandProcessor {
         if (words.size() == 1 && words.get(0).equals("EXIT")) {
             return params.length == 0 ? Result.exit("Bye.") : Result.error("Usage: EXIT");
         }
+        if (words.size() == 2 && words.get(0).equals("SYSTEM") && words.get(1).equals("DATE")) {
+            return systemDate(params);
+        }
         if (words.size() != 2 || !words.get(0).equals("USER")) {
             return Result.error("Unknown command: " + parts[0].trim());
         }
@@ -62,6 +86,21 @@ public class CommandProcessor {
     private Result help() {
         return Result.ok("Available commands:" + System.lineSeparator()
                 + String.join(System.lineSeparator(), COMMAND_SYNTAX));
+    }
+
+    private Result systemDate(String[] p) {
+        if (!hasParams(p, 1)) {
+            return Result.error("Usage: SYSTEM DATE;yyyy-MM-dd");
+        }
+        if (p[0].length() != DATE_LENGTH) {
+            return Result.error("Invalid date '" + p[0] + "': expected format yyyy-MM-dd.");
+        }
+        try {
+            currentDate = LocalDate.parse(p[0], DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (DateTimeParseException e) {
+            return Result.error("Invalid date '" + p[0] + "': expected format yyyy-MM-dd.");
+        }
+        return Result.ok("System date set to " + currentDate + ".");
     }
 
     private Result userCreate(String[] p) {
