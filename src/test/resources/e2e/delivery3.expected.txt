@@ -1,0 +1,173 @@
+OK: Available commands:
+  USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta
+  USER DELETE;Correo;Contraseña
+  USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)
+  GROUP CREATE;Id;Nombre
+  GROUP ADD;Id;Correo
+  GROUP REMOVE;Id;Correo
+  GROUP DELETE;Id
+  TICKET CREATE;Id;Correo;yyyy-MM-dd
+  TICKET DELETE;Id
+  GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd
+  GROUPTICKET DELETE;Id
+  ATTRACTION CREATE;Id;Nombre;Capacidad
+  ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo
+  ATTRACTION ENTER;IdAtraccion;IdTicket
+  ATTRACTION ENTER;IdAtraccion;IdTicket;SPEED
+  ATTRACTION EXIT;IdAtraccion;IdTicket
+  ATTRACTION STATUS;IdAtraccion
+  INVOICE CREATE;USER;Correo
+  INVOICE CREATE;GROUP;IdGrupo
+  SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad
+  SPEEDPASS DELETE;IdPase
+  SPECIALPASS CREATE;IdPase;IdTicket
+  SPECIALPASS DELETE;IdPase
+  SYSTEM DATE;yyyy-MM-dd
+  SYSTEM PRICE;Precio
+  HELP
+  HELP EXTENDED
+  EXIT
+OK: Available commands (extended):
+  USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta
+      Registers a user after validating DNI, email, password and card; DNI and email must be unique.
+  USER DELETE;Correo;Contraseña
+      Deletes the user with that email and password, unless they hold a ticket dated today or later.
+  USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)
+      Changes one field of the authenticated user; the DNI cannot be changed.
+  GROUP CREATE;Id;Nombre
+      Creates an empty group with a unique identifier.
+  GROUP ADD;Id;Correo
+      Adds an existing user to a group, unless the group has a ticket dated today or later.
+  GROUP REMOVE;Id;Correo
+      Removes a member from a group, unless the group has a ticket dated today or later.
+  GROUP DELETE;Id
+      Deletes a group (not its users), unless it has a ticket dated today or later.
+  TICKET CREATE;Id;Correo;yyyy-MM-dd
+      Buys an individual ticket for a user on a date from today on, at the current ticket price.
+  TICKET DELETE;Id
+      Cancels an individual ticket whose date is later than today.
+  GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd
+      Buys one ticket per current group member, with a discount that grows with the group size.
+  GROUPTICKET DELETE;Id
+      Cancels a group ticket, and its members' tickets, if its date is later than today.
+  ATTRACTION CREATE;Id;Nombre;Capacidad
+      Creates a GENERAL attraction with a maximum number of simultaneous visitors.
+  ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo
+      Creates an attraction of type GENERAL, INDIVIDUAL, GROUP or SPECIAL (by tickets admitted).
+  ATTRACTION ENTER;IdAtraccion;IdTicket
+      Lets the ticket's visitors in if the ticket is for today and all of them fit.
+  ATTRACTION ENTER;IdAtraccion;IdTicket;SPEED
+      Same entry using one unused SpeedPass per person; nothing is consumed if entry fails.
+  ATTRACTION EXIT;IdAtraccion;IdTicket
+      Lets the ticket's visitors out of the attraction, freeing their places.
+  ATTRACTION STATUS;IdAtraccion
+      Shows capacity, occupancy, free places and the visitors inside.
+  INVOICE CREATE;USER;Correo
+      Shows the invoice of the tickets bought directly for a user.
+  INVOICE CREATE;GROUP;IdGrupo
+      Shows the invoice of the group tickets bought by a group.
+  SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad
+      Buys 1 or 10 SpeedPasses (ids IdCompra-1..n) for a ticket, each at 20% of the ticket price.
+  SPEEDPASS DELETE;IdPase
+      Refunds an unused SpeedPass whose ticket is for a later date than today.
+  SPECIALPASS CREATE;IdPase;IdTicket
+      Buys the only Special Pass of a ticket, at the ticket price.
+  SPECIALPASS DELETE;IdPase
+      Refunds an unused Special Pass whose ticket is for a later date than today.
+  SYSTEM DATE;yyyy-MM-dd
+      Sets the simulated current date used by every date check.
+  SYSTEM PRICE;Precio
+      Sets the price of tickets bought from now on in this run.
+  HELP
+      Lists the syntax of every command.
+  HELP EXTENDED
+      Lists every command with its syntax and a short explanation.
+  EXIT
+      Ends the application; later commands are not processed.
+OK: System date set to 2026-10-01
+OK: User ana@correo.com created
+OK: User pedro@correo.com created
+OK: User luis@correo.com created
+ERROR: Invalid DNI: 12345678A
+OK: User ana@correo.com updated: PHONE
+ERROR: Incorrect email or password
+OK: Group G01 created
+OK: User pedro@correo.com added to group G01
+OK: User luis@correo.com added to group G01
+OK: User ana@correo.com added to group G01
+OK: Ticket price set to 50.00
+OK TICKET CREATED -> 50.00
+OK: Ticket price set to 40.00
+OK GROUP TICKET CREATED -> 108.00
+ERROR: Group G01 has a group ticket dated on or after 2026-10-01 and cannot be modified or deleted
+OK TICKET CREATED -> 40.00
+OK SPEEDPASS CREATED -> 100.00
+ERROR: Invalid quantity '5': SpeedPasses are sold in quantities of 1 or 10
+OK SPECIALPASS CREATED -> 50.00
+ERROR: Ticket T001 already has a Special Pass
+OK SPEEDPASS CREATED -> 7.20
+OK SPEEDPASS CREATED -> 7.20
+OK SPEEDPASS CREATED -> 8.00
+OK: SpeedPass SP1-10 refunded
+OK: Attraction A01 created
+OK: Attraction A02 created
+OK: Attraction A03 created
+OK: Attraction A04 created
+ERROR: Unknown attraction type: VIP (use GENERAL, INDIVIDUAL, GROUP or SPECIAL)
+OK: Invoice for user Ana Garcia Lopez <ana@correo.com> (DNI 12345678Z)
+  Individual tickets:
+    T001 2026-10-15: 50.00
+  Personal passes:
+    SP1-1 SpeedPass for T001: 10.00
+    SP1-2 SpeedPass for T001: 10.00
+    SP1-3 SpeedPass for T001: 10.00
+    SP1-4 SpeedPass for T001: 10.00
+    SP1-5 SpeedPass for T001: 10.00
+    SP1-6 SpeedPass for T001: 10.00
+    SP1-7 SpeedPass for T001: 10.00
+    SP1-8 SpeedPass for T001: 10.00
+    SP1-9 SpeedPass for T001: 10.00
+    VIP1 SpecialPass for T001: 50.00
+  TOTAL: 190.00
+OK: Invoice for group G01 (Familia Garcia)
+  Group tickets:
+    TG01 2026-10-15 (3 members, 10% discount): 108.00
+  TOTAL: 108.00
+OK: Invoice for user Luis Martin Ruiz <luis@correo.com> (DNI 11111111H)
+  Personal passes:
+    P2-1 SpeedPass for TG01-11111111H: 7.20
+  TOTAL: 7.20
+ERROR: User ana@correo.com has a ticket dated on or after 2026-10-01 and cannot be deleted
+OK: System date set to 2026-10-15
+OK: 1 visitor(s) entered A01 with ticket T001; consumed SpeedPass SP1-1
+ERROR: Attraction A02 has 2 free places; ticket TG01 needs 3
+ERROR: Attraction A02 has 2 free places; ticket TG01 needs 3
+OK: Attraction A06 created
+OK SPEEDPASS CREATED -> 7.20
+OK: 3 visitor(s) entered A06 with ticket TG01; consumed SpeedPass P1-1, P2-1, P4-1
+OK: Attraction A06 (Autos) capacity=5 present=3 available=2 type=GROUP
+  - Pedro Lopez Martin <pedro@correo.com>
+  - Luis Martin Ruiz <luis@correo.com>
+  - Ana Garcia Lopez <ana@correo.com>
+ERROR: Attraction A03 (INDIVIDUAL) does not admit group tickets
+ERROR: Attraction A04 (SPECIAL) does not accept the SPEED option
+OK: 1 visitor(s) entered A04 with ticket T001; consumed Special Pass VIP1
+ERROR: Ticket T002 is for 2026-10-20, not for 2026-10-15
+OK: Attraction A01 (Tornado) capacity=20 present=1 available=19 type=GENERAL
+  - Ana Garcia Lopez <ana@correo.com>
+OK: Attraction A04 (Mansion VIP) capacity=5 present=1 available=4 type=SPECIAL
+  - Ana Garcia Lopez <ana@correo.com>
+OK: Visitors of ticket T001 left A01
+OK: Attraction A01 (Tornado) capacity=20 present=0 available=20 type=GENERAL
+ERROR: Pass SP1-2 belongs to a ticket for 2026-10-15 and can only be refunded before that date
+OK: Ticket T002 deleted
+OK: System date set to 2026-10-10
+ERROR: No ticket with id T002
+OK: System date set to 2026-10-16
+OK: User ana@correo.com deleted
+OK: Group G01 deleted
+OK: Invoice for user Luis Martin Ruiz <luis@correo.com> (DNI 11111111H)
+  Personal passes:
+    P2-1 SpeedPass for TG01-11111111H: 7.20
+  TOTAL: 7.20
+OK: Bye
