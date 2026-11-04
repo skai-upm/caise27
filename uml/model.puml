@@ -36,6 +36,7 @@ class ParkController <<Singleton>> {
   ticketPrice : BigDecimal
 }
 class ParkServices
+class EntryResult
 }
 
 package business.model {
@@ -246,6 +247,9 @@ CommandProcessor ..> UserField : <<use>>
 ParkController ..> UserField : <<use>>
 App ..> ParkServices : <<create>>
 ParkController ..> ParkServices : <<use>>
+ParkController ..> EntryResult : <<create>>
+EntryResult "0..*" x--> "1" Ticket : ticket
+EntryResult "0..*" x--> "0..*" Pass : consumedPasses
 UserManager ..> UserField : <<use>>
 UserManager ..> UserValidator : <<use>>
 GroupManager ..> UserValidator : <<use>>

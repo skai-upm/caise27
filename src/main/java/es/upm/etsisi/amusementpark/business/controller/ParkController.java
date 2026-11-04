@@ -5,6 +5,8 @@ import es.upm.etsisi.amusementpark.business.invoice.Invoice;
 import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.etsisi.amusementpark.business.invoice.UserInvoiceBuilder;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
+import es.upm.etsisi.amusementpark.business.model.AttractionType;
+import es.upm.etsisi.amusementpark.business.model.Pass;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
@@ -22,6 +24,7 @@ import es.upm.etsisi.amusementpark.business.service.UserManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -258,11 +261,47 @@ public final class ParkController {
     }
 
     /** Admits the visitors of a ticket into an attraction and returns the ticket used. */
-    public Ticket enterAttraction(String attractionId, String ticketId) throws UserException {
+    /**
+     * Admits the visitors of a ticket, consuming SpeedPasses when {@code speed} is
+     * requested and the Special Pass at SPECIAL attractions. Every condition is
+     * checked first; a failed entry changes neither occupancy nor passes.
+     */
+    public EntryResult enterAttraction(String attractionId, String ticketId, boolean speed) throws UserException {
         Attraction<?> attraction = attractions.require(attractionId);
         Ticket ticket = requireTicket(ticketId);
+        boolean special = attraction.getType() == AttractionType.SPECIAL;
+        if (special && speed) {
+            throw new UserException("Attraction " + attractionId + " (SPECIAL) does not accept the SPEED option");
+        }
+        attraction.checkAdmission(ticket, currentDate);
+        List<Pass> toConsume = new ArrayList<>();
+        if (speed) {
+            for (IndividualTicket t : individualTicketsOf(ticket)) {
+                toConsume.add(passes.firstUnusedSpeedPass(t)
+                        .orElseThrow(() -> new UserException("Ticket " + t.getId() + " has no unused SpeedPass")));
+            }
+        } else if (special) {
+            IndividualTicket t = (IndividualTicket) ticket;
+            toConsume.add(passes.unusedSpecialPass(t)
+                    .orElseThrow(() -> new UserException("Ticket " + t.getId() + " has no unused Special Pass")));
+        }
         attraction.admit(ticket, currentDate);
-        return ticket;
+        if (!toConsume.isEmpty()) {
+            try {
+                passes.consume(toConsume);
+            } catch (UserException e) {
+                ticket.getVisitors().forEach(attraction::remove);
+                throw e;
+            }
+        }
+        return new EntryResult(ticket, List.copyOf(toConsume));
+    }
+
+    private static List<IndividualTicket> individualTicketsOf(Ticket ticket) {
+        if (ticket instanceof GroupTicket group) {
+            return group.getParts();
+        }
+        return List.of((IndividualTicket) ticket);
     }
 
     public void exitAttraction(String attractionId, String ticketId) throws UserException {

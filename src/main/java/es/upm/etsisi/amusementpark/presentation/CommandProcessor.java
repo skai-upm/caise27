@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.presentation;
 
+import es.upm.etsisi.amusementpark.business.controller.EntryResult;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.invoice.Invoice;
 import es.upm.etsisi.amusementpark.business.invoice.InvoiceLine;
@@ -8,6 +9,8 @@ import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.Pass;
+import es.upm.etsisi.amusementpark.business.model.SpecialPass;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserException;
@@ -272,9 +275,22 @@ public class CommandProcessor {
     }
 
     private String attractionEnter(String[] p) throws UserException {
-        requireParams(p, 2, "ATTRACTION ENTER;IdAtraccion;IdTicket");
-        Ticket ticket = controller.enterAttraction(p[0], p[1]);
-        return ok(ticket.getVisitors().size() + " visitor(s) entered " + p[0] + " with ticket " + p[1]);
+        if (p.length != 3) {
+            requireParams(p, 2, "ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]");
+        }
+        boolean speed = p.length == 3;
+        if (speed && !"SPEED".equals(p[2].toUpperCase(Locale.ROOT))) {
+            throw new UserException("Unknown entry option: " + p[2] + " (only SPEED is accepted)");
+        }
+        EntryResult entry = controller.enterAttraction(p[0], p[1], speed);
+        StringBuilder sb = new StringBuilder(ok(entry.ticket().getVisitors().size() + " visitor(s) entered " + p[0]
+                + " with ticket " + p[1]));
+        if (!entry.consumedPasses().isEmpty()) {
+            Pass first = entry.consumedPasses().get(0);
+            sb.append("; consumed ").append(first instanceof SpecialPass ? "Special Pass " : "SpeedPass ")
+                    .append(String.join(", ", entry.consumedPasses().stream().map(Pass::getId).toList()));
+        }
+        return sb.toString();
     }
 
     private String attractionExit(String[] p) throws UserException {

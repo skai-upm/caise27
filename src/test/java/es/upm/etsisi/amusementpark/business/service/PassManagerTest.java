@@ -135,6 +135,28 @@ class PassManagerTest {
     }
 
     @Test
+    void findsUnusedPassesAndConsumesThem() throws Exception {
+        passes.buySpeedPasses("SP1", "T001", "10", OCT_1);
+        passes.buySpecialPass("VIP1", "T001", OCT_1);
+        var t001 = tickets.find("T001").orElseThrow();
+        assertEquals("SP1-1", passes.firstUnusedSpeedPass(t001).orElseThrow().getId());
+        passes.consume(java.util.List.of(passes.find("SP1-1").orElseThrow(), passes.find("VIP1").orElseThrow()));
+        assertEquals("SP1-2", passes.firstUnusedSpeedPass(t001).orElseThrow().getId());
+        assertTrue(passes.unusedSpecialPass(t001).isEmpty());
+        assertTrue(java.nio.file.Files.readAllLines(dir.resolve("passes.txt")).contains("SPEED;SP1-1;T001;8.00;true"));
+    }
+
+    @Test
+    void consumeRollsBackWhenSavingFails() throws Exception {
+        passes.buySpeedPasses("SP1", "T001", "1", OCT_1);
+        Files.delete(dir.resolve("passes.txt"));
+        Files.createDirectory(dir.resolve("passes.txt"));
+        Pass p = passes.find("SP1-1").orElseThrow();
+        assertThrows(UserException.class, () -> passes.consume(java.util.List.of(p)));
+        assertFalse(p.isConsumed());
+    }
+
+    @Test
     void failedSaveRollsBack() throws Exception {
         Path plain = dir.resolve("plain");
         Files.writeString(plain, "x");

@@ -729,6 +729,7 @@ class CommandProcessorTest {
         assertError(processor.process("ATTRACTION ENTER;A03;TG01"));
         assertOk(processor.process("ATTRACTION ENTER;A03;T001"));
         assertError(processor.process("ATTRACTION ENTER;A04;TG01"));
+        assertOk(processor.process("SPECIALPASS CREATE;VIP1;T001"));
         assertOk(processor.process("ATTRACTION ENTER;A04;T001"));
         assertOk(processor.process("ATTRACTION ENTER;A01;T001"));
         assertOk(processor.process("ATTRACTION ENTER;A01;TG01"));
@@ -746,6 +747,78 @@ class CommandProcessorTest {
         Files.write(dir.resolve("attractions.txt"), List.of("A09;Noria;5"), StandardCharsets.UTF_8);
         CommandProcessor legacy = newProcessor();
         assertTrue(legacy.process("ATTRACTION STATUS;A09").contains("capacity=5 present=0 available=5 type=GENERAL"));
+    }
+
+    private void passAccessSetup() {
+        sourceAttractionSetup();
+        assertOk(processor.process("ATTRACTION CREATE;A02;Coches;10;GROUP"));
+        assertOk(processor.process("ATTRACTION CREATE;A04;VIP;10;SPECIAL"));
+        assertOk(processor.process("ATTRACTION CREATE;A05;Mini;2"));
+        assertEquals("OK SPEEDPASS CREATED -> 80.00", processor.process("SPEEDPASS CREATE;SP1;T001;10"));
+    }
+
+    private List<String> passesFile() throws Exception {
+        return Files.readAllLines(dir.resolve("passes.txt"));
+    }
+
+    @Test
+    void individualSpeedEntryConsumesExactlyOnePass() throws Exception {
+        passAccessSetup();
+        assertEquals("OK: 1 visitor(s) entered A01 with ticket T001; consumed SpeedPass SP1-1",
+                processor.process("ATTRACTION ENTER;A01;T001;speed"));
+        assertEquals(1, passesFile().stream().filter(l -> l.endsWith(";true")).count());
+        assertTrue(passesFile().contains("SPEED;SP1-1;T001;8.00;true"));
+        assertOk(processor.process("ATTRACTION EXIT;A01;T001"));
+        assertEquals("OK: 1 visitor(s) entered A01 with ticket T001", processor.process("ATTRACTION ENTER;A01;T001"));
+        assertEquals(1, passesFile().stream().filter(l -> l.endsWith(";true")).count());
+        assertError(processor.process("ATTRACTION ENTER;A01;T001;FAST"));
+        CommandProcessor restarted = newProcessor();
+        restarted.process("SYSTEM DATE;2026-10-15");
+        assertEquals("OK: 1 visitor(s) entered A01 with ticket T001; consumed SpeedPass SP1-2",
+                restarted.process("ATTRACTION ENTER;A01;T001;SPEED"));
+    }
+
+    @Test
+    void groupSpeedEntryIsAllOrNothing() throws Exception {
+        passAccessSetup();
+        processor.process("SPEEDPASS CREATE;P1;TG01-87654321X;1");
+        processor.process("SPEEDPASS CREATE;P2;TG01-11111111H;1");
+        List<String> before = passesFile();
+        assertError(processor.process("ATTRACTION ENTER;A02;TG01;SPEED"));
+        assertEquals(before, passesFile());
+        assertTrue(processor.process("ATTRACTION STATUS;A02").contains("present=0"));
+        processor.process("SPEEDPASS CREATE;P3;TG01-22222222J;1");
+        before = passesFile();
+        assertError(processor.process("ATTRACTION ENTER;A05;TG01;SPEED"));
+        assertEquals(before, passesFile());
+        assertEquals("OK: 3 visitor(s) entered A02 with ticket TG01; consumed SpeedPass P1-1, P2-1, P3-1",
+                processor.process("ATTRACTION ENTER;A02;TG01;SPEED"));
+        assertEquals(3, passesFile().stream().filter(l -> l.endsWith(";true")).count());
+    }
+
+    @Test
+    void specialAttractionConsumesTheSpecialPass() throws Exception {
+        passAccessSetup();
+        assertError(processor.process("ATTRACTION ENTER;A04;T001"));
+        assertEquals("OK SPECIALPASS CREATED -> 40.00", processor.process("SPECIALPASS CREATE;VIP1;T001"));
+        List<String> before = passesFile();
+        assertError(processor.process("ATTRACTION ENTER;A04;T001;SPEED"));
+        assertEquals(before, passesFile());
+        assertEquals("OK: 1 visitor(s) entered A04 with ticket T001; consumed Special Pass VIP1",
+                processor.process("ATTRACTION ENTER;A04;T001"));
+        assertTrue(passesFile().contains("SPECIAL;VIP1;T001;40.00;true"));
+        assertOk(processor.process("ATTRACTION EXIT;A04;T001"));
+        assertError(processor.process("ATTRACTION ENTER;A04;T001"));
+        assertError(processor.process("ATTRACTION ENTER;A04;TG01"));
+    }
+
+    @Test
+    void failedSpeedEntryOnAnotherDayConsumesNothing() throws Exception {
+        passAccessSetup();
+        assertOk(processor.process("SYSTEM DATE;2026-10-14"));
+        List<String> before = passesFile();
+        assertError(processor.process("ATTRACTION ENTER;A01;T001;SPEED"));
+        assertEquals(before, passesFile());
     }
 
     @Test

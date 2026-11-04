@@ -51,6 +51,17 @@ class AttractionTypeTest {
     }
 
     @Test
+    void checkAdmissionNeverChangesTheAttraction() throws Exception {
+        GroupAttraction small = new GroupAttraction("A02", "Coches", 1);
+        assertThrows(UserException.class, () -> small.checkAdmission(individual(), DAY));
+        GeneralAttraction general = new GeneralAttraction("A01", "Tornado", 10);
+        general.checkAdmission(individual(), DAY);
+        assertTrue(general.getPresent().isEmpty());
+        general.admit(individual(), DAY);
+        assertEquals(1, general.getPresent().size());
+    }
+
+    @Test
     void typesAreCreatedAndParsed() throws Exception {
         assertInstanceOf(GeneralAttraction.class, AttractionType.GENERAL.create("A", "a", 1));
         assertInstanceOf(IndividualAttraction.class, AttractionType.INDIVIDUAL.create("A", "a", 1));

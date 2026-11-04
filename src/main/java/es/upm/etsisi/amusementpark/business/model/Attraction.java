@@ -36,11 +36,20 @@ public abstract class Attraction<T extends AttractionAccess> {
      * admitted only if it has the capability {@code T}.
      */
     public void admit(AttractionAccess access, LocalDate today) throws UserException {
+        checkAdmission(access, today);
+        present.addAll(access.getVisitors());
+    }
+
+    /**
+     * Checks every entry condition (capability, date, visitors, presence, capacity)
+     * without changing the attraction.
+     */
+    public void checkAdmission(AttractionAccess access, LocalDate today) throws UserException {
         if (!accessType().isInstance(access)) {
             String kind = access instanceof GroupAccess ? "group" : "individual";
             throw new UserException("Attraction " + id + " (" + getType() + ") does not admit " + kind + " tickets");
         }
-        enter(accessType().cast(access), today);
+        validate(access, today);
     }
 
     public String getId() {
@@ -72,6 +81,11 @@ public abstract class Attraction<T extends AttractionAccess> {
      * none of its users may already be inside, and all must fit.
      */
     public void enter(T ticket, LocalDate today) throws UserException {
+        validate(ticket, today);
+        present.addAll(ticket.getVisitors());
+    }
+
+    private void validate(AttractionAccess ticket, LocalDate today) throws UserException {
         if (!ticket.getDate().equals(today)) {
             throw new UserException("Ticket " + ticket.getId() + " is for " + ticket.getDate()
                     + ", not for " + today);
@@ -89,7 +103,6 @@ public abstract class Attraction<T extends AttractionAccess> {
             throw new UserException("Attraction " + id + " has " + getAvailable() + " free places; ticket "
                     + ticket.getId() + " needs " + visitors.size());
         }
-        present.addAll(visitors);
     }
 
     /** Removes the ticket's users that are inside; fails if none of them is. */

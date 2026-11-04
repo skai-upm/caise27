@@ -114,6 +114,27 @@ public class PassManager {
         });
     }
 
+    /** The first unconsumed SpeedPass of the ticket in purchase order. */
+    public Optional<Pass> firstUnusedSpeedPass(IndividualTicket ticket) {
+        return passesOf(ticket).stream().filter(p -> p instanceof SpeedPass && !p.isConsumed()).findFirst();
+    }
+
+    /** The ticket's Special Pass if it exists and has not been consumed. */
+    public Optional<Pass> unusedSpecialPass(IndividualTicket ticket) {
+        return passesOf(ticket).stream().filter(p -> p instanceof SpecialPass && !p.isConsumed()).findFirst();
+    }
+
+    /** Marks all given passes consumed and saves them; on failure none stays consumed. */
+    public void consume(List<Pass> toConsume) throws UserException {
+        toConsume.forEach(Pass::markConsumed);
+        try {
+            repository.save(passes.values());
+        } catch (IOException e) {
+            toConsume.forEach(Pass::markUnconsumed);
+            throw new UserException("Could not save passes: " + e.getMessage());
+        }
+    }
+
     public List<Pass> passesOf(IndividualTicket ticket) {
         return passes.values().stream().filter(p -> p.getTicket() == ticket).toList();
     }

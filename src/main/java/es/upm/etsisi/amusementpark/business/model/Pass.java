@@ -40,6 +40,11 @@ public abstract class Pass {
         consumed = true;
     }
 
+    /** Undoes {@link #markConsumed()} when the consumption could not be stored. */
+    public void markUnconsumed() {
+        consumed = false;
+    }
+
     /** Human-readable kind, e.g. {@code SpeedPass}. */
     public abstract String kind();
 }

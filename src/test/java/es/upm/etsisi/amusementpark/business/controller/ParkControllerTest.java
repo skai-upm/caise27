@@ -100,6 +100,6 @@ class ParkControllerTest {
     void reportsUnknownGroupsAndAttractions() {
         assertThrows(UserException.class, () -> controller.requireGroup("G99"));
         assertThrows(UserException.class, () -> controller.getAttraction("A99"));
-        assertThrows(UserException.class, () -> controller.enterAttraction("A99", "T001"));
+        assertThrows(UserException.class, () -> controller.enterAttraction("A99", "T001", false));
     }
 }
