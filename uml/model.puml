@@ -53,6 +53,12 @@ package es.upm.park.business.service {
 
   class UserValidator
 
+  interface PasswordHasher
+
+  class BCryptPasswordHasher {
+    -logRounds : int
+  }
+
   abstract class InvoiceBuilder {
     -recipient : String
   }
@@ -176,6 +182,7 @@ ParkController "0..*" x--> "1" GroupManager : groups
 ParkController "0..*" x--> "1" TicketManager : tickets
 ParkController "0..*" x--> "1" AttractionManager : attractions
 UserManager "0..*" x--> "1" UserFileStorage : storage
+UserManager "0..*" x--> "1" PasswordHasher : hasher
 UserManager "0..*" x--> "0..*" User : users
 GroupManager "0..*" x--> "1" GroupFileStorage : storage
 GroupManager "0..*" x--> "1" UserManager : users
@@ -214,6 +221,7 @@ Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 InvoiceBuilder <|-- UserInvoiceBuilder
 InvoiceBuilder <|-- GroupInvoiceBuilder
+PasswordHasher <|.. BCryptPasswordHasher
 HelpFormatter <|.. SyntaxHelpFormatter
 HelpFormatter <|.. ExtendedHelpFormatter
 
@@ -226,6 +234,7 @@ App ..> ExtendedHelpFormatter : <<use>>
 SyntaxHelpFormatter ..> CommandCatalog : <<use>>
 CommandCatalog ..> UserField : <<use>>
 ParkSession ..> DataFiles : <<use>>
+ParkSession ..> BCryptPasswordHasher : <<use>>
 ParkSession ..> TemporaryDataDirectory : <<use>>
 UserManager ..> UserValidator : <<use>>
 GroupManager ..> UserValidator : <<use>>

@@ -62,7 +62,8 @@ public final class ParkSession implements AutoCloseable {
      */
     private static ParkController build(DataFiles files) {
         try {
-            UserManager users = UserManager.initialize(new UserFileStorage(files.users()));
+            UserManager users = UserManager.initialize(new UserFileStorage(files.users()),
+                    new BCryptPasswordHasher());
             GroupManager groups = GroupManager.initialize(new GroupFileStorage(files.groups()), users);
             TicketManager tickets = TicketManager.initialize(new TicketFileStorage(files.tickets()),
                     new GroupTicketFileStorage(files.groupTickets()), users, groups);

@@ -22,6 +22,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 class ComponentWiringTest {
 
+    static final PasswordHasher FAST_HASHER = new BCryptPasswordHasher(4);
+
     @TempDir
     Path dir;
 
@@ -46,9 +48,9 @@ class ComponentWiringTest {
     void secondInitializationAndEarlyAccessFail() {
         assertThrows(IllegalStateException.class, UserManager::getInstance);
         assertThrows(IllegalStateException.class, ParkController::getInstance);
-        UserManager first = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        UserManager first = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")), FAST_HASHER);
         assertThrows(IllegalStateException.class,
-                () -> UserManager.initialize(new UserFileStorage(dir.resolve("other.txt"))));
+                () -> UserManager.initialize(new UserFileStorage(dir.resolve("other.txt")), FAST_HASHER));
         assertSame(first, UserManager.getInstance());
         assertThrows(IllegalStateException.class, () -> ParkSession.permanent(dir), "controllers already active");
         assertThrows(IllegalStateException.class, GroupManager::getInstance, "failed session left nothing behind");
@@ -90,7 +92,7 @@ class ComponentWiringTest {
                 return super.construct(builder);
             }
         };
-        UserManager users = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        UserManager users = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")), FAST_HASHER);
         GroupManager groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), users);
         TicketManager tickets = TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), users, groups);

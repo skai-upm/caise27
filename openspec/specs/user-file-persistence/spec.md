@@ -6,11 +6,11 @@ Defines how users are stored in a plain semicolon-separated text file and recove
 ## Requirements
 
 ### Requirement: Text file format
-The system SHALL store users in a text file with one user per line and attributes separated by `;` in the order first name, surname(s), DNI, email, password, telephone, card number.
+The system SHALL store users in a text file with one user per line and attributes separated by `;` in the order first name, surname(s), DNI, email, BCrypt hash of the password, telephone, card number. The plaintext password SHALL NOT be written.
 
 #### Scenario: File contents after creation
 - **WHEN** user Ana is created with the appendix example data
-- **THEN** the file contains the line `Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456`
+- **THEN** the file contains a line `Ana;Garcia Lopez;12345678Z;ana@correo.com;<hash>;612345678;1234567890123456` where `<hash>` is a BCrypt hash (starting with `$2a$`) that verifies `Clave1!`, and the text `Clave1!` does not appear in the file
 
 ### Requirement: Persist after successful changes
 After each successful create, delete or update, the file SHALL reflect the complete current set of users; failed commands SHALL NOT change the file.

@@ -1,5 +1,7 @@
 package es.upm.park.presentation;
 
+import es.upm.park.business.service.BCryptPasswordHasher;
+import es.upm.park.business.service.PasswordHasher;
 import es.upm.park.business.service.ParkSession;
 import es.upm.park.business.service.InvoiceDirector;
 import es.upm.park.business.service.AttractionManager;
@@ -31,6 +33,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 class CommandRunnerTest {
 
+    static final PasswordHasher FAST_HASHER = new BCryptPasswordHasher(4);
+
     static final String CREATE_PEDRO =
             "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
 
@@ -47,7 +51,7 @@ class CommandRunnerTest {
 
     @BeforeEach
     void setUp() {
-        manager = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        manager = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")), FAST_HASHER);
         GroupManager groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), manager);
         runner = new CommandRunner(App.newCommandProcessor(ParkController.initialize(manager, groups,
                 TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),

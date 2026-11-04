@@ -33,12 +33,17 @@ The project SHALL contain an executable main class that starts the application.
 - **THEN** the process terminates normally with exit status 0
 
 ### Requirement: Executable JAR packaging
-Packaging the project SHALL produce a JAR whose manifest declares the main class, so it can be launched with `java -jar`.
+Packaging the project SHALL produce a JAR whose manifest declares the main class and that contains the runtime dependencies, so it can be launched with `java -jar`.
 
 #### Scenario: Packaged JAR starts
 - **GIVEN** a successful `mvn package`
 - **WHEN** `java -jar` is run on the produced JAR
 - **THEN** the application starts without a "no main manifest attribute" error and exits with status 0
+
+#### Scenario: Packaged with runtime dependencies
+- **GIVEN** the project declares a runtime library dependency
+- **WHEN** `java -jar` is run on the JAR produced by `mvn package`
+- **THEN** the application starts without missing-class errors because the runtime dependencies are included in the JAR
 
 ### Requirement: Basic test infrastructure
 The project SHALL include a test source tree with at least one automated test that Maven executes during the `test` phase.

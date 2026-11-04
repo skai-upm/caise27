@@ -27,6 +27,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 class TicketManagerTest {
 
+    static final PasswordHasher FAST_HASHER = new BCryptPasswordHasher(4);
+
     static final LocalDate TODAY = LocalDate.of(2026, 10, 1);
     static final BigDecimal PRICE = new BigDecimal("40.00");
 
@@ -48,7 +50,7 @@ class TicketManagerTest {
     void setUp() {
         usersFile = dir.resolve("users.txt");
         ticketsFile = dir.resolve("tickets.txt");
-        users = UserManager.initialize(new UserFileStorage(usersFile));
+        users = UserManager.initialize(new UserFileStorage(usersFile), FAST_HASHER);
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         ana = users.findByEmail("ana@correo.com");
         tickets = newManager();
@@ -62,7 +64,7 @@ class TicketManagerTest {
 
     private TicketManager restart() {
         ParkSession.resetControllers();
-        users = UserManager.initialize(new UserFileStorage(usersFile));
+        users = UserManager.initialize(new UserFileStorage(usersFile), FAST_HASHER);
         return newManager();
     }
 

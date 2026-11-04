@@ -24,6 +24,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 class GroupManagerTest {
 
+    static final PasswordHasher FAST_HASHER = new BCryptPasswordHasher(4);
+
     @TempDir
     Path dir;
     Path usersFile;
@@ -41,7 +43,7 @@ class GroupManagerTest {
     void setUp() {
         usersFile = dir.resolve("users.txt");
         groupsFile = dir.resolve("groups.txt");
-        users = UserManager.initialize(new UserFileStorage(usersFile));
+        users = UserManager.initialize(new UserFileStorage(usersFile), FAST_HASHER);
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
         groups = GroupManager.initialize(new GroupFileStorage(groupsFile), users);
@@ -49,7 +51,7 @@ class GroupManagerTest {
 
     private GroupManager restart() {
         ParkSession.resetControllers();
-        users = UserManager.initialize(new UserFileStorage(usersFile));
+        users = UserManager.initialize(new UserFileStorage(usersFile), FAST_HASHER);
         return GroupManager.initialize(new GroupFileStorage(groupsFile), users);
     }
 

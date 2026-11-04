@@ -48,7 +48,7 @@ Interactive and file modes SHALL use the same command loop and the same command 
 #### Scenario: Equivalent runs
 - **GIVEN** two fresh users files
 - **WHEN** the same command sequence is run once through standard input and once through a command file
-- **THEN** the printed results are identical and both users files have identical contents
+- **THEN** the printed results are identical and both users files have identical contents except for the salted password hashes, which verify the same passwords
 
 ### Requirement: Controlled command-file errors
 If the command file does not exist, is not a regular file, cannot be opened or cannot be read, the application SHALL print a single error message naming the file, SHALL NOT print an unhandled Java exception, and SHALL terminate with a non-zero exit status without executing any further command.

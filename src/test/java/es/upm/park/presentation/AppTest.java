@@ -101,7 +101,19 @@ class AppTest {
         Run interactive = run(new String[0], usersA, commands);
         Run file = run(new String[] {input.toString()}, usersB, "");
         assertEquals(interactive.out(), file.out());
-        assertEquals(Files.readAllLines(usersA), Files.readAllLines(usersB));
+        List<String> a = Files.readAllLines(usersA);
+        List<String> b = Files.readAllLines(usersB);
+        assertEquals(a.size(), b.size());
+        for (int i = 0; i < a.size(); i++) {
+            String[] fa = a.get(i).split(";", -1);
+            String[] fb = b.get(i).split(";", -1);
+            String hashA = fa[4];
+            fa[4] = "";
+            fb[4] = "";
+            assertEquals(String.join(";", fa), String.join(";", fb), "same data apart from the salted hash");
+            assertTrue(new es.upm.park.business.service.BCryptPasswordHasher().matches(
+                    a.get(i).contains("ana@") ? "Clave1!" : "Otra2#", hashA));
+        }
     }
 
     @Test

@@ -15,16 +15,17 @@ import java.util.List;
 public class UserManager {
 
     private final UserFileStorage storage;
+    private final PasswordHasher hasher;
     private List<User> users;
 
     private static UserManager instance;
 
-    /** Creates the single instance for this execution with its injected repository; fails if it already exists. */
-    public static synchronized UserManager initialize(UserFileStorage storage) {
+    /** Creates the single instance for this execution with its injected repository and password hasher; fails if it already exists. */
+    public static synchronized UserManager initialize(UserFileStorage storage, PasswordHasher hasher) {
         if (instance != null) {
             throw new IllegalStateException("UserManager is already initialized");
         }
-        instance = new UserManager(storage);
+        instance = new UserManager(storage, hasher);
         return instance;
     }
 
@@ -41,8 +42,9 @@ public class UserManager {
         instance = null;
     }
 
-    private UserManager(UserFileStorage storage) {
+    private UserManager(UserFileStorage storage, PasswordHasher hasher) {
         this.storage = storage;
+        this.hasher = hasher;
         this.users = new ArrayList<>(storage.load());
     }
 
@@ -81,7 +83,7 @@ public class UserManager {
         requireValid(findByEmail(email) == null, "a user with this email already exists");
 
         List<User> next = new ArrayList<>(users);
-        next.add(new User(name, surnames, dni, email, password, phone, card));
+        next.add(new User(name, surnames, dni, email, hasher.hash(password), phone, card));
         commit(next);
     }
 
@@ -114,7 +116,7 @@ public class UserManager {
             }
             case PASSWORD -> {
                 requireValid(UserValidator.isValidPassword(value), "invalid password");
-                changed.setPassword(value);
+                changed.setPassword(hasher.hash(value));
             }
             case PHONE -> {
                 requireValid(UserValidator.isNonBlank(value), "invalid phone");
@@ -135,7 +137,7 @@ public class UserManager {
     /** Returns the user with that email if the password matches, otherwise fails. */
     public User authenticate(String email, String password) {
         User user = findByEmail(email);
-        if (user == null || !user.getPassword().equals(password)) {
+        if (user == null || !hasher.matches(password, user.getPassword())) {
             throw new IllegalArgumentException("invalid email or password");
         }
         return user;

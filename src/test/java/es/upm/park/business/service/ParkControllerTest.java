@@ -20,6 +20,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 class ParkControllerTest {
 
+    static final PasswordHasher FAST_HASHER = new BCryptPasswordHasher(4);
+
     @TempDir
     Path dir;
     ParkController park;
@@ -34,7 +36,7 @@ class ParkControllerTest {
 
     @BeforeEach
     void setUp() {
-        users = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        users = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")), FAST_HASHER);
         groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), users);
         TicketManager tickets = TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), users, groups);

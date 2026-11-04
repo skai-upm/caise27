@@ -4,6 +4,8 @@ import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
 import es.upm.park.persistence.UserFileStorage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -22,6 +24,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class UserManagerTest {
 
+    static final PasswordHasher FAST_HASHER = new BCryptPasswordHasher(4);
+
     @TempDir
     Path dir;
     Path file;
@@ -36,7 +40,7 @@ class UserManagerTest {
     @BeforeEach
     void setUp() {
         file = dir.resolve("users.txt");
-        manager = UserManager.initialize(new UserFileStorage(file));
+        manager = UserManager.initialize(new UserFileStorage(file), FAST_HASHER);
     }
 
     private void createAna() {
@@ -49,7 +53,7 @@ class UserManagerTest {
 
     private UserManager restart() {
         UserManager.reset();
-        return UserManager.initialize(new UserFileStorage(file));
+        return UserManager.initialize(new UserFileStorage(file), FAST_HASHER);
     }
 
     @Test
@@ -126,7 +130,8 @@ class UserManagerTest {
         assertEquals("Ana Maria", u.getName());
         assertEquals("Garcia Ruiz", u.getSurnames());
         assertEquals("699000111", u.getPhone());
-        assertEquals("Nueva2#", u.getPassword());
+        assertTrue(FAST_HASHER.matches("Nueva2#", u.getPassword()));
+        assertFalse(FAST_HASHER.matches("Clave1!", u.getPassword()));
         assertEquals("9999888877776666", u.getCard());
         assertEquals("12345678Z", u.getDni());
         assertNull(restart().findByEmail("ana@correo.com"));
@@ -152,7 +157,7 @@ class UserManagerTest {
                 () -> manager.update("ana@correo.com", "Clave1!", UserField.NAME, " "));
         User ana = manager.findByEmail("ana@correo.com");
         assertEquals("Ana", ana.getName());
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(FAST_HASHER.matches("Clave1!", ana.getPassword()));
         assertEquals("1234567890123456", ana.getCard());
         assertEquals(before, Files.readAllLines(file));
     }
@@ -193,5 +198,35 @@ class UserManagerTest {
         assertEquals("Ana Maria", again.findByEmail("ana@correo.com").getName());
         again.create("Pedro", "Nuevo", "11111111H", "pedro@correo.com", "Otra2#", "1", "1111222233334444");
         assertEquals(2, again.getUsers().size());
+    }
+
+    @Test
+    void passwordsAreStoredAsHashesAndChangesRehash() throws IOException {
+        createAna();
+        String first = manager.findByEmail("ana@correo.com").getPassword();
+        assertTrue(first.startsWith("$2a$") && !first.equals("Clave1!"));
+        assertFalse(String.join("\n", Files.readAllLines(file)).contains("Clave1!"));
+        manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "Nueva2#");
+        String second = restart().findByEmail("ana@correo.com").getPassword();
+        assertTrue(!second.equals(first) && FAST_HASHER.matches("Nueva2#", second));
+    }
+
+    @Test
+    void weakPasswordsAreRejectedBeforeHashing() {
+        assertThrows(IllegalArgumentException.class,
+                () -> manager.create("Ana", "G", "12345678Z", "ana@correo.com", "Clave12", "1", "1234567890123456"));
+        createAna();
+        assertThrows(IllegalArgumentException.class,
+                () -> manager.update("ana@correo.com", "Clave1!", UserField.PASSWORD, "clave1!"));
+        assertTrue(FAST_HASHER.matches("Clave1!", manager.findByEmail("ana@correo.com").getPassword()));
+    }
+
+    @Test
+    void legacyPlaintextRecordNeverAuthenticates() throws IOException {
+        Files.write(file, java.util.List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"));
+        UserManager legacy = restart();
+        assertEquals(1, legacy.getUsers().size());
+        assertThrows(IllegalArgumentException.class, () -> legacy.delete("ana@correo.com", "Clave1!"));
+        assertEquals(1, legacy.getUsers().size());
     }
 }

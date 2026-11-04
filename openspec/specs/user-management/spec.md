@@ -46,7 +46,7 @@ The system SHALL reject creation of a user whose DNI or email already belongs to
 - **THEN** creation is rejected
 
 ### Requirement: Authenticated deletion
-The system SHALL process `USER DELETE;Correo;Contraseña` by locating the user by email, verifying the password matches the stored password, removing the user and updating the persistent file. Deletion SHALL be rejected while the user owns any ticket dated on or after the current system date; tickets dated before it SHALL NOT, by themselves, prevent deletion.
+The system SHALL process `USER DELETE;Correo;Contraseña` by locating the user by email, verifying the supplied password against the stored password hash, removing the user and updating the persistent file. Deletion SHALL be rejected while the user owns any ticket dated on or after the current system date; tickets dated before it SHALL NOT, by themselves, prevent deletion.
 
 #### Scenario: Successful deletion
 - **GIVEN** an existing user `ana@correo.com` with password `Clave1!`
