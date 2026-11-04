@@ -2,6 +2,9 @@ package es.upm.etsisi.amusementpark.presentation;
 
 import es.upm.etsisi.amusementpark.TestSupport;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.controller.ParkServices;
+import es.upm.etsisi.amusementpark.business.service.PassManager;
+import es.upm.etsisi.amusementpark.persistence.PassFileRepository;
 import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
 import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelpFormatter;
 import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
@@ -55,11 +58,11 @@ class CommandRunnerTest {
         manager = new UserManager(new UserFileRepository(dir.resolve("users.txt")), TestSupport.HASHER);
         GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), manager);
         ParkController.shutdown();
-        runner = new CommandRunner(new CommandProcessor(ParkController.initialize(manager,
-                groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
-                        new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), manager, groups),
-                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))),
-                new InvoiceDirector()),
+        TicketManager tickets = new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
+                new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), manager, groups);
+        runner = new CommandRunner(new CommandProcessor(ParkController.initialize(new ParkServices(manager, groups,
+                tickets, new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))),
+                new PassManager(new PassFileRepository(dir.resolve("passes.txt")), tickets)), new InvoiceDirector()),
                 new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter(), new ExtendedHelpFormatter())));
         bytes = new ByteArrayOutputStream();
         out = new PrintStream(bytes, true, StandardCharsets.UTF_8);

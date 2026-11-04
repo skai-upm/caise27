@@ -7,7 +7,7 @@ Lets a group buy one ticket for all its current members at a size-based discount
 ## Requirements
 
 ### Requirement: Group ticket composition
-A group ticket SHALL have an identifier, a date, a reference to the group that bought it, and SHALL be composed of one individual ticket per member of the group at the moment of purchase. Each constituent individual ticket SHALL have the group ticket's date, refer to its member user, and carry the individual price in force at purchase. Later changes to the group's membership SHALL NOT change an existing group ticket's composition.
+A group ticket SHALL have an identifier, a date, a reference to the group that bought it, and SHALL be composed of one individual ticket per member of the group at the moment of purchase. Each constituent individual ticket SHALL have the group ticket's date, refer to its member user, and store the discounted per-member price: the individual price in force at purchase reduced by the group's discount percentage (two decimals, half up). Later changes to the group's membership SHALL NOT change an existing group ticket's composition.
 
 #### Scenario: One ticket per member
 - **GIVEN** group `G01` has members Ana, Pedro and Luis
@@ -18,6 +18,11 @@ A group ticket SHALL have an identifier, a date, a reference to the group that b
 - **GIVEN** `TG01` was bought for `G01` with three members and its date has passed
 - **WHEN** a member is removed from `G01`
 - **THEN** `TG01` still contains three individual tickets
+
+#### Scenario: Stored per-member price
+- **GIVEN** the individual price is 40.00 and `G01` has 3 members
+- **WHEN** `GROUPTICKET CREATE;TG01;G01;2026-10-15` succeeds
+- **THEN** each constituent ticket stores 36.00, while the group ticket's price is 108.00
 
 ### Requirement: Create group ticket
 The system SHALL process `GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd`. It SHALL create the group ticket only if the identifier is non-blank and not used by any ticket, the group exists and has at least one member, and the date is a valid `yyyy-MM-dd` date on or after the system date. On success it SHALL print exactly `OK GROUP TICKET CREATED -> <Precio>`, with the total price formatted with two decimals and `.` as separator. Otherwise it SHALL print a line starting with `ERROR` and create nothing.

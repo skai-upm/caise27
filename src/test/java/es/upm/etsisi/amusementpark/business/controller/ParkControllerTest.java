@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
+import es.upm.etsisi.amusementpark.business.service.PassManager;
+import es.upm.etsisi.amusementpark.persistence.PassFileRepository;
 import es.upm.etsisi.amusementpark.business.model.UserException;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
 import es.upm.etsisi.amusementpark.business.service.GroupManager;
@@ -37,6 +39,7 @@ class ParkControllerTest {
     private GroupManager groups;
     private TicketManager tickets;
     private AttractionManager attractions;
+    private ParkServices services;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -46,8 +49,9 @@ class ParkControllerTest {
                 new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups);
         attractions = new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt")));
         ParkController.shutdown();
-        controller = ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector(),
-                LocalDate.of(2026, 10, 1));
+        services = new ParkServices(users, groups, tickets, attractions,
+                new PassManager(new PassFileRepository(dir.resolve("passes.txt")), tickets));
+        controller = ParkController.initialize(services, new InvoiceDirector(), LocalDate.of(2026, 10, 1));
     }
 
     @AfterEach
@@ -63,7 +67,7 @@ class ParkControllerTest {
 
     @Test
     void secondInitializationIsRefused() {
-        assertThrows(IllegalStateException.class, () -> ParkController.initialize(users, groups, tickets, attractions,
+        assertThrows(IllegalStateException.class, () -> ParkController.initialize(services,
                 new InvoiceDirector(), LocalDate.of(2027, 1, 1)));
         assertSame(controller, ParkController.getInstance());
         assertEquals(LocalDate.of(2026, 10, 1), ParkController.getInstance().getCurrentDate());
@@ -73,8 +77,7 @@ class ParkControllerTest {
     void notAvailableBeforeInitializationAndRenewedAfterShutdown() {
         ParkController.shutdown();
         assertThrows(IllegalStateException.class, ParkController::getInstance);
-        ParkController next = ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector(),
-                LocalDate.of(2026, 10, 2));
+        ParkController next = ParkController.initialize(services, new InvoiceDirector(), LocalDate.of(2026, 10, 2));
         assertNotSame(controller, next);
         assertSame(next, ParkController.getInstance());
     }

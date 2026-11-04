@@ -35,6 +35,7 @@ class ParkController <<Singleton>> {
   currentDate : LocalDate
   ticketPrice : BigDecimal
 }
+class ParkServices
 }
 
 package business.model {
@@ -79,6 +80,13 @@ class Attraction {
   name : String
   capacity : int
 }
+abstract class Pass {
+  id : String
+  price : BigDecimal
+  consumed : boolean
+}
+class SpeedPass
+class SpecialPass
 }
 
 package business.invoice {
@@ -114,6 +122,7 @@ class UserManager
 class GroupManager
 class TicketManager
 class AttractionManager
+class PassManager
 }
 
 package persistence {
@@ -132,6 +141,9 @@ class GroupTicketFileRepository {
 class AttractionFileRepository {
   file : Path
 }
+class PassFileRepository {
+  file : Path
+}
 }
 
 class Exception
@@ -139,6 +151,8 @@ class Exception
 ' ---------- Inheritance ----------
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
 Exception <|-- UserException
 HelpFormatter <|.. SyntaxHelpFormatter
 HelpFormatter <|.. ExtendedHelpFormatter
@@ -159,6 +173,12 @@ ParkController "0..1" x--> "1" GroupManager : groups
 ParkController "0..1" x--> "1" TicketManager : tickets
 ParkController "0..1" x--> "1" AttractionManager : attractions
 ParkController "0..1" x--> "1" InvoiceDirector : invoiceDirector
+ParkController "0..1" x--> "1" PassManager : passes
+PassManager "1" *--> "0..*" Pass : passes
+PassManager "0..1" x--> "1" PassFileRepository : repository
+PassManager "0..1" x--> "1" TicketManager : tickets
+Pass "0..*" x--> "1" IndividualTicket : ticket
+UserInvoiceBuilder "0..*" x--> "0..*" Pass : passes
 ParkController "0..1" x--> "0..1" ParkController : instance
 
 ' ---------- Managers and their entities ----------
@@ -202,6 +222,8 @@ InvoiceDirector ..> Invoice : <<create>>
 App ..> CommandRunner : <<use>>
 CommandProcessor ..> UserField : <<use>>
 ParkController ..> UserField : <<use>>
+App ..> ParkServices : <<create>>
+ParkController ..> ParkServices : <<use>>
 UserManager ..> UserField : <<use>>
 UserManager ..> UserValidator : <<use>>
 GroupManager ..> UserValidator : <<use>>
@@ -211,6 +233,7 @@ UserManager ..> UserException : <<throw>>
 GroupManager ..> UserException : <<throw>>
 TicketManager ..> UserException : <<throw>>
 AttractionManager ..> UserException : <<throw>>
+PassManager ..> UserException : <<throw>>
 Attraction ..> UserException : <<throw>>
 CommandProcessor ..> UserException : <<catch>>
 ParkController ..> UserException : <<throw>>

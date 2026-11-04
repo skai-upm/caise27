@@ -8,12 +8,15 @@ import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.SpecialPass;
+import es.upm.etsisi.amusementpark.business.model.SpeedPass;
 import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserException;
 import es.upm.etsisi.amusementpark.business.model.UserField;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
 import es.upm.etsisi.amusementpark.business.service.GroupManager;
+import es.upm.etsisi.amusementpark.business.service.PassManager;
 import es.upm.etsisi.amusementpark.business.service.TicketManager;
 import es.upm.etsisi.amusementpark.business.service.UserManager;
 
@@ -40,18 +43,19 @@ public final class ParkController {
     private final GroupManager groups;
     private final TicketManager tickets;
     private final AttractionManager attractions;
+    private final PassManager passes;
     private final InvoiceDirector invoiceDirector;
     /** The single simulated current date of this run; never persisted. */
     private LocalDate currentDate;
     /** Price of new individual tickets; never persisted. */
     private BigDecimal ticketPrice = DEFAULT_TICKET_PRICE;
 
-    private ParkController(UserManager users, GroupManager groups, TicketManager tickets,
-                           AttractionManager attractions, InvoiceDirector invoiceDirector, LocalDate startupDate) {
-        this.users = users;
-        this.groups = groups;
-        this.tickets = tickets;
-        this.attractions = attractions;
+    private ParkController(ParkServices services, InvoiceDirector invoiceDirector, LocalDate startupDate) {
+        this.users = services.users();
+        this.groups = services.groups();
+        this.tickets = services.tickets();
+        this.attractions = services.attractions();
+        this.passes = services.passes();
         this.invoiceDirector = invoiceDirector;
         this.currentDate = startupDate;
     }
@@ -62,9 +66,8 @@ public final class ParkController {
      *
      * @throws IllegalStateException if it was already created and not shut down
      */
-    public static ParkController initialize(UserManager users, GroupManager groups, TicketManager tickets,
-                                            AttractionManager attractions, InvoiceDirector invoiceDirector) {
-        return initialize(users, groups, tickets, attractions, invoiceDirector, LocalDate.now());
+    public static ParkController initialize(ParkServices services, InvoiceDirector invoiceDirector) {
+        return initialize(services, invoiceDirector, LocalDate.now());
     }
 
     /**
@@ -72,13 +75,12 @@ public final class ParkController {
      *
      * @throws IllegalStateException if it was already created and not shut down
      */
-    public static synchronized ParkController initialize(UserManager users, GroupManager groups,
-                                                         TicketManager tickets, AttractionManager attractions,
-                                                         InvoiceDirector invoiceDirector, LocalDate startupDate) {
+    public static synchronized ParkController initialize(ParkServices services, InvoiceDirector invoiceDirector,
+                                                         LocalDate startupDate) {
         if (instance != null) {
             throw new IllegalStateException("The park controller has already been initialized for this execution");
         }
-        instance = new ParkController(users, groups, tickets, attractions, invoiceDirector, startupDate);
+        instance = new ParkController(services, invoiceDirector, startupDate);
         return instance;
     }
 
@@ -189,6 +191,10 @@ public final class ParkController {
     }
 
     public void deleteTicket(String id) throws UserException {
+        Optional<IndividualTicket> ticket = tickets.find(id);
+        if (ticket.isPresent() && passes.hasPasses(ticket.get())) {
+            throw new UserException("Ticket " + id + " has passes; refund them first");
+        }
         tickets.delete(id, currentDate);
     }
 
@@ -197,7 +203,31 @@ public final class ParkController {
     }
 
     public void deleteGroupTicket(String id) throws UserException {
+        Optional<GroupTicket> groupTicket = tickets.findGroupTicket(id);
+        if (groupTicket.isPresent() && groupTicket.get().getParts().stream().anyMatch(passes::hasPasses)) {
+            throw new UserException("Group ticket " + id + " has tickets with passes; refund them first");
+        }
         tickets.deleteGroupTicket(id, currentDate);
+    }
+
+    // ---------- Passes ----------
+
+    /** Buys 1 or 10 SpeedPasses for an individual ticket; returns the total charged. */
+    public BigDecimal buySpeedPasses(String purchaseId, String ticketId, String quantity) throws UserException {
+        return passes.buySpeedPasses(purchaseId, ticketId, quantity, currentDate);
+    }
+
+    /** Buys the Special Pass of an individual ticket; returns the price charged. */
+    public BigDecimal buySpecialPass(String passId, String ticketId) throws UserException {
+        return passes.buySpecialPass(passId, ticketId, currentDate);
+    }
+
+    public void refundSpeedPass(String passId) throws UserException {
+        passes.refund(passId, SpeedPass.class, currentDate);
+    }
+
+    public void refundSpecialPass(String passId) throws UserException {
+        passes.refund(passId, SpecialPass.class, currentDate);
     }
 
     // ---------- Invoices ----------
@@ -206,7 +236,7 @@ public final class ParkController {
     public Invoice createUserInvoice(String email) throws UserException {
         User user = users.findByEmail(email).orElseThrow(() -> new UserException("No user with email " + email));
         List<IndividualTicket> direct = tickets.getTickets().stream().filter(t -> t.belongsTo(user)).toList();
-        return invoiceDirector.construct(new UserInvoiceBuilder(user, direct));
+        return invoiceDirector.construct(new UserInvoiceBuilder(user, direct, passes.passesOfUser(user)));
     }
 
     /** Invoice of the group tickets bought by the group. */

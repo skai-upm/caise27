@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
+import es.upm.etsisi.amusementpark.business.model.SpecialPass;
+import es.upm.etsisi.amusementpark.business.model.SpeedPass;
 import es.upm.etsisi.amusementpark.business.model.User;
 
 import java.math.BigDecimal;
@@ -28,7 +30,7 @@ class InvoiceBuilderTest {
     void userInvoiceListsDirectTicketsWithCapturedPrices() {
         Invoice invoice = director.construct(new UserInvoiceBuilder(ana, List.of(
                 new IndividualTicket("T001", DAY, ana, new BigDecimal("40.00")),
-                new IndividualTicket("T002", DAY.plusDays(1), ana, new BigDecimal("60.00")))));
+                new IndividualTicket("T002", DAY.plusDays(1), ana, new BigDecimal("60.00"))), List.of()));
         assertTrue(invoice.getTitle().contains("ana@correo.com"));
         assertEquals(1, invoice.getSections().size());
         InvoiceSection section = invoice.getSections().get(0);
@@ -53,7 +55,7 @@ class InvoiceBuilderTest {
 
     @Test
     void emptySectionsAreOmittedAndTotalIsZero() {
-        Invoice user = director.construct(new UserInvoiceBuilder(pedro, List.of()));
+        Invoice user = director.construct(new UserInvoiceBuilder(pedro, List.of(), List.of()));
         assertTrue(user.getSections().isEmpty());
         assertEquals(new BigDecimal("0.00"), user.getTotal());
         Invoice group = director.construct(new GroupInvoiceBuilder(new Group("G02", "Vacio"), List.of()));
@@ -78,20 +80,45 @@ class InvoiceBuilderTest {
             }
 
             @Override
+            public void buildPassSection() {
+                steps.add("passes");
+            }
+
+            @Override
             public void buildTotal() {
                 steps.add("total");
                 super.buildTotal();
             }
         };
         Invoice invoice = director.construct(recording);
-        assertEquals(List.of("header", "tickets", "total"), steps);
+        assertEquals(List.of("header", "tickets", "passes", "total"), steps);
         assertEquals(new BigDecimal("1.50"), invoice.getTotal());
+    }
+
+    @Test
+    void userInvoiceAddsPersonalPassesIncludingGroupTicketMembers() {
+        Group g = new Group("G01", "Familia Garcia");
+        g.addMember(ana);
+        g.addMember(pedro);
+        g.addMember(luis);
+        GroupTicket tg = new GroupTicket("TG01", DAY, g, new BigDecimal("40.00"));
+        IndividualTicket anaPart = tg.getParts().get(0);
+        Invoice invoice = director.construct(new UserInvoiceBuilder(ana, List.of(),
+                List.of(new SpeedPass("SP1-1", anaPart), new SpecialPass("VIP1", anaPart))));
+        assertEquals(1, invoice.getSections().size());
+        InvoiceSection passes = invoice.getSections().get(0);
+        assertEquals("Personal passes", passes.getTitle());
+        assertEquals("SP1-1 SpeedPass for TG01-12345678Z", passes.getLines().get(0).getDescription());
+        assertEquals(new BigDecimal("7.20"), passes.getLines().get(0).getAmount());
+        assertEquals(new BigDecimal("43.20"), invoice.getTotal());
+        Invoice group = director.construct(new GroupInvoiceBuilder(g, List.of(tg)));
+        assertEquals(new BigDecimal("108.00"), group.getTotal());
     }
 
     @Test
     void productIsImmutable() {
         Invoice invoice = director.construct(new UserInvoiceBuilder(ana,
-                List.of(new IndividualTicket("T001", DAY, ana, new BigDecimal("40.00")))));
+                List.of(new IndividualTicket("T001", DAY, ana, new BigDecimal("40.00"))), List.of()));
         assertThrows(UnsupportedOperationException.class, () -> invoice.getSections().clear());
         assertThrows(UnsupportedOperationException.class, () -> invoice.getSections().get(0).getLines().clear());
     }

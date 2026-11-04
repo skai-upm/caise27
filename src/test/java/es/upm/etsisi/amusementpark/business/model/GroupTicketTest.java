@@ -46,7 +46,10 @@ class GroupTicketTest {
         IndividualTicket first = t.getParts().get(0);
         assertEquals("TG01-12345678Z", first.getId());
         assertEquals(DAY, first.getDate());
-        assertEquals(FORTY, first.getPrice());
+        assertEquals(new BigDecimal("36.00"), first.getPrice());
+        assertEquals(new BigDecimal("36.00"), GroupTicket.memberPrice(FORTY, 3));
+        assertEquals(new BigDecimal("40.00"), GroupTicket.memberPrice(FORTY, 2));
+        assertEquals(new BigDecimal("20.00"), GroupTicket.memberPrice(FORTY, 11));
         assertSame(ana, first.getUser().orElseThrow());
         assertTrue(t.belongsTo(g));
 

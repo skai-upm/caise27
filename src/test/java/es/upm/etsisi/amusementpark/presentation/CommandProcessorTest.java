@@ -2,6 +2,9 @@ package es.upm.etsisi.amusementpark.presentation;
 
 import es.upm.etsisi.amusementpark.TestSupport;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.controller.ParkServices;
+import es.upm.etsisi.amusementpark.business.service.PassManager;
+import es.upm.etsisi.amusementpark.persistence.PassFileRepository;
 import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
 import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelpFormatter;
 import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
@@ -59,9 +62,12 @@ class CommandProcessorTest {
         UserManager users = new UserManager(new UserFileRepository(file), TestSupport.HASHER);
         GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users);
         ParkController.shutdown();
-        return new CommandProcessor(ParkController.initialize(users, groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
-                new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups),
-                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))), new InvoiceDirector(), START),
+        TicketManager tickets = new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
+                new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups);
+        ParkServices services = new ParkServices(users, groups, tickets,
+                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))),
+                new PassManager(new PassFileRepository(dir.resolve("passes.txt")), tickets));
+        return new CommandProcessor(ParkController.initialize(services, new InvoiceDirector(), START),
                 new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter(), new ExtendedHelpFormatter()));
     }
 
@@ -182,10 +188,13 @@ class CommandProcessorTest {
         AttractionManager a = new AttractionManager(new AttractionFileRepository(dir.resolve("other-attractions.txt")));
         ParkController.shutdown();
         assertEquals(LocalDate.of(2026, 1, 1),
-                ParkController.initialize(m, g, t, a, new InvoiceDirector(), LocalDate.of(2026, 1, 1)).getCurrentDate());
+                ParkController.initialize(new ParkServices(m, g, t, a, new PassManager(
+                        new PassFileRepository(dir.resolve("other-passes.txt")), t)), new InvoiceDirector(),
+                        LocalDate.of(2026, 1, 1)).getCurrentDate());
         ParkController.shutdown();
         LocalDate before = LocalDate.now();
-        LocalDate actual = ParkController.initialize(m, g, t, a, new InvoiceDirector()).getCurrentDate();
+        LocalDate actual = ParkController.initialize(new ParkServices(m, g, t, a, new PassManager(
+                new PassFileRepository(dir.resolve("other-passes.txt")), t)), new InvoiceDirector()).getCurrentDate();
         assertFalse(actual.isBefore(before));
         assertFalse(actual.isAfter(LocalDate.now()));
     }
@@ -630,6 +639,83 @@ class CommandProcessorTest {
         CommandProcessor legacy = newProcessor();
         assertError(legacy.process("USER DELETE;ana@correo.com;Clave1!"));
         assertEquals(1, Files.readAllLines(file).size());
+    }
+
+    @Test
+    void speedPassPurchasesAndRefunds() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertEquals("OK SPEEDPASS CREATED -> 80.00", processor.process("SPEEDPASS CREATE;SP1;T001;10"));
+        assertEquals("OK SPEEDPASS CREATED -> 8.00", processor.process("SPEEDPASS CREATE;SP2;T001;1"));
+        assertEquals(11, Files.readAllLines(dir.resolve("passes.txt")).size());
+        assertTrue(Files.readAllLines(dir.resolve("passes.txt")).contains("SPEED;SP2-1;T001;8.00;false"));
+        for (String bad : List.of("SPEEDPASS CREATE;SP3;T001;5", "SPEEDPASS CREATE;SP1;T001;10", "SPEEDPASS CREATE;SP3;T999;1",
+                "SPEEDPASS CREATE;SP3;T001", "SPEEDPASS DELETE;SP9-1", "SPECIALPASS DELETE;SP1-1", "SPEEDPASS DELETE")) {
+            List<String> before = Files.readAllLines(dir.resolve("passes.txt"));
+            assertError(processor.process(bad));
+            assertEquals(before, Files.readAllLines(dir.resolve("passes.txt")), bad);
+        }
+        assertOk(processor.process("SPEEDPASS DELETE;SP1-1"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-15"));
+        assertError(processor.process("SPEEDPASS DELETE;SP1-2"));
+        assertEquals("OK SPEEDPASS CREATED -> 8.00", processor.process("SPEEDPASS CREATE;SP4;T001;1"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-16"));
+        assertError(processor.process("SPEEDPASS CREATE;SP5;T001;1"));
+    }
+
+    @Test
+    void specialPassIsUniquePerTicketAndUsesStoredGroupPrice() {
+        groupOfThree();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertEquals("OK SPECIALPASS CREATED -> 40.00", processor.process("SPECIALPASS CREATE;VIP1;T001"));
+        assertError(processor.process("SPECIALPASS CREATE;VIP2;T001"));
+        assertEquals("OK GROUP TICKET CREATED -> 108.00", processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        assertEquals("OK SPEEDPASS CREATED -> 7.20", processor.process("SPEEDPASS CREATE;SP4;TG01-12345678Z;1"));
+        assertEquals("OK SPECIALPASS CREATED -> 36.00", processor.process("SPECIALPASS CREATE;VIP3;TG01-12345678Z"));
+        assertError(processor.process("SPECIALPASS CREATE;VIP4;TG01"));
+        assertOk(processor.process("SPECIALPASS DELETE;VIP1"));
+        assertError(processor.process("SPEEDPASS DELETE;VIP3"));
+    }
+
+    @Test
+    void ticketsWithPassesCannotBeDeletedAlone() {
+        groupOfThree();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("SPEEDPASS CREATE;SP1;T001;1");
+        processor.process("SPEEDPASS CREATE;SP2;TG01-87654321X;1");
+        assertError(processor.process("TICKET DELETE;T001"));
+        assertError(processor.process("GROUPTICKET DELETE;TG01"));
+        assertOk(processor.process("SPEEDPASS DELETE;SP1-1"));
+        assertOk(processor.process("SPEEDPASS DELETE;SP2-1"));
+        assertOk(processor.process("TICKET DELETE;T001"));
+        assertOk(processor.process("GROUPTICKET DELETE;TG01"));
+    }
+
+    @Test
+    void invoicesIncludePersonalPassesOnlyForUsers() {
+        groupOfThree();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("SPEEDPASS CREATE;SP1;TG01-12345678Z;1");
+        assertEquals(String.join(System.lineSeparator(),
+                "OK: Invoice for user Ana Garcia Lopez <ana@correo.com> (DNI 12345678Z)",
+                "  Individual tickets:",
+                "    T001 2026-10-15: 40.00",
+                "  Personal passes:",
+                "    SP1-1 SpeedPass for TG01-12345678Z: 7.20",
+                "  TOTAL: 47.20"), processor.process("INVOICE CREATE;USER;ana@correo.com"));
+        assertTrue(processor.process("INVOICE CREATE;GROUP;G01").endsWith("TOTAL: 108.00"));
+    }
+
+    @Test
+    void passesSurviveRestart() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("SPECIALPASS CREATE;VIP1;T001");
+        CommandProcessor restarted = newProcessor();
+        assertError(restarted.process("SPECIALPASS CREATE;VIP2;T001"));
+        assertOk(restarted.process("SPECIALPASS DELETE;VIP1"));
     }
 
     @Test

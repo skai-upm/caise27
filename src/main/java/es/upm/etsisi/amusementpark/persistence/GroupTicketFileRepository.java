@@ -60,9 +60,10 @@ public class GroupTicketFileRepository {
                 BigDecimal base = new BigDecimal(f[3]);
                 BigDecimal total = new BigDecimal(f[4]);
                 List<IndividualTicket> parts = new ArrayList<>();
+                BigDecimal perMember = GroupTicket.memberPrice(base, f.length - FIXED_FIELDS);
                 for (int i = FIXED_FIELDS; i < f.length; i++) {
                     parts.add(new IndividualTicket(GroupTicket.partId(f[0], f[i]), date, f[i],
-                            userByDni.apply(f[i]), base));
+                            userByDni.apply(f[i]), perMember));
                 }
                 result.add(new GroupTicket(f[0], date, f[2], groupById.apply(f[2]), base, total, parts));
             } catch (IllegalArgumentException | DateTimeParseException e) {

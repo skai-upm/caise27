@@ -24,7 +24,12 @@ public abstract class InvoiceBuilder {
     /** Step 2: adds the ticket purchases that apply to the recipient, if any. */
     public abstract void buildTicketSection();
 
-    /** Step 3: totals every line added so far. */
+    /** Step 3: adds the personal passes that apply to the recipient, if any (none by default). */
+    public void buildPassSection() {
+        // recipients without personal passes contribute no pass section
+    }
+
+    /** Step 4: totals every line added so far. */
     public void buildTotal() {
         total = sections.stream().map(InvoiceSection::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(DECIMALS, RoundingMode.HALF_UP);

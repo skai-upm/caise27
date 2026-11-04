@@ -1,6 +1,9 @@
 package es.upm.etsisi.amusementpark;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.controller.ParkServices;
+import es.upm.etsisi.amusementpark.business.service.PassManager;
+import es.upm.etsisi.amusementpark.persistence.PassFileRepository;
 import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.etsisi.amusementpark.business.security.BCryptPasswordHasher;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
@@ -50,6 +53,7 @@ public class App {
     static final String TICKETS_FILE_NAME = "tickets.txt";
     static final String GROUP_TICKETS_FILE_NAME = "grouptickets.txt";
     static final String ATTRACTIONS_FILE_NAME = "attractions.txt";
+    static final String PASSES_FILE_NAME = "passes.txt";
     static final String FLY_OPTION = "--fly";
     static final String TMP_DIR_NAME = "tmp";
     private static final DateTimeFormatter RUN_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
@@ -106,7 +110,9 @@ public class App {
                     new GroupTicketFileRepository(usersFile.resolveSibling(GROUP_TICKETS_FILE_NAME)), users, groups);
             AttractionManager attractions = new AttractionManager(
                     new AttractionFileRepository(usersFile.resolveSibling(ATTRACTIONS_FILE_NAME)));
-            ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector());
+            PassManager passes = new PassManager(
+                    new PassFileRepository(usersFile.resolveSibling(PASSES_FILE_NAME)), tickets);
+            ParkController.initialize(new ParkServices(users, groups, tickets, attractions, passes), new InvoiceDirector());
             HelpGenerator help = new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter(),
                     new ExtendedHelpFormatter());
             runner = new CommandRunner(new CommandProcessor(ParkController.getInstance(), help));

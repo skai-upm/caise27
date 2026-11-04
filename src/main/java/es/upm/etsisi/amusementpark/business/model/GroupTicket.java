@@ -33,8 +33,9 @@ public class GroupTicket extends Ticket {
         this.group = group;
         this.basePrice = basePrice;
         List<IndividualTicket> generated = new ArrayList<>();
+        BigDecimal perMember = memberPrice(basePrice, group.getMembers().size());
         for (User member : group.getMembers()) {
-            generated.add(new IndividualTicket(partId(id, member.getDni()), date, member, basePrice));
+            generated.add(new IndividualTicket(partId(id, member.getDni()), date, member, perMember));
         }
         this.parts = generated;
         this.totalPrice = totalFor(basePrice, generated.size());
@@ -68,6 +69,12 @@ public class GroupTicket extends Ticket {
             return 20;
         }
         return 50;
+    }
+
+    /** Price stored in each generated ticket: the base price minus the group discount, two decimals. */
+    public static BigDecimal memberPrice(BigDecimal basePrice, int members) {
+        BigDecimal factor = HUNDRED.subtract(BigDecimal.valueOf(discountPercent(members)));
+        return basePrice.multiply(factor).divide(HUNDRED, 2, RoundingMode.HALF_UP);
     }
 
     /** Sum of {@code members} individual prices minus the group discount, two decimals. */

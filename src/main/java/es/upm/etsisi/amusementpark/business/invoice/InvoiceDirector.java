@@ -6,6 +6,7 @@ public class InvoiceDirector {
     public Invoice construct(InvoiceBuilder builder) {
         builder.buildHeader();
         builder.buildTicketSection();
+        builder.buildPassSection();
         builder.buildTotal();
         return builder.getResult();
     }

@@ -93,6 +93,10 @@ public class CommandProcessor {
                 case "ATTRACTION EXIT" -> attractionExit(params);
                 case "ATTRACTION STATUS" -> attractionStatus(params);
                 case "INVOICE CREATE" -> invoiceCreate(params);
+                case "SPEEDPASS CREATE" -> speedPassCreate(params);
+                case "SPEEDPASS DELETE" -> speedPassDelete(params);
+                case "SPECIALPASS CREATE" -> specialPassCreate(params);
+                case "SPECIALPASS DELETE" -> specialPassDelete(params);
                 case "SYSTEM DATE" -> systemDate(params);
                 case "SYSTEM PRICE" -> systemPrice(params);
                 case "HELP" -> help(params);
@@ -216,6 +220,28 @@ public class CommandProcessor {
         requireParams(p, 1, "GROUP DELETE;Id");
         controller.deleteGroup(p[0]);
         return ok("Group " + p[0] + " deleted");
+    }
+
+    private String speedPassCreate(String[] p) throws UserException {
+        requireParams(p, 3, "SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad");
+        return "OK SPEEDPASS CREATED -> " + controller.buySpeedPasses(p[0], p[1], p[2]).toPlainString();
+    }
+
+    private String speedPassDelete(String[] p) throws UserException {
+        requireParams(p, 1, "SPEEDPASS DELETE;IdPase");
+        controller.refundSpeedPass(p[0]);
+        return ok("SpeedPass " + p[0] + " refunded");
+    }
+
+    private String specialPassCreate(String[] p) throws UserException {
+        requireParams(p, 2, "SPECIALPASS CREATE;IdPase;IdTicket");
+        return "OK SPECIALPASS CREATED -> " + controller.buySpecialPass(p[0], p[1]).toPlainString();
+    }
+
+    private String specialPassDelete(String[] p) throws UserException {
+        requireParams(p, 1, "SPECIALPASS DELETE;IdPase");
+        controller.refundSpecialPass(p[0]);
+        return ok("Special Pass " + p[0] + " refunded");
     }
 
     private String invoiceCreate(String[] p) throws UserException {
