@@ -298,4 +298,29 @@ class AppTest {
         assertTrue(lines[1].startsWith("ERROR") && lines[1].contains("no unused SpeedPass"), lines[1]);
         assertTrue(lines[3].startsWith("ERROR") && lines[3].contains("consumed"), lines[3]);
     }
+
+    @Test
+    void flyIsolatesPassesAndTypedAttractions() throws IOException {
+        launch(new String[0], CommandProcessorTest.CREATE_ANA + "\nSYSTEM DATE;2026-10-01\n"
+                + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nSPEEDPASS CREATE;SP1;T001;1\n"
+                + "ATTRACTION CREATE;A01;Tornado;20\n");
+        byte[] passesBefore = Files.readAllBytes(dir.resolve("passes.txt"));
+        byte[] attractionsBefore = Files.readAllBytes(dir.resolve("attractions.txt"));
+        Run fly = launch(new String[] {"--fly"}, CommandProcessorTest.CREATE_ANA + "\nSYSTEM DATE;2026-10-01\n"
+                + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nSPEEDPASS CREATE;PK;T001;10\n"
+                + "ATTRACTION CREATE;A02;Saltos;5;GROUP\nTICKET DELETE;T001\n");
+        assertFalse(fly.out().contains("ERROR"), fly.out());
+        assertTrue(java.util.Arrays.equals(passesBefore, Files.readAllBytes(dir.resolve("passes.txt"))));
+        assertTrue(java.util.Arrays.equals(attractionsBefore, Files.readAllBytes(dir.resolve("attractions.txt"))));
+        assertEquals(0, tmpEntries());
+    }
+
+    @Test
+    void ticketDeleteCascadesAcrossRestart() throws IOException {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], users, CommandProcessorTest.CREATE_ANA + "\nSYSTEM DATE;2026-10-01\n"
+                + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nSPEEDPASS CREATE;PK;T001;10\nSPECIALPASS CREATE;SX;T001\n"
+                + "TICKET CREATE;T002;ana@correo.com;2026-10-15\nSPEEDPASS CREATE;OTHER;T002;1\nTICKET DELETE;T001\n");
+        assertEquals(List.of("SPEED;OTHER;T002;8.00;false"), Files.readAllLines(dir.resolve("passes.txt")));
+    }
 }

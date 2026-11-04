@@ -32,6 +32,10 @@ The repository SHALL contain a single PlantUML class diagram at `uml/model.puml`
 - **WHEN** `uml/model.puml` is reviewed
 - **THEN** it declares the access interfaces implemented by the ticket classes and the generic abstract attraction specialised by the four attraction type classes
 
+#### Scenario: Delivery 3 model complete
+- **WHEN** `uml/model.puml` is reviewed after Delivery 3
+- **THEN** it shows the layered packages, the pass hierarchy with its ticket association, the attraction type hierarchy with its generic bound and the access interfaces, the invoice builder classes, the help strategy interface and the singleton controllers, and it passes the PlantUML syntax check
+
 ### Requirement: Diagram notation rules
 The class diagram SHALL show no methods and no technical labels (such as stereotypes, `{readOnly}` or `{static}` markers). Class bodies SHALL show only attributes of primitive, value (`String`, `LocalDate`, `BigDecimal`, `Path`) or enumeration types. Every reference to another modelled class SHALL be drawn only as a relationship, named exactly as the holding attribute and drawn with a navigability arrow toward the referenced class and a cross on the holder's end, except where the holder's end carries an aggregation or composition diamond. Usage (dependency) relationships SHALL be drawn only for classes that have no incoming relationship, to show where they are used.
 

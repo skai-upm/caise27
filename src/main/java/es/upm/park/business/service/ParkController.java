@@ -167,8 +167,10 @@ public class ParkController {
         return tickets.create(id, owner, date, currentPrice, currentDate);
     }
 
+    /** Deletes a future standalone ticket and, first, all its passes; nothing changes on failure. */
     public void deleteTicket(String id) {
-        tickets.delete(id, currentDate);
+        IndividualTicket ticket = tickets.requireDeletable(id, currentDate);
+        cascade(List.of(ticket), () -> tickets.delete(id, currentDate));
     }
 
     public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) {
@@ -177,8 +179,25 @@ public class ParkController {
         return tickets.createGroupTicket(id, group, date, currentPrice, currentDate);
     }
 
+    /**
+     * Deletes a future group ticket: first the passes of its constituent tickets, then the
+     * constituents together with the group ticket; nothing changes on failure.
+     */
     public void deleteGroupTicket(String id) {
-        tickets.deleteGroupTicket(id, currentDate);
+        GroupTicket ticket = tickets.requireGroupDeletable(id, currentDate);
+        cascade(ticket.getConstituents(), () -> tickets.deleteGroupTicket(id, currentDate));
+    }
+
+    /** Removes the passes of {@code owners}, then runs {@code deletion}; compensates on failure. */
+    private void cascade(List<IndividualTicket> owners, Runnable deletion) {
+        List<Pass> before = passes.snapshot();
+        passes.removeFor(owners);
+        try {
+            deletion.run();
+        } catch (RuntimeException e) {
+            passes.restore(before);
+            throw e;
+        }
     }
 
     // --- invoices

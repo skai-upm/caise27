@@ -125,8 +125,8 @@ public class TicketManager {
         return ticket;
     }
 
-    /** Deletes a standalone ticket whose date is strictly later than {@code today}. */
-    public void delete(String id, LocalDate today) {
+    /** Validates, without changing anything, that a standalone ticket can be deleted on {@code today}. */
+    public IndividualTicket requireDeletable(String id, LocalDate today) {
         IndividualTicket ticket = tickets.get(id);
         if (ticket == null && isConstituentId(id)) {
             throw new IllegalArgumentException("ticket " + id
@@ -134,6 +134,12 @@ public class TicketManager {
         }
         requireValid(ticket != null, "no ticket with identifier " + id);
         requireFuture(ticket, today);
+        return ticket;
+    }
+
+    /** Deletes a standalone ticket whose date is strictly later than {@code today}. */
+    public void delete(String id, LocalDate today) {
+        requireDeletable(id, today);
         Map<String, IndividualTicket> next = new LinkedHashMap<>(tickets);
         next.remove(id);
         storage.save(next.values());
@@ -158,11 +164,17 @@ public class TicketManager {
         return ticket;
     }
 
-    /** Deletes a group ticket (and its constituents) dated strictly later than {@code today}. */
-    public void deleteGroupTicket(String id, LocalDate today) {
+    /** Validates, without changing anything, that a group ticket can be deleted on {@code today}. */
+    public GroupTicket requireGroupDeletable(String id, LocalDate today) {
         GroupTicket ticket = groupTickets.get(id);
         requireValid(ticket != null, "no group ticket with identifier " + id);
         requireFuture(ticket, today);
+        return ticket;
+    }
+
+    /** Deletes a group ticket (and its constituents) dated strictly later than {@code today}. */
+    public void deleteGroupTicket(String id, LocalDate today) {
+        requireGroupDeletable(id, today);
         Map<String, GroupTicket> next = new LinkedHashMap<>(groupTickets);
         next.remove(id);
         groupStorage.save(next.values());

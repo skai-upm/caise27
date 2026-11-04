@@ -19,7 +19,7 @@ When the `--fly` option is given, the application SHALL create at startup a new 
 - **THEN** it uses `tmp/20260826_190315_1/`
 
 ### Requirement: All persistence redirected
-In `--fly` mode every persistent element — users, groups, tickets, group tickets and attractions — SHALL be read from and written to files inside the temporary directory only, using the same persistence components as a normal execution. The permanent files SHALL NOT be read or modified.
+In `--fly` mode every persistent element — users, groups, tickets, group tickets, attractions (with their types) and passes — SHALL be read from and written to files inside the temporary directory only, using the same persistence components as a normal execution. The permanent files SHALL NOT be read or modified.
 
 #### Scenario: Permanent data untouched
 - **GIVEN** permanent files with user Ana
@@ -29,6 +29,10 @@ In `--fly` mode every persistent element — users, groups, tickets, group ticke
 #### Scenario: Commands operate on temporary data
 - **WHEN** the application runs `--fly input_fase2.txt` where the file creates and then updates a user
 - **THEN** the update succeeds because the created user is persisted in the temporary directory during the run
+
+#### Scenario: Delivery 3 data isolated
+- **WHEN** a `--fly` run creates an attraction of type `GROUP`, a ticket and SpeedPasses
+- **THEN** the passes and typed attraction are written only inside the run directory and the permanent `passes.txt` and `attractions.txt` are unchanged
 
 ### Requirement: Cleanup on termination
 When a `--fly` execution terminates — after `EXIT`, at end of input, after a command-file error, or on JVM shutdown — the temporary directory of that execution and all files in it SHALL be deleted. Other executions' directories SHALL NOT be touched.

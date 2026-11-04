@@ -162,6 +162,49 @@ public class PassManager {
         }
     }
 
+    /** Removes (and saves) every pass attached to one of {@code ticketsToDelete}; returns them. */
+    public List<Pass> removeFor(Collection<IndividualTicket> ticketsToDelete) {
+        List<Pass> removed = new ArrayList<>();
+        Map<String, Pass> next = new LinkedHashMap<>();
+        for (Pass p : passes.values()) {
+            boolean attached = false;
+            for (IndividualTicket t : ticketsToDelete) {
+                attached |= p.isFor(t);
+            }
+            if (attached) {
+                removed.add(p);
+            } else {
+                next.put(p.getId(), p);
+            }
+        }
+        if (!removed.isEmpty()) {
+            storage.save(next.values());
+            passes = next;
+        }
+        return removed;
+    }
+
+    /**
+     * Compensation for a failed cascade: puts {@code removed} passes back in their original
+     * positions (as captured in {@code before}) and saves.
+     */
+    public void restore(List<Pass> before) {
+        if (before.size() == passes.size()) {
+            return;
+        }
+        Map<String, Pass> next = new LinkedHashMap<>();
+        for (Pass p : before) {
+            next.put(p.getId(), p);
+        }
+        storage.save(next.values());
+        passes = next;
+    }
+
+    /** Snapshot of all passes in their current order (for compensation). */
+    public List<Pass> snapshot() {
+        return new ArrayList<>(passes.values());
+    }
+
     /** Persists the current state, e.g. after passes were marked consumed. */
     public void save() {
         storage.save(passes.values());
