@@ -1,5 +1,10 @@
 package com.parque;
 
+import com.parque.business.controller.*;
+import com.parque.business.model.*;
+import com.parque.business.service.*;
+import com.parque.persistence.*;
+import com.parque.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,19 +37,24 @@ class UmlModelTest {
     static String model;
     static List<String> lines;
     static List<String> productionClasses;
+    static java.util.Map<String, String> qualified = new java.util.HashMap<>();
 
     @BeforeAll
     static void load() throws Exception {
         model = Files.readString(Path.of("uml/model.puml"));
         lines = model.lines().map(String::strip).toList();
         try (Stream<Path> files = Files.walk(Path.of("src/main/java"))) {
-            productionClasses = files.filter(p -> p.toString().endsWith(".java"))
-                    .map(p -> p.getFileName().toString().replace(".java", "")).sorted().toList();
+            for (Path p : files.filter(p -> p.toString().endsWith(".java")).toList()) {
+                String rel = Path.of("src/main/java").relativize(p).toString().replace('\\', '/');
+                qualified.put(p.getFileName().toString().replace(".java", ""),
+                        rel.substring(0, rel.length() - 5).replace('/', '.'));
+            }
+            productionClasses = qualified.keySet().stream().sorted().toList();
         }
     }
 
     private static Class<?> type(String simpleName) throws ClassNotFoundException {
-        return Class.forName("com.parque." + simpleName);
+        return Class.forName(qualified.get(simpleName));
     }
 
     @Test
@@ -59,6 +69,22 @@ class UmlModelTest {
             }
         }
         assertEquals(productionClasses, declared.stream().sorted().toList(), "declared elements = production classes");
+    }
+
+    @Test
+    void classesAreInTheirPackages() {
+        String current = null;
+        for (String l : lines) {
+            Matcher p = Pattern.compile("^package ([\\w.]+) \\{$").matcher(l);
+            if (p.matches()) {
+                current = p.group(1);
+                continue;
+            }
+            Matcher m = DECLARATION.matcher(l);
+            if (m.find()) {
+                assertEquals(qualified.get(m.group(2)), current + "." + m.group(2), "package of " + m.group(2));
+            }
+        }
     }
 
     @Test
@@ -90,7 +116,7 @@ class UmlModelTest {
         }
         for (String name : productionClasses) {
             Class<?> c = type(name);
-            if (c.getSuperclass() != null && c.getSuperclass().getPackageName().equals("com.parque")) {
+            if (c.getSuperclass() != null && c.getSuperclass().getPackageName().startsWith("com.parque")) {
                 assertTrue(drawn.contains(name), "missing inheritance for " + name);
             }
         }
@@ -137,7 +163,7 @@ class UmlModelTest {
                 if (f.getGenericType() instanceof ParameterizedType pt && pt.getActualTypeArguments()[0] instanceof Class<?> a) {
                     ft = a;
                 }
-                if (ft.getPackageName().equals("com.parque") && !ft.isEnum()) {
+                if (ft.getPackageName().startsWith("com.parque") && !ft.isEnum()) {
                     assertTrue(drawn.contains(name + "." + f.getName()), "relationship not drawn: " + name + "." + f.getName());
                 }
             }

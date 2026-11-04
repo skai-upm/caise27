@@ -1,5 +1,10 @@
 package com.parque;
 
+import com.parque.business.controller.*;
+import com.parque.business.model.*;
+import com.parque.business.service.*;
+import com.parque.persistence.*;
+import com.parque.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -48,15 +53,15 @@ class FlyModeTest {
     @Test
     void directoryNamedByTimestampWithSuffixOnCollision() throws Exception {
         LocalDateTime t = LocalDateTime.of(2026, 8, 26, 19, 3, 15);
-        Path first = App.createFlyDirectory(base, t);
-        Path second = App.createFlyDirectory(base, t);
+        Path first = DataDirectory.createTemporary(base, t);
+        Path second = DataDirectory.createTemporary(base, t);
         assertEquals(base.resolve("tmp").resolve("20260826_190315"), first);
         assertEquals(base.resolve("tmp").resolve("20260826_190315_1"), second);
         Files.writeString(first.resolve("users.txt"), "x");
-        App.deleteFlyDirectory(first, System.err);
+        DataDirectory.delete(first);
         assertFalse(Files.exists(first));
         assertTrue(Files.exists(base.resolve("tmp")), "tmp kept while another run directory exists");
-        App.deleteFlyDirectory(second, System.err);
+        DataDirectory.delete(second);
         assertFalse(Files.exists(base.resolve("tmp")), "empty tmp removed");
     }
 

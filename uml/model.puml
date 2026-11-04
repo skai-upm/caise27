@@ -1,22 +1,36 @@
 @startuml model
-' Class model of the amusement-park application (package com.parque), derived from the current source code.
+' Class model of the amusement-park application, derived from the current source code and organised by layer.
 ' Notation: no methods; attributes are primitive-like values or enumerations; every object reference is a
 ' relationship labelled with the holder's field name. Plain associations mark the holder end with a cross (x)
 ' and the referenced end with an arrow; aggregations/compositions mark the holder end with the diamond.
 ' Usage (dependency) arrows are drawn only for classes that have no incoming relationship.
 hide empty members
 skinparam classAttributeIconSize 0
+set separator none
 
 package com.parque {
-
   class App
+}
+
+package com.parque.presentation {
+  class CommandRunner {
+    -out : PrintStream
+    -err : PrintStream
+  }
 
   class CommandProcessor {
     -exitRequested : boolean
+  }
+}
+
+package com.parque.business.controller {
+  class ParkController {
     -currentDate : LocalDate
     -ticketPrice : BigDecimal
   }
+}
 
+package com.parque.business.model {
   class User {
     -name : String
     -surname : String
@@ -36,23 +50,9 @@ package com.parque {
     CARD
   }
 
-  class UserValidator
-
-  class UserService
-
-  class UserRepository {
-    -file : Path
-  }
-
   class Group {
     -id : String
     -name : String
-  }
-
-  class GroupService
-
-  class GroupRepository {
-    -file : Path
   }
 
   abstract class Ticket {
@@ -71,24 +71,35 @@ package com.parque {
     -total : BigDecimal
   }
 
-  class TicketService
-
-  class TicketRepository {
-    -file : Path
-  }
-
-  class GroupTicketRepository {
-    -file : Path
-  }
-
   class Attraction {
     -id : String
     -name : String
     -capacity : int
   }
+}
 
+package com.parque.business.service {
+  class UserValidator
+  class UserService
+  class GroupService
+  class TicketService
   class AttractionService
+}
 
+package com.parque.persistence {
+  class DataDirectory
+  class UserRepository {
+    -file : Path
+  }
+  class GroupRepository {
+    -file : Path
+  }
+  class TicketRepository {
+    -file : Path
+  }
+  class GroupTicketRepository {
+    -file : Path
+  }
   class AttractionRepository {
     -file : Path
   }
@@ -98,11 +109,15 @@ package com.parque {
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 
-' Controller
-CommandProcessor "1" x--> "1" UserService : users
-CommandProcessor "1" x--> "1" GroupService : groups
-CommandProcessor "1" x--> "1" TicketService : tickets
-CommandProcessor "1" x--> "1" AttractionService : attractions
+' Presentation
+CommandRunner "0..*" x--> "1" CommandProcessor : processor
+CommandProcessor "1" x--> "1" ParkController : controller
+
+' Main controller
+ParkController "1" x--> "1" UserService : users
+ParkController "1" x--> "1" GroupService : groups
+ParkController "1" x--> "1" TicketService : tickets
+ParkController "1" x--> "1" AttractionService : attractions
 
 ' Users
 UserService "1" x--> "1" UserRepository : repository
@@ -131,9 +146,11 @@ AttractionService "1" o--> "0..*" Attraction : attractions
 Attraction "0..*" o--> "0..*" User : present
 
 ' Usage of classes without incoming relationships
-App ..> CommandProcessor : <<use>>
+App ..> CommandRunner : <<use>>
+App ..> DataDirectory : <<use>>
 User ..> UserField : <<use>>
 UserService ..> UserField : <<use>>
+ParkController ..> UserField : <<use>>
 CommandProcessor ..> UserField : <<use>>
 UserService ..> UserValidator : <<use>>
 GroupService ..> UserValidator : <<use>>

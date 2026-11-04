@@ -1,40 +1,26 @@
 package com.parque;
 
-import java.io.BufferedReader;
+import com.parque.business.controller.ParkController;
+import com.parque.persistence.DataDirectory;
+import com.parque.presentation.CommandProcessor;
+import com.parque.presentation.CommandRunner;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
- * Entry point. Without a file argument commands are read from standard input; otherwise the first argument
- * (other than {@code --fly}) is the path of a command file. Both sources go through the same loop and the same
- * CommandProcessor. With {@code --fly} all persistence goes to a per-execution temporary directory
- * {@code tmp/<yyyyMMdd_HHmmss>/} that is deleted when the application terminates.
+ * Bootstrap (composition root). Interprets the launch arguments — optional {@code --fly} and an optional command
+ * file — chooses the data directory, wires the business controller and the presentation layer, and returns the
+ * exit status. Without a command file commands are read from standard input.
  */
 public class App {
     /** Data files live in the working directory. */
     static final Path DATA_DIR = Path.of("");
     static final String FLY_OPTION = "--fly";
-    static final String FLY_ROOT = "tmp";
-    static final String USERS_FILE = "users.txt";
-    static final String GROUPS_FILE = "groups.txt";
-    static final String TICKETS_FILE = "tickets.txt";
-    static final String GROUP_TICKETS_FILE = "grouptickets.txt";
-    static final String ATTRACTIONS_FILE = "attractions.txt";
-
-    private static final DateTimeFormatter FLY_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     public static void main(String[] args) {
         int status = run(args, System.in, System.out, System.err, DATA_DIR, true);
@@ -67,19 +53,19 @@ public class App {
         }
         Path flyDir;
         try {
-            flyDir = createFlyDirectory(baseDir, LocalDateTime.now());
+            flyDir = DataDirectory.createTemporary(baseDir, LocalDateTime.now());
         } catch (IOException e) {
-            err.println("ERROR: Cannot create temporary directory for --fly: " + describe(e));
+            err.println("ERROR: Cannot create temporary directory for --fly: " + CommandRunner.describe(e));
             return 1;
         }
-        Thread cleanup = new Thread(() -> deleteFlyDirectory(flyDir, err));
+        Thread cleanup = new Thread(() -> deleteQuietly(flyDir, err));
         if (registerShutdownHook) {
             Runtime.getRuntime().addShutdownHook(cleanup);
         }
         try {
             return runWithDataDir(commandFile, stdin, out, err, flyDir);
         } finally {
-            deleteFlyDirectory(flyDir, err);
+            deleteQuietly(flyDir, err);
             if (registerShutdownHook) {
                 try {
                     Runtime.getRuntime().removeShutdownHook(cleanup);
@@ -90,94 +76,24 @@ public class App {
         }
     }
 
-    /** Wires every repository to {@code dataDir} and processes the commands. */
     private static int runWithDataDir(String commandFile, InputStream stdin, PrintStream out, PrintStream err,
             Path dataDir) {
-        CommandProcessor processor;
+        ParkController controller;
         try {
-            UserService users = new UserService(new UserRepository(dataDir.resolve(USERS_FILE)));
-            GroupService groups = new GroupService(new GroupRepository(dataDir.resolve(GROUPS_FILE)), users);
-            TicketService tickets = new TicketService(new TicketRepository(dataDir.resolve(TICKETS_FILE)),
-                    new GroupTicketRepository(dataDir.resolve(GROUP_TICKETS_FILE)), users, groups);
-            AttractionService attractions = new AttractionService(new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE)));
-            processor = new CommandProcessor(users, groups, tickets, attractions);
+            controller = ParkController.open(dataDir);
         } catch (IOException e) {
-            err.println("ERROR: Cannot load data from '" + dataDir.toAbsolutePath() + "': " + describe(e));
+            err.println("ERROR: Cannot load data from '" + dataDir.toAbsolutePath() + "': " + CommandRunner.describe(e));
             return 1;
         }
-        if (commandFile == null) {
-            try {
-                processLines(new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8)), out, processor);
-            } catch (IOException e) {
-                err.println("ERROR: Cannot read standard input: " + describe(e));
-                return 1;
-            }
-            return 0;
-        }
-        try (BufferedReader reader = Files.newBufferedReader(Path.of(commandFile), StandardCharsets.UTF_8)) {
-            processLines(reader, out, processor);
-        } catch (IOException | InvalidPathException e) {
-            err.println("ERROR: Cannot read command file '" + commandFile + "': " + describe(e));
-            return 1;
-        }
-        return 0;
+        CommandRunner runner = new CommandRunner(new CommandProcessor(controller), out, err);
+        return commandFile == null ? runner.runInteractive(stdin) : runner.runFile(commandFile);
     }
 
-    /**
-     * Creates a new, empty {@code base/tmp/yyyyMMdd_HHmmss} directory for this execution, adding {@code _1},
-     * {@code _2}... if a directory with that timestamp already exists.
-     */
-    static Path createFlyDirectory(Path base, LocalDateTime start) throws IOException {
-        Path root = base.resolve(FLY_ROOT);
-        Files.createDirectories(root);
-        String stamp = start.format(FLY_STAMP);
-        for (int i = 0;; i++) {
-            Path candidate = root.resolve(i == 0 ? stamp : stamp + "_" + i);
-            try {
-                return Files.createDirectory(candidate);
-            } catch (FileAlreadyExistsException taken) {
-                // try the next suffix
-            }
-        }
-    }
-
-    /** Deletes the run directory and its files, and the {@code tmp} parent if it is left empty. Idempotent. */
-    static void deleteFlyDirectory(Path dir, PrintStream err) {
+    private static void deleteQuietly(Path dir, PrintStream err) {
         try {
-            if (Files.exists(dir)) {
-                try (Stream<Path> walk = Files.walk(dir)) {
-                    for (Path p : walk.sorted(Comparator.reverseOrder()).toList()) {
-                        Files.deleteIfExists(p);
-                    }
-                }
-            }
-            Path root = dir.toAbsolutePath().getParent();
-            if (root != null && Files.isDirectory(root)) {
-                try (Stream<Path> children = Files.list(root)) {
-                    if (children.findAny().isEmpty()) {
-                        Files.deleteIfExists(root);
-                    }
-                }
-            }
+            DataDirectory.delete(dir);
         } catch (IOException e) {
-            err.println("ERROR: Cannot delete temporary directory '" + dir + "': " + describe(e));
+            err.println("ERROR: Cannot delete temporary directory '" + dir + "': " + CommandRunner.describe(e));
         }
-    }
-
-    /** The single command loop shared by interactive and file mode. */
-    private static void processLines(BufferedReader reader, PrintStream out, CommandProcessor processor)
-            throws IOException {
-        String line;
-        while (!processor.isExitRequested() && (line = reader.readLine()) != null) {
-            if (line.isBlank()) {
-                continue;
-            }
-            out.println(processor.process(line));
-        }
-    }
-
-    private static String describe(Exception e) {
-        String kind = e.getClass().getSimpleName();
-        return e.getMessage() == null ? kind : kind + " (" + e.getMessage() + ")";
     }
 }

@@ -1,5 +1,10 @@
 package com.parque;
 
+import com.parque.business.controller.*;
+import com.parque.business.model.*;
+import com.parque.business.service.*;
+import com.parque.persistence.*;
+import com.parque.presentation.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
