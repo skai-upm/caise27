@@ -1,6 +1,9 @@
 package es.upm.park.presentation;
 
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.Invoice;
+import es.upm.park.business.model.InvoiceLine;
+import es.upm.park.business.model.InvoiceSection;
 import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
 import es.upm.park.business.service.ParkController;
@@ -40,6 +43,8 @@ public class CommandProcessor {
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
             "ATTRACTION STATUS;IdAtraccion",
+            "INVOICE CREATE;USER;Correo",
+            "INVOICE CREATE;GROUP;IdGrupo",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -79,6 +84,7 @@ public class CommandProcessor {
                 case "ATTRACTION ENTER" -> attractionEnter(parts);
                 case "ATTRACTION EXIT" -> attractionExit(parts);
                 case "ATTRACTION STATUS" -> attractionStatus(parts);
+                case "INVOICE CREATE" -> invoiceCreate(parts);
                 case "SYSTEM DATE" -> systemDate(parts);
                 case "SYSTEM PRICE" -> systemPrice(parts);
                 case "HELP" -> help(parts);
@@ -208,6 +214,29 @@ public class CommandProcessor {
                 + "  present: " + a.getPresentCount() + nl
                 + "  available: " + a.getAvailablePlaces() + nl
                 + "  users: " + (present.isEmpty() ? "(none)" : present);
+    }
+
+    // --- invoices
+
+    private String invoiceCreate(String[] p) {
+        requireParams(p, 2, "INVOICE CREATE;USER;Correo | INVOICE CREATE;GROUP;IdGrupo");
+        Invoice invoice = switch (p[1]) {
+            case "USER" -> park.createUserInvoice(p[2]);
+            case "GROUP" -> park.createGroupInvoice(p[2]);
+            default -> throw new IllegalArgumentException("unknown invoice recipient type '" + p[1]
+                    + "', expected USER or GROUP");
+        };
+        String nl = System.lineSeparator();
+        StringBuilder sb = new StringBuilder("OK: invoice for ").append(invoice.recipient());
+        for (InvoiceSection section : invoice.sections()) {
+            sb.append(nl).append("  ").append(section.title()).append(':');
+            for (InvoiceLine line : section.lines()) {
+                sb.append(nl).append("    ").append(line.description()).append(": ")
+                        .append(line.amount().toPlainString());
+            }
+            sb.append(nl).append("    subtotal: ").append(section.subtotal().toPlainString());
+        }
+        return sb.append(nl).append("  TOTAL: ").append(invoice.total().toPlainString()).toString();
     }
 
     // --- system and general commands

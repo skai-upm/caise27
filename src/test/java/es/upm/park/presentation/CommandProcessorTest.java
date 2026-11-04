@@ -108,6 +108,7 @@ class CommandProcessorTest {
             "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;IdTicket",
             "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket", "ATTRACTION STATUS;IdAtraccion",
+            "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo",
             "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Precio", "HELP", "EXIT",
             "NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD"}) {
             assertTrue(help.contains(usage), usage);
@@ -467,5 +468,44 @@ class CommandProcessorTest {
     void invalidCapacityTextRejected(String command) {
         assertTrue(processor.process(command).startsWith("ERROR"), command);
         assertNull(attractions.find("A02"));
+    }
+
+    @Test
+    void userAndGroupInvoicesDoNotDoubleCount() throws java.io.IOException {
+        groupOf(3);
+        processor.process("TICKET CREATE;T001;u0@correo.com;2026-10-15");
+        processor.process("SYSTEM PRICE;60.00");
+        processor.process("TICKET CREATE;T002;u0@correo.com;2026-10-15");
+        processor.process("SYSTEM PRICE;40.00");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG02;G01;2026-10-16");
+        java.util.List<String> before = java.nio.file.Files.readAllLines(dir.resolve("tickets.txt"));
+
+        String user = processor.process("INVOICE CREATE;USER;u0@correo.com");
+        assertTrue(user.startsWith("OK: invoice for user U0"), user);
+        assertTrue(user.contains("T001 2026-10-15: 40.00") && user.contains("T002 2026-10-15: 60.00"), user);
+        assertTrue(!user.contains("TG01") && user.contains("TOTAL: 100.00"), user);
+
+        String group = processor.process("INVOICE CREATE;GROUP;G01");
+        assertTrue(group.startsWith("OK: invoice for group G01"), group);
+        assertTrue(group.contains("TG01 2026-10-15 (3 members, 10% discount): 108.00"), group);
+        assertTrue(group.contains("TOTAL: 216.00") && !group.contains("T001") && !group.contains("Individual"), group);
+        assertEquals(before, java.nio.file.Files.readAllLines(dir.resolve("tickets.txt")), "invoices are not persisted");
+    }
+
+    @Test
+    void invoiceWithoutPurchasesShowsZeroTotal() {
+        processor.process(CREATE_ANA);
+        String invoice = processor.process("INVOICE CREATE;USER;ana@correo.com");
+        assertEquals(2, invoice.split("\\R").length, invoice);
+        assertTrue(invoice.endsWith("TOTAL: 0.00") && !invoice.contains("tickets:"), invoice);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INVOICE CREATE;USER;nadie@correo.com", "INVOICE CREATE;GROUP;G99", "INVOICE CREATE;COMPANY;X",
+        "INVOICE CREATE;USER", "INVOICE CREATE;USER;a;b", "INVOICE CREATE", "INVOICE CREATE;user;ana@correo.com"})
+    void invalidInvoiceRequestsRejected(String command) {
+        processor.process(CREATE_ANA);
+        assertTrue(processor.process(command).startsWith("ERROR"), command);
     }
 }

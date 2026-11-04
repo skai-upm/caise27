@@ -4,6 +4,7 @@ import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
+import es.upm.park.business.model.Invoice;
 import es.upm.park.business.model.Ticket;
 import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
@@ -133,6 +134,22 @@ public class ParkController {
 
     public void deleteGroupTicket(String id) {
         tickets.deleteGroupTicket(id, currentDate);
+    }
+
+    // --- invoices
+
+    /** Builds, on demand, the invoice of the registered user with that email. */
+    public Invoice createUserInvoice(String email) {
+        User user = users.findByEmail(email);
+        requireValid(user != null, "no registered user with email " + email);
+        return new InvoiceDirector().construct(new UserInvoiceBuilder(user, tickets.getTickets()));
+    }
+
+    /** Builds, on demand, the invoice of the group with that identifier. */
+    public Invoice createGroupInvoice(String groupId) {
+        Group group = groups.find(groupId);
+        requireValid(group != null, "no group with identifier " + groupId);
+        return new InvoiceDirector().construct(new GroupInvoiceBuilder(group, tickets.getGroupTickets()));
     }
 
     // --- attractions

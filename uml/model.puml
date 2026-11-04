@@ -37,6 +37,16 @@ package es.upm.park.business.service {
   class AttractionManager
 
   class UserValidator
+
+  abstract class InvoiceBuilder {
+    -recipient : String
+  }
+
+  class UserInvoiceBuilder
+
+  class GroupInvoiceBuilder
+
+  class InvoiceDirector
 }
 
 package es.upm.park.business.model {
@@ -85,6 +95,19 @@ package es.upm.park.business.model {
     -id : String
     -name : String
     -capacity : int
+  }
+
+  class Invoice {
+    -recipient : String
+  }
+
+  class InvoiceSection {
+    -title : String
+  }
+
+  class InvoiceLine {
+    -description : String
+    -amount : BigDecimal
   }
 }
 
@@ -150,9 +173,19 @@ Attraction "0..*" x--> "0..*" User : present
 GroupTicket "0..*" o--> "0..1" Group : group
 GroupTicket "1" *--> "1..*" IndividualTicket : constituents
 
+Invoice "1" *--> "0..*" InvoiceSection : sections
+InvoiceSection "1" *--> "1..*" InvoiceLine : lines
+InvoiceBuilder "1" *--> "0..*" InvoiceSection : sections
+UserInvoiceBuilder "0..*" x--> "1" User : user
+UserInvoiceBuilder "0..*" x--> "0..*" IndividualTicket : tickets
+GroupInvoiceBuilder "0..*" x--> "1" Group : group
+GroupInvoiceBuilder "0..*" x--> "0..*" GroupTicket : groupTickets
+
 ' --- inheritance
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
 
 ' --- usage, only for classes without incoming relationships
 App ..> CommandRunner : <<use>>
@@ -166,4 +199,10 @@ AttractionManager ..> UserValidator : <<use>>
 UserManager ..> UserField : <<use>>
 ParkController ..> UserField : <<use>>
 CommandProcessor ..> UserField : <<use>>
+ParkController ..> InvoiceDirector : <<use>>
+ParkController ..> UserInvoiceBuilder : <<use>>
+ParkController ..> GroupInvoiceBuilder : <<use>>
+InvoiceDirector ..> InvoiceBuilder : <<use>>
+InvoiceBuilder ..> Invoice : <<use>>
+CommandProcessor ..> Invoice : <<use>>
 @enduml
