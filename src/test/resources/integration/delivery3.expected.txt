@@ -1,0 +1,49 @@
+OK: user ana@correo.com created
+OK
+OK
+ERROR
+OK
+ERROR
+OK
+OK
+OK
+OK
+ERROR
+OK: system date set to 2026-10-01
+OK
+OK TICKET CREATED -> 50.00
+OK TICKET CREATED -> 50.00
+ERROR
+OK GROUP TICKET CREATED -> 135.00
+OK SPEEDPASS CREATED -> 100.00
+OK SPECIALPASS CREATED -> 50.00
+ERROR
+OK SPEEDPASS CREATED -> 10.00
+OK
+OK
+ERROR
+OK SPEEDPASS CREATED -> 10.00
+OK
+OK
+OK
+OK
+OK
+OK: invoice for user Ana Garcia Lopez
+OK: invoice for group G01
+ERROR
+OK: ticket T002 deleted
+OK
+OK: 1 user(s) entered attraction A01 (19 places available); SpeedPass consumed: PK-1
+ERROR
+OK: 3 user(s) entered attraction A02 (0 places available); SpeedPasses consumed: PA, PB, PC
+ERROR
+OK: 1 user(s) entered attraction A03 (4 places available); Special Pass consumed: SX1
+OK: attraction A02 - Saltos
+OK: 3 user(s) left attraction A02
+ERROR
+OK
+OK
+OK: user luis@correo.com deleted
+OK: available commands:
+OK: available commands (extended):
+OK: application terminated
