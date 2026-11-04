@@ -81,6 +81,16 @@ class AppTest {
     }
 
     @Test
+    void groupsSurviveRestart() throws Exception {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], String.join("\n", BASIC.get(0), BASIC.get(1),
+                "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com", "GROUP ADD;G01;pedro@correo.com"), users);
+        Run second = run(new String[0], "GROUP ADD;G01;ana@correo.com\nGROUP REMOVE;G01;pedro@correo.com\n", users);
+        assertTrue(second.output().startsWith("ERROR"));
+        assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(dir.resolve("groups.txt")));
+    }
+
+    @Test
     void interactiveModeEndsAtEndOfInput() throws Exception {
         Path users = dir.resolve("users.txt");
         Run r = run(new String[0], BASIC.get(0) + "\n", users);

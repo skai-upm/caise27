@@ -28,22 +28,28 @@ public class CommandProcessor {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "GROUP CREATE;Id;Nombre",
+            "GROUP ADD;Id;Correo",
+            "GROUP REMOVE;Id;Correo",
+            "GROUP DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
 
     private final UserManager users;
+    private final GroupManager groups;
     private boolean exitRequested;
     /** The single simulated current date of this run; never persisted. */
     private LocalDate currentDate;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserManager users) {
-        this(users, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups) {
+        this(users, groups, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, LocalDate startupDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, LocalDate startupDate) {
         this.users = users;
+        this.groups = groups;
         this.currentDate = startupDate;
     }
 
@@ -77,6 +83,10 @@ public class CommandProcessor {
                 case "USER CREATE" -> create(params);
                 case "USER DELETE" -> delete(params);
                 case "USER UPDATE" -> update(params);
+                case "GROUP CREATE" -> groupCreate(params);
+                case "GROUP ADD" -> groupAdd(params);
+                case "GROUP REMOVE" -> groupRemove(params);
+                case "GROUP DELETE" -> groupDelete(params);
                 case "SYSTEM DATE" -> systemDate(params);
                 case "HELP" -> help(params);
                 case "EXIT" -> exit(params);
@@ -122,8 +132,33 @@ public class CommandProcessor {
 
     private String delete(String[] p) throws UserException {
         requireParams(p, DELETE_PARAMS, "USER DELETE;Correo;Contraseña");
-        users.delete(p[0], p[1]);
+        User deleted = users.delete(p[0], p[1]);
+        groups.removeUserEverywhere(deleted);
         return ok("User " + p[0] + " deleted");
+    }
+
+    private String groupCreate(String[] p) throws UserException {
+        requireParams(p, 2, "GROUP CREATE;Id;Nombre");
+        groups.create(p[0], p[1]);
+        return ok("Group " + p[0] + " created");
+    }
+
+    private String groupAdd(String[] p) throws UserException {
+        requireParams(p, 2, "GROUP ADD;Id;Correo");
+        groups.addMember(p[0], p[1]);
+        return ok("User " + p[1] + " added to group " + p[0]);
+    }
+
+    private String groupRemove(String[] p) throws UserException {
+        requireParams(p, 2, "GROUP REMOVE;Id;Correo");
+        groups.removeMember(p[0], p[1]);
+        return ok("User " + p[1] + " removed from group " + p[0]);
+    }
+
+    private String groupDelete(String[] p) throws UserException {
+        requireParams(p, 1, "GROUP DELETE;Id");
+        groups.delete(p[0]);
+        return ok("Group " + p[0] + " deleted");
     }
 
     private String update(String[] p) throws UserException {

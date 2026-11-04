@@ -1,0 +1,114 @@
+@startuml model
+' Class model of the amusement-park application (package es.upm.etsisi.amusementpark).
+' Keep in sync with src/main/java when classes or relationships change.
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+class App {
+  {static} ~USERS_FILE : Path
+  {static} ~GROUPS_FILE_NAME : String
+  {static} +main(args : String[]) : void
+  {static} ~run(args : String[], stdin : InputStream, out : PrintStream, usersFile : Path) : int
+}
+
+class CommandRunner {
+  +run(in : BufferedReader, out : PrintStream) : boolean
+}
+
+class CommandProcessor {
+  {static} ~HELP_LINES : List<String>
+  -exitRequested : boolean
+  -currentDate : LocalDate
+  +process(line : String) : String
+  +isExitRequested() : boolean
+  +getCurrentDate() : LocalDate
+}
+
+class UserManager {
+  +getUsers() : List<User>
+  +findByEmail(email : String) : Optional<User>
+  +create(name, surname, dni, email, password, phone, card) : void
+  +delete(email : String, password : String) : User
+  +update(email : String, password : String, field : UserField, newValue : String) : void
+}
+
+class UserFileRepository {
+  -file : Path
+  +load() : List<User>
+  +save(users : List<User>) : void
+}
+
+class User {
+  -name : String
+  -surname : String
+  -dni : String {readOnly}
+  -email : String
+  -password : String
+  -phone : String
+  -card : String
+}
+
+enum UserField {
+  NAME
+  SURNAME
+  EMAIL
+  PASSWORD
+  PHONE
+  CARD
+}
+
+class UserValidator <<utility>> {
+  {static} +isValidDni(dni : String) : boolean
+  {static} +isValidEmail(email : String) : boolean
+  {static} +isValidPassword(password : String) : boolean
+  {static} +isValidCard(card : String) : boolean
+  {static} +isNotBlank(value : String) : boolean
+}
+
+class UserException
+
+class GroupManager {
+  +getGroups() : Collection<Group>
+  +find(id : String) : Optional<Group>
+  +create(id : String, name : String) : void
+  +addMember(id : String, email : String) : void
+  +removeMember(id : String, email : String) : void
+  +delete(id : String) : void
+  +removeUserEverywhere(user : User) : void
+}
+
+class GroupFileRepository {
+  -file : Path
+  +load(userByDni : Function<String, User>) : List<Group>
+  +save(groups : Collection<Group>) : void
+}
+
+class Group {
+  -id : String {readOnly}
+  -name : String
+  +addMember(user : User) : boolean
+  +removeMember(user : User) : boolean
+  +contains(user : User) : boolean
+}
+
+Exception <|-- UserException
+
+App ..> CommandRunner : creates
+CommandRunner "1" --> "1" CommandProcessor : processor
+CommandProcessor "1" --> "1" UserManager : users
+CommandProcessor "1" --> "1" GroupManager : groups
+CommandProcessor ..> UserField
+UserManager "1" --> "1" UserFileRepository : repository
+UserManager "1" *-- "0..*" User : users
+UserManager ..> UserValidator
+GroupManager "1" --> "1" GroupFileRepository : repository
+GroupManager "1" --> "1" UserManager : users
+GroupManager "1" *-- "0..*" Group : groups
+Group "0..*" o-- "0..*" User : members
+UserFileRepository ..> User
+GroupFileRepository ..> Group
+UserManager ..> UserException : throws
+GroupManager ..> UserException : throws
+
+@enduml

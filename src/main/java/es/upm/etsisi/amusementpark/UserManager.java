@@ -56,7 +56,8 @@ public class UserManager {
         }
     }
 
-    public void delete(String email, String password) throws UserException {
+    /** Deletes the authenticated user and returns it. */
+    public User delete(String email, String password) throws UserException {
         User user = authenticate(email, password);
         int index = users.indexOf(user);
         users.remove(index);
@@ -66,6 +67,7 @@ public class UserManager {
             users.add(index, user);
             throw new UserException("Could not save users: " + e.getMessage());
         }
+        return user;
     }
 
     public void update(String email, String password, UserField field, String newValue)

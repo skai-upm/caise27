@@ -35,7 +35,8 @@ class CommandProcessorTest {
     }
 
     private CommandProcessor newProcessor() throws Exception {
-        return new CommandProcessor(new UserManager(new UserFileRepository(file)));
+        UserManager users = new UserManager(new UserFileRepository(file));
+        return new CommandProcessor(users, new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users));
     }
 
     private static void assertOk(String result) {
@@ -128,9 +129,10 @@ class CommandProcessorTest {
     @Test
     void startupDateIsTheInjectedDateOrToday() throws Exception {
         UserManager m = new UserManager(new UserFileRepository(dir.resolve("other.txt")));
-        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(m, LocalDate.of(2026, 1, 1)).getCurrentDate());
+        GroupManager g = new GroupManager(new GroupFileRepository(dir.resolve("other-groups.txt")), m);
+        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(m, g, LocalDate.of(2026, 1, 1)).getCurrentDate());
         LocalDate before = LocalDate.now();
-        LocalDate actual = new CommandProcessor(m).getCurrentDate();
+        LocalDate actual = new CommandProcessor(m, g).getCurrentDate();
         assertFalse(actual.isBefore(before));
         assertFalse(actual.isAfter(LocalDate.now()));
     }
@@ -167,6 +169,53 @@ class CommandProcessorTest {
     @Test
     void helpListsSystemDate() {
         assertTrue(processor.process("HELP").contains("SYSTEM DATE;yyyy-MM-dd"));
+    }
+
+    @Test
+    void groupCommandsFromTheSource() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        assertOk(processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertOk(processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertError(processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertError(processor.process("GROUP ADD;G01;nadie@correo.com"));
+        assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(dir.resolve("groups.txt")));
+        assertOk(processor.process("GROUP REMOVE;G01;ana@correo.com"));
+        assertEquals(List.of("G01;Familia Garcia"), Files.readAllLines(dir.resolve("groups.txt")));
+        assertOk(processor.process("GROUP DELETE;G01"));
+        assertTrue(Files.readAllLines(dir.resolve("groups.txt")).isEmpty());
+        assertError(processor.process("GROUP DELETE;G01"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GROUP CREATE;G02", "GROUP CREATE;G02;N;x", "GROUP ADD;G01", "GROUP ADD;G01;a;b",
+        "GROUP REMOVE;G01", "GROUP DELETE", "GROUP DELETE;G01;extra", "GROUP CREATE;;Familia", "GROUP CREATE;G02;"})
+    void malformedGroupCommandsChangeNothing(String command) throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        assertOk(processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertOk(processor.process("GROUP ADD;G01;ana@correo.com"));
+        List<String> before = Files.readAllLines(dir.resolve("groups.txt"));
+        assertError(processor.process(command));
+        assertEquals(before, Files.readAllLines(dir.resolve("groups.txt")));
+    }
+
+    @Test
+    void deletingAUserRemovesItFromGroupsAcrossRestart() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        assertOk(processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertOk(processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertOk(processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals(List.of("G01;Familia Garcia"), Files.readAllLines(dir.resolve("groups.txt")));
+        CommandProcessor restarted = newProcessor();
+        assertOk(restarted.process(CREATE_ANA));
+        assertError(restarted.process("GROUP REMOVE;G01;ana@correo.com"));
+    }
+
+    @Test
+    void helpListsGroupCommands() {
+        String help = processor.process("HELP");
+        for (String syntax : List.of("GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id")) {
+            assertTrue(help.contains(syntax), syntax);
+        }
     }
 
     @Test
