@@ -69,11 +69,3 @@ The system SHALL process `SPEEDPASS DELETE;IdPase` and `SPECIALPASS DELETE;IdPas
 #### Scenario: Refund not permitted
 - **WHEN** the pass is consumed, its ticket is dated on or before the system date, the pass does not exist, or `SPECIALPASS DELETE` names a SpeedPass (or the reverse)
 - **THEN** the result starts with `ERROR` and the pass is kept
-
-### Requirement: Tickets with passes are not deleted alone
-While an individual ticket has passes, `TICKET DELETE` of that ticket, and `GROUPTICKET DELETE` of a group ticket whose generated tickets have passes, SHALL be rejected with `ERROR`, so that no pass is left without its ticket.
-
-#### Scenario: Ticket with passes
-- **GIVEN** future ticket `T001` has SpeedPass `SP1-1`
-- **WHEN** `TICKET DELETE;T001` is processed
-- **THEN** the result starts with `ERROR`; after `SPEEDPASS DELETE;SP1-1` the ticket can be deleted

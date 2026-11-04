@@ -678,18 +678,67 @@ class CommandProcessorTest {
     }
 
     @Test
-    void ticketsWithPassesCannotBeDeletedAlone() {
+    void ticketDeletionCascadesToItsPasses() throws Exception {
+        groupOfThree();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("TICKET CREATE;T002;pedro@correo.com;2026-10-15");
+        processor.process("SPEEDPASS CREATE;SP1;T001;10");
+        processor.process("SPECIALPASS CREATE;VIP1;T001");
+        processor.process("SPEEDPASS CREATE;SP9;T002;1");
+        assertOk(processor.process("TICKET DELETE;T001"));
+        assertEquals(List.of("SPEED;SP9-1;T002;8.00;false"), Files.readAllLines(dir.resolve("passes.txt")));
+        CommandProcessor restarted = newProcessor();
+        assertError(restarted.process("SPEEDPASS DELETE;SP1-1"));
+        assertError(restarted.process("TICKET DELETE;T001"));
+    }
+
+    @Test
+    void groupTicketDeletionCascadesToMemberPasses() throws Exception {
+        groupOfThree();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("SPEEDPASS CREATE;SP1;TG01-12345678Z;10");
+        processor.process("SPECIALPASS CREATE;VIP1;TG01-87654321X");
+        processor.process("SPEEDPASS CREATE;SP9;T001;1");
+        assertOk(processor.process("GROUPTICKET DELETE;TG01"));
+        assertEquals(List.of("SPEED;SP9-1;T001;8.00;false"), Files.readAllLines(dir.resolve("passes.txt")));
+        assertTrue(Files.readAllLines(dir.resolve("grouptickets.txt")).isEmpty());
+        assertError(processor.process("SPEEDPASS CREATE;SP2;TG01-12345678Z;1"));
+        assertOk(processor.process("GROUP REMOVE;G01;ana@correo.com"));
+    }
+
+    @Test
+    void invalidDeletionsRemoveNothing() throws Exception {
         groupOfThree();
         processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
         processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
         processor.process("SPEEDPASS CREATE;SP1;T001;1");
-        processor.process("SPEEDPASS CREATE;SP2;TG01-87654321X;1");
+        processor.process("SPEEDPASS CREATE;SP2;TG01-12345678Z;1");
+        assertOk(processor.process("SYSTEM DATE;2026-10-15"));
+        List<String> passesBefore = Files.readAllLines(dir.resolve("passes.txt"));
         assertError(processor.process("TICKET DELETE;T001"));
         assertError(processor.process("GROUPTICKET DELETE;TG01"));
-        assertOk(processor.process("SPEEDPASS DELETE;SP1-1"));
-        assertOk(processor.process("SPEEDPASS DELETE;SP2-1"));
-        assertOk(processor.process("TICKET DELETE;T001"));
-        assertOk(processor.process("GROUPTICKET DELETE;TG01"));
+        assertError(processor.process("TICKET DELETE;TG01-12345678Z"));
+        assertEquals(passesBefore, Files.readAllLines(dir.resolve("passes.txt")));
+        assertEquals(1, Files.readAllLines(dir.resolve("tickets.txt")).size());
+        assertEquals(1, Files.readAllLines(dir.resolve("grouptickets.txt")).size());
+    }
+
+    @Test
+    void consumedPassesAndTypedAttractionsSurviveRestart() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("SPEEDPASS CREATE;SP1;T001;10");
+        processor.process("SPECIALPASS CREATE;VIP1;T001");
+        processor.process("ATTRACTION CREATE;A04;VIP;5;SPECIAL");
+        assertOk(processor.process("ATTRACTION ENTER;A04;T001"));
+        CommandProcessor restarted = newProcessor();
+        restarted.process("SYSTEM DATE;2026-10-15");
+        assertTrue(restarted.process("ATTRACTION STATUS;A04").contains("present=0 available=5 type=SPECIAL"));
+        assertError(restarted.process("ATTRACTION ENTER;A04;T001"));
+        assertError(restarted.process("SPECIALPASS CREATE;VIP2;T001"));
+        assertTrue(Files.readAllLines(dir.resolve("passes.txt")).contains("SPECIAL;VIP1;T001;40.00;true"));
     }
 
     @Test

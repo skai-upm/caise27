@@ -129,8 +129,8 @@ public class TicketManager {
         return ticket;
     }
 
-    /** Deletes an individual ticket whose date is later than {@code today}. */
-    public void delete(String id, LocalDate today) throws UserException {
+    /** Checks, without changing anything, that an individual ticket can be deleted. */
+    public IndividualTicket checkDeletable(String id, LocalDate today) throws UserException {
         IndividualTicket ticket = tickets.get(id);
         if (ticket == null) {
             if (groupTickets.containsKey(id)) {
@@ -144,6 +144,12 @@ public class TicketManager {
             throw new UserException("No ticket with id " + id);
         }
         requireFuture(ticket, today);
+        return ticket;
+    }
+
+    /** Deletes an individual ticket whose date is later than {@code today}. */
+    public void delete(String id, LocalDate today) throws UserException {
+        checkDeletable(id, today);
         Map<String, IndividualTicket> previous = new LinkedHashMap<>(tickets);
         tickets.remove(id);
         saveTickets(() -> {
@@ -152,8 +158,8 @@ public class TicketManager {
         });
     }
 
-    /** Deletes a group ticket, with all its individual tickets, if its date is later than {@code today}. */
-    public void deleteGroupTicket(String id, LocalDate today) throws UserException {
+    /** Checks, without changing anything, that a group ticket can be deleted. */
+    public GroupTicket checkGroupDeletable(String id, LocalDate today) throws UserException {
         GroupTicket ticket = groupTickets.get(id);
         if (ticket == null) {
             throw new UserException(tickets.containsKey(id)
@@ -161,6 +167,12 @@ public class TicketManager {
                     : "No group ticket with id " + id);
         }
         requireFuture(ticket, today);
+        return ticket;
+    }
+
+    /** Deletes a group ticket, with all its individual tickets, if its date is later than {@code today}. */
+    public void deleteGroupTicket(String id, LocalDate today) throws UserException {
+        checkGroupDeletable(id, today);
         Map<String, GroupTicket> previous = new LinkedHashMap<>(groupTickets);
         groupTickets.remove(id);
         saveGroupTickets(() -> {

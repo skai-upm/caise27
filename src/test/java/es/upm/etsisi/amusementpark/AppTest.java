@@ -153,7 +153,9 @@ class AppTest {
             "GROUP ADD;G01;ana@correo.com",
             "TICKET CREATE;T001;ana@correo.com;2026-10-15",
             "GROUPTICKET CREATE;TG01;G01;2026-10-16",
-            "ATTRACTION CREATE;A01;Tornado;20");
+            "ATTRACTION CREATE;A01;Tornado;20;INDIVIDUAL",
+            "SPEEDPASS CREATE;SP1;T001;1",
+            "ATTRACTION ENTER;A01;T001;SPEED");
 
     /** Stdin that, when fully read, records which files exist under tmp/ (i.e. while the run is live). */
     private static InputStream probingInput(String text, Path tmpRoot, List<Path> seen) {
@@ -199,7 +201,8 @@ class AppTest {
         assertEquals(0, status);
         assertFalse(bytes.toString(StandardCharsets.UTF_8).contains("ERROR"), bytes.toString(StandardCharsets.UTF_8));
         List<String> names = seen.stream().map(p -> p.getFileName().toString()).sorted().toList();
-        assertEquals(List.of("attractions.txt", "groups.txt", "grouptickets.txt", "tickets.txt", "users.txt"), names);
+        assertEquals(List.of("attractions.txt", "groups.txt", "grouptickets.txt", "passes.txt", "tickets.txt", "users.txt"),
+                names);
         Path runDir = seen.get(0).getParent();
         assertEquals(tmpRoot, runDir.getParent());
         assertTrue(runDir.getFileName().toString().matches("\\d{8}_\\d{6}(_\\d+)?"), runDir.toString());

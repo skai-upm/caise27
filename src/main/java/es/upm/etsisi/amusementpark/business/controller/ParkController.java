@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -193,24 +194,41 @@ public final class ParkController {
         return tickets.create(id, email, date, currentDate, ticketPrice);
     }
 
+    /** Deletes a future individual ticket and, first, all its passes; nothing is removed on failure. */
     public void deleteTicket(String id) throws UserException {
-        Optional<IndividualTicket> ticket = tickets.find(id);
-        if (ticket.isPresent() && passes.hasPasses(ticket.get())) {
-            throw new UserException("Ticket " + id + " has passes; refund them first");
-        }
-        tickets.delete(id, currentDate);
+        IndividualTicket ticket = tickets.checkDeletable(id, currentDate);
+        cascade(passes.passesOf(ticket), () -> tickets.delete(id, currentDate));
     }
 
     public GroupTicket createGroupTicket(String id, Group group, LocalDate date) throws UserException {
         return tickets.createGroupTicket(id, group, date, currentDate, ticketPrice);
     }
 
+    /**
+     * Deletes a future group ticket: first the passes of its individual tickets,
+     * then those tickets together with the group ticket; nothing is removed on failure.
+     */
     public void deleteGroupTicket(String id) throws UserException {
-        Optional<GroupTicket> groupTicket = tickets.findGroupTicket(id);
-        if (groupTicket.isPresent() && groupTicket.get().getParts().stream().anyMatch(passes::hasPasses)) {
-            throw new UserException("Group ticket " + id + " has tickets with passes; refund them first");
+        GroupTicket groupTicket = tickets.checkGroupDeletable(id, currentDate);
+        List<Pass> memberPasses = new ArrayList<>();
+        groupTicket.getParts().forEach(part -> memberPasses.addAll(passes.passesOf(part)));
+        cascade(memberPasses, () -> tickets.deleteGroupTicket(id, currentDate));
+    }
+
+    /** Removes the passes, then runs the ticket deletion; restores the passes if it fails. */
+    private void cascade(List<Pass> ownedPasses, TicketDeletion deletion) throws UserException {
+        Map<String, Pass> snapshot = passes.removeAll(ownedPasses);
+        try {
+            deletion.run();
+        } catch (UserException e) {
+            passes.restore(snapshot);
+            throw e;
         }
-        tickets.deleteGroupTicket(id, currentDate);
+    }
+
+    @FunctionalInterface
+    private interface TicketDeletion {
+        void run() throws UserException;
     }
 
     // ---------- Passes ----------

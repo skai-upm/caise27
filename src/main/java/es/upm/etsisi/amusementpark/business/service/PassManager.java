@@ -135,6 +135,31 @@ public class PassManager {
         }
     }
 
+    /**
+     * Removes the given passes and saves; returns a snapshot to give to
+     * {@link #restore} if a later step of the same operation fails.
+     */
+    public Map<String, Pass> removeAll(List<Pass> toRemove) throws UserException {
+        Map<String, Pass> snapshot = new LinkedHashMap<>(passes);
+        toRemove.forEach(p -> passes.remove(p.getId()));
+        save(() -> {
+            passes.clear();
+            passes.putAll(snapshot);
+        });
+        return snapshot;
+    }
+
+    /** Puts back the passes of a snapshot taken by {@link #removeAll}, in their original order, and saves. */
+    public void restore(Map<String, Pass> snapshot) throws UserException {
+        Map<String, Pass> current = new LinkedHashMap<>(passes);
+        passes.clear();
+        passes.putAll(snapshot);
+        save(() -> {
+            passes.clear();
+            passes.putAll(current);
+        });
+    }
+
     public List<Pass> passesOf(IndividualTicket ticket) {
         return passes.values().stream().filter(p -> p.getTicket() == ticket).toList();
     }

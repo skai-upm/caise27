@@ -89,6 +89,20 @@ class ParkControllerTest {
     }
 
     @Test
+    void failedTicketSaveRestoresTheCascadedPasses() throws Exception {
+        controller.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
+                "1234567890123456");
+        controller.createTicket("T001", "ana@correo.com", LocalDate.of(2026, 10, 15));
+        controller.buySpeedPasses("SP1", "T001", "10");
+        java.nio.file.Path ticketsFile = dir.resolve("tickets.txt");
+        java.nio.file.Files.delete(ticketsFile);
+        java.nio.file.Files.createDirectory(ticketsFile);
+        assertThrows(UserException.class, () -> controller.deleteTicket("T001"));
+        assertEquals(10, java.nio.file.Files.readAllLines(dir.resolve("passes.txt")).size());
+        assertEquals(new BigDecimal("8.00"), controller.buySpeedPasses("SP2", "T001", "1"));
+    }
+
+    @Test
     void rejectsNonPositivePrices() throws Exception {
         assertThrows(UserException.class, () -> controller.setTicketPrice(BigDecimal.ZERO));
         assertThrows(UserException.class, () -> controller.setTicketPrice(null));
