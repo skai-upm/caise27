@@ -30,6 +30,16 @@ public class User {
                 other.password, other.phone, other.card);
     }
 
+    /** Copies every editable field (all but the DNI) from another user into this one. */
+    void copyEditableFrom(User other) {
+        this.name = other.name;
+        this.surnames = other.surnames;
+        this.email = other.email;
+        this.password = other.password;
+        this.phone = other.phone;
+        this.card = other.card;
+    }
+
     public String getName() {
         return name;
     }

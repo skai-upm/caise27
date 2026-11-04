@@ -29,7 +29,7 @@ class CommandRunnerTest {
     @BeforeEach
     void setUp() {
         manager = new UserManager(new UserFileStorage(dir.resolve("users.txt")));
-        runner = new CommandRunner(new CommandProcessor(manager));
+        runner = new CommandRunner(new CommandProcessor(manager, new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), manager)));
     }
 
     private String[] run(String input) throws IOException {

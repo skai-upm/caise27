@@ -33,7 +33,7 @@ class AppTest {
     private Run run(String[] args, Path usersFile, String stdin) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
-        int status = App.run(args, usersFile, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
+        int status = App.run(args, usersFile, usersFile.resolveSibling("groups-" + usersFile.getFileName()), new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8));
         return new Run(status, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
     }
@@ -118,5 +118,16 @@ class AppTest {
             assertTrue(r.err().startsWith("ERROR"));
         }
         input.toFile().setReadable(true);
+    }
+
+    @Test
+    void groupsSurviveRestart() throws IOException {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], users, CommandProcessorTest.CREATE_ANA + "\nGROUP CREATE;G01;Familia Garcia\n"
+                + "GROUP ADD;G01;ana@correo.com\nEXIT\n");
+        Run second = run(new String[0], users, "GROUP ADD;G01;ana@correo.com\nGROUP REMOVE;G01;ana@correo.com\n");
+        String[] lines = second.out().split("\\R");
+        assertTrue(lines[0].startsWith("ERROR"), "membership restored, so duplicate add is rejected");
+        assertTrue(lines[1].startsWith("OK"));
     }
 }

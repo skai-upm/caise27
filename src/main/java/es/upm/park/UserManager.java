@@ -32,7 +32,7 @@ public class UserManager {
         return null;
     }
 
-    private User findByDni(String dni) {
+    public User findByDni(String dni) {
         for (User u : users) {
             if (u.getDni().equals(dni)) {
                 return u;
@@ -58,11 +58,13 @@ public class UserManager {
         commit(next);
     }
 
-    public void delete(String email, String password) {
+    /** Deletes the authenticated user and returns the removed object. */
+    public User delete(String email, String password) {
         User user = authenticate(email, password);
         List<User> next = new ArrayList<>(users);
         next.remove(user);
         commit(next);
+        return user;
     }
 
     public void update(String email, String password, UserField field, String value) {
@@ -98,7 +100,9 @@ public class UserManager {
         }
         List<User> next = new ArrayList<>(users);
         next.set(next.indexOf(current), changed);
-        commit(next);
+        storage.save(next);
+        // Apply to the existing object so every holder of the reference sees the change.
+        current.copyEditableFrom(changed);
     }
 
     private User authenticate(String email, String password) {

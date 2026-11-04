@@ -1,0 +1,99 @@
+@startuml model
+' Class model of the amusement-park application (package es.upm.park)
+skinparam classAttributeIconSize 0
+hide empty members
+
+package es.upm.park {
+
+  class App {
+    {static} +main(args : String[]) : void
+  }
+
+  class CommandRunner {
+    +run(in : BufferedReader, out : PrintStream) : void
+  }
+
+  class CommandProcessor {
+    -exitRequested : boolean
+    -currentDate : LocalDate
+    +process(line : String) : String
+    +isExitRequested() : boolean
+    +getCurrentDate() : LocalDate
+  }
+
+  class UserManager {
+    +create(...) : void
+    +delete(email : String, password : String) : User
+    +update(email : String, password : String, field : UserField, value : String) : void
+    +findByEmail(email : String) : User
+    +findByDni(dni : String) : User
+  }
+
+  class UserFileStorage {
+    -file : Path
+    +load() : List<User>
+    +save(users : List<User>) : void
+  }
+
+  class UserValidator <<utility>> {
+    {static} +isValidDni(dni : String) : boolean
+    {static} +isValidEmail(email : String) : boolean
+    {static} +isValidPassword(password : String) : boolean
+    {static} +isValidCard(card : String) : boolean
+    {static} +isNonBlank(value : String) : boolean
+  }
+
+  class User {
+    -name : String
+    -surnames : String
+    -dni : String {readOnly}
+    -email : String
+    -password : String
+    -phone : String
+    -card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class GroupManager {
+    +create(id : String, name : String) : void
+    +delete(id : String) : void
+    +addMember(id : String, email : String) : void
+    +removeMember(id : String, email : String) : void
+    +removeUserFromAllGroups(user : User) : void
+    +find(id : String) : Group
+  }
+
+  class GroupFileStorage {
+    -file : Path
+    +load(userByDni : Function<String, User>) : List<Group>
+    +save(groups : Collection<Group>) : void
+  }
+
+  class Group {
+    -id : String {readOnly}
+    -name : String {readOnly}
+    +contains(user : User) : boolean
+  }
+}
+
+App ..> CommandRunner : creates
+CommandRunner --> "1" CommandProcessor : processor
+CommandProcessor --> "1" UserManager : users
+CommandProcessor --> "1" GroupManager : groups
+UserManager --> "1" UserFileStorage : storage
+UserManager "1" *-- "0..*" User : users
+UserManager ..> UserValidator
+UserManager ..> UserField
+GroupManager --> "1" GroupFileStorage : storage
+GroupManager --> "1" UserManager : users
+GroupManager "1" *-- "0..*" Group : groups
+Group "0..*" o-- "0..*" User : members
+@enduml

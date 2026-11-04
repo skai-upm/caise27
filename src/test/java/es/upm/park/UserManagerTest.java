@@ -3,6 +3,7 @@ package es.upm.park;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
@@ -150,6 +151,23 @@ class UserManagerTest {
         createAna();
         manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "Ana@correo.com");
         assertEquals("Ana@correo.com", manager.findByEmail("ana@correo.com").getEmail());
+    }
+
+    @Test
+    void updateModifiesTheSameUserObject() {
+        createAna();
+        User ana = manager.findByEmail("ana@correo.com");
+        manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "ana.nueva@correo.com");
+        assertSame(ana, manager.findByEmail("ana.nueva@correo.com"));
+        assertEquals("ana.nueva@correo.com", ana.getEmail());
+        assertSame(ana, manager.findByDni("12345678Z"));
+    }
+
+    @Test
+    void deleteReturnsRemovedUser() {
+        createAna();
+        User ana = manager.findByEmail("ana@correo.com");
+        assertSame(ana, manager.delete("ana@correo.com", "Clave1!"));
     }
 
     @Test

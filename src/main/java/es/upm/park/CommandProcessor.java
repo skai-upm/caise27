@@ -21,6 +21,10 @@ public class CommandProcessor {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "GROUP CREATE;Id;Nombre",
+            "GROUP ADD;Id;Correo",
+            "GROUP REMOVE;Id;Correo",
+            "GROUP DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
@@ -29,17 +33,19 @@ public class CommandProcessor {
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private final UserManager users;
+    private final GroupManager groups;
     private boolean exitRequested;
     /** The single current date of the application; time-dependent rules must use it. */
     private LocalDate currentDate;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserManager users) {
-        this(users, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups) {
+        this(users, groups, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, LocalDate initialDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, LocalDate initialDate) {
         this.users = users;
+        this.groups = groups;
         this.currentDate = initialDate;
     }
 
@@ -58,6 +64,10 @@ public class CommandProcessor {
                 case "USER CREATE" -> create(parts);
                 case "USER DELETE" -> delete(parts);
                 case "USER UPDATE" -> update(parts);
+                case "GROUP CREATE" -> groupCreate(parts);
+                case "GROUP ADD" -> groupAdd(parts);
+                case "GROUP REMOVE" -> groupRemove(parts);
+                case "GROUP DELETE" -> groupDelete(parts);
                 case "SYSTEM DATE" -> systemDate(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
@@ -86,6 +96,30 @@ public class CommandProcessor {
         return sb.toString();
     }
 
+    private String groupCreate(String[] p) {
+        requireParams(p, 2, "GROUP CREATE;Id;Nombre");
+        groups.create(p[1], p[2]);
+        return "OK: group " + p[1] + " created";
+    }
+
+    private String groupAdd(String[] p) {
+        requireParams(p, 2, "GROUP ADD;Id;Correo");
+        groups.addMember(p[1], p[2]);
+        return "OK: user " + p[2] + " added to group " + p[1];
+    }
+
+    private String groupRemove(String[] p) {
+        requireParams(p, 2, "GROUP REMOVE;Id;Correo");
+        groups.removeMember(p[1], p[2]);
+        return "OK: user " + p[2] + " removed from group " + p[1];
+    }
+
+    private String groupDelete(String[] p) {
+        requireParams(p, 1, "GROUP DELETE;Id");
+        groups.delete(p[1]);
+        return "OK: group " + p[1] + " deleted";
+    }
+
     private String systemDate(String[] p) {
         requireParams(p, 1, "SYSTEM DATE;yyyy-MM-dd");
         try {
@@ -110,7 +144,8 @@ public class CommandProcessor {
 
     private String delete(String[] p) {
         requireParams(p, 2, "USER DELETE;Correo;Contraseña");
-        users.delete(p[1], p[2]);
+        User removed = users.delete(p[1], p[2]);
+        groups.removeUserFromAllGroups(removed);
         return "OK: user " + p[1] + " deleted";
     }
 

@@ -1,6 +1,7 @@
 package es.upm.park;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -19,12 +20,14 @@ class CommandProcessorTest {
     @TempDir
     Path dir;
     UserManager manager;
+    GroupManager groups;
     CommandProcessor processor;
 
     @BeforeEach
     void setUp() {
         manager = new UserManager(new UserFileStorage(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        groups = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), manager);
+        processor = new CommandProcessor(manager, groups);
     }
 
     @Test
@@ -78,6 +81,7 @@ class CommandProcessorTest {
         for (String usage : new String[] {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd", "HELP", "EXIT",
             "NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD"}) {
             assertTrue(help.contains(usage), usage);
@@ -101,7 +105,7 @@ class CommandProcessorTest {
     @Test
     void startsWithLocalDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = new CommandProcessor(manager).getCurrentDate();
+        LocalDate date = new CommandProcessor(manager, groups).getCurrentDate();
         LocalDate after = LocalDate.now();
         assertTrue(!date.isBefore(before) && !date.isAfter(after));
     }
@@ -129,6 +133,49 @@ class CommandProcessorTest {
 
     @Test
     void injectedInitialDateIsUsed() {
-        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(manager, LocalDate.of(2026, 1, 1)).getCurrentDate());
+        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(manager, groups, LocalDate.of(2026, 1, 1)).getCurrentDate());
+    }
+
+    @Test
+    void groupCommands() {
+        processor.process(CREATE_ANA);
+        assertTrue(processor.process("GROUP CREATE;G01;Familia Garcia").startsWith("OK"));
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").startsWith("OK"));
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP ADD;G01;nadie@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").startsWith("OK"));
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("OK"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR"));
+        assertEquals(0, groups.getGroups().size());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GROUP CREATE;G01", "GROUP CREATE;G01;a;b", "GROUP ADD;G01", "GROUP REMOVE;G01",
+        "GROUP DELETE", "GROUP DELETE;G01;x", "GROUP CREATE;;Familia", "GROUP CREATE;G02;"})
+    void malformedGroupCommandsAreRejected(String command) {
+        assertTrue(processor.process(command).startsWith("ERROR"), command);
+        assertEquals(0, groups.getGroups().size());
+    }
+
+    @Test
+    void deletedUserLeavesItsGroups() {
+        processor.process(CREATE_ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+        assertNotNull(groups.find("G01"));
+        assertEquals(0, groups.find("G01").getMembers().size());
+        GroupManager reloaded = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), manager);
+        assertEquals(0, reloaded.find("G01").getMembers().size());
+    }
+
+    @Test
+    void groupMemberReflectsUserUpdate() {
+        processor.process(CREATE_ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria");
+        assertEquals("Ana Maria", groups.find("G01").getMembers().get(0).getName());
     }
 }

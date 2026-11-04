@@ -19,21 +19,25 @@ import java.nio.file.Path;
 public class App {
 
     static final Path USERS_FILE = Path.of("users.txt");
+    static final Path GROUPS_FILE = Path.of("groups.txt");
 
     public static void main(String[] args) {
-        int status = run(args, USERS_FILE, System.in, System.out, System.err);
+        int status = run(args, USERS_FILE, GROUPS_FILE, System.in, System.out, System.err);
         if (status != 0) {
             System.exit(status);
         }
     }
 
     /** Runs the application and returns its exit status (0 on success). */
-    static int run(String[] args, Path usersFile, InputStream stdin, PrintStream out, PrintStream err) {
+    static int run(String[] args, Path usersFile, Path groupsFile, InputStream stdin, PrintStream out,
+                   PrintStream err) {
         CommandRunner runner;
         try {
-            runner = new CommandRunner(new CommandProcessor(new UserManager(new UserFileStorage(usersFile))));
+            UserManager users = new UserManager(new UserFileStorage(usersFile));
+            GroupManager groups = new GroupManager(new GroupFileStorage(groupsFile), users);
+            runner = new CommandRunner(new CommandProcessor(users, groups));
         } catch (UncheckedIOException e) {
-            err.println("ERROR: cannot load users file '" + usersFile + "': " + e.getCause().getMessage());
+            err.println("ERROR: cannot load data: " + e.getMessage());
             return 1;
         }
         if (args.length == 0) {
