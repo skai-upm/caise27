@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -122,6 +123,50 @@ class CommandProcessorTest {
         assertFalse(processor.isExitRequested());
         assertOk(processor.process("exit"));
         assertTrue(processor.isExitRequested());
+    }
+
+    @Test
+    void startupDateIsTheInjectedDateOrToday() throws Exception {
+        UserManager m = new UserManager(new UserFileRepository(dir.resolve("other.txt")));
+        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(m, LocalDate.of(2026, 1, 1)).getCurrentDate());
+        LocalDate before = LocalDate.now();
+        LocalDate actual = new CommandProcessor(m).getCurrentDate();
+        assertFalse(actual.isBefore(before));
+        assertFalse(actual.isAfter(LocalDate.now()));
+    }
+
+    @Test
+    void systemDateCanMoveForwardAndBackward() {
+        assertOk(processor.process("SYSTEM DATE;2026-09-15"));
+        assertEquals(LocalDate.of(2026, 9, 15), processor.getCurrentDate());
+        assertOk(processor.process("SYSTEM DATE;2025-01-01"));
+        assertEquals(LocalDate.of(2025, 1, 1), processor.getCurrentDate());
+        assertOk(processor.process("system date;2027-12-31"));
+        assertEquals(LocalDate.of(2027, 12, 31), processor.getCurrentDate());
+    }
+
+    @Test
+    void leapDayBoundary() {
+        assertOk(processor.process("SYSTEM DATE;2028-02-29"));
+        assertError(processor.process("SYSTEM DATE;2026-02-29"));
+        assertEquals(LocalDate.of(2028, 2, 29), processor.getCurrentDate());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "SYSTEM DATE;15-09-2026", "SYSTEM DATE;2026/09/15", "SYSTEM DATE;2026-9-15", "SYSTEM DATE;2026-13-01",
+        "SYSTEM DATE;2026-02-30", "SYSTEM DATE;hoy", "SYSTEM DATE;", "SYSTEM DATE",
+        "SYSTEM DATE;2026-09-15;2026-09-16", "SYSTEM DATE;+2026-09-15", "SYSTEM DATE;12026-09-15"
+    })
+    void invalidDatesLeaveDateUnchanged(String command) {
+        assertOk(processor.process("SYSTEM DATE;2026-09-15"));
+        assertError(processor.process(command));
+        assertEquals(LocalDate.of(2026, 9, 15), processor.getCurrentDate());
+    }
+
+    @Test
+    void helpListsSystemDate() {
+        assertTrue(processor.process("HELP").contains("SYSTEM DATE;yyyy-MM-dd"));
     }
 
     @Test

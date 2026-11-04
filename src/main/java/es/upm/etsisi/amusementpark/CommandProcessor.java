@@ -1,5 +1,9 @@
 package es.upm.etsisi.amusementpark;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -16,20 +20,36 @@ public class CommandProcessor {
     private static final int CREATE_PARAMS = 7;
     private static final int DELETE_PARAMS = 2;
     private static final int UPDATE_PARAMS = 4;
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     /** Syntax of every available command, shown by {@code HELP}. Extend when adding commands. */
     static final List<String> HELP_LINES = List.of(
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
 
     private final UserManager users;
     private boolean exitRequested;
+    /** The single simulated current date of this run; never persisted. */
+    private LocalDate currentDate;
 
+    /** Creates the controller with the operating system's local date as current date. */
     public CommandProcessor(UserManager users) {
+        this(users, LocalDate.now());
+    }
+
+    public CommandProcessor(UserManager users, LocalDate startupDate) {
         this.users = users;
+        this.currentDate = startupDate;
+    }
+
+    /** The current system date that all time-dependent operations must use. */
+    public LocalDate getCurrentDate() {
+        return currentDate;
     }
 
     /** True once an {@code EXIT} command has been processed. */
@@ -57,6 +77,7 @@ public class CommandProcessor {
                 case "USER CREATE" -> create(params);
                 case "USER DELETE" -> delete(params);
                 case "USER UPDATE" -> update(params);
+                case "SYSTEM DATE" -> systemDate(params);
                 case "HELP" -> help(params);
                 case "EXIT" -> exit(params);
                 default -> error("Unknown command: " + parts[0].trim());
@@ -66,6 +87,16 @@ public class CommandProcessor {
         } catch (RuntimeException e) {
             return error("Unexpected problem processing the command: " + e.getMessage());
         }
+    }
+
+    private String systemDate(String[] p) throws UserException {
+        requireParams(p, 1, "SYSTEM DATE;yyyy-MM-dd");
+        try {
+            currentDate = LocalDate.parse(p[0], DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new UserException("Invalid date '" + p[0] + "', expected yyyy-MM-dd");
+        }
+        return ok("System date set to " + currentDate);
     }
 
     private static String help(String[] p) throws UserException {
