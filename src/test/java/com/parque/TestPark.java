@@ -4,6 +4,9 @@ import com.parque.business.controller.ParkController;
 import com.parque.business.service.AttractionService;
 import com.parque.business.service.GroupService;
 import com.parque.business.service.InvoiceDirector;
+import com.parque.business.service.PassService;
+import com.parque.persistence.PassRepository;
+import java.nio.file.Files;
 import com.parque.business.service.TicketService;
 import com.parque.business.service.UserService;
 import java.io.IOException;
@@ -30,14 +33,24 @@ public final class TestPark {
     public static ParkController controller(UserService users, GroupService groups, TicketService tickets,
             AttractionService attractions) {
         ParkController.release();
-        return ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector());
+        return ParkController.initialize(users, groups, tickets, attractions, passes(tickets), new InvoiceDirector());
     }
 
     /** As {@link #controller(UserService, GroupService, TicketService, AttractionService)} starting at {@code date}. */
     public static ParkController controller(UserService users, GroupService groups, TicketService tickets,
             AttractionService attractions, LocalDate date) {
         ParkController.release();
-        return ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector(), date);
+        return ParkController.initialize(users, groups, tickets, attractions, passes(tickets), new InvoiceDirector(),
+                date);
+    }
+
+    /** Pass service over a fresh temporary file for tests that wire services by hand. */
+    private static PassService passes(TicketService tickets) {
+        try {
+            return new PassService(new PassRepository(Files.createTempDirectory("passes").resolve("passes.txt")), tickets);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /** Passwords used by the tests. */

@@ -93,6 +93,16 @@ package com.parque.business.model {
     -capacity : int
   }
 
+  abstract class Pass {
+    -id : String
+    -price : BigDecimal
+    -consumed : boolean
+  }
+
+  class SpeedPass
+
+  class SpecialPass
+
   class Invoice {
     -recipient : String
     -total : BigDecimal
@@ -118,6 +128,7 @@ package com.parque.business.service {
   class GroupService
   class TicketService
   class AttractionService
+  class PassService
   class InvoiceDirector
   abstract class InvoiceBuilder {
     -recipient : String
@@ -141,6 +152,9 @@ package com.parque.persistence {
     -file : Path
   }
   class AttractionRepository {
+    -file : Path
+  }
+  class PassRepository {
     -file : Path
   }
 }
@@ -169,6 +183,7 @@ ParkController "1" x--> "1" UserService : users
 ParkController "1" x--> "1" GroupService : groups
 ParkController "1" x--> "1" TicketService : tickets
 ParkController "1" x--> "1" AttractionService : attractions
+ParkController "1" x--> "1" PassService : passes
 
 ' Users
 UserService "1" x--> "1" UserRepository : repository
@@ -198,7 +213,16 @@ AttractionService "1" x--> "1" AttractionRepository : repository
 AttractionService "1" o--> "0..*" Attraction : attractions
 Attraction "0..*" o--> "0..*" User : present
 
-'' Invoices
+''' Passes
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Pass "0..*" x--> "1" IndividualTicket : ticket
+PassService "1" x--> "1" PassRepository : repository
+PassService "0..*" x--> "1" TicketService : tickets
+PassService "1" o--> "0..*" Pass : passes
+UserInvoiceBuilder "0..*" o--> "0..*" Pass : passes
+
+' Invoices
 Invoice "1" *--> "0..*" InvoiceSection : sections
 InvoiceSection "1" *--> "1..*" InvoiceLine : lines
 InvoiceBuilder "1" *--> "0..*" InvoiceSection : sections
@@ -211,6 +235,10 @@ GroupInvoiceBuilder "0..*" o--> "0..*" GroupTicket : groupTickets
 App ..> CommandRunner : <<use>>
 App ..> DataDirectory : <<use>>
 App ..> ApplicationContext : <<use>>
+PassService ..> SpeedPass : <<use>>
+PassService ..> SpecialPass : <<use>>
+PassRepository ..> SpeedPass : <<use>>
+PassRepository ..> SpecialPass : <<use>>
 ApplicationContext ..> BCryptPasswordHasher : <<use>>
 ApplicationContext ..> SyntaxHelpFormatter : <<use>>
 ApplicationContext ..> ExtendedHelpFormatter : <<use>>

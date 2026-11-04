@@ -52,6 +52,12 @@ public class GroupTicket extends Ticket {
         return sum.multiply(factor).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
 
+    /** Stored price of each constituent ticket: the individual price reduced by the group discount. */
+    public static BigDecimal shareFor(BigDecimal unitPrice, int members) {
+        BigDecimal factor = BigDecimal.valueOf(100 - discountPercent(members));
+        return unitPrice.multiply(factor).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+
     /** The group that bought the ticket (null only for history of a deleted group). */
     public Group getGroup() {
         return group;

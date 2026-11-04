@@ -112,10 +112,11 @@ public class TicketService {
         require(!members.isEmpty(), "Group " + groupId + " has no members");
         require(!date.isBefore(today), "Ticket date " + date + " is before the system date " + today);
         List<IndividualTicket> constituents = new ArrayList<>();
+        BigDecimal share = GroupTicket.shareFor(unitPrice, members.size());
         for (int i = 0; i < members.size(); i++) {
             String constituentId = id + "-" + (i + 1);
             require(findAny(constituentId) == null, "A ticket with identifier " + constituentId + " already exists");
-            constituents.add(new IndividualTicket(constituentId, members.get(i), date, unitPrice));
+            constituents.add(new IndividualTicket(constituentId, members.get(i), date, share));
         }
         GroupTicket groupTicket = new GroupTicket(id, group, groupId, date, unitPrice,
                 GroupTicket.totalFor(unitPrice, members.size()), constituents);

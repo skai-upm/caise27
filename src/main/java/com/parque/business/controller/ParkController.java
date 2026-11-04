@@ -5,6 +5,9 @@ import com.parque.business.model.Group;
 import com.parque.business.model.GroupTicket;
 import com.parque.business.model.IndividualTicket;
 import com.parque.business.model.Invoice;
+import com.parque.business.model.Pass;
+import com.parque.business.model.SpecialPass;
+import com.parque.business.model.SpeedPass;
 import com.parque.business.model.Ticket;
 import com.parque.business.model.User;
 import com.parque.business.model.UserField;
@@ -12,11 +15,14 @@ import com.parque.business.service.AttractionService;
 import com.parque.business.service.GroupInvoiceBuilder;
 import com.parque.business.service.GroupService;
 import com.parque.business.service.InvoiceDirector;
+import com.parque.business.service.PassService;
 import com.parque.business.service.TicketService;
 import com.parque.business.service.UserInvoiceBuilder;
 import com.parque.business.service.UserService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The application's main controller. It owns the single current system date and the current individual ticket
@@ -38,16 +44,18 @@ public class ParkController {
     private final GroupService groups;
     private final TicketService tickets;
     private final AttractionService attractions;
+    private final PassService passes;
     private final InvoiceDirector invoiceDirector;
     private LocalDate currentDate;
     private BigDecimal ticketPrice = DEFAULT_TICKET_PRICE;
 
     private ParkController(UserService users, GroupService groups, TicketService tickets,
-            AttractionService attractions, InvoiceDirector invoiceDirector, LocalDate initialDate) {
+            AttractionService attractions, PassService passes, InvoiceDirector invoiceDirector, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
+        this.passes = passes;
         this.invoiceDirector = invoiceDirector;
         this.currentDate = initialDate;
     }
@@ -57,18 +65,18 @@ public class ParkController {
      * operating system's local date. Fails if the execution already has a controller.
      */
     public static synchronized ParkController initialize(UserService users, GroupService groups,
-            TicketService tickets, AttractionService attractions, InvoiceDirector invoiceDirector) {
-        return initialize(users, groups, tickets, attractions, invoiceDirector, LocalDate.now());
+            TicketService tickets, AttractionService attractions, PassService passes, InvoiceDirector invoiceDirector) {
+        return initialize(users, groups, tickets, attractions, passes, invoiceDirector, LocalDate.now());
     }
 
-    /** As {@link #initialize(UserService, GroupService, TicketService, AttractionService, InvoiceDirector)} with an explicit start date. */
+    /** As {@link #initialize(UserService, GroupService, TicketService, AttractionService, PassService, InvoiceDirector)} with an explicit start date. */
     public static synchronized ParkController initialize(UserService users, GroupService groups,
-            TicketService tickets, AttractionService attractions, InvoiceDirector invoiceDirector,
+            TicketService tickets, AttractionService attractions, PassService passes, InvoiceDirector invoiceDirector,
             LocalDate initialDate) {
         if (instance != null) {
             throw new IllegalStateException("The park controller has already been initialized for this execution");
         }
-        instance = new ParkController(users, groups, tickets, attractions, invoiceDirector, initialDate);
+        instance = new ParkController(users, groups, tickets, attractions, passes, invoiceDirector, initialDate);
         return instance;
     }
 
@@ -164,16 +172,42 @@ public class ParkController {
         return tickets.create(id, email, date, currentDate, ticketPrice);
     }
 
+    /** Deletes a future individual ticket together with its passes. */
     public void deleteTicket(String id) {
+        IndividualTicket ticket = tickets.find(id);
         tickets.delete(id, currentDate);
+        passes.removePassesOf(List.of(ticket));
     }
 
     public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) {
         return tickets.createGroupTicket(id, groupId, date, currentDate, ticketPrice);
     }
 
+    /** Deletes a future group ticket, its constituent tickets and their passes. */
     public void deleteGroupTicket(String id) {
+        GroupTicket groupTicket = tickets.findGroupTicket(id);
+        List<IndividualTicket> constituents = groupTicket == null ? List.of() : new ArrayList<>(groupTicket.getConstituents());
         tickets.deleteGroupTicket(id, currentDate);
+        passes.removePassesOf(constituents);
+    }
+
+    // ----- passes
+
+    /** Buys 1 or 10 SpeedPasses for an individual ticket; returns the created passes. */
+    public List<Pass> buySpeedPasses(String purchaseId, String ticketId, String quantity) {
+        return passes.buySpeedPasses(purchaseId, ticketId, quantity, currentDate);
+    }
+
+    public Pass buySpecialPass(String id, String ticketId) {
+        return passes.buySpecialPass(id, ticketId, currentDate);
+    }
+
+    public void refundSpeedPass(String id) {
+        passes.refund(id, SpeedPass.class, currentDate);
+    }
+
+    public void refundSpecialPass(String id) {
+        passes.refund(id, SpecialPass.class, currentDate);
     }
 
     // ----- attractions
@@ -208,7 +242,8 @@ public class ParkController {
         if (user == null) {
             throw new IllegalArgumentException("No user with email " + email);
         }
-        return invoiceDirector.construct(new UserInvoiceBuilder(user, tickets.directTicketsOf(user)));
+        return invoiceDirector.construct(new UserInvoiceBuilder(user, tickets.directTicketsOf(user),
+                passes.passesOfUser(user)));
     }
 
     /** Invoice of the group ticket purchases of an existing group, built on demand. */

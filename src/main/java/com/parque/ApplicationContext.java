@@ -5,11 +5,13 @@ import com.parque.business.service.AttractionService;
 import com.parque.business.service.BCryptPasswordHasher;
 import com.parque.business.service.GroupService;
 import com.parque.business.service.InvoiceDirector;
+import com.parque.business.service.PassService;
 import com.parque.business.service.TicketService;
 import com.parque.business.service.UserService;
 import com.parque.persistence.AttractionRepository;
 import com.parque.persistence.GroupRepository;
 import com.parque.persistence.GroupTicketRepository;
+import com.parque.persistence.PassRepository;
 import com.parque.persistence.TicketRepository;
 import com.parque.persistence.UserRepository;
 import com.parque.presentation.CommandCatalog;
@@ -31,6 +33,7 @@ public final class ApplicationContext {
     public static final String TICKETS_FILE = "tickets.txt";
     public static final String GROUP_TICKETS_FILE = "grouptickets.txt";
     public static final String ATTRACTIONS_FILE = "attractions.txt";
+    public static final String PASSES_FILE = "passes.txt";
 
     private ApplicationContext() {
     }
@@ -42,13 +45,15 @@ public final class ApplicationContext {
         TicketRepository ticketRepository = new TicketRepository(dataDir.resolve(TICKETS_FILE));
         GroupTicketRepository groupTicketRepository = new GroupTicketRepository(dataDir.resolve(GROUP_TICKETS_FILE));
         AttractionRepository attractionRepository = new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE));
+        PassRepository passRepository = new PassRepository(dataDir.resolve(PASSES_FILE));
 
         UserService users = new UserService(userRepository, new BCryptPasswordHasher());
         GroupService groups = new GroupService(groupRepository, users);
         TicketService tickets = new TicketService(ticketRepository, groupTicketRepository, users, groups);
         AttractionService attractions = new AttractionService(attractionRepository);
+        PassService passes = new PassService(passRepository, tickets);
 
-        return ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector());
+        return ParkController.initialize(users, groups, tickets, attractions, passes, new InvoiceDirector());
     }
 
     /**

@@ -11,6 +11,7 @@ public class InvoiceDirector {
         builder.buildRecipient();
         builder.buildIndividualTicketsSection();
         builder.buildGroupTicketsSection();
+        builder.buildPassesSection();
         return builder.getInvoice();
     }
 }

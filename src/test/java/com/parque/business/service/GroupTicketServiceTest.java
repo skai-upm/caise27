@@ -65,8 +65,8 @@ class GroupTicketServiceTest {
         assertEquals("TG01-3", gt.getConstituents().get(2).getId());
         assertSame(groups.find("G01"), gt.getGroup());
         assertEquals(List.of("TG01;G01;2026-10-15;40.00;108.00;TG01-1,TG01-2,TG01-3"), read("grouptickets.txt"));
-        assertEquals(List.of("TG01-1;12345678Z;2026-10-15;40.00", "TG01-2;87654321X;2026-10-15;40.00",
-                "TG01-3;11111111H;2026-10-15;40.00"), read("tickets.txt"));
+        assertEquals(List.of("TG01-1;12345678Z;2026-10-15;36.00", "TG01-2;87654321X;2026-10-15;36.00",
+                "TG01-3;11111111H;2026-10-15;36.00"), read("tickets.txt"));
     }
 
     @Test

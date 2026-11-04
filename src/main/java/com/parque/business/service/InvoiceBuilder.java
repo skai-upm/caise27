@@ -25,6 +25,10 @@ public abstract class InvoiceBuilder {
     public void buildGroupTicketsSection() {
     }
 
+    /** Step 4: personal passes. Not applicable by default. */
+    public void buildPassesSection() {
+    }
+
     /** Final step: the assembled invoice with the total of its sections. */
     public Invoice getInvoice() {
         return new Invoice(recipient, sections);

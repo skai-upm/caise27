@@ -7,6 +7,8 @@ import com.parque.business.model.IndividualTicket;
 import com.parque.business.model.Invoice;
 import com.parque.business.model.InvoiceLine;
 import com.parque.business.model.InvoiceSection;
+import com.parque.business.model.Pass;
+import com.parque.business.service.PassService;
 import com.parque.business.model.User;
 import com.parque.business.model.UserField;
 
@@ -15,6 +17,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.List;
 
 /**
  * Presentation layer: interprets text commands ({@code OPERATION;param;param...}) using String.split,
@@ -194,6 +197,26 @@ public class CommandProcessor {
                             + " (expected USER or GROUP)");
                 };
                 return ok(render(invoice));
+            }
+            case "SPEEDPASS CREATE" -> {
+                expectParameters(parts, 3, "SPEEDPASS CREATE;Identificador;Ticket;Cantidad");
+                List<Pass> created = controller.buySpeedPasses(parts[1], parts[2], parts[3]);
+                return "OK: SPEEDPASS CREATED -> " + PassService.total(created).toPlainString();
+            }
+            case "SPECIALPASS CREATE" -> {
+                expectParameters(parts, 2, "SPECIALPASS CREATE;Identificador;Ticket");
+                Pass pass = controller.buySpecialPass(parts[1], parts[2]);
+                return "OK: SPECIALPASS CREATED -> " + pass.getPrice().toPlainString();
+            }
+            case "SPEEDPASS DELETE" -> {
+                expectParameters(parts, 1, "SPEEDPASS DELETE;Identificador");
+                controller.refundSpeedPass(parts[1]);
+                return ok("SpeedPass refunded");
+            }
+            case "SPECIALPASS DELETE" -> {
+                expectParameters(parts, 1, "SPECIALPASS DELETE;Identificador");
+                controller.refundSpecialPass(parts[1]);
+                return ok("Special Pass refunded");
             }
             default -> throw new IllegalArgumentException("Unknown command: " + operation);
         }

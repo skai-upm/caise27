@@ -33,9 +33,14 @@ class InvoiceBuilderTest {
             public void buildGroupTicketsSection() {
                 calls.add("group");
             }
+
+            @Override
+            public void buildPassesSection() {
+                calls.add("passes");
+            }
         };
         Invoice invoice = new InvoiceDirector().construct(spy);
-        assertEquals(List.of("recipient", "individual", "group"), calls);
+        assertEquals(List.of("recipient", "individual", "group", "passes"), calls);
         assertEquals("x", invoice.getRecipient());
     }
 
@@ -43,7 +48,7 @@ class InvoiceBuilderTest {
     void userInvoiceHasOnlyIndividualTicketsSection() {
         Invoice invoice = new InvoiceDirector().construct(new UserInvoiceBuilder(ana, List.of(
                 new IndividualTicket("T001", ana, D, new BigDecimal("40")),
-                new IndividualTicket("T002", ana, D.plusDays(1), new BigDecimal("60")))));
+                new IndividualTicket("T002", ana, D.plusDays(1), new BigDecimal("60"))), List.of()));
         assertEquals("user Ana Garcia Lopez <ana@correo.com>", invoice.getRecipient());
         assertEquals(1, invoice.getSections().size());
         assertEquals("Individual tickets", invoice.getSections().get(0).getTitle());
@@ -69,7 +74,7 @@ class InvoiceBuilderTest {
 
     @Test
     void emptySectionsOmitted() {
-        Invoice user = new InvoiceDirector().construct(new UserInvoiceBuilder(ana, List.of()));
+        Invoice user = new InvoiceDirector().construct(new UserInvoiceBuilder(ana, List.of(), List.of()));
         assertTrue(user.getSections().isEmpty());
         assertEquals(new BigDecimal("0.00"), user.getTotal());
         Invoice group = new InvoiceDirector().construct(new GroupInvoiceBuilder(new Group("G02", "Vacio"), List.of()));
