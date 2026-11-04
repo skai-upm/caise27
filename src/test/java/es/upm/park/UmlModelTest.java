@@ -7,18 +7,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-/** Keeps {@code uml/model.puml} consistent with the production classes. */
+/** Keeps {@code uml/model.puml} consistent with the production classes and their packages. */
 class UmlModelTest {
 
     static final Path MODEL = Path.of("uml", "model.puml");
-    static final Path SOURCES = Path.of("src", "main", "java", "es", "upm", "park");
+    static final Path SOURCES = Path.of("src", "main", "java");
     static List<String> lines;
 
     @BeforeAll
@@ -26,26 +28,48 @@ class UmlModelTest {
         lines = Files.readAllLines(MODEL);
     }
 
-    static Set<String> declaredInModel(List<String> model) {
-        Set<String> names = new TreeSet<>();
+    /** Class name → package, as declared inside {@code package x.y {} } blocks of the diagram. */
+    static Map<String, String> declaredInModel(List<String> model) {
+        Map<String, String> names = new TreeMap<>();
+        Deque<String> blocks = new ArrayDeque<>();
         for (String raw : model) {
-            String[] t = raw.trim().split(" ");
+            String line = raw.trim();
+            String[] t = line.split(" ");
+            if (t[0].equals("package") && line.endsWith("{")) {
+                blocks.push(t[1]);
+                continue;
+            }
             int i = t.length > 2 && t[0].equals("abstract") ? 1 : 0;
-            if (t.length > i + 1 && (t[i].equals("class") || t[i].equals("enum") || t[i].equals("interface"))) {
-                names.add(t[i + 1].replace("{", ""));
+            boolean declaration = t.length > i + 1
+                    && (t[i].equals("class") || t[i].equals("enum") || t[i].equals("interface"));
+            if (declaration) {
+                names.put(t[i + 1].replace("{", ""), blocks.isEmpty() ? "" : blocks.peek());
+                if (line.endsWith("{")) {
+                    blocks.push("");
+                }
+            } else if (line.equals("}") && !blocks.isEmpty()) {
+                blocks.pop();
             }
         }
+        names.values().removeIf(String::isEmpty);
         return names;
     }
 
-    @Test
-    void everyProductionTypeIsInTheModelAndViceVersa() throws IOException {
-        Set<String> code = new TreeSet<>();
-        try (Stream<Path> files = Files.list(SOURCES)) {
-            files.map(p -> p.getFileName().toString()).filter(n -> n.endsWith(".java"))
-                    .forEach(n -> code.add(n.substring(0, n.length() - ".java".length())));
+    static Map<String, String> declaredInCode() throws IOException {
+        Map<String, String> code = new TreeMap<>();
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            for (Path p : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                String name = p.getFileName().toString();
+                String pkg = SOURCES.relativize(p.getParent()).toString().replace('/', '.').replace('\\', '.');
+                code.put(name.substring(0, name.length() - ".java".length()), pkg);
+            }
         }
-        assertEquals(code, declaredInModel(lines));
+        return code;
+    }
+
+    @Test
+    void everyProductionTypeIsInTheModelInItsPackageAndViceVersa() throws IOException {
+        assertEquals(declaredInCode(), declaredInModel(lines));
     }
 
     @Test
@@ -76,6 +100,6 @@ class UmlModelTest {
     @Test
     void detectsMissingClass() {
         List<String> withoutUser = lines.stream().filter(l -> !l.trim().startsWith("class User ")).toList();
-        assertFalse(declaredInModel(withoutUser).contains("User"));
+        assertFalse(declaredInModel(withoutUser).containsKey("User"));
     }
 }

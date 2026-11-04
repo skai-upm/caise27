@@ -43,9 +43,9 @@ A `SYSTEM DATE` command whose value is not a valid calendar date in exactly the 
 - **THEN** an `ERROR` message is produced and the current date is unchanged
 
 ### Requirement: Single date source
-The application SHALL hold exactly one current date, owned by its main command controller, and every time-dependent business rule SHALL obtain the date from it rather than from the computer's clock.
+The application SHALL hold exactly one current date, owned by the business-layer park controller that executes every command, and every time-dependent business rule SHALL obtain the date from it rather than from the computer's clock.
 
 #### Scenario: Change affects subsequent operations immediately
 - **GIVEN** the current date is changed with `SYSTEM DATE`
-- **WHEN** the next command is processed by the same controller
+- **WHEN** the next command is executed by the same park controller
 - **THEN** that command observes the newly configured date
