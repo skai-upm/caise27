@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /** Common abstraction of every park ticket: an identifier, a date of use and a price. */
-public abstract class Ticket {
+public abstract class Ticket implements AttractionAccess {
 
     private final String id;
     private final LocalDate date;
@@ -15,10 +15,12 @@ public abstract class Ticket {
         this.date = date;
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }
@@ -27,6 +29,7 @@ public abstract class Ticket {
     public abstract BigDecimal getPrice();
 
     /** The users this ticket admits; each ticket type decides who they are. */
+    @Override
     public abstract List<User> getVisitors();
 
     /** True if the ticket's date is on or after {@code day} (current or future ticket). */

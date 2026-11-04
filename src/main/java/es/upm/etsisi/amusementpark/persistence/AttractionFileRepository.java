@@ -1,6 +1,8 @@
 package es.upm.etsisi.amusementpark.persistence;
 
 import es.upm.etsisi.amusementpark.business.model.Attraction;
+import es.upm.etsisi.amusementpark.business.model.AttractionType;
+import es.upm.etsisi.amusementpark.business.model.UserException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -12,12 +14,14 @@ import java.util.List;
 
 /**
  * Stores attraction definitions in a text file, one per line:
- * {@code Id;Nombre;Capacidad}. Present users are never stored.
+ * {@code Id;Nombre;Capacidad;Tipo} (lines without the type are GENERAL).
+ * Present users are never stored.
  */
 public class AttractionFileRepository {
 
     private static final String SEPARATOR = ";";
-    private static final int FIELD_COUNT = 3;
+    private static final int LEGACY_FIELD_COUNT = 3;
+    private static final int FIELD_COUNT = 4;
 
     private final Path file;
 
@@ -26,8 +30,8 @@ public class AttractionFileRepository {
     }
 
     /** Loads all attractions, empty; a missing file means there are none. */
-    public List<Attraction> load() throws IOException {
-        List<Attraction> result = new ArrayList<>();
+    public List<Attraction<?>> load() throws IOException {
+        List<Attraction<?>> result = new ArrayList<>();
         if (!Files.exists(file)) {
             return result;
         }
@@ -39,11 +43,12 @@ public class AttractionFileRepository {
             }
             String[] f = line.split(SEPARATOR, -1);
             try {
-                if (f.length != FIELD_COUNT) {
+                if (f.length != LEGACY_FIELD_COUNT && f.length != FIELD_COUNT) {
                     throw new IllegalArgumentException("wrong number of fields");
                 }
-                result.add(new Attraction(f[0], f[1], Integer.parseInt(f[2])));
-            } catch (IllegalArgumentException e) {
+                AttractionType type = f.length == LEGACY_FIELD_COUNT ? AttractionType.GENERAL : AttractionType.parse(f[3]);
+                result.add(type.create(f[0], f[1], Integer.parseInt(f[2])));
+            } catch (IllegalArgumentException | UserException e) {
                 System.err.println("Skipping malformed attraction record at line " + lineNumber + " of " + file);
             }
         }
@@ -51,10 +56,11 @@ public class AttractionFileRepository {
     }
 
     /** Replaces the file content with the given attraction definitions. */
-    public void save(Collection<Attraction> attractions) throws IOException {
+    public void save(Collection<Attraction<?>> attractions) throws IOException {
         List<String> lines = new ArrayList<>(attractions.size());
-        for (Attraction a : attractions) {
-            lines.add(String.join(SEPARATOR, a.getId(), a.getName(), String.valueOf(a.getCapacity())));
+        for (Attraction<?> a : attractions) {
+            lines.add(String.join(SEPARATOR, a.getId(), a.getName(), String.valueOf(a.getCapacity()),
+                    a.getType().name()));
         }
         Path parent = file.toAbsolutePath().getParent();
         if (parent != null) {

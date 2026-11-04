@@ -31,14 +31,14 @@ class AttractionManagerTest {
     void createsAndPersistsDefinitionsOnly() throws Exception {
         Path file = dir.resolve("attractions.txt");
         AttractionManager m = new AttractionManager(new AttractionFileRepository(file));
-        Attraction a = m.create("A01", "Tornado", "20");
+        Attraction<?> a = m.create("A01", "Tornado", "20", null);
         User ana = new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "1", "1234567890123456");
         LocalDate day = LocalDate.of(2026, 10, 15);
-        a.enter(new IndividualTicket("T001", day, ana, new BigDecimal("40.00")), day);
+        a.admit(new IndividualTicket("T001", day, ana, new BigDecimal("40.00")), day);
 
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(file, StandardCharsets.UTF_8));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(file, StandardCharsets.UTF_8));
         AttractionManager restarted = new AttractionManager(new AttractionFileRepository(file));
-        Attraction loaded = restarted.require("A01");
+        Attraction<?> loaded = restarted.require("A01");
         assertEquals("Tornado", loaded.getName());
         assertEquals(20, loaded.getCapacity());
         assertTrue(loaded.getPresent().isEmpty());
@@ -50,10 +50,10 @@ class AttractionManagerTest {
     void invalidCreations(String id, String name, String capacity) throws Exception {
         Path file = dir.resolve("attractions.txt");
         AttractionManager m = new AttractionManager(new AttractionFileRepository(file));
-        m.create("A01", "Tornado", "20");
-        assertThrows(UserException.class, () -> m.create(id, name, capacity));
+        m.create("A01", "Tornado", "20", null);
+        assertThrows(UserException.class, () -> m.create(id, name, capacity, null));
         assertEquals(1, m.getAttractions().size());
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(file, StandardCharsets.UTF_8));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(file, StandardCharsets.UTF_8));
     }
 
     @Test
@@ -65,7 +65,7 @@ class AttractionManagerTest {
         Path plain = dir.resolve("plain");
         Files.writeString(plain, "x");
         AttractionManager broken = new AttractionManager(new AttractionFileRepository(plain.resolve("a.txt")));
-        assertThrows(UserException.class, () -> broken.create("A01", "Tornado", "20"));
+        assertThrows(UserException.class, () -> broken.create("A01", "Tornado", "20", null));
         assertTrue(broken.getAttractions().isEmpty());
         assertThrows(UserException.class, () -> broken.require("A01"));
     }

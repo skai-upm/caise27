@@ -719,6 +719,36 @@ class CommandProcessorTest {
     }
 
     @Test
+    void typedAttractionsAdmitOnlyTheirTicketKinds() throws Exception {
+        sourceAttractionSetup();
+        assertOk(processor.process("ATTRACTION CREATE;A02;Coches;10;GROUP"));
+        assertOk(processor.process("ATTRACTION CREATE;A03;Noria;10;individual"));
+        assertOk(processor.process("ATTRACTION CREATE;A04;VIP;10;SPECIAL"));
+        assertError(processor.process("ATTRACTION ENTER;A02;T001"));
+        assertOk(processor.process("ATTRACTION ENTER;A02;TG01"));
+        assertError(processor.process("ATTRACTION ENTER;A03;TG01"));
+        assertOk(processor.process("ATTRACTION ENTER;A03;T001"));
+        assertError(processor.process("ATTRACTION ENTER;A04;TG01"));
+        assertOk(processor.process("ATTRACTION ENTER;A04;T001"));
+        assertOk(processor.process("ATTRACTION ENTER;A01;T001"));
+        assertOk(processor.process("ATTRACTION ENTER;A01;TG01"));
+        assertTrue(processor.process("ATTRACTION STATUS;A02")
+                .startsWith("OK: Attraction A02 (Coches) capacity=10 present=3 available=7 type=GROUP"));
+        assertTrue(Files.readAllLines(dir.resolve("attractions.txt")).contains("A02;Coches;10;GROUP"));
+        assertTrue(Files.readAllLines(dir.resolve("attractions.txt")).contains("A01;Tornado;20;GENERAL"));
+        assertError(processor.process("ATTRACTION CREATE;A05;X;5;VIP"));
+        assertError(processor.process("ATTRACTION CREATE;A05;X;5;GROUP;extra"));
+        assertFalse(processor.process("ATTRACTION STATUS;A05").startsWith("OK"));
+    }
+
+    @Test
+    void legacyAttractionLinesLoadAsGeneral() throws Exception {
+        Files.write(dir.resolve("attractions.txt"), List.of("A09;Noria;5"), StandardCharsets.UTF_8);
+        CommandProcessor legacy = newProcessor();
+        assertTrue(legacy.process("ATTRACTION STATUS;A09").contains("capacity=5 present=0 available=5 type=GENERAL"));
+    }
+
+    @Test
     void blankLinesAreIgnored() {
         assertNull(processor.process(""));
         assertNull(processor.process("   "));

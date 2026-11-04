@@ -13,7 +13,7 @@ import java.util.Optional;
  * per member at purchase time and aggregates the {@link Group} that bought it.
  * If the group is later deleted, its identifier is kept as history.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private static final int SMALL_GROUP_LIMIT = 3;
     private static final int MEDIUM_GROUP_LIMIT = 5;
@@ -121,6 +121,7 @@ public class GroupTicket extends Ticket {
     }
 
     /** The constituent individual tickets (fixed at purchase). */
+    @Override
     public List<IndividualTicket> getParts() {
         return Collections.unmodifiableList(parts);
     }

@@ -37,7 +37,7 @@ class AttractionTest {
 
     @Test
     void individualAndGroupEntryAreHandledUniformly() throws Exception {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         User ana = user(1);
         a.enter(new IndividualTicket("T001", DAY, ana, PRICE), DAY);
         a.enter(groupTicket("TG01", users(2, 3)), DAY);
@@ -48,7 +48,7 @@ class AttractionTest {
 
     @Test
     void ticketMustBeForToday() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         IndividualTicket t = new IndividualTicket("T001", DAY, user(1), PRICE);
         assertThrows(UserException.class, () -> a.enter(t, DAY.minusDays(1)));
         assertThrows(UserException.class, () -> a.enter(t, DAY.plusDays(1)));
@@ -57,7 +57,7 @@ class AttractionTest {
 
     @Test
     void groupEntryIsAtomicAtTheCapacityBoundary() throws Exception {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         a.enter(groupTicket("TG00", users(10, 17)), DAY);
         assertEquals(3, a.getAvailable());
 
@@ -72,7 +72,7 @@ class AttractionTest {
 
     @Test
     void alreadyPresentUserIsRejectedAndCountedOnce() throws Exception {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         IndividualTicket t = new IndividualTicket("T001", DAY, user(1), PRICE);
         a.enter(t, DAY);
         assertThrows(UserException.class, () -> a.enter(t, DAY));
@@ -81,7 +81,7 @@ class AttractionTest {
 
     @Test
     void ticketWithoutUsersCannotEnter() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         IndividualTicket t = new IndividualTicket("T001", DAY, user(1), PRICE);
         t.detachUser();
         assertThrows(UserException.class, () -> a.enter(t, DAY));
@@ -89,7 +89,7 @@ class AttractionTest {
 
     @Test
     void exitFreesPlacesWithoutDateCheck() throws Exception {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         IndividualTicket t = new IndividualTicket("T001", DAY, user(1), PRICE);
         GroupTicket g = groupTicket("TG01", users(2, 3));
         a.enter(t, DAY);
@@ -103,7 +103,7 @@ class AttractionTest {
 
     @Test
     void removeDropsADeletedUser() throws Exception {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         User ana = user(1);
         a.enter(new IndividualTicket("T001", DAY, ana, PRICE), DAY);
         a.remove(ana);

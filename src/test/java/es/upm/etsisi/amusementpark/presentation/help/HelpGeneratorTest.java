@@ -29,6 +29,7 @@ class HelpGeneratorTest {
                 "  GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
                 "  GROUPTICKET DELETE;Id",
                 "  ATTRACTION CREATE;Id;Nombre;Capacidad",
+                "  ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo",
                 "  ATTRACTION ENTER;IdAtraccion;IdTicket",
                 "  ATTRACTION EXIT;IdAtraccion;IdTicket",
                 "  ATTRACTION STATUS;IdAtraccion",

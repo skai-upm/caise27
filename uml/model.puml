@@ -75,10 +75,23 @@ class GroupTicket {
   basePrice : BigDecimal
   totalPrice : BigDecimal
 }
-class Attraction {
+interface AttractionAccess
+interface IndividualAccess
+interface GroupAccess
+abstract class Attraction<T extends AttractionAccess> {
   id : String
   name : String
   capacity : int
+}
+class GeneralAttraction
+class IndividualAttraction
+class GroupAttraction
+class SpecialAttraction
+enum AttractionType {
+  GENERAL
+  INDIVIDUAL
+  GROUP
+  SPECIAL
 }
 abstract class Pass {
   id : String
@@ -151,6 +164,15 @@ class Exception
 ' ---------- Inheritance ----------
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+AttractionAccess <|-- IndividualAccess
+AttractionAccess <|-- GroupAccess
+AttractionAccess <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <<bind>> T = AttractionAccess
+Attraction <|-- IndividualAttraction : <<bind>> T = IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T = GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T = IndividualAccess
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 Exception <|-- UserException
@@ -235,6 +257,7 @@ TicketManager ..> UserException : <<throw>>
 AttractionManager ..> UserException : <<throw>>
 PassManager ..> UserException : <<throw>>
 Attraction ..> UserException : <<throw>>
+AttractionManager ..> AttractionType : <<use>>
 CommandProcessor ..> UserException : <<catch>>
 ParkController ..> UserException : <<throw>>
 

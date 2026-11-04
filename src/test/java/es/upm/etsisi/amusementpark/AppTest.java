@@ -143,7 +143,7 @@ class AppTest {
         Run second = run(new String[0], "ATTRACTION STATUS;A01\n", users);
         assertTrue(second.output().startsWith("OK: Attraction A01 (Tornado) capacity=20 present=0 available=20"),
                 second.output());
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
     }
 
     private static final List<String> FLY_COMMANDS = List.of(

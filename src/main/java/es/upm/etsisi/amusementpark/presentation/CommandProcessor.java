@@ -264,8 +264,10 @@ public class CommandProcessor {
     }
 
     private String attractionCreate(String[] p) throws UserException {
-        requireParams(p, 3, "ATTRACTION CREATE;Id;Nombre;Capacidad");
-        controller.createAttraction(p[0], p[1], p[2]);
+        if (p.length != 4) {
+            requireParams(p, 3, "ATTRACTION CREATE;Id;Nombre;Capacidad[;Tipo]");
+        }
+        controller.createAttraction(p[0], p[1], p[2], p.length == 4 ? p[3] : null);
         return ok("Attraction " + p[0] + " created");
     }
 
@@ -283,9 +285,9 @@ public class CommandProcessor {
 
     private String attractionStatus(String[] p) throws UserException {
         requireParams(p, 1, "ATTRACTION STATUS;IdAtraccion");
-        Attraction a = controller.getAttraction(p[0]);
+        Attraction<?> a = controller.getAttraction(p[0]);
         StringBuilder sb = new StringBuilder(ok("Attraction " + a.getId() + " (" + a.getName() + ") capacity="
-                + a.getCapacity() + " present=" + a.getPresent().size() + " available=" + a.getAvailable()));
+                + a.getCapacity() + " present=" + a.getPresent().size() + " available=" + a.getAvailable() + " type=" + a.getType()));
         for (User u : a.getPresent()) {
             sb.append(System.lineSeparator()).append("  - ").append(u.getName()).append(' ')
                     .append(u.getSurname()).append(" <").append(u.getEmail()).append('>');

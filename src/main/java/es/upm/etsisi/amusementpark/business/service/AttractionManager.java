@@ -1,6 +1,7 @@
 package es.upm.etsisi.amusementpark.business.service;
 
 import es.upm.etsisi.amusementpark.business.model.Attraction;
+import es.upm.etsisi.amusementpark.business.model.AttractionType;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserException;
 import es.upm.etsisi.amusementpark.business.model.UserValidator;
@@ -20,35 +21,38 @@ import java.util.Optional;
 public class AttractionManager {
 
     private final AttractionFileRepository repository;
-    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
 
     public AttractionManager(AttractionFileRepository repository) throws IOException {
         this.repository = repository;
-        for (Attraction a : repository.load()) {
+        for (Attraction<?> a : repository.load()) {
             attractions.put(a.getId(), a);
         }
     }
 
-    public Collection<Attraction> getAttractions() {
+    public Collection<Attraction<?>> getAttractions() {
         return Collections.unmodifiableCollection(attractions.values());
     }
 
-    public Optional<Attraction> find(String id) {
+    public Optional<Attraction<?>> find(String id) {
         return Optional.ofNullable(attractions.get(id));
     }
 
-    public Attraction require(String id) throws UserException {
+    public Attraction<?> require(String id) throws UserException {
         return find(id).orElseThrow(() -> new UserException("No attraction with id " + id));
     }
 
-    public Attraction create(String id, String name, String capacityText) throws UserException {
+    /** Creates an attraction; {@code typeText} null means GENERAL. */
+    public Attraction<?> create(String id, String name, String capacityText, String typeText) throws UserException {
         if (!UserValidator.isNotBlank(id) || !UserValidator.isNotBlank(name)) {
             throw new UserException("The attraction id and name must not be empty");
         }
         if (attractions.containsKey(id)) {
             throw new UserException("An attraction with id " + id + " already exists");
         }
-        Attraction attraction = new Attraction(id, name, parseCapacity(capacityText));
+        int capacity = parseCapacity(capacityText);
+        AttractionType type = typeText == null ? AttractionType.GENERAL : AttractionType.parse(typeText);
+        Attraction<?> attraction = type.create(id, name, capacity);
         attractions.put(id, attraction);
         try {
             repository.save(attractions.values());

@@ -248,24 +248,25 @@ public final class ParkController {
 
     // ---------- Attractions ----------
 
-    public void createAttraction(String id, String name, String capacity) throws UserException {
-        attractions.create(id, name, capacity);
+    /** Creates an attraction; a null {@code type} means GENERAL. */
+    public void createAttraction(String id, String name, String capacity, String type) throws UserException {
+        attractions.create(id, name, capacity, type);
     }
 
-    public Attraction getAttraction(String id) throws UserException {
+    public Attraction<?> getAttraction(String id) throws UserException {
         return attractions.require(id);
     }
 
     /** Admits the visitors of a ticket into an attraction and returns the ticket used. */
     public Ticket enterAttraction(String attractionId, String ticketId) throws UserException {
-        Attraction attraction = attractions.require(attractionId);
+        Attraction<?> attraction = attractions.require(attractionId);
         Ticket ticket = requireTicket(ticketId);
-        attraction.enter(ticket, currentDate);
+        attraction.admit(ticket, currentDate);
         return ticket;
     }
 
     public void exitAttraction(String attractionId, String ticketId) throws UserException {
-        Attraction attraction = attractions.require(attractionId);
+        Attraction<?> attraction = attractions.require(attractionId);
         attraction.exit(requireTicket(ticketId));
     }
 

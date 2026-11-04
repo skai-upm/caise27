@@ -10,7 +10,7 @@ import java.util.Optional;
  * who owns it; if that user is deleted the ticket stays as a historical record
  * that keeps the owner's DNI.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final BigDecimal price;
     private final String ownerDni;
@@ -38,6 +38,7 @@ public class IndividualTicket extends Ticket {
     }
 
     /** The owning user, or empty if that user has been deleted. */
+    @Override
     public Optional<User> getUser() {
         return Optional.ofNullable(user);
     }

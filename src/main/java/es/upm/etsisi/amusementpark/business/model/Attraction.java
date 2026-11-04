@@ -7,20 +7,40 @@ import java.util.List;
 
 /**
  * A park attraction with a maximum capacity and the users currently inside.
- * Entry and exit work on the {@link Ticket} abstraction only, so individual and
- * group tickets are handled by the same code.
+ * The type parameter is the access capability the attraction admits: entering
+ * with any other capability does not compile, and {@link #admit} checks the
+ * same bound for accesses resolved at run time from identifiers.
+ *
+ * @param <T> the access capability admitted by this attraction
  */
-public class Attraction {
+public abstract class Attraction<T extends AttractionAccess> {
 
     private final String id;
     private final String name;
     private final int capacity;
     private final List<User> present = new ArrayList<>();
 
-    public Attraction(String id, String name, int capacity) {
+    protected Attraction(String id, String name, int capacity) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+    }
+
+    /** The access capability class admitted, i.e. the generic bound {@code T}. */
+    protected abstract Class<T> accessType();
+
+    public abstract AttractionType getType();
+
+    /**
+     * Entry for an access whose capability is only known at run time: it is
+     * admitted only if it has the capability {@code T}.
+     */
+    public void admit(AttractionAccess access, LocalDate today) throws UserException {
+        if (!accessType().isInstance(access)) {
+            String kind = access instanceof GroupAccess ? "group" : "individual";
+            throw new UserException("Attraction " + id + " (" + getType() + ") does not admit " + kind + " tickets");
+        }
+        enter(accessType().cast(access), today);
     }
 
     public String getId() {
@@ -51,7 +71,7 @@ public class Attraction {
      * Admits all users of the ticket, or none: the ticket must be for {@code today},
      * none of its users may already be inside, and all must fit.
      */
-    public void enter(Ticket ticket, LocalDate today) throws UserException {
+    public void enter(T ticket, LocalDate today) throws UserException {
         if (!ticket.getDate().equals(today)) {
             throw new UserException("Ticket " + ticket.getId() + " is for " + ticket.getDate()
                     + ", not for " + today);
@@ -73,7 +93,7 @@ public class Attraction {
     }
 
     /** Removes the ticket's users that are inside; fails if none of them is. */
-    public void exit(Ticket ticket) throws UserException {
+    public void exit(AttractionAccess ticket) throws UserException {
         List<User> leaving = new ArrayList<>();
         for (User v : ticket.getVisitors()) {
             if (isPresent(v)) {

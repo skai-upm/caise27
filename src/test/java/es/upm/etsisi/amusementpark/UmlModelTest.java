@@ -26,8 +26,14 @@ class UmlModelTest {
             for (String keyword : List.of("abstract class ", "class ", "interface ", "enum ")) {
                 if (trimmed.startsWith(keyword)) {
                     String rest = trimmed.substring(keyword.length()).trim();
-                    int end = rest.indexOf(' ');
-                    declared.add(end < 0 ? rest : rest.substring(0, end));
+                    int end = rest.length();
+                    for (char stop : new char[] {' ', '<', '{'}) {
+                        int i = rest.indexOf(stop);
+                        if (i >= 0 && i < end) {
+                            end = i;
+                        }
+                    }
+                    declared.add(rest.substring(0, end));
                     break;
                 }
             }
