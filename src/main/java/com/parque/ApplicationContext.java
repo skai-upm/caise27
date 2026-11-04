@@ -11,6 +11,11 @@ import com.parque.persistence.GroupRepository;
 import com.parque.persistence.GroupTicketRepository;
 import com.parque.persistence.TicketRepository;
 import com.parque.persistence.UserRepository;
+import com.parque.presentation.CommandCatalog;
+import com.parque.presentation.CommandProcessor;
+import com.parque.presentation.ExtendedHelpFormatter;
+import com.parque.presentation.HelpGenerator;
+import com.parque.presentation.SyntaxHelpFormatter;
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -43,6 +48,16 @@ public final class ApplicationContext {
         AttractionService attractions = new AttractionService(attractionRepository);
 
         return ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector());
+    }
+
+    /**
+     * Presentation wiring for the started execution: the command processor with the unique controller and the
+     * help generators configured with their injected formatting behaviour.
+     */
+    public static CommandProcessor commandProcessor() {
+        CommandCatalog catalog = CommandCatalog.standard();
+        return new CommandProcessor(ParkController.getInstance(), new HelpGenerator(catalog, new SyntaxHelpFormatter()),
+                new HelpGenerator(catalog, new ExtendedHelpFormatter()));
     }
 
     /** Ends the execution: releases the unique controller. */

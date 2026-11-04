@@ -22,6 +22,21 @@ package com.parque.presentation {
   class CommandProcessor {
     -exitRequested : boolean
   }
+
+  class HelpGenerator
+
+  interface HelpFormatter
+
+  class SyntaxHelpFormatter
+
+  class ExtendedHelpFormatter
+
+  class CommandCatalog
+
+  class CommandInfo {
+    -syntax : String
+    -description : String
+  }
 }
 
 package com.parque.business.controller {
@@ -135,6 +150,13 @@ InvoiceBuilder <|-- GroupInvoiceBuilder
 ' Presentation
 CommandRunner "0..*" x--> "1" CommandProcessor : processor
 CommandProcessor "1" x--> "1" ParkController : controller
+CommandProcessor "0..*" x--> "1" HelpGenerator : help
+CommandProcessor "0..*" x--> "1" HelpGenerator : extendedHelp
+HelpGenerator "0..*" x--> "1" CommandCatalog : catalog
+HelpGenerator "0..*" x--> "1" HelpFormatter : formatter
+CommandCatalog "1" *--> "0..*" CommandInfo : commands
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
 
 '' Main controller (Singleton per execution, collaborators injected at startup)
 ParkController "1" x--> "0..1" ParkController : instance
@@ -183,6 +205,8 @@ GroupInvoiceBuilder "0..*" o--> "0..*" GroupTicket : groupTickets
 App ..> CommandRunner : <<use>>
 App ..> DataDirectory : <<use>>
 App ..> ApplicationContext : <<use>>
+ApplicationContext ..> SyntaxHelpFormatter : <<use>>
+ApplicationContext ..> ExtendedHelpFormatter : <<use>>
 User ..> UserField : <<use>>
 UserService ..> UserField : <<use>>
 ParkController ..> UserField : <<use>>

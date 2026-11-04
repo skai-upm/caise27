@@ -1,7 +1,6 @@
 package com.parque;
 
 import com.parque.persistence.DataDirectory;
-import com.parque.presentation.CommandProcessor;
 import com.parque.presentation.CommandRunner;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,7 +84,7 @@ public class App {
             return 1;
         }
         try {
-            CommandRunner runner = new CommandRunner(new CommandProcessor(), out, err);
+            CommandRunner runner = new CommandRunner(ApplicationContext.commandProcessor(), out, err);
             return commandFile == null ? runner.runInteractive(stdin) : runner.runFile(commandFile);
         } finally {
             ApplicationContext.stop();

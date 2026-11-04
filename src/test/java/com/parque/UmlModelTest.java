@@ -113,11 +113,22 @@ class UmlModelTest {
                 assertEquals(type(p[0]), type(p[1]).getSuperclass(), l);
                 drawn.add(p[1]);
             }
+            if (l.contains("<|..")) {
+                String[] p = l.split("\\s*<\\|\\.\\.\\s*");
+                assertTrue(List.of(type(p[1]).getInterfaces()).contains(type(p[0])), l);
+                drawn.add(p[1] + " implements " + p[0]);
+            }
         }
         for (String name : productionClasses) {
             Class<?> c = type(name);
             if (c.getSuperclass() != null && c.getSuperclass().getPackageName().startsWith("com.parque")) {
                 assertTrue(drawn.contains(name), "missing inheritance for " + name);
+            }
+            for (Class<?> i : c.getInterfaces()) {
+                if (i.getPackageName().startsWith("com.parque")) {
+                    assertTrue(drawn.contains(name + " implements " + i.getSimpleName()),
+                            "missing realization " + name + " -> " + i.getSimpleName());
+                }
             }
         }
     }
@@ -204,6 +215,9 @@ class UmlModelTest {
             }
             if (l.contains("<|--")) {
                 incoming.add(l.split("\\s*<\\|--\\s*")[0]);
+            }
+            if (l.contains("<|..")) {
+                incoming.add(l.split("\\s*<\\|\\.\\.\\s*")[0]);
             }
         }
         Set<String> usedTargets = new HashSet<>();

@@ -15,7 +15,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
-import java.util.List;
 
 /**
  * Presentation layer: interprets text commands ({@code OPERATION;param;param...}) using String.split,
@@ -24,41 +23,28 @@ import java.util.List;
  * and file input.
  */
 public class CommandProcessor {
-    /** Syntax of every available command, shown by HELP. Add new commands here. */
-    public static final List<String> COMMAND_SYNTAX = List.of(
-            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "USER DELETE;Correo;Contraseña",
-            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
-            "GROUP CREATE;Identificador;Nombre",
-            "GROUP ADD;Identificador;Correo",
-            "GROUP REMOVE;Identificador;Correo",
-            "GROUP DELETE;Identificador",
-            "TICKET CREATE;Identificador;Correo;yyyy-MM-dd",
-            "TICKET DELETE;Identificador",
-            "GROUPTICKET CREATE;Identificador;Grupo;yyyy-MM-dd",
-            "GROUPTICKET DELETE;Identificador",
-            "ATTRACTION CREATE;Identificador;Nombre;Aforo",
-            "ATTRACTION ENTER;Identificador;Ticket",
-            "ATTRACTION EXIT;Identificador;Ticket",
-            "ATTRACTION STATUS;Identificador",
-            "INVOICE CREATE;USER;Correo",
-            "INVOICE CREATE;GROUP;Identificador",
-            "SYSTEM DATE;yyyy-MM-dd",
-            "SYSTEM PRICE;Precio",
-            "HELP",
-            "EXIT");
-
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private final ParkController controller;
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
     private boolean exitRequested;
 
-    public CommandProcessor(ParkController controller) {
+    /** Main constructor: the controller and the help generators are injected. */
+    public CommandProcessor(ParkController controller, HelpGenerator help, HelpGenerator extendedHelp) {
         this.controller = controller;
+        this.help = help;
+        this.extendedHelp = extendedHelp;
     }
 
-    /** Uses the unique controller of the current execution. */
+    /** Convenience wiring with the standard command catalog and help formats. */
+    public CommandProcessor(ParkController controller) {
+        this(controller, new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter()),
+                new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter()));
+    }
+
+    /** Uses the unique controller of the current execution with the standard help. */
     public CommandProcessor() {
         this(ParkController.getInstance());
     }
@@ -99,7 +85,11 @@ public class CommandProcessor {
         switch (operation) {
             case "HELP" -> {
                 expectParameters(parts, 0, "HELP");
-                return ok(help());
+                return ok(help.generate());
+            }
+            case "HELP EXTENDED" -> {
+                expectParameters(parts, 0, "HELP EXTENDED");
+                return ok(extendedHelp.generate());
             }
             case "EXIT" -> {
                 expectParameters(parts, 0, "EXIT");
@@ -279,14 +269,6 @@ public class CommandProcessor {
             }
         }
         return true;
-    }
-
-    private static String help() {
-        StringBuilder sb = new StringBuilder("Available commands:");
-        for (String syntax : COMMAND_SYNTAX) {
-            sb.append(System.lineSeparator()).append("  ").append(syntax);
-        }
-        return sb.toString();
     }
 
     private static void expectParameters(String[] parts, int expected, String format) {
