@@ -97,4 +97,42 @@ class CommandProcessorTest {
         assertTrue(processor.process("  USER  CREATE ; Ana ;Garcia Lopez; 12345678Z ;ana@correo.com;Clave1!;612345678;1234567890123456 ").success());
         assertEquals("12345678Z", manager.getUsers().get(0).getDni());
     }
+
+    @Test
+    void helpListsAllCommandsAndChangesNothing() {
+        processor.process(CREATE_ANA);
+        Result r = processor.process("HELP");
+        assertTrue(r.success());
+        assertFalse(r.terminate());
+        for (String syntax : new String[] {
+            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+            "USER DELETE;Correo;Contraseña",
+            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "HELP",
+            "EXIT"}) {
+            assertTrue(r.message().contains(syntax), syntax);
+        }
+        assertEquals(1, manager.getUsers().size());
+    }
+
+    @Test
+    void exitTerminates() {
+        Result r = processor.process("EXIT");
+        assertTrue(r.success());
+        assertTrue(r.terminate());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"HELP;extra", "EXIT;now", "HELP ME", "help", "exit"})
+    void generalCommandsRejectExtras(String command) {
+        Result r = processor.process(command);
+        assertFalse(r.success());
+        assertFalse(r.terminate());
+    }
+
+    @Test
+    void userCommandsDoNotTerminate() {
+        assertFalse(processor.process(CREATE_ANA).terminate());
+        assertFalse(processor.process("FOO").terminate());
+    }
 }

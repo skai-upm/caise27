@@ -13,6 +13,14 @@ public class CommandProcessor {
     private static final String PARAM_SEPARATOR = ";";
     private static final String WORD_SEPARATOR = " ";
 
+    /** Syntax of every available command, shown by {@code HELP}. Add new commands here. */
+    private static final List<String> COMMAND_SYNTAX = List.of(
+            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+            "USER DELETE;Correo;Contraseña",
+            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "HELP",
+            "EXIT");
+
     private final UserManager users;
 
     public CommandProcessor(UserManager users) {
@@ -34,6 +42,12 @@ public class CommandProcessor {
                 words.add(w);
             }
         }
+        if (words.size() == 1 && words.get(0).equals("HELP")) {
+            return params.length == 0 ? help() : Result.error("Usage: HELP");
+        }
+        if (words.size() == 1 && words.get(0).equals("EXIT")) {
+            return params.length == 0 ? Result.exit("Bye.") : Result.error("Usage: EXIT");
+        }
         if (words.size() != 2 || !words.get(0).equals("USER")) {
             return Result.error("Unknown command: " + parts[0].trim());
         }
@@ -43,6 +57,11 @@ public class CommandProcessor {
             case "UPDATE" -> userUpdate(params);
             default -> Result.error("Unknown command: " + parts[0].trim());
         };
+    }
+
+    private Result help() {
+        return Result.ok("Available commands:" + System.lineSeparator()
+                + String.join(System.lineSeparator(), COMMAND_SYNTAX));
     }
 
     private Result userCreate(String[] p) {

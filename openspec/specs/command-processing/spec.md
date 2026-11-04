@@ -6,13 +6,6 @@ Defines how the terminal application receives API-like text commands, splits the
 
 ## Requirements
 
-### Requirement: Terminal command input
-The application SHALL read commands line by line from standard input and print one result message per non-blank command, continuing until the input ends.
-
-#### Scenario: Command sequence from the terminal
-- **WHEN** several valid commands are entered one per line followed by end of input
-- **THEN** one result message is printed per command and the application exits normally
-
 ### Requirement: Command splitting
 A command SHALL be split on `;` with `String.split` into the operation and its parameters, and the operation SHALL be split on spaces into its words (for example `USER` and `CREATE`); surrounding whitespace of each part SHALL be ignored.
 
