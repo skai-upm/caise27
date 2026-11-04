@@ -76,6 +76,20 @@ package com.parque.business.model {
     -name : String
     -capacity : int
   }
+
+  class Invoice {
+    -recipient : String
+    -total : BigDecimal
+  }
+
+  class InvoiceSection {
+    -title : String
+  }
+
+  class InvoiceLine {
+    -description : String
+    -amount : BigDecimal
+  }
 }
 
 package com.parque.business.service {
@@ -84,6 +98,12 @@ package com.parque.business.service {
   class GroupService
   class TicketService
   class AttractionService
+  class InvoiceDirector
+  abstract class InvoiceBuilder {
+    -recipient : String
+  }
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
 }
 
 package com.parque.persistence {
@@ -108,6 +128,8 @@ package com.parque.persistence {
 ' Inheritance
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
 
 ' Presentation
 CommandRunner "0..*" x--> "1" CommandProcessor : processor
@@ -145,6 +167,15 @@ AttractionService "1" x--> "1" AttractionRepository : repository
 AttractionService "1" o--> "0..*" Attraction : attractions
 Attraction "0..*" o--> "0..*" User : present
 
+'' Invoices
+Invoice "1" *--> "0..*" InvoiceSection : sections
+InvoiceSection "1" *--> "1..*" InvoiceLine : lines
+InvoiceBuilder "1" *--> "0..*" InvoiceSection : sections
+UserInvoiceBuilder "0..*" x--> "1" User : user
+UserInvoiceBuilder "0..*" o--> "0..*" IndividualTicket : directTickets
+GroupInvoiceBuilder "0..*" x--> "1" Group : group
+GroupInvoiceBuilder "0..*" o--> "0..*" GroupTicket : groupTickets
+
 ' Usage of classes without incoming relationships
 App ..> CommandRunner : <<use>>
 App ..> DataDirectory : <<use>>
@@ -156,4 +187,8 @@ UserService ..> UserValidator : <<use>>
 GroupService ..> UserValidator : <<use>>
 TicketService ..> UserValidator : <<use>>
 AttractionService ..> UserValidator : <<use>>
+ParkController ..> InvoiceDirector : <<use>>
+ParkController ..> UserInvoiceBuilder : <<use>>
+ParkController ..> GroupInvoiceBuilder : <<use>>
+ParkController ..> Invoice : <<use>>
 @enduml

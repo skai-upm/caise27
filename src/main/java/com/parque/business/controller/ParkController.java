@@ -4,12 +4,16 @@ import com.parque.business.model.Attraction;
 import com.parque.business.model.Group;
 import com.parque.business.model.GroupTicket;
 import com.parque.business.model.IndividualTicket;
+import com.parque.business.model.Invoice;
 import com.parque.business.model.Ticket;
 import com.parque.business.model.User;
 import com.parque.business.model.UserField;
 import com.parque.business.service.AttractionService;
+import com.parque.business.service.GroupInvoiceBuilder;
 import com.parque.business.service.GroupService;
+import com.parque.business.service.InvoiceDirector;
 import com.parque.business.service.TicketService;
+import com.parque.business.service.UserInvoiceBuilder;
 import com.parque.business.service.UserService;
 import com.parque.persistence.AttractionRepository;
 import com.parque.persistence.GroupRepository;
@@ -182,6 +186,26 @@ public class ParkController {
 
     public Attraction attraction(String id) {
         return attractions.existing(id);
+    }
+
+    // ----- invoices
+
+    /** Invoice of the directly purchased tickets of an existing user, built on demand. */
+    public Invoice createUserInvoice(String email) {
+        User user = users.findByEmail(email);
+        if (user == null) {
+            throw new IllegalArgumentException("No user with email " + email);
+        }
+        return new InvoiceDirector().construct(new UserInvoiceBuilder(user, tickets.directTicketsOf(user)));
+    }
+
+    /** Invoice of the group ticket purchases of an existing group, built on demand. */
+    public Invoice createGroupInvoice(String groupId) {
+        Group group = groups.find(groupId);
+        if (group == null) {
+            throw new IllegalArgumentException("No group with identifier " + groupId);
+        }
+        return new InvoiceDirector().construct(new GroupInvoiceBuilder(group, tickets.groupTicketsOf(group)));
     }
 
     private Ticket existingTicket(String id) {

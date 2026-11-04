@@ -144,6 +144,28 @@ public class TicketService {
         groupTickets = nextGroupTickets;
     }
 
+    /** Individual tickets bought directly for the user (constituents of group tickets excluded). */
+    public List<IndividualTicket> directTicketsOf(User user) {
+        List<IndividualTicket> result = new ArrayList<>();
+        for (IndividualTicket t : tickets) {
+            if (t.getUser() == user && groupTicketContaining(t) == null) {
+                result.add(t);
+            }
+        }
+        return result;
+    }
+
+    /** Group tickets bought by the group. */
+    public List<GroupTicket> groupTicketsOf(Group group) {
+        List<GroupTicket> result = new ArrayList<>();
+        for (GroupTicket g : groupTickets) {
+            if (g.getGroup() == group) {
+                result.add(g);
+            }
+        }
+        return result;
+    }
+
     /** True if the user owns an individual (or constituent) ticket dated on or after {@code today}. */
     public boolean hasCurrentOrFutureTicket(User user, LocalDate today) {
         for (IndividualTicket t : tickets) {

@@ -4,6 +4,9 @@ import com.parque.business.controller.ParkController;
 import com.parque.business.model.Attraction;
 import com.parque.business.model.GroupTicket;
 import com.parque.business.model.IndividualTicket;
+import com.parque.business.model.Invoice;
+import com.parque.business.model.InvoiceLine;
+import com.parque.business.model.InvoiceSection;
 import com.parque.business.model.User;
 import com.parque.business.model.UserField;
 import com.parque.business.service.AttractionService;
@@ -42,6 +45,8 @@ public class CommandProcessor {
             "ATTRACTION ENTER;Identificador;Ticket",
             "ATTRACTION EXIT;Identificador;Ticket",
             "ATTRACTION STATUS;Identificador",
+            "INVOICE CREATE;USER;Correo",
+            "INVOICE CREATE;GROUP;Identificador",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -201,6 +206,16 @@ public class CommandProcessor {
                 expectParameters(parts, 1, "ATTRACTION STATUS;Identificador");
                 return ok(status(controller.attraction(parts[1])));
             }
+            case "INVOICE CREATE" -> {
+                expectParameters(parts, 2, "INVOICE CREATE;USER|GROUP;Identificador");
+                Invoice invoice = switch (parts[1]) {
+                    case "USER" -> controller.createUserInvoice(parts[2]);
+                    case "GROUP" -> controller.createGroupInvoice(parts[2]);
+                    default -> throw new IllegalArgumentException("Unknown invoice recipient type: " + parts[1]
+                            + " (expected USER or GROUP)");
+                };
+                return ok(render(invoice));
+            }
             default -> throw new IllegalArgumentException("Unknown command: " + operation);
         }
     }
@@ -219,6 +234,20 @@ public class CommandProcessor {
             sb.append(nl).append("    ").append(u.getName()).append(' ').append(u.getSurname())
                     .append(" <").append(u.getEmail()).append('>');
         }
+        return sb.toString();
+    }
+
+    private static String render(Invoice invoice) {
+        String nl = System.lineSeparator();
+        StringBuilder sb = new StringBuilder("Invoice for " + invoice.getRecipient());
+        for (InvoiceSection section : invoice.getSections()) {
+            sb.append(nl).append("  ").append(section.getTitle()).append(':');
+            for (InvoiceLine line : section.getLines()) {
+                sb.append(nl).append("    ").append(line.getDescription()).append(": ")
+                        .append(line.getAmount().toPlainString());
+            }
+        }
+        sb.append(nl).append("  Total: ").append(invoice.getTotal().toPlainString());
         return sb.toString();
     }
 
