@@ -29,6 +29,10 @@ public class CommandProcessor {
             "TICKET DELETE;Identificador",
             "GROUPTICKET CREATE;Identificador;Grupo;yyyy-MM-dd",
             "GROUPTICKET DELETE;Identificador",
+            "ATTRACTION CREATE;Identificador;Nombre;Aforo",
+            "ATTRACTION ENTER;Identificador;Ticket",
+            "ATTRACTION EXIT;Identificador;Ticket",
+            "ATTRACTION STATUS;Identificador",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -43,19 +47,23 @@ public class CommandProcessor {
     private final UserService users;
     private final GroupService groups;
     private final TicketService tickets;
+    private final AttractionService attractions;
     private boolean exitRequested;
     private LocalDate currentDate;
     private BigDecimal ticketPrice = DEFAULT_TICKET_PRICE;
 
     /** Creates the controller with the operating system's local date as the current date. */
-    public CommandProcessor(UserService users, GroupService groups, TicketService tickets) {
-        this(users, groups, tickets, LocalDate.now());
+    public CommandProcessor(UserService users, GroupService groups, TicketService tickets,
+            AttractionService attractions) {
+        this(users, groups, tickets, attractions, LocalDate.now());
     }
 
-    public CommandProcessor(UserService users, GroupService groups, TicketService tickets, LocalDate initialDate) {
+    public CommandProcessor(UserService users, GroupService groups, TicketService tickets,
+            AttractionService attractions, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        this.attractions = attractions;
         this.currentDate = initialDate;
     }
 
@@ -178,6 +186,28 @@ public class CommandProcessor {
                 tickets.deleteGroupTicket(parts[1], currentDate);
                 return ok("Group ticket deleted");
             }
+            case "ATTRACTION CREATE" -> {
+                expectParameters(parts, 3, "ATTRACTION CREATE;Identificador;Nombre;Aforo");
+                attractions.create(parts[1], parts[2], parts[3]);
+                return ok("Attraction created");
+            }
+            case "ATTRACTION ENTER" -> {
+                expectParameters(parts, 2, "ATTRACTION ENTER;Identificador;Ticket");
+                Attraction attraction = attractions.existing(parts[1]);
+                Ticket ticket = existingTicket(parts[2]);
+                attraction.enter(ticket, currentDate);
+                return ok(ticket.getVisitors().size() + " user(s) entered attraction " + attraction.getId());
+            }
+            case "ATTRACTION EXIT" -> {
+                expectParameters(parts, 2, "ATTRACTION EXIT;Identificador;Ticket");
+                Attraction attraction = attractions.existing(parts[1]);
+                int left = attraction.exit(existingTicket(parts[2]));
+                return ok(left + " user(s) left attraction " + attraction.getId());
+            }
+            case "ATTRACTION STATUS" -> {
+                expectParameters(parts, 1, "ATTRACTION STATUS;Identificador");
+                return ok(status(attractions.existing(parts[1])));
+            }
             default -> throw new IllegalArgumentException("Unknown command: " + operation);
         }
     }
@@ -189,6 +219,31 @@ public class CommandProcessor {
             throw new IllegalArgumentException("Group " + groupId + " has group tickets dated on or after "
                     + currentDate + " and cannot be modified or deleted");
         }
+    }
+
+    private Ticket existingTicket(String id) {
+        Ticket ticket = tickets.findAny(id);
+        if (ticket == null) {
+            throw new IllegalArgumentException("No ticket with identifier " + id);
+        }
+        return ticket;
+    }
+
+    private static String status(Attraction a) {
+        String nl = System.lineSeparator();
+        StringBuilder sb = new StringBuilder("Attraction " + a.getId() + " - " + a.getName());
+        sb.append(nl).append("  Maximum capacity: ").append(a.getCapacity());
+        sb.append(nl).append("  Users present: ").append(a.getPresent().size());
+        sb.append(nl).append("  Available places: ").append(a.available());
+        sb.append(nl).append("  Present:");
+        if (a.getPresent().isEmpty()) {
+            sb.append(" none");
+        }
+        for (User u : a.getPresent()) {
+            sb.append(nl).append("    ").append(u.getName()).append(' ').append(u.getSurname())
+                    .append(" <").append(u.getEmail()).append('>');
+        }
+        return sb.toString();
     }
 
     private static String ok(String message) {

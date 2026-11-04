@@ -22,6 +22,7 @@ class SystemDateTest {
     UserService users;
     GroupService groups;
     TicketService tickets;
+    AttractionService attractions;
     CommandProcessor processor;
 
     @BeforeEach
@@ -30,13 +31,14 @@ class SystemDateTest {
         groups = new GroupService(new GroupRepository(dir.resolve("groups.txt")), users);
         tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")),
                 new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups);
-        processor = new CommandProcessor(users, groups, tickets, LocalDate.of(2026, 9, 15));
+        attractions = new AttractionService(new AttractionRepository(dir.resolve("attractions.txt")));
+        processor = new CommandProcessor(users, groups, tickets, attractions, LocalDate.of(2026, 9, 15));
     }
 
     @Test
     void startsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        CommandProcessor fresh = new CommandProcessor(users, groups, tickets);
+        CommandProcessor fresh = new CommandProcessor(users, groups, tickets, attractions);
         LocalDate after = LocalDate.now();
         LocalDate date = fresh.getCurrentDate();
         assertTrue(!date.isBefore(before) && !date.isAfter(after), date.toString());
@@ -44,7 +46,7 @@ class SystemDateTest {
 
     @Test
     void setsValidDate() {
-        CommandProcessor fresh = new CommandProcessor(users, groups, tickets);
+        CommandProcessor fresh = new CommandProcessor(users, groups, tickets, attractions);
         assertEquals("OK: System date set to 2026-09-15", fresh.process("SYSTEM DATE;2026-09-15"));
         assertEquals(LocalDate.of(2026, 9, 15), fresh.getCurrentDate());
     }
@@ -90,6 +92,6 @@ class SystemDateTest {
         assertEquals("OK: System date set to 2026-09-15", lines[0]);
         assertTrue(lines[1].startsWith("ERROR: Invalid date"));
         // a new execution builds a new controller starting at the OS date again
-        assertEquals(LocalDate.now(), new CommandProcessor(users, groups, tickets).getCurrentDate());
+        assertEquals(LocalDate.now(), new CommandProcessor(users, groups, tickets, attractions).getCurrentDate());
     }
 }

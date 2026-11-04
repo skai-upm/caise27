@@ -28,7 +28,7 @@ class CommandProcessorTest {
         groups = new GroupService(new GroupRepository(dir.resolve("groups.txt")), service);
         tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")),
                 new GroupTicketRepository(dir.resolve("grouptickets.txt")), service, groups);
-        processor = new CommandProcessor(service, groups, tickets);
+        processor = new CommandProcessor(service, groups, tickets, new AttractionService(new AttractionRepository(dir.resolve("attractions.txt"))));
     }
 
     @Test

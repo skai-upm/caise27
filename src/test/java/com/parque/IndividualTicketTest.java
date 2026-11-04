@@ -29,4 +29,13 @@ class IndividualTicketTest {
         assertEquals("12345678Z", t.getHolderDni());
         assertEquals("60.50", t.getPriceText());
     }
+
+    @Test
+    void visitorsAreTheOwner() {
+        IndividualTicket t = new IndividualTicket("T001", ana, LocalDate.of(2026, 10, 15), new BigDecimal("40"));
+        assertEquals(java.util.List.of(ana), t.getVisitors());
+        IndividualTicket history = new IndividualTicket("T002", null, "12345678Z", LocalDate.of(2026, 10, 15),
+                new BigDecimal("40"));
+        assertEquals(java.util.List.of(), history.getVisitors());
+    }
 }

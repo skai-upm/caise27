@@ -39,5 +39,7 @@ class UmlModelTest {
         assertTrue(model.contains("Ticket <|-- GroupTicket"));
         assertTrue(model.contains("GroupTicket \"0..*\" o-- \"0..1\" Group : buyer"));
         assertTrue(model.contains("GroupTicket \"1\" *-- \"1..*\" IndividualTicket : constituents"));
+        assertTrue(model.contains("Attraction \"0..*\" o-- \"0..*\" User : present"));
+        assertTrue(model.contains("getVisitors() : List<User>"));
     }
 }

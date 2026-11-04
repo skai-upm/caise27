@@ -42,6 +42,7 @@ class GroupTicketTest {
         GroupTicket gt = (GroupTicket) t;
         assertSame(g, gt.getGroup());
         assertTrue(gt.contains(c));
+        assertEquals(List.of(ana), t.getVisitors());
         assertThrows(UnsupportedOperationException.class, () -> gt.getConstituents().add(c));
         assertTrue(t.isCurrentOrFuture(LocalDate.of(2026, 10, 15)));
         assertTrue(!t.isFuture(LocalDate.of(2026, 10, 15)));

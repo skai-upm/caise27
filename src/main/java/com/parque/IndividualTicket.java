@@ -3,6 +3,7 @@ package com.parque;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * An individual ticket for one date of use, owned by a registered user (a reference, not a copy).
@@ -36,6 +37,12 @@ public class IndividualTicket extends Ticket {
 
     public String getHolderDni() {
         return holderDni;
+    }
+
+    /** The owner, or nobody if the owner is no longer registered. */
+    @Override
+    public List<User> getVisitors() {
+        return user == null ? List.of() : List.of(user);
     }
 
     @Override

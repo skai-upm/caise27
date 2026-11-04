@@ -92,6 +92,7 @@ package com.parque {
     -id : String {readOnly}
     -date : LocalDate {readOnly}
     +{abstract} getPrice() : BigDecimal
+    +{abstract} getVisitors() : List<User>
     +getPriceText() : String
     +isCurrentOrFuture(today : LocalDate) : boolean
     +isFuture(today : LocalDate) : boolean
@@ -101,6 +102,7 @@ package com.parque {
     -holderDni : String {readOnly}
     -price : BigDecimal {readOnly}
     +getPrice() : BigDecimal
+    +getVisitors() : List<User>
   }
 
   class GroupTicket {
@@ -110,6 +112,28 @@ package com.parque {
     {static} +discountPercent(members : int) : int
     {static} +totalFor(unitPrice : BigDecimal, members : int) : BigDecimal
     +getPrice() : BigDecimal
+    +getVisitors() : List<User>
+  }
+
+  class Attraction {
+    -id : String {readOnly}
+    -name : String {readOnly}
+    -capacity : int {readOnly}
+    +enter(ticket : Ticket, today : LocalDate) : void
+    +exit(ticket : Ticket) : int
+    +available() : int
+  }
+
+  class AttractionService {
+    +create(id : String, name : String, capacity : String) : Attraction
+    +find(id : String) : Attraction
+    +existing(id : String) : Attraction
+  }
+
+  class AttractionRepository {
+    -file : Path
+    +load() : List<Attraction>
+    +save(attractions : List<Attraction>) : void
   }
 
   class TicketService {
@@ -139,9 +163,11 @@ App ..> CommandProcessor : creates
 App ..> UserService : creates
 App ..> GroupService : creates
 App ..> TicketService : creates
+App ..> AttractionService : creates
 CommandProcessor "1" --> "1" UserService : users
 CommandProcessor "1" --> "1" GroupService : groups
 CommandProcessor "1" --> "1" TicketService : tickets
+CommandProcessor "1" --> "1" AttractionService : attractions
 UserService "1" --> "1" UserRepository : repository
 UserService "1" o-- "0..*" User : users
 UserService ..> UserValidator : uses
@@ -165,4 +191,9 @@ GroupTicket "0..*" o-- "0..1" Group : buyer
 GroupTicket "1" *-- "1..*" IndividualTicket : constituents
 TicketRepository ..> IndividualTicket : reads/writes
 GroupTicketRepository ..> GroupTicket : reads/writes
+AttractionService "1" --> "1" AttractionRepository : repository
+AttractionService "1" o-- "0..*" Attraction : attractions
+Attraction "0..*" o-- "0..*" User : present
+Attraction ..> Ticket : admits visitors of
+AttractionRepository ..> Attraction : reads/writes
 @enduml

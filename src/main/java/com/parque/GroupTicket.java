@@ -3,6 +3,7 @@ package com.parque;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -67,6 +68,16 @@ public class GroupTicket extends Ticket {
     @Override
     public BigDecimal getPrice() {
         return total;
+    }
+
+    /** The owners of all constituent tickets. */
+    @Override
+    public List<User> getVisitors() {
+        List<User> visitors = new ArrayList<>();
+        for (IndividualTicket t : constituents) {
+            visitors.addAll(t.getVisitors());
+        }
+        return visitors;
     }
 
     /** The individual tickets composing this group ticket (read-only). */
