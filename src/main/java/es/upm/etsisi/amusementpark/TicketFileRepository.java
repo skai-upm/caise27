@@ -32,8 +32,8 @@ public class TicketFileRepository {
      *
      * @param userByDni returns the existing user with a DNI, or {@code null} if none
      */
-    public List<Ticket> load(Function<String, User> userByDni) throws IOException {
-        List<Ticket> tickets = new ArrayList<>();
+    public List<IndividualTicket> load(Function<String, User> userByDni) throws IOException {
+        List<IndividualTicket> tickets = new ArrayList<>();
         if (!Files.exists(file)) {
             return tickets;
         }
@@ -50,7 +50,7 @@ public class TicketFileRepository {
                 }
                 LocalDate date = LocalDate.parse(f[1]);
                 BigDecimal price = new BigDecimal(f[3]);
-                tickets.add(new Ticket(f[0], date, f[2], userByDni.apply(f[2]), price));
+                tickets.add(new IndividualTicket(f[0], date, f[2], userByDni.apply(f[2]), price));
             } catch (IllegalArgumentException | DateTimeParseException e) {
                 System.err.println("Skipping malformed ticket record at line " + lineNumber + " of " + file);
             }
@@ -59,9 +59,9 @@ public class TicketFileRepository {
     }
 
     /** Replaces the file content with the given tickets. */
-    public void save(Collection<Ticket> tickets) throws IOException {
+    public void save(Collection<IndividualTicket> tickets) throws IOException {
         List<String> lines = new ArrayList<>(tickets.size());
-        for (Ticket t : tickets) {
+        for (IndividualTicket t : tickets) {
             lines.add(String.join(SEPARATOR, t.getId(), t.getDate().toString(), t.getOwnerDni(),
                     t.getPrice().toPlainString()));
         }

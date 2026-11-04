@@ -39,8 +39,9 @@ class CommandProcessorTest {
 
     private CommandProcessor newProcessor() throws Exception {
         UserManager users = new UserManager(new UserFileRepository(file));
-        return new CommandProcessor(users, new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users),
-                new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")), users), START);
+        GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users);
+        return new CommandProcessor(users, groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
+                new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups), START);
     }
 
     private static void assertOk(String result) {
@@ -134,7 +135,8 @@ class CommandProcessorTest {
     void startupDateIsTheInjectedDateOrToday() throws Exception {
         UserManager m = new UserManager(new UserFileRepository(dir.resolve("other.txt")));
         GroupManager g = new GroupManager(new GroupFileRepository(dir.resolve("other-groups.txt")), m);
-        TicketManager t = new TicketManager(new TicketFileRepository(dir.resolve("other-tickets.txt")), m);
+        TicketManager t = new TicketManager(new TicketFileRepository(dir.resolve("other-tickets.txt")),
+                new GroupTicketFileRepository(dir.resolve("other-grouptickets.txt")), m, g);
         assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(m, g, t, LocalDate.of(2026, 1, 1)).getCurrentDate());
         LocalDate before = LocalDate.now();
         LocalDate actual = new CommandProcessor(m, g, t).getCurrentDate();
@@ -302,6 +304,103 @@ class CommandProcessorTest {
         for (String syntax : List.of("TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id", "SYSTEM PRICE;Precio")) {
             assertTrue(help.contains(syntax), syntax);
         }
+    }
+
+    private static final String CREATE_PEDRO =
+            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
+    private static final String CREATE_LUIS =
+            "USER CREATE;Luis;Martin Ruiz;11111111H;luis@correo.com;Luis3$;634567890;1111222233334444";
+
+    private void groupOfThree() {
+        assertOk(processor.process(CREATE_ANA));
+        assertOk(processor.process(CREATE_PEDRO));
+        assertOk(processor.process(CREATE_LUIS));
+        assertOk(processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertOk(processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertOk(processor.process("GROUP ADD;G01;pedro@correo.com"));
+        assertOk(processor.process("GROUP ADD;G01;luis@correo.com"));
+    }
+
+    @Test
+    void groupTicketPurchaseFromTheSource() throws Exception {
+        groupOfThree();
+        assertEquals("OK GROUP TICKET CREATED -> 108.00", processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        assertEquals(List.of("TG01;2026-10-15;G01;40.00;108.00;12345678Z;87654321X;11111111H"),
+                Files.readAllLines(dir.resolve("grouptickets.txt")));
+        assertFalse(Files.exists(dir.resolve("tickets.txt")), "constituent tickets are not individual tickets");
+    }
+
+    @Test
+    void groupTicketUsesCurrentPrice() {
+        groupOfThree();
+        assertOk(processor.process("SYSTEM PRICE;60.00"));
+        assertEquals("OK GROUP TICKET CREATED -> 162.00", processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GROUPTICKET CREATE;TG02;G99;2026-10-15", "GROUPTICKET CREATE;TG02;G02;2026-10-15",
+        "GROUPTICKET CREATE;TG02;G01;2026-09-30", "GROUPTICKET CREATE;TG02;G01;2026-02-30",
+        "GROUPTICKET CREATE;TG01;G01;2026-10-20", "GROUPTICKET CREATE;T001;G01;2026-10-20",
+        "GROUPTICKET CREATE;;G01;2026-10-20", "GROUPTICKET CREATE;TG02;G01", "GROUPTICKET CREATE;TG02;G01;2026-10-20;x",
+        "GROUPTICKET DELETE", "GROUPTICKET DELETE;TG99", "GROUPTICKET DELETE;T001", "TICKET DELETE;TG01",
+        "TICKET DELETE;TG01-12345678Z"})
+    void invalidGroupTicketCommandsChangeNothing(String command) throws Exception {
+        groupOfThree();
+        assertOk(processor.process("GROUP CREATE;G02;Vacio"));
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-20");
+        assertEquals("OK GROUP TICKET CREATED -> 108.00", processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        List<String> before = Files.readAllLines(dir.resolve("grouptickets.txt"));
+        List<String> beforeTickets = Files.readAllLines(dir.resolve("tickets.txt"));
+        assertError(processor.process(command));
+        assertEquals(before, Files.readAllLines(dir.resolve("grouptickets.txt")));
+        assertEquals(beforeTickets, Files.readAllLines(dir.resolve("tickets.txt")));
+    }
+
+    @Test
+    void groupIsLockedWhileGroupTicketIsCurrentOrFuture() {
+        groupOfThree();
+        assertOk(processor.process("USER CREATE;Eva;Sanz;22222222J;eva@correo.com;Eva4%a;645678901;5555666677778888"));
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        for (String date : List.of("2026-10-01", "2026-10-15")) {
+            assertOk(processor.process("SYSTEM DATE;" + date));
+            assertError(processor.process("GROUP ADD;G01;eva@correo.com"));
+            assertError(processor.process("GROUP REMOVE;G01;ana@correo.com"));
+            assertError(processor.process("GROUP DELETE;G01"));
+        }
+        assertOk(processor.process("SYSTEM DATE;2026-10-16"));
+        assertOk(processor.process("GROUP ADD;G01;eva@correo.com"));
+        assertOk(processor.process("GROUP REMOVE;G01;ana@correo.com"));
+        assertOk(processor.process("GROUP DELETE;G01"));
+    }
+
+    @Test
+    void groupTicketMembersCannotBeDeletedWhileValid() throws Exception {
+        groupOfThree();
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertOk(processor.process("SYSTEM DATE;2026-10-15"));
+        assertError(processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-16"));
+        assertOk(processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals(List.of("TG01;2026-10-15;G01;40.00;108.00;12345678Z;87654321X;11111111H"),
+                Files.readAllLines(dir.resolve("grouptickets.txt")));
+    }
+
+    @Test
+    void deletingFutureGroupTicketRemovesItsTickets() throws Exception {
+        groupOfThree();
+        processor.process("GROUPTICKET CREATE;TG001;G01;2026-10-15");
+        assertError(processor.process("USER DELETE;pedro@correo.com;Otra2#"));
+        assertOk(processor.process("GROUPTICKET DELETE;TG001"));
+        assertTrue(Files.readAllLines(dir.resolve("grouptickets.txt")).isEmpty());
+        assertOk(processor.process("USER DELETE;pedro@correo.com;Otra2#"));
+        assertOk(processor.process("GROUP REMOVE;G01;ana@correo.com"));
+    }
+
+    @Test
+    void helpListsGroupTicketCommands() {
+        String help = processor.process("HELP");
+        assertTrue(help.contains("GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd"));
+        assertTrue(help.contains("GROUPTICKET DELETE;Id"));
     }
 
     @Test

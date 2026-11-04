@@ -108,6 +108,22 @@ class AppTest {
     }
 
     @Test
+    void groupTicketsSurviveRestartAndKeepTheGroupLocked() throws Exception {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], String.join("\n", BASIC.get(0), BASIC.get(1), "SYSTEM DATE;2026-10-01",
+                "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com", "GROUP ADD;G01;pedro@correo.com",
+                "GROUPTICKET CREATE;TG01;G01;2026-10-15"), users);
+        Run second = run(new String[0], String.join("\n", "SYSTEM DATE;2026-10-01", "GROUP REMOVE;G01;ana@correo.com",
+                "USER DELETE;pedro@correo.com;Otra2#", "SYSTEM DATE;2026-10-16", "GROUP REMOVE;G01;ana@correo.com"), users);
+        List<String> lines = second.output().lines().toList();
+        assertTrue(lines.get(1).startsWith("ERROR"), lines.get(1));
+        assertTrue(lines.get(2).startsWith("ERROR"), lines.get(2));
+        assertTrue(lines.get(4).startsWith("OK"), lines.get(4));
+        assertEquals(List.of("TG01;2026-10-15;G01;40.00;80.00;12345678Z;87654321X"),
+                Files.readAllLines(dir.resolve("grouptickets.txt")));
+    }
+
+    @Test
     void interactiveModeEndsAtEndOfInput() throws Exception {
         Path users = dir.resolve("users.txt");
         Run r = run(new String[0], BASIC.get(0) + "\n", users);

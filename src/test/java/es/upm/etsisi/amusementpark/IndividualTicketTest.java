@@ -10,13 +10,13 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 
-class TicketTest {
+class IndividualTicketTest {
 
     private final User ana = new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "1", "1234567890123456");
 
     @Test
     void holdsIdDateUserAndPrice() {
-        Ticket t = new Ticket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
+        IndividualTicket t = new IndividualTicket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
         assertEquals("T001", t.getId());
         assertEquals(LocalDate.of(2026, 10, 15), t.getDate());
         assertEquals(new BigDecimal("40.00"), t.getPrice());
@@ -28,7 +28,7 @@ class TicketTest {
 
     @Test
     void detachKeepsDniAsHistory() {
-        Ticket t = new Ticket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
+        IndividualTicket t = new IndividualTicket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
         t.detachUser();
         assertTrue(t.getUser().isEmpty());
         assertFalse(t.belongsTo(ana));

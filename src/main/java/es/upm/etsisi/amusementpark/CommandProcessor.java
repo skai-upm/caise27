@@ -8,6 +8,7 @@ import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Interprets text commands such as {@code USER CREATE;...}. Components are
@@ -35,6 +36,8 @@ public class CommandProcessor {
             "GROUP DELETE;Id",
             "TICKET CREATE;Id;Correo;yyyy-MM-dd",
             "TICKET DELETE;Id",
+            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
+            "GROUPTICKET DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -106,6 +109,8 @@ public class CommandProcessor {
                 case "GROUP DELETE" -> groupDelete(params);
                 case "TICKET CREATE" -> ticketCreate(params);
                 case "TICKET DELETE" -> ticketDelete(params);
+                case "GROUPTICKET CREATE" -> groupTicketCreate(params);
+                case "GROUPTICKET DELETE" -> groupTicketDelete(params);
                 case "SYSTEM DATE" -> systemDate(params);
                 case "SYSTEM PRICE" -> systemPrice(params);
                 case "HELP" -> help(params);
@@ -161,7 +166,7 @@ public class CommandProcessor {
 
     private String ticketCreate(String[] p) throws UserException {
         requireParams(p, 3, "TICKET CREATE;Id;Correo;yyyy-MM-dd");
-        Ticket ticket = tickets.create(p[0], p[1], parseDate(p[2]), currentDate, ticketPrice);
+        IndividualTicket ticket = tickets.create(p[0], p[1], parseDate(p[2]), currentDate, ticketPrice);
         return "OK TICKET CREATED -> " + ticket.getPrice().toPlainString();
     }
 
@@ -220,20 +225,47 @@ public class CommandProcessor {
 
     private String groupAdd(String[] p) throws UserException {
         requireParams(p, 2, "GROUP ADD;Id;Correo");
+        requireGroupUnlocked(p[0]);
         groups.addMember(p[0], p[1]);
         return ok("User " + p[1] + " added to group " + p[0]);
     }
 
     private String groupRemove(String[] p) throws UserException {
         requireParams(p, 2, "GROUP REMOVE;Id;Correo");
+        requireGroupUnlocked(p[0]);
         groups.removeMember(p[0], p[1]);
         return ok("User " + p[1] + " removed from group " + p[0]);
     }
 
     private String groupDelete(String[] p) throws UserException {
         requireParams(p, 1, "GROUP DELETE;Id");
+        requireGroupUnlocked(p[0]);
+        Optional<Group> group = groups.find(p[0]);
         groups.delete(p[0]);
+        group.ifPresent(tickets::detachGroup);
         return ok("Group " + p[0] + " deleted");
+    }
+
+    /** A group with a group ticket dated on or after the system date cannot be modified or deleted. */
+    private void requireGroupUnlocked(String groupId) throws UserException {
+        Optional<Group> group = groups.find(groupId);
+        if (group.isPresent() && tickets.groupHasTicketOnOrAfter(group.get(), currentDate)) {
+            throw new UserException("Group " + groupId + " has a group ticket dated on or after " + currentDate
+                    + " and cannot be modified or deleted");
+        }
+    }
+
+    private String groupTicketCreate(String[] p) throws UserException {
+        requireParams(p, 3, "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd");
+        Group group = groups.find(p[1]).orElseThrow(() -> new UserException("No group with id " + p[1]));
+        GroupTicket ticket = tickets.createGroupTicket(p[0], group, parseDate(p[2]), currentDate, ticketPrice);
+        return "OK GROUP TICKET CREATED -> " + ticket.getPrice().toPlainString();
+    }
+
+    private String groupTicketDelete(String[] p) throws UserException {
+        requireParams(p, 1, "GROUPTICKET DELETE;Id");
+        tickets.deleteGroupTicket(p[0], currentDate);
+        return ok("Group ticket " + p[0] + " deleted");
     }
 
     private String update(String[] p) throws UserException {

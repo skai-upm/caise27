@@ -9,6 +9,7 @@ class App {
   {static} ~USERS_FILE : Path
   {static} ~GROUPS_FILE_NAME : String
   {static} ~TICKETS_FILE_NAME : String
+  {static} ~GROUP_TICKETS_FILE_NAME : String
   {static} +main(args : String[]) : void
   {static} ~run(args : String[], stdin : InputStream, out : PrintStream, usersFile : Path) : int
 }
@@ -97,29 +98,63 @@ class Group {
 }
 
 class TicketManager {
-  +getTickets() : Collection<Ticket>
-  +find(id : String) : Optional<Ticket>
-  +create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Ticket
+  +getTickets() : Collection<IndividualTicket>
+  +getGroupTickets() : Collection<GroupTicket>
+  +allTickets() : List<Ticket>
+  +find(id : String) : Optional<IndividualTicket>
+  +findGroupTicket(id : String) : Optional<GroupTicket>
+  +create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : IndividualTicket
+  +createGroupTicket(id : String, group : Group, date : LocalDate, today : LocalDate, price : BigDecimal) : GroupTicket
   +delete(id : String, today : LocalDate) : void
+  +deleteGroupTicket(id : String, today : LocalDate) : void
   +hasTicketOnOrAfter(user : User, today : LocalDate) : boolean
+  +groupHasTicketOnOrAfter(group : Group, today : LocalDate) : boolean
   +detachUser(user : User) : void
+  +detachGroup(group : Group) : void
 }
 
 class TicketFileRepository {
   -file : Path
-  +load(userByDni : Function<String, User>) : List<Ticket>
-  +save(tickets : Collection<Ticket>) : void
+  +load(userByDni : Function<String, User>) : List<IndividualTicket>
+  +save(tickets : Collection<IndividualTicket>) : void
 }
 
-class Ticket {
+class GroupTicketFileRepository {
+  -file : Path
+  +load(groupById : Function<String, Group>, userByDni : Function<String, User>) : List<GroupTicket>
+  +save(groupTickets : Collection<GroupTicket>) : void
+}
+
+abstract class Ticket {
   -id : String {readOnly}
   -date : LocalDate {readOnly}
+  +{abstract} getPrice() : BigDecimal
+  +isOnOrAfter(day : LocalDate) : boolean
+}
+
+class IndividualTicket {
   -price : BigDecimal {readOnly}
   -ownerDni : String {readOnly}
+  +getPrice() : BigDecimal
   +getUser() : Optional<User>
   +belongsTo(user : User) : boolean
   +detachUser() : void
 }
+
+class GroupTicket {
+  -groupId : String {readOnly}
+  -basePrice : BigDecimal {readOnly}
+  -totalPrice : BigDecimal {readOnly}
+  {static} +discountPercent(members : int) : int
+  {static} +totalFor(basePrice : BigDecimal, members : int) : BigDecimal
+  +getPrice() : BigDecimal
+  +getGroup() : Optional<Group>
+  +getParts() : List<IndividualTicket>
+  +detachGroup() : void
+}
+
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
 
 Exception <|-- UserException
 
@@ -138,9 +173,13 @@ Group "0..*" o-- "0..*" User : members
 CommandProcessor "1" --> "1" TicketManager : tickets
 TicketManager "1" --> "1" TicketFileRepository : repository
 TicketManager "1" --> "1" UserManager : users
+TicketManager "1" --> "1" GroupTicketFileRepository : groupRepository
 TicketManager "1" *-- "0..*" Ticket : tickets
-Ticket "0..*" --> "0..1" User : owner
-TicketFileRepository ..> Ticket
+IndividualTicket "0..*" --> "0..1" User : owner
+GroupTicket "1" *-- "1..*" IndividualTicket : parts
+GroupTicket "0..*" o-- "0..1" Group : group
+TicketFileRepository ..> IndividualTicket
+GroupTicketFileRepository ..> GroupTicket
 TicketManager ..> UserException : throws
 UserFileRepository ..> User
 GroupFileRepository ..> Group

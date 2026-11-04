@@ -35,9 +35,10 @@ class CommandRunnerTest {
     @BeforeEach
     void setUp() throws Exception {
         manager = new UserManager(new UserFileRepository(dir.resolve("users.txt")));
+        GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), manager);
         runner = new CommandRunner(new CommandProcessor(manager,
-                new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), manager),
-                new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")), manager)));
+                groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
+                        new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), manager, groups)));
         bytes = new ByteArrayOutputStream();
         out = new PrintStream(bytes, true, StandardCharsets.UTF_8);
     }
