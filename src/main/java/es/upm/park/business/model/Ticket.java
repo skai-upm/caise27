@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Common abstraction of every ticket: an identifier, a date of use and a price.
  */
-public abstract class Ticket {
+public abstract class Ticket implements Admissible {
 
     private final String id;
     private final LocalDate date;
@@ -17,10 +17,12 @@ public abstract class Ticket {
         this.date = date;
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }
@@ -31,6 +33,7 @@ public abstract class Ticket {
     }
 
     /** Users admitted with this ticket; {@code null} entries stand for deleted users. */
+    @Override
     public abstract List<User> getHolders();
 
     /** Price paid for this ticket. */

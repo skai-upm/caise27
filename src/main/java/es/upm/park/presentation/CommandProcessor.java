@@ -1,6 +1,7 @@
 package es.upm.park.presentation;
 
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.AttractionType;
 import es.upm.park.business.model.Invoice;
 import es.upm.park.business.model.InvoiceLine;
 import es.upm.park.business.model.InvoiceSection;
@@ -163,14 +164,17 @@ public class CommandProcessor {
     // --- attractions
 
     private String attractionCreate(String[] p) {
-        requireParams(p, 3, "ATTRACTION CREATE;Id;Nombre;Capacidad");
-        park.createAttraction(p[1], p[2], parseCapacity(p[3]));
+        if (p.length - 1 != 4) {
+            requireParams(p, 3, "ATTRACTION CREATE;Id;Nombre;Capacidad[;Tipo]");
+        }
+        AttractionType type = p.length - 1 == 4 ? AttractionType.parse(p[4]) : AttractionType.GENERAL;
+        park.createAttraction(p[1], p[2], parseCapacity(p[3]), type);
         return "OK: attraction " + p[1] + " created";
     }
 
     private String attractionEnter(String[] p) {
         requireParams(p, 2, "ATTRACTION ENTER;IdAtraccion;IdTicket");
-        Attraction attraction = park.enterAttraction(p[1], p[2]);
+        Attraction<?> attraction = park.enterAttraction(p[1], p[2]);
         int entered = park.findTicket(p[2]).getHolders().size();
         return "OK: " + entered + " user(s) entered attraction " + p[1]
                 + " (" + attraction.getAvailablePlaces() + " places available)";
@@ -185,7 +189,7 @@ public class CommandProcessor {
 
     private String attractionStatus(String[] p) {
         requireParams(p, 1, "ATTRACTION STATUS;IdAtraccion");
-        Attraction a = park.findAttraction(p[1]);
+        Attraction<?> a = park.findAttraction(p[1]);
         String nl = System.lineSeparator();
         StringBuilder present = new StringBuilder();
         for (User u : a.getPresentUsers()) {
@@ -195,6 +199,7 @@ public class CommandProcessor {
             present.append(u.getName()).append(' ').append(u.getSurnames()).append(" <").append(u.getEmail()).append('>');
         }
         return "OK: attraction " + a.getId() + " - " + a.getName() + nl
+                + "  type: " + a.type() + nl
                 + "  capacity: " + a.getCapacity() + nl
                 + "  present: " + a.getPresentCount() + nl
                 + "  available: " + a.getAvailablePlaces() + nl

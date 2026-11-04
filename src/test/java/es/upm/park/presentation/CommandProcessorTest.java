@@ -123,7 +123,8 @@ class CommandProcessorTest {
             "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id",
             "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
             "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;IdTicket",
-            "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo",
+            "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket", "ATTRACTION STATUS;IdAtraccion",
             "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo", "HELP EXTENDED",
             "SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad", "SPEEDPASS DELETE;IdPase",
@@ -589,5 +590,32 @@ class CommandProcessorTest {
         String group = processor.process("INVOICE CREATE;GROUP;G01");
         assertTrue(!group.contains("pass") && group.contains("TOTAL: 162.00"), group);
         assertTrue(processor.process("INVOICE CREATE;USER;u1@correo.com").endsWith("TOTAL: 0.00"));
+    }
+
+    @Test
+    void attractionTypesRestrictTicketKinds() {
+        groupOf(2);
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;u0@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertTrue(processor.process("ATTRACTION CREATE;A01;Tornado;20").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION CREATE;A02;Saltos;20;GROUP").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION CREATE;A03;Solo;20;individual").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION CREATE;A04;Especial;20;SPECIAL").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION CREATE;A05;X;20;VIP").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION CREATE;A05;X;20;GROUP;extra").startsWith("ERROR"));
+
+        String r = processor.process("ATTRACTION ENTER;A02;T001");
+        assertTrue(r.startsWith("ERROR") && r.contains("does not accept individual tickets"), r);
+        r = processor.process("ATTRACTION ENTER;A03;TG01");
+        assertTrue(r.startsWith("ERROR") && r.contains("does not accept group tickets"), r);
+        assertTrue(processor.process("ATTRACTION ENTER;A04;TG01").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION ENTER;A02;TG01").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION ENTER;A03;T001").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION STATUS;A01").contains("  type: GENERAL"));
+        assertTrue(processor.process("ATTRACTION STATUS;A02").contains("  type: GROUP"));
+        assertTrue(processor.process("ATTRACTION EXIT;A03;TG01").startsWith("ERROR"));
     }
 }

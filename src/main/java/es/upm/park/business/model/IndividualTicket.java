@@ -11,7 +11,7 @@ import java.util.List;
  * the owner's DNI is kept as well so the ticket remains a historical record after
  * the owner has been deleted.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final BigDecimal price;
     private final String ownerDni;
@@ -44,6 +44,7 @@ public class IndividualTicket extends Ticket {
     }
 
     /** The owning user, or {@code null} for a historical ticket whose owner was deleted. */
+    @Override
     public User getOwner() {
         return owner;
     }

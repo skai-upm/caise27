@@ -43,7 +43,9 @@ class UmlModelTest {
             boolean declaration = t.length > i + 1
                     && (t[i].equals("class") || t[i].equals("enum") || t[i].equals("interface"));
             if (declaration) {
-                names.put(t[i + 1].replace("{", ""), blocks.isEmpty() ? "" : blocks.peek());
+                String name = t[i + 1].replace("{", "");
+                int generic = name.indexOf('<');
+                names.put(generic < 0 ? name : name.substring(0, generic), blocks.isEmpty() ? "" : blocks.peek());
                 if (line.endsWith("{")) {
                     blocks.push("");
                 }

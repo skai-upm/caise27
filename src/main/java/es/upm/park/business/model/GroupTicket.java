@@ -12,7 +12,7 @@ import java.util.List;
  * composed of one {@link IndividualTicket} per member at purchase time; the total
  * is the sum of the individual prices minus a discount by member count.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private static final BigDecimal HUNDRED = new BigDecimal(100);
 
@@ -106,6 +106,7 @@ public class GroupTicket extends Ticket {
         return groupId;
     }
 
+    @Override
     public List<IndividualTicket> getConstituents() {
         return constituents;
     }

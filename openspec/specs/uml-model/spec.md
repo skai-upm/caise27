@@ -28,6 +28,10 @@ The repository SHALL contain a single PlantUML class diagram at `uml/model.puml`
 - **WHEN** `uml/model.puml` is processed by PlantUML
 - **THEN** it is recognised as a class diagram without syntax errors
 
+#### Scenario: Attraction types and access interfaces present
+- **WHEN** `uml/model.puml` is reviewed
+- **THEN** it declares the access interfaces implemented by the ticket classes and the generic abstract attraction specialised by the four attraction type classes
+
 ### Requirement: Diagram notation rules
 The class diagram SHALL show no methods and no technical labels (such as stereotypes, `{readOnly}` or `{static}` markers). Class bodies SHALL show only attributes of primitive, value (`String`, `LocalDate`, `BigDecimal`, `Path`) or enumeration types. Every reference to another modelled class SHALL be drawn only as a relationship, named exactly as the holding attribute and drawn with a navigability arrow toward the referenced class and a cross on the holder's end, except where the holder's end carries an aggregation or composition diamond. Usage (dependency) relationships SHALL be drawn only for classes that have no incoming relationship, to show where they are used.
 

@@ -1,6 +1,7 @@
 package es.upm.park.business.service;
 
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.AttractionType;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
@@ -228,24 +229,24 @@ public class ParkController {
 
     // --- attractions
 
-    public Attraction createAttraction(String id, String name, int capacity) {
-        return attractions.create(id, name, capacity);
+    public Attraction<?> createAttraction(String id, String name, int capacity, AttractionType type) {
+        return attractions.create(id, name, capacity, type);
     }
 
     /** Admits the holders of a ticket valid for the system date; returns the attraction. */
-    public Attraction enterAttraction(String attractionId, String ticketId) {
-        Attraction attraction = findAttraction(attractionId);
-        attraction.enter(findTicket(ticketId), currentDate);
+    public Attraction<?> enterAttraction(String attractionId, String ticketId) {
+        Attraction<?> attraction = findAttraction(attractionId);
+        attraction.enterAny(findTicket(ticketId), currentDate);
         return attraction;
     }
 
     /** Removes the holders of a ticket from an attraction; returns how many left. */
     public int exitAttraction(String attractionId, String ticketId) {
-        return findAttraction(attractionId).exit(findTicket(ticketId));
+        return findAttraction(attractionId).exitAny(findTicket(ticketId));
     }
 
-    public Attraction findAttraction(String id) {
-        Attraction a = attractions.find(id);
+    public Attraction<?> findAttraction(String id) {
+        Attraction<?> a = attractions.find(id);
         requireValid(a != null, "no attraction with identifier " + id);
         return a;
     }

@@ -30,7 +30,7 @@ class AttractionTest {
 
     @Test
     void individualAndGroupEntryAreUniform() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         User ana = user(0);
         Ticket individual = new IndividualTicket("T001", ana, DAY, PRICE);
         Ticket group = groupTicket("TG01", 2, 1);
@@ -44,7 +44,7 @@ class AttractionTest {
 
     @Test
     void wrongDateRejected() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         Ticket t = new IndividualTicket("T001", user(0), DAY, PRICE);
         assertThrows(IllegalArgumentException.class, () -> a.enter(t, DAY.minusDays(1)));
         assertThrows(IllegalArgumentException.class, () -> a.enter(t, DAY.plusDays(1)));
@@ -53,7 +53,7 @@ class AttractionTest {
 
     @Test
     void groupEntryIsAtomicWhenCapacityIsShort() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         a.enter(groupTicket("TG00", 17, 100), DAY);
         assertEquals(3, a.getAvailablePlaces());
         GroupTicket four = groupTicket("TG01", 4, 0);
@@ -66,7 +66,7 @@ class AttractionTest {
 
     @Test
     void exactlyFullThenNoMore() {
-        Attraction a = new Attraction("A01", "Tornado", 2);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 2);
         a.enter(groupTicket("TG01", 2, 0), DAY);
         assertEquals(0, a.getAvailablePlaces());
         assertThrows(IllegalArgumentException.class,
@@ -75,7 +75,7 @@ class AttractionTest {
 
     @Test
     void alreadyPresentRejectedAndCountedOnce() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         Ticket t = new IndividualTicket("T001", user(0), DAY, PRICE);
         a.enter(t, DAY);
         assertThrows(IllegalArgumentException.class, () -> a.enter(t, DAY));
@@ -84,7 +84,7 @@ class AttractionTest {
 
     @Test
     void exitFreesPlacesWithoutDateCheck() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         Ticket t = new IndividualTicket("T001", user(0), DAY, PRICE);
         GroupTicket g = groupTicket("TG01", 2, 1);
         a.enter(t, DAY);
@@ -98,8 +98,51 @@ class AttractionTest {
 
     @Test
     void ticketOfDeletedOwnerCannotEnter() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        GeneralAttraction a = new GeneralAttraction("A01", "Tornado", 20);
         Ticket orphan = new IndividualTicket("T001", null, "12345678Z", DAY, PRICE);
         assertThrows(IllegalArgumentException.class, () -> a.enter(orphan, DAY));
+    }
+
+    @Test
+    void typedAttractionsAcceptOnlyTheirTicketKind() {
+        IndividualTicket individual = new IndividualTicket("T001", user(0), DAY, PRICE);
+        GroupTicket group = groupTicket("TG01", 2, 1);
+        IndividualAttraction ind = new IndividualAttraction("A1", "Solo", 10);
+        GroupAttraction grp = new GroupAttraction("A2", "Grupo", 10);
+        SpecialAttraction spe = new SpecialAttraction("A3", "Especial", 10);
+        GeneralAttraction gen = new GeneralAttraction("A4", "General", 10);
+
+        // compile-time typed API: only the accepted capability can be passed
+        ind.enter(individual, DAY);
+        grp.enter(group, DAY);
+        spe.enter(new IndividualTicket("T002", user(5), DAY, PRICE), DAY);
+
+        assertThrows(IllegalArgumentException.class, () -> ind.enterAny(group, DAY));
+        assertThrows(IllegalArgumentException.class, () -> spe.enterAny(group, DAY));
+        assertThrows(IllegalArgumentException.class, () -> grp.enterAny(individual, DAY));
+        gen.enterAny(individual, DAY);
+        gen.enterAny(group, DAY);
+        assertEquals(3, gen.getPresentCount());
+        assertEquals(1, ind.getPresentCount());
+        assertEquals(2, grp.getPresentCount());
+        assertEquals(AttractionType.SPECIAL, spe.type());
+        assertTrue(!ind.accepts(group) && ind.accepts(individual) && gen.accepts(group));
+    }
+
+    @Test
+    void typeRejectionKeepsOtherRules() {
+        GroupAttraction grp = new GroupAttraction("A2", "Grupo", 3);
+        assertThrows(IllegalArgumentException.class, () -> grp.enterAny(groupTicket("TG01", 4, 0), DAY), "capacity");
+        assertThrows(IllegalArgumentException.class, () -> grp.enterAny(groupTicket("TG02", 2, 10), DAY.plusDays(1)));
+        assertEquals(0, grp.getPresentCount());
+    }
+
+    @Test
+    void attractionTypeFactoryAndParsing() {
+        for (AttractionType t : AttractionType.values()) {
+            assertEquals(t, t.create("X", "n", 1).type());
+        }
+        assertEquals(AttractionType.GROUP, AttractionType.parse("group"));
+        assertThrows(IllegalArgumentException.class, () -> AttractionType.parse("VIP"));
     }
 }

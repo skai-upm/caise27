@@ -114,10 +114,31 @@ package es.upm.park.business.model {
     -total : BigDecimal
   }
 
-  class Attraction {
+  interface Admissible
+
+  interface IndividualAccess
+
+  interface GroupAccess
+
+  abstract class Attraction<T extends Admissible> {
     -id : String
     -name : String
     -capacity : int
+  }
+
+  class GeneralAttraction
+
+  class IndividualAttraction
+
+  class GroupAttraction
+
+  class SpecialAttraction
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 
   abstract class Pass {
@@ -243,6 +264,15 @@ GroupInvoiceBuilder "0..*" x--> "0..*" GroupTicket : groupTickets
 ' --- inheritance
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+Admissible <|-- IndividualAccess
+Admissible <|-- GroupAccess
+Admissible <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <<bind>> T = Admissible
+Attraction <|-- IndividualAttraction : <<bind>> T = IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T = GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T = IndividualAccess
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 InvoiceBuilder <|-- UserInvoiceBuilder
@@ -269,6 +299,13 @@ AttractionManager ..> UserValidator : <<use>>
 UserManager ..> UserField : <<use>>
 ParkController ..> UserField : <<use>>
 CommandProcessor ..> UserField : <<use>>
+CommandProcessor ..> AttractionType : <<use>>
+AttractionManager ..> AttractionType : <<use>>
+AttractionFileStorage ..> AttractionType : <<use>>
+AttractionType ..> GeneralAttraction : <<create>>
+AttractionType ..> IndividualAttraction : <<create>>
+AttractionType ..> GroupAttraction : <<create>>
+AttractionType ..> SpecialAttraction : <<create>>
 ParkController ..> UserInvoiceBuilder : <<use>>
 ParkController ..> GroupInvoiceBuilder : <<use>>
 InvoiceDirector ..> InvoiceBuilder : <<use>>

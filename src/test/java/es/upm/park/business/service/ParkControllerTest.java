@@ -1,5 +1,6 @@
 package es.upm.park.business.service;
 
+import es.upm.park.business.model.AttractionType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -96,11 +97,11 @@ class ParkControllerTest {
 
     @Test
     void attractionEntryUsesSystemDate() {
-        park.createAttraction("A01", "Tornado", 2);
+        park.createAttraction("A01", "Tornado", 2, AttractionType.GENERAL);
         park.createTicket("T001", "ana@correo.com", LocalDate.of(2026, 10, 15));
         assertThrows(IllegalArgumentException.class, () -> park.enterAttraction("A01", "T001"));
         park.setCurrentDate(LocalDate.of(2026, 10, 15));
-        Attraction a = park.enterAttraction("A01", "T001");
+        Attraction<?> a = park.enterAttraction("A01", "T001");
         assertEquals(1, a.getPresentCount());
         assertEquals(1, park.exitAttraction("A01", "T001"));
         assertNotNull(park.findAttraction("A01"));
