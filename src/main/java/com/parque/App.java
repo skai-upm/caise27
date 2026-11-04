@@ -15,10 +15,13 @@ import java.nio.file.Path;
  * is the path of a command file. Both sources go through the same loop and the same CommandProcessor.
  */
 public class App {
-    static final Path USERS_FILE = Path.of("users.txt");
+    /** Data files live in the working directory. */
+    static final Path DATA_DIR = Path.of("");
+    static final String USERS_FILE = "users.txt";
+    static final String GROUPS_FILE = "groups.txt";
 
     public static void main(String[] args) {
-        int status = run(args, System.in, System.out, System.err, USERS_FILE);
+        int status = run(args, System.in, System.out, System.err, DATA_DIR);
         if (status != 0) {
             System.exit(status);
         }
@@ -27,12 +30,14 @@ public class App {
     /**
      * Runs the application and returns the process exit status (0 normal end, 1 controlled failure).
      */
-    static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err, Path usersFile) {
+    static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err, Path dataDir) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new UserService(new UserRepository(usersFile)));
+            UserService users = new UserService(new UserRepository(dataDir.resolve(USERS_FILE)));
+            GroupService groups = new GroupService(new GroupRepository(dataDir.resolve(GROUPS_FILE)), users);
+            processor = new CommandProcessor(users, groups);
         } catch (IOException e) {
-            err.println("ERROR: Cannot load users from '" + usersFile + "': " + describe(e));
+            err.println("ERROR: Cannot load data from '" + dataDir.toAbsolutePath() + "': " + describe(e));
             return 1;
         }
         if (args.length == 0) {

@@ -3,6 +3,7 @@ package com.parque;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Files;
@@ -154,5 +155,20 @@ class UserServiceTest {
         // the deleted user's identifiers are free again
         restarted.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
                 "1234567890123456");
+    }
+
+    @Test
+    void updateKeepsSameUserInstance() {
+        User before = service.findByEmail("ana@correo.com");
+        service.update("ana@correo.com", "Clave1!", UserField.EMAIL, "ana.nueva@correo.com");
+        service.update("ana.nueva@correo.com", "Clave1!", UserField.PHONE, "699999999");
+        assertSame(before, service.findByEmail("ana.nueva@correo.com"));
+        assertEquals("699999999", before.getPhone());
+    }
+
+    @Test
+    void deleteReturnsRemovedUser() {
+        User ana = service.findByEmail("ana@correo.com");
+        assertSame(ana, service.delete("ana@correo.com", "Clave1!"));
     }
 }

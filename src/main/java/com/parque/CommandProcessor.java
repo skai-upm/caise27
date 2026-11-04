@@ -19,6 +19,10 @@ public class CommandProcessor {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "GROUP CREATE;Identificador;Nombre",
+            "GROUP ADD;Identificador;Correo",
+            "GROUP REMOVE;Identificador;Correo",
+            "GROUP DELETE;Identificador",
             "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
@@ -27,16 +31,18 @@ public class CommandProcessor {
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private final UserService users;
+    private final GroupService groups;
     private boolean exitRequested;
     private LocalDate currentDate;
 
     /** Creates the controller with the operating system's local date as the current date. */
-    public CommandProcessor(UserService users) {
-        this(users, LocalDate.now());
+    public CommandProcessor(UserService users, GroupService groups) {
+        this(users, groups, LocalDate.now());
     }
 
-    public CommandProcessor(UserService users, LocalDate initialDate) {
+    public CommandProcessor(UserService users, GroupService groups, LocalDate initialDate) {
         this.users = users;
+        this.groups = groups;
         this.currentDate = initialDate;
     }
 
@@ -86,7 +92,8 @@ public class CommandProcessor {
             }
             case "USER DELETE" -> {
                 expectParameters(parts, 2, COMMAND_SYNTAX.get(1));
-                users.delete(parts[1], parts[2]);
+                User deleted = users.delete(parts[1], parts[2]);
+                groups.removeUserFromAllGroups(deleted);
                 return "User deleted";
             }
             case "USER UPDATE" -> {
@@ -98,6 +105,26 @@ public class CommandProcessor {
                 }
                 users.update(parts[1], parts[2], field, parts[4]);
                 return "User updated";
+            }
+            case "GROUP CREATE" -> {
+                expectParameters(parts, 2, "GROUP CREATE;Identificador;Nombre");
+                groups.create(parts[1], parts[2]);
+                return "Group created";
+            }
+            case "GROUP ADD" -> {
+                expectParameters(parts, 2, "GROUP ADD;Identificador;Correo");
+                groups.addMember(parts[1], parts[2]);
+                return "User added to group";
+            }
+            case "GROUP REMOVE" -> {
+                expectParameters(parts, 2, "GROUP REMOVE;Identificador;Correo");
+                groups.removeMember(parts[1], parts[2]);
+                return "User removed from group";
+            }
+            case "GROUP DELETE" -> {
+                expectParameters(parts, 1, "GROUP DELETE;Identificador");
+                groups.delete(parts[1]);
+                return "Group deleted";
             }
             default -> throw new IllegalArgumentException("Unknown command: " + operation);
         }

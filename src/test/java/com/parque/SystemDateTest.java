@@ -20,18 +20,20 @@ class SystemDateTest {
     @TempDir
     Path dir;
     UserService users;
+    GroupService groups;
     CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws Exception {
         users = new UserService(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(users, LocalDate.of(2026, 9, 15));
+        groups = new GroupService(new GroupRepository(dir.resolve("groups.txt")), users);
+        processor = new CommandProcessor(users, groups, LocalDate.of(2026, 9, 15));
     }
 
     @Test
     void startsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        CommandProcessor fresh = new CommandProcessor(users);
+        CommandProcessor fresh = new CommandProcessor(users, groups);
         LocalDate after = LocalDate.now();
         LocalDate date = fresh.getCurrentDate();
         assertTrue(!date.isBefore(before) && !date.isAfter(after), date.toString());
@@ -39,7 +41,7 @@ class SystemDateTest {
 
     @Test
     void setsValidDate() {
-        CommandProcessor fresh = new CommandProcessor(users);
+        CommandProcessor fresh = new CommandProcessor(users, groups);
         assertEquals("OK: System date set to 2026-09-15", fresh.process("SYSTEM DATE;2026-09-15"));
         assertEquals(LocalDate.of(2026, 9, 15), fresh.getCurrentDate());
     }
@@ -79,12 +81,12 @@ class SystemDateTest {
         PrintStream ps = new PrintStream(out, true, StandardCharsets.UTF_8);
         int status = App.run(new String[0],
                 new ByteArrayInputStream("SYSTEM DATE;2026-09-15\nSYSTEM DATE;bad\nEXIT\n".getBytes(StandardCharsets.UTF_8)),
-                ps, ps, dir.resolve("users.txt"));
+                ps, ps, dir);
         assertEquals(0, status);
         String[] lines = out.toString(StandardCharsets.UTF_8).split("\\R");
         assertEquals("OK: System date set to 2026-09-15", lines[0]);
         assertTrue(lines[1].startsWith("ERROR: Invalid date"));
         // a new execution builds a new controller starting at the OS date again
-        assertEquals(LocalDate.now(), new CommandProcessor(users).getCurrentDate());
+        assertEquals(LocalDate.now(), new CommandProcessor(users, groups).getCurrentDate());
     }
 }

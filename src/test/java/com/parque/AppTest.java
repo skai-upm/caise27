@@ -36,7 +36,7 @@ class AppTest {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         int status = App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8),
-                usersFile);
+                usersFile.getParent());
         return new Run(status, out.toString(StandardCharsets.UTF_8).lines().toList(),
                 err.toString(StandardCharsets.UTF_8));
     }
@@ -143,5 +143,22 @@ class AppTest {
         assertEquals("OK: System date set to 2026-09-15", r.out().get(0));
         assertTrue(r.out().get(1).startsWith("ERROR: Invalid date"));
         assertEquals("OK: System date set to 2025-01-01", r.out().get(2));
+    }
+
+    @Test
+    void groupsRestoredAfterRestart() throws Exception {
+        Path users = dir.resolve("users.txt");
+        Run first = run(new String[0], String.join("\n", ANA, PEDRO, "GROUP CREATE;G01;Familia Garcia",
+                "GROUP ADD;G01;ana@correo.com", "GROUP ADD;G01;pedro@correo.com",
+                "USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com", "EXIT") + "\n", users);
+        assertFalse(first.out().stream().anyMatch(l -> l.startsWith("ERROR")), first.out().toString());
+        assertEquals(List.of("G01;Familia Garcia;12345678Z,87654321X"),
+                Files.readAllLines(dir.resolve("groups.txt")));
+        Run second = run(new String[0], String.join("\n", "GROUP ADD;G01;ana.nueva@correo.com",
+                "GROUP REMOVE;G01;ana.nueva@correo.com", "USER DELETE;pedro@correo.com;Otra2#", "EXIT") + "\n", users);
+        assertTrue(second.out().get(0).startsWith("ERROR: "), "Ana is still a member after restart");
+        assertEquals("OK: User removed from group", second.out().get(1));
+        assertEquals("OK: User deleted", second.out().get(2));
+        assertEquals(List.of("G01;Familia Garcia;"), Files.readAllLines(dir.resolve("groups.txt")));
     }
 }

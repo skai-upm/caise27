@@ -58,11 +58,13 @@ public class UserService {
         commit(next);
     }
 
-    public void delete(String email, String password) {
+    /** Deletes the authenticated user and returns the removed user object. */
+    public User delete(String email, String password) {
         User user = authenticate(email, password);
         List<User> next = new ArrayList<>(users);
         next.remove(user);
         commit(next);
+        return user;
     }
 
     public void update(String email, String password, UserField field, String value) {
@@ -81,11 +83,14 @@ public class UserService {
                 require(owner == null || owner == user, "A user with email " + value + " already exists");
             }
         }
+        // Save the edited state first; only then change the stored object in place, so that every
+        // reference to this user (e.g. from groups) sees the new value and a failed save changes nothing.
         User changed = new User(user);
         changed.set(field, value);
-        List<User> next = new ArrayList<>(users);
-        next.set(next.indexOf(user), changed);
-        commit(next);
+        List<User> toSave = new ArrayList<>(users);
+        toSave.set(toSave.indexOf(user), changed);
+        save(toSave);
+        user.set(field, value);
     }
 
     private User authenticate(String email, String password) {
@@ -97,12 +102,16 @@ public class UserService {
 
     /** Persists the new state first; memory only changes if the file was written. */
     private void commit(List<User> next) {
+        save(next);
+        users = next;
+    }
+
+    private void save(List<User> state) {
         try {
-            repository.save(next);
+            repository.save(state);
         } catch (IOException e) {
             throw new IllegalStateException("Could not save users: " + e.getMessage(), e);
         }
-        users = next;
     }
 
     private static void require(boolean condition, String message) {

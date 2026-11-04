@@ -18,12 +18,14 @@ class CommandProcessorTest {
     @TempDir
     Path dir;
     UserService service;
+    GroupService groups;
     CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws Exception {
         service = new UserService(new UserRepository(dir.resolve("users.txt")));
-        processor = new CommandProcessor(service);
+        groups = new GroupService(new GroupRepository(dir.resolve("groups.txt")), service);
+        processor = new CommandProcessor(service, groups);
     }
 
     @Test
@@ -94,5 +96,37 @@ class CommandProcessorTest {
     void generalCommandsRejectParameters(String command) {
         assertTrue(processor.process(command).startsWith("ERROR: "));
         assertEquals(false, processor.isExitRequested());
+    }
+
+    @Test
+    void groupCommandsAndCascadeOnUserDelete() {
+        processor.process(CREATE_ANA);
+        assertEquals("OK: Group created", processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertEquals("OK: User added to group", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").startsWith("ERROR: "));
+        assertTrue(processor.process("GROUP ADD;G01;nadie@correo.com").startsWith("ERROR: "));
+        assertTrue(processor.process("GROUP CREATE;G01;Otra").startsWith("ERROR: "));
+        assertEquals(1, groups.find("G01").getMembers().size());
+        assertEquals("OK: User deleted", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals(0, groups.find("G01").getMembers().size());
+        assertEquals("OK: Group deleted", processor.process("GROUP DELETE;G01"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR: "));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GROUP CREATE;G01", "GROUP CREATE;G01;A;B", "GROUP ADD;G01", "GROUP REMOVE;G01",
+            "GROUP DELETE", "GROUP DELETE;G01;x", "GROUP LIST"})
+    void malformedGroupCommandsRejected(String command) {
+        assertTrue(processor.process(command).startsWith("ERROR: "), command);
+        assertEquals(0, groups.getGroups().size());
+    }
+
+    @Test
+    void helpListsGroupCommands() {
+        String help = processor.process("HELP");
+        for (String line : java.util.List.of("GROUP CREATE;Identificador;Nombre", "GROUP ADD;Identificador;Correo",
+                "GROUP REMOVE;Identificador;Correo", "GROUP DELETE;Identificador")) {
+            assertTrue(help.contains(line), line);
+        }
     }
 }

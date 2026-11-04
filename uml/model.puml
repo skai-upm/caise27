@@ -1,0 +1,104 @@
+@startuml model
+' Class model of the amusement-park application (package com.parque)
+hide empty members
+skinparam classAttributeIconSize 0
+
+package com.parque {
+
+  class App {
+    {static} ~DATA_DIR : Path
+    {static} +main(args : String[]) : void
+    {static} ~run(args : String[], stdin : InputStream, out : PrintStream, err : PrintStream, dataDir : Path) : int
+  }
+
+  class CommandProcessor {
+    {static} ~COMMAND_SYNTAX : List<String>
+    -exitRequested : boolean
+    -currentDate : LocalDate
+    +process(line : String) : String
+    +isExitRequested() : boolean
+    +getCurrentDate() : LocalDate
+  }
+
+  class User {
+    -name : String
+    -surname : String
+    -dni : String {readOnly}
+    -email : String
+    -password : String
+    -phone : String
+    -card : String
+    +set(field : UserField, value : String) : void
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class UserValidator <<utility>> {
+    {static} +isValidDni(dni : String) : boolean
+    {static} +isValidEmail(email : String) : boolean
+    {static} +isValidPassword(password : String) : boolean
+    {static} +isValidCard(card : String) : boolean
+    {static} +isNonBlank(value : String) : boolean
+  }
+
+  class UserService {
+    +create(...) : void
+    +delete(email : String, password : String) : User
+    +update(email : String, password : String, field : UserField, value : String) : void
+    +findByEmail(email : String) : User
+    +findByDni(dni : String) : User
+  }
+
+  class UserRepository {
+    -file : Path
+    +load() : List<User>
+    +save(users : List<User>) : void
+  }
+
+  class Group {
+    -id : String {readOnly}
+    -name : String
+    +addMember(user : User) : boolean
+    +removeMember(user : User) : boolean
+    +contains(user : User) : boolean
+  }
+
+  class GroupService {
+    +create(id : String, name : String) : void
+    +addMember(id : String, email : String) : void
+    +removeMember(id : String, email : String) : void
+    +delete(id : String) : void
+    +removeUserFromAllGroups(user : User) : void
+    +find(id : String) : Group
+  }
+
+  class GroupRepository {
+    -file : Path
+    +load(userByDni : Function<String, User>) : List<Group>
+    +save(groups : List<Group>) : void
+  }
+}
+
+App ..> CommandProcessor : creates
+App ..> UserService : creates
+App ..> GroupService : creates
+CommandProcessor "1" --> "1" UserService : users
+CommandProcessor "1" --> "1" GroupService : groups
+UserService "1" --> "1" UserRepository : repository
+UserService "1" o-- "0..*" User : users
+UserService ..> UserValidator : uses
+User ..> UserField : uses
+GroupService "1" --> "1" GroupRepository : repository
+GroupService "1" --> "1" UserService : users
+GroupService "1" o-- "0..*" Group : groups
+Group "0..*" o-- "0..*" User : members
+UserRepository ..> User : reads/writes
+GroupRepository ..> Group : reads/writes
+@enduml
