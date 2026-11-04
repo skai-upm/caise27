@@ -150,6 +150,7 @@ note top of App : Entry point (main); not used by other classes.
 CommandRunner "0..*" x--> "1" CommandProcessor : processor
 CommandProcessor "0..*" x--> "1" ParkController : park
 ParkSession "0..1" x--> "1" ParkController : controller
+ParkController "0..*" x--> "1" InvoiceDirector : director
 ParkController "0..*" x--> "1" UserManager : users
 ParkController "0..*" x--> "1" GroupManager : groups
 ParkController "0..*" x--> "1" TicketManager : tickets
@@ -168,6 +169,13 @@ IndividualTicket "0..*" x--> "0..1" User : owner
 AttractionManager "0..*" x--> "1" AttractionFileStorage : storage
 AttractionManager "0..*" x--> "0..*" Attraction : attractions
 Attraction "0..*" x--> "0..*" User : present
+
+' --- singleton instances (static attribute holding the single instance)
+ParkController "0..1" x--> "0..1" ParkController : instance
+UserManager "0..1" x--> "0..1" UserManager : instance
+GroupManager "0..1" x--> "0..1" GroupManager : instance
+TicketManager "0..1" x--> "0..1" TicketManager : instance
+AttractionManager "0..1" x--> "0..1" AttractionManager : instance
 
 ' --- aggregation and composition
 GroupTicket "0..*" o--> "0..1" Group : group
@@ -199,7 +207,6 @@ AttractionManager ..> UserValidator : <<use>>
 UserManager ..> UserField : <<use>>
 ParkController ..> UserField : <<use>>
 CommandProcessor ..> UserField : <<use>>
-ParkController ..> InvoiceDirector : <<use>>
 ParkController ..> UserInvoiceBuilder : <<use>>
 ParkController ..> GroupInvoiceBuilder : <<use>>
 InvoiceDirector ..> InvoiceBuilder : <<use>>

@@ -29,7 +29,32 @@ public class TicketManager {
     private Map<String, IndividualTicket> tickets = new LinkedHashMap<>();
     private Map<String, GroupTicket> groupTickets = new LinkedHashMap<>();
 
-    public TicketManager(TicketFileStorage storage, GroupTicketFileStorage groupStorage,
+    private static TicketManager instance;
+
+    /** Creates the single instance for this execution with its injected repositories and collaborators; fails if it already exists. */
+    public static synchronized TicketManager initialize(TicketFileStorage storage, GroupTicketFileStorage groupStorage,
+                         UserManager users, GroupManager groups) {
+        if (instance != null) {
+            throw new IllegalStateException("TicketManager is already initialized");
+        }
+        instance = new TicketManager(storage, groupStorage, users, groups);
+        return instance;
+    }
+
+    /** The single instance of this execution; fails if not initialized. */
+    public static synchronized TicketManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("TicketManager is not initialized");
+        }
+        return instance;
+    }
+
+    /** Ends the current execution's instance so a new one can be initialized. */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+    private TicketManager(TicketFileStorage storage, GroupTicketFileStorage groupStorage,
                          UserManager users, GroupManager groups) {
         this.storage = storage;
         this.groupStorage = groupStorage;

@@ -56,13 +56,32 @@ public final class ParkSession implements AutoCloseable {
         }
     }
 
+    /**
+     * Composition root: creates the repositories for {@code files} and initializes the
+     * singleton controllers in dependency order, injecting repositories and collaborators.
+     */
     private static ParkController build(DataFiles files) {
-        UserManager users = new UserManager(new UserFileStorage(files.users()));
-        GroupManager groups = new GroupManager(new GroupFileStorage(files.groups()), users);
-        TicketManager tickets = new TicketManager(new TicketFileStorage(files.tickets()),
-                new GroupTicketFileStorage(files.groupTickets()), users, groups);
-        AttractionManager attractions = new AttractionManager(new AttractionFileStorage(files.attractions()));
-        return new ParkController(users, groups, tickets, attractions);
+        try {
+            UserManager users = UserManager.initialize(new UserFileStorage(files.users()));
+            GroupManager groups = GroupManager.initialize(new GroupFileStorage(files.groups()), users);
+            TicketManager tickets = TicketManager.initialize(new TicketFileStorage(files.tickets()),
+                    new GroupTicketFileStorage(files.groupTickets()), users, groups);
+            AttractionManager attractions =
+                    AttractionManager.initialize(new AttractionFileStorage(files.attractions()));
+            return ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector());
+        } catch (RuntimeException e) {
+            resetControllers();
+            throw e;
+        }
+    }
+
+    /** Ends the execution of every singleton controller. */
+    public static void resetControllers() {
+        ParkController.reset();
+        AttractionManager.reset();
+        TicketManager.reset();
+        GroupManager.reset();
+        UserManager.reset();
     }
 
     public ParkController controller() {
@@ -76,6 +95,7 @@ public final class ParkSession implements AutoCloseable {
 
     @Override
     public void close() {
+        resetControllers();
         if (temporaryDir != null) {
             deleteQuietly(temporaryDir);
             removeHook(cleanupOnShutdown);

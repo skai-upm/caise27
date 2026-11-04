@@ -25,23 +25,56 @@ public class ParkController {
     private final GroupManager groups;
     private final TicketManager tickets;
     private final AttractionManager attractions;
+    private final InvoiceDirector director;
     /** The single current date of the application; time-dependent rules must use it. */
     private LocalDate currentDate;
     /** Current individual-ticket price; never persisted. */
     private BigDecimal currentPrice = DEFAULT_PRICE;
 
-    /** Creates the controller with the operating system's local date as current date. */
-    public ParkController(UserManager users, GroupManager groups, TicketManager tickets,
-                          AttractionManager attractions) {
-        this(users, groups, tickets, attractions, LocalDate.now());
+    private static ParkController instance;
+
+    /**
+     * Creates the single controller of this execution with its injected collaborators and
+     * the operating system's local date as current date; fails if it already exists.
+     */
+    public static synchronized ParkController initialize(UserManager users, GroupManager groups,
+                                                         TicketManager tickets, AttractionManager attractions,
+                                                         InvoiceDirector director) {
+        return initialize(users, groups, tickets, attractions, director, LocalDate.now());
     }
 
-    public ParkController(UserManager users, GroupManager groups, TicketManager tickets,
-                          AttractionManager attractions, LocalDate initialDate) {
+    /** As {@link #initialize(UserManager, GroupManager, TicketManager, AttractionManager, InvoiceDirector)}
+     *  with an explicit initial date. */
+    public static synchronized ParkController initialize(UserManager users, GroupManager groups,
+                                                         TicketManager tickets, AttractionManager attractions,
+                                                         InvoiceDirector director, LocalDate initialDate) {
+        if (instance != null) {
+            throw new IllegalStateException("ParkController is already initialized");
+        }
+        instance = new ParkController(users, groups, tickets, attractions, director, initialDate);
+        return instance;
+    }
+
+    /** The single controller of this execution; fails if not initialized. */
+    public static synchronized ParkController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("ParkController is not initialized");
+        }
+        return instance;
+    }
+
+    /** Ends the current execution's controller so a new one can be initialized. */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+    private ParkController(UserManager users, GroupManager groups, TicketManager tickets,
+                           AttractionManager attractions, InvoiceDirector director, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
+        this.director = director;
         this.currentDate = initialDate;
     }
 
@@ -142,14 +175,14 @@ public class ParkController {
     public Invoice createUserInvoice(String email) {
         User user = users.findByEmail(email);
         requireValid(user != null, "no registered user with email " + email);
-        return new InvoiceDirector().construct(new UserInvoiceBuilder(user, tickets.getTickets()));
+        return director.construct(new UserInvoiceBuilder(user, tickets.getTickets()));
     }
 
     /** Builds, on demand, the invoice of the group with that identifier. */
     public Invoice createGroupInvoice(String groupId) {
         Group group = groups.find(groupId);
         requireValid(group != null, "no group with identifier " + groupId);
-        return new InvoiceDirector().construct(new GroupInvoiceBuilder(group, tickets.getGroupTickets()));
+        return director.construct(new GroupInvoiceBuilder(group, tickets.getGroupTickets()));
     }
 
     // --- attractions

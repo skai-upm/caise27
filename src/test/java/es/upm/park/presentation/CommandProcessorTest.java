@@ -1,5 +1,7 @@
 package es.upm.park.presentation;
 
+import es.upm.park.business.service.ParkSession;
+import es.upm.park.business.service.InvoiceDirector;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.service.AttractionManager;
@@ -21,6 +23,7 @@ import java.nio.file.Path;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,13 +45,19 @@ class CommandProcessorTest {
     CommandProcessor processor;
 
     @BeforeEach
+    @AfterEach
+    void resetControllers() {
+        ParkSession.resetControllers();
+    }
+
+    @BeforeEach
     void setUp() {
-        manager = new UserManager(new UserFileStorage(dir.resolve("users.txt")));
-        groups = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), manager);
-        tickets = new TicketManager(new TicketFileStorage(dir.resolve("tickets.txt")),
+        manager = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), manager);
+        tickets = TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups);
-        attractions = new AttractionManager(new AttractionFileStorage(dir.resolve("attractions.txt")));
-        park = new ParkController(manager, groups, tickets, attractions);
+        attractions = AttractionManager.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")));
+        park = ParkController.initialize(manager, groups, tickets, attractions, new InvoiceDirector());
         processor = new CommandProcessor(park);
     }
 
@@ -132,7 +141,8 @@ class CommandProcessorTest {
     @Test
     void startsWithLocalDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = new ParkController(manager, groups, tickets, attractions).getCurrentDate();
+        ParkController.reset();
+        LocalDate date = ParkController.initialize(manager, groups, tickets, attractions, new InvoiceDirector()).getCurrentDate();
         LocalDate after = LocalDate.now();
         assertTrue(!date.isBefore(before) && !date.isAfter(after));
     }
@@ -160,7 +170,8 @@ class CommandProcessorTest {
 
     @Test
     void injectedInitialDateIsUsed() {
-        assertEquals(LocalDate.of(2026, 1, 1), new ParkController(manager, groups, tickets, attractions, LocalDate.of(2026, 1, 1)).getCurrentDate());
+        ParkController.reset();
+        assertEquals(LocalDate.of(2026, 1, 1), ParkController.initialize(manager, groups, tickets, attractions, new InvoiceDirector(), LocalDate.of(2026, 1, 1)).getCurrentDate());
     }
 
     @Test
@@ -193,7 +204,8 @@ class CommandProcessorTest {
         assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
         assertNotNull(groups.find("G01"));
         assertEquals(0, groups.find("G01").getMembers().size());
-        GroupManager reloaded = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), manager);
+        GroupManager.reset();
+        GroupManager reloaded = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), manager);
         assertEquals(0, reloaded.find("G01").getMembers().size());
     }
 
@@ -280,8 +292,9 @@ class CommandProcessorTest {
         assertEquals(new BigDecimal("40.00"), tickets.find("T001").getPrice());
         processor.process("SYSTEM PRICE;55");
         assertEquals(new BigDecimal("55.00"), park.getCurrentPrice());
+        ParkController.reset();
         assertEquals(new BigDecimal("40.00"),
-                new ParkController(manager, groups, tickets, attractions).getCurrentPrice(), "new execution starts at 40.00");
+                ParkController.initialize(manager, groups, tickets, attractions, new InvoiceDirector()).getCurrentPrice(), "new execution starts at 40.00");
     }
 
     @ParameterizedTest

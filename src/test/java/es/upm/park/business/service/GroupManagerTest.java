@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -31,18 +32,25 @@ class GroupManagerTest {
     GroupManager groups;
 
     @BeforeEach
+    @AfterEach
+    void resetControllers() {
+        ParkSession.resetControllers();
+    }
+
+    @BeforeEach
     void setUp() {
         usersFile = dir.resolve("users.txt");
         groupsFile = dir.resolve("groups.txt");
-        users = new UserManager(new UserFileStorage(usersFile));
+        users = UserManager.initialize(new UserFileStorage(usersFile));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
-        groups = new GroupManager(new GroupFileStorage(groupsFile), users);
+        groups = GroupManager.initialize(new GroupFileStorage(groupsFile), users);
     }
 
     private GroupManager restart() {
-        users = new UserManager(new UserFileStorage(usersFile));
-        return new GroupManager(new GroupFileStorage(groupsFile), users);
+        ParkSession.resetControllers();
+        users = UserManager.initialize(new UserFileStorage(usersFile));
+        return GroupManager.initialize(new GroupFileStorage(groupsFile), users);
     }
 
     @Test

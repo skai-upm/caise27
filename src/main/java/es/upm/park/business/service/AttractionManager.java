@@ -15,7 +15,31 @@ public class AttractionManager {
     private final AttractionFileStorage storage;
     private Map<String, Attraction> attractions = new LinkedHashMap<>();
 
-    public AttractionManager(AttractionFileStorage storage) {
+    private static AttractionManager instance;
+
+    /** Creates the single instance for this execution with its injected repository; fails if it already exists. */
+    public static synchronized AttractionManager initialize(AttractionFileStorage storage) {
+        if (instance != null) {
+            throw new IllegalStateException("AttractionManager is already initialized");
+        }
+        instance = new AttractionManager(storage);
+        return instance;
+    }
+
+    /** The single instance of this execution; fails if not initialized. */
+    public static synchronized AttractionManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("AttractionManager is not initialized");
+        }
+        return instance;
+    }
+
+    /** Ends the current execution's instance so a new one can be initialized. */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+    private AttractionManager(AttractionFileStorage storage) {
         this.storage = storage;
         for (Attraction a : storage.load()) {
             attractions.put(a.getId(), a);

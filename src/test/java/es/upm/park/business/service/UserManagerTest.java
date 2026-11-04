@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -27,9 +28,15 @@ class UserManagerTest {
     UserManager manager;
 
     @BeforeEach
+    @AfterEach
+    void resetControllers() {
+        ParkSession.resetControllers();
+    }
+
+    @BeforeEach
     void setUp() {
         file = dir.resolve("users.txt");
-        manager = new UserManager(new UserFileStorage(file));
+        manager = UserManager.initialize(new UserFileStorage(file));
     }
 
     private void createAna() {
@@ -41,7 +48,8 @@ class UserManagerTest {
     }
 
     private UserManager restart() {
-        return new UserManager(new UserFileStorage(file));
+        UserManager.reset();
+        return UserManager.initialize(new UserFileStorage(file));
     }
 
     @Test

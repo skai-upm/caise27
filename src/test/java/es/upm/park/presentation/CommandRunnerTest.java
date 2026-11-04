@@ -1,5 +1,7 @@
 package es.upm.park.presentation;
 
+import es.upm.park.business.service.ParkSession;
+import es.upm.park.business.service.InvoiceDirector;
 import es.upm.park.business.service.AttractionManager;
 import es.upm.park.business.service.GroupManager;
 import es.upm.park.business.service.ParkController;
@@ -23,6 +25,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -37,13 +40,20 @@ class CommandRunnerTest {
     CommandRunner runner;
 
     @BeforeEach
+    @AfterEach
+    void resetControllers() {
+        ParkSession.resetControllers();
+    }
+
+    @BeforeEach
     void setUp() {
-        manager = new UserManager(new UserFileStorage(dir.resolve("users.txt")));
-        GroupManager groups = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), manager);
-        runner = new CommandRunner(new CommandProcessor(new ParkController(manager, groups,
-                new TicketManager(new TicketFileStorage(dir.resolve("tickets.txt")),
+        manager = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        GroupManager groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), manager);
+        runner = new CommandRunner(new CommandProcessor(ParkController.initialize(manager, groups,
+                TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                         new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups),
-                new AttractionManager(new AttractionFileStorage(dir.resolve("attractions.txt"))))));
+                AttractionManager.initialize(new AttractionFileStorage(dir.resolve("attractions.txt"))),
+                new InvoiceDirector())));
     }
 
     private String[] run(String input) throws IOException {

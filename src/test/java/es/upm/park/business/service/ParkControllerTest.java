@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,13 +27,19 @@ class ParkControllerTest {
     GroupManager groups;
 
     @BeforeEach
+    @AfterEach
+    void resetControllers() {
+        ParkSession.resetControllers();
+    }
+
+    @BeforeEach
     void setUp() {
-        users = new UserManager(new UserFileStorage(dir.resolve("users.txt")));
-        groups = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), users);
-        TicketManager tickets = new TicketManager(new TicketFileStorage(dir.resolve("tickets.txt")),
+        users = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")));
+        groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), users);
+        TicketManager tickets = TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), users, groups);
-        AttractionManager attractions = new AttractionManager(new AttractionFileStorage(dir.resolve("attractions.txt")));
-        park = new ParkController(users, groups, tickets, attractions, LocalDate.of(2026, 10, 1));
+        AttractionManager attractions = AttractionManager.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")));
+        park = ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector(), LocalDate.of(2026, 10, 1));
         park.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         park.createUser("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "6", "1234567890123456");
     }

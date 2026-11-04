@@ -1,5 +1,7 @@
 package es.upm.park.presentation;
 
+import es.upm.park.business.service.ParkSession;
+import es.upm.park.business.service.InvoiceDirector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,10 +16,18 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class AppTest {
+
+    @BeforeEach
+    @AfterEach
+    void resetControllers() {
+        ParkSession.resetControllers();
+    }
 
     static final String INPUT_BASICO = String.join("\n",
             CommandProcessorTest.CREATE_ANA,

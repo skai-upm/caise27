@@ -17,7 +17,31 @@ public class UserManager {
     private final UserFileStorage storage;
     private List<User> users;
 
-    public UserManager(UserFileStorage storage) {
+    private static UserManager instance;
+
+    /** Creates the single instance for this execution with its injected repository; fails if it already exists. */
+    public static synchronized UserManager initialize(UserFileStorage storage) {
+        if (instance != null) {
+            throw new IllegalStateException("UserManager is already initialized");
+        }
+        instance = new UserManager(storage);
+        return instance;
+    }
+
+    /** The single instance of this execution; fails if not initialized. */
+    public static synchronized UserManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("UserManager is not initialized");
+        }
+        return instance;
+    }
+
+    /** Ends the current execution's instance so a new one can be initialized. */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+    private UserManager(UserFileStorage storage) {
         this.storage = storage;
         this.users = new ArrayList<>(storage.load());
     }

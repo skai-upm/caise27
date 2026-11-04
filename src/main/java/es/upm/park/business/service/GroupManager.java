@@ -18,7 +18,31 @@ public class GroupManager {
     private final UserManager users;
     private Map<String, Group> groups = new LinkedHashMap<>();
 
-    public GroupManager(GroupFileStorage storage, UserManager users) {
+    private static GroupManager instance;
+
+    /** Creates the single instance for this execution with its injected repository and user manager; fails if it already exists. */
+    public static synchronized GroupManager initialize(GroupFileStorage storage, UserManager users) {
+        if (instance != null) {
+            throw new IllegalStateException("GroupManager is already initialized");
+        }
+        instance = new GroupManager(storage, users);
+        return instance;
+    }
+
+    /** The single instance of this execution; fails if not initialized. */
+    public static synchronized GroupManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("GroupManager is not initialized");
+        }
+        return instance;
+    }
+
+    /** Ends the current execution's instance so a new one can be initialized. */
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+    private GroupManager(GroupFileStorage storage, UserManager users) {
         this.storage = storage;
         this.users = users;
         for (Group g : storage.load(users::findByDni)) {
