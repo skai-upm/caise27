@@ -40,6 +40,8 @@ public class CommandProcessor {
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
             "ATTRACTION STATUS;IdAtraccion",
+            "INVOICE CREATE;USER;Correo",
+            "INVOICE CREATE;GROUP;IdGrupo",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -94,6 +96,9 @@ public class CommandProcessor {
         }
         if (words.size() == 2 && words.get(0).equals("ATTRACTION")) {
             return attraction(words.get(1), params, parts[0].trim());
+        }
+        if (words.size() == 2 && words.get(0).equals("INVOICE") && words.get(1).equals("CREATE")) {
+            return invoice(params);
         }
         if (words.size() == 2 && words.get(0).equals("GROUP")) {
             return group(words.get(1), params, parts[0].trim());
@@ -192,6 +197,17 @@ public class CommandProcessor {
             case "STATUS" -> hasParams(p, 1) ? controller.attractionStatus(p[0])
                     : Result.error("Usage: ATTRACTION STATUS;IdAtraccion");
             default -> Result.error("Unknown command: " + command);
+        };
+    }
+
+    private Result invoice(String[] p) {
+        if (!hasParams(p, 2)) {
+            return Result.error("Usage: INVOICE CREATE;USER;Correo or INVOICE CREATE;GROUP;IdGrupo");
+        }
+        return switch (p[0]) {
+            case "USER" -> controller.createUserInvoice(p[1]);
+            case "GROUP" -> controller.createGroupInvoice(p[1]);
+            default -> Result.error("Usage: INVOICE CREATE;USER;Correo or INVOICE CREATE;GROUP;IdGrupo");
         };
     }
 

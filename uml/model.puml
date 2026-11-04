@@ -39,6 +39,17 @@ package es.upm.park.business {
   }
 
   class AttractionManager
+
+  abstract class InvoiceBuilder {
+    - recipient : String
+    - date : LocalDate
+  }
+
+  class UserInvoiceBuilder
+
+  class GroupInvoiceBuilder
+
+  class InvoiceDirector
 }
 
 package es.upm.park.business.model {
@@ -89,6 +100,20 @@ package es.upm.park.business.model {
     - id : String
     - name : String
     - capacity : int
+  }
+
+  class Invoice {
+    - recipient : String
+    - date : LocalDate
+  }
+
+  class "Invoice.Section" as InvoiceSection <<record>> {
+    + title : String
+  }
+
+  class "Invoice.Line" as InvoiceLine <<record>> {
+    + description : String
+    + amount : BigDecimal
   }
 }
 
@@ -161,9 +186,19 @@ AttractionManager "0..1" x--> "1" AttractionFileStore : store
 AttractionManager "1" *--> "0..*" Attraction : attractions
 Attraction "0..*" o--> "0..*" User : present
 
+'' ---- Invoices ----
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder "0..1" *--> "0..*" InvoiceSection : sections
+Invoice "0..*" *--> "0..*" InvoiceSection : sections
+InvoiceSection "0..*" *--> "1..*" InvoiceLine : lines
+
 ' ---- Usage of classes without incoming relationships ----
 App ..> CommandRunner : creates
 ParkController ..> DataDirectory
+ParkController ..> InvoiceDirector
+InvoiceBuilder ..> Invoice : creates
+ParkController ..> Invoice
 UserManager ..> UserValidator
 GroupManager ..> UserValidator
 TicketManager ..> UserValidator

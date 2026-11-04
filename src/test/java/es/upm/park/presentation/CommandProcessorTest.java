@@ -136,6 +136,8 @@ class CommandProcessorTest {
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
             "ATTRACTION STATUS;IdAtraccion",
+            "INVOICE CREATE;USER;Correo",
+            "INVOICE CREATE;GROUP;IdGrupo",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -457,5 +459,76 @@ class CommandProcessorTest {
         CommandProcessor p = groupOf(1);
         p.process("ATTRACTION CREATE;A01;Tornado;20");
         assertFalse(p.process(command).success());
+    }
+
+    // ---- invoices ----
+
+    @Test
+    void userInvoiceChargesDirectTicketOnceDespiteGroupMembership() {
+        CommandProcessor p = groupOf(2);
+        p.process(CREATE_ANA);
+        p.process("GROUP ADD;G01;ana@correo.com");
+        p.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        p.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        Result r = p.process("INVOICE CREATE;USER;ana@correo.com");
+        assertTrue(r.success());
+        String text = r.toString();
+        assertTrue(text.startsWith("OK: INVOICE USER ana@correo.com - Ana Garcia Lopez"), text);
+        assertTrue(text.contains("Date: 2026-10-01"));
+        assertTrue(text.contains("Individual tickets:"));
+        assertTrue(text.contains("T001 2026-10-15 40.00"));
+        assertFalse(text.contains("TG01"));
+        assertTrue(text.endsWith("Total: 40.00"));
+    }
+
+    @Test
+    void groupInvoiceShowsDiscountedAmountOnly() {
+        CommandProcessor p = groupOf(3);
+        p.process("TICKET CREATE;T005;u0@correo.com;2026-10-15");
+        p.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        String text = p.process("INVOICE CREATE;GROUP;G01").toString();
+        assertTrue(text.startsWith("OK: INVOICE GROUP G01 - Familia Garcia"), text);
+        assertTrue(text.contains("TG01 2026-10-15 (3 tickets, 10% discount) 108.00"));
+        assertFalse(text.contains("T005"));
+        assertFalse(text.contains("Individual tickets"));
+        assertTrue(text.endsWith("Total: 108.00"));
+    }
+
+    @Test
+    void recipientWithoutPurchasesHasNoSections() {
+        CommandProcessor p = groupOf(1);
+        String text = p.process("INVOICE CREATE;USER;u0@correo.com").toString();
+        assertFalse(text.contains("tickets:"));
+        assertTrue(text.endsWith("Total: 0.00"));
+        assertTrue(p.process("INVOICE CREATE;GROUP;G01").toString().endsWith("Total: 0.00"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INVOICE CREATE;USER;nadie@correo.com", "INVOICE CREATE;GROUP;G99",
+        "INVOICE CREATE;CLIENT;ana@correo.com", "INVOICE CREATE;USER", "INVOICE CREATE;USER;ana@correo.com;x",
+        "INVOICE DELETE;USER;ana@correo.com", "INVOICE CREATE;user;ana@correo.com"})
+    void invalidInvoiceCommands(String command) {
+        CommandProcessor p = groupOf(1);
+        assertFalse(p.process(command).success());
+    }
+
+    @Test
+    void invoicesDoNotChangeData() throws IOException {
+        CommandProcessor p = groupOf(2);
+        p.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        java.util.Map<String, String> before = snapshot();
+        p.process("INVOICE CREATE;GROUP;G01");
+        p.process("INVOICE CREATE;USER;u0@correo.com");
+        assertEquals(before, snapshot());
+    }
+
+    private java.util.Map<String, String> snapshot() throws IOException {
+        java.util.Map<String, String> files = new java.util.TreeMap<>();
+        try (java.util.stream.Stream<Path> s = java.nio.file.Files.list(dir)) {
+            for (Path f : s.toList()) {
+                files.put(f.getFileName().toString(), java.nio.file.Files.readString(f));
+            }
+        }
+        return files;
     }
 }

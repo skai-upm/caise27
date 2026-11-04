@@ -2,6 +2,7 @@ package es.upm.park.business;
 
 import es.upm.park.business.model.Result;
 import es.upm.park.business.model.Group;
+import es.upm.park.business.model.Invoice;
 import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
 import es.upm.park.persistence.AttractionFileStore;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -211,6 +213,34 @@ public class ParkController implements AutoCloseable {
 
     public Result deleteGroupTicket(String id) {
         return tickets.deleteGroupTicket(id, currentDate);
+    }
+
+    // ---- invoices ----
+
+    /** Invoice of the individual tickets bought directly by the user with this email. */
+    public Result createUserInvoice(String email) {
+        Optional<User> user = users.findByEmail(email);
+        if (user.isEmpty()) {
+            return Result.error("No registered user with email " + email + ".");
+        }
+        User u = user.get();
+        Invoice invoice = new InvoiceDirector().construct(new UserInvoiceBuilder(),
+                "USER " + u.getEmail() + " - " + u.getFirstName() + " " + u.getSurnames(), currentDate,
+                tickets.getTickets().stream().filter(t -> t.getUser() == u).toList(), List.of());
+        return Result.ok(invoice.format());
+    }
+
+    /** Invoice of the group-ticket purchases of the group with this identifier. */
+    public Result createGroupInvoice(String groupId) {
+        Optional<Group> group = groups.find(groupId);
+        if (group.isEmpty()) {
+            return Result.error("Group " + groupId + " does not exist.");
+        }
+        Group g = group.get();
+        Invoice invoice = new InvoiceDirector().construct(new GroupInvoiceBuilder(),
+                "GROUP " + g.getId() + " - " + g.getName(), currentDate,
+                List.of(), tickets.getGroupTickets().stream().filter(t -> t.getGroup() == g).toList());
+        return Result.ok(invoice.format());
     }
 
     // ---- attractions ----
