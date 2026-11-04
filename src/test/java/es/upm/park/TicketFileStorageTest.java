@@ -30,10 +30,10 @@ class TicketFileStorageTest {
         User ana = new User("Ana", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "1", "1234567890123456");
         Path file = dir.resolve("tickets.txt");
         TicketFileStorage storage = new TicketFileStorage(file);
-        storage.save(List.of(new Ticket("T001", ana, LocalDate.of(2026, 10, 15), new BigDecimal("40.00"))));
+        storage.save(List.of(new IndividualTicket("T001", ana, LocalDate.of(2026, 10, 15), new BigDecimal("40.00"))));
         Files.writeString(file, "T002;87654321X;2026-01-01;60.00\nbad;line\nT003;1;notadate;1.00\nT004;1;2026-01-01;x\n",
                 java.nio.file.StandardOpenOption.APPEND);
-        List<Ticket> loaded = storage.load(Map.of("12345678Z", ana)::get);
+        List<IndividualTicket> loaded = storage.load(Map.of("12345678Z", ana)::get);
         assertEquals(2, loaded.size());
         assertSame(ana, loaded.get(0).getOwner());
         assertNull(loaded.get(1).getOwner());

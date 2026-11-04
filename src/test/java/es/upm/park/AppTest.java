@@ -34,7 +34,8 @@ class AppTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         App.DataFiles files = new App.DataFiles(usersFile, usersFile.resolveSibling("groups-" + usersFile.getFileName()),
-                usersFile.resolveSibling("tickets-" + usersFile.getFileName()));
+                usersFile.resolveSibling("tickets-" + usersFile.getFileName()),
+                usersFile.resolveSibling("group-tickets-" + usersFile.getFileName()));
         int status = App.run(args, files, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8));
         return new Run(status, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
@@ -145,5 +146,21 @@ class AppTest {
         assertTrue(lines[1].startsWith("ERROR"), lines[1]);
         assertEquals("OK TICKET CREATED -> 40.00", lines[2]);
         assertTrue(lines[4].startsWith("ERROR"), "T002 (2026-10-20) still blocks: " + lines[4]);
+    }
+
+    @Test
+    void groupTicketLocksSurviveRestart() {
+        Path users = dir.resolve("users.txt");
+        Run first = run(new String[0], users, CommandProcessorTest.CREATE_ANA + "\n" + CommandRunnerTest.CREATE_PEDRO
+                + "\nGROUP CREATE;G01;Familia Garcia\nGROUP ADD;G01;ana@correo.com\nGROUP ADD;G01;pedro@correo.com\n"
+                + "SYSTEM DATE;2026-10-01\nGROUPTICKET CREATE;TG01;G01;2026-10-15\n");
+        assertTrue(first.out().contains("OK GROUP TICKET CREATED -> 80.00"), first.out());
+        Run second = run(new String[0], users, "SYSTEM DATE;2026-10-01\nGROUP DELETE;G01\n"
+                + "USER DELETE;pedro@correo.com;Otra2#\nGROUPTICKET DELETE;TG01\nGROUP DELETE;G01\n");
+        String[] lines = second.out().split("\\R");
+        assertTrue(lines[1].startsWith("ERROR"), lines[1]);
+        assertTrue(lines[2].startsWith("ERROR"), lines[2]);
+        assertTrue(lines[3].startsWith("OK"), lines[3]);
+        assertTrue(lines[4].startsWith("OK"), lines[4]);
     }
 }

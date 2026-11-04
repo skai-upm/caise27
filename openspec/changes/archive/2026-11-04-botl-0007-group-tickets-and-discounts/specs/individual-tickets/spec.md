@@ -1,0 +1,56 @@
+# Spec Delta
+
+## MODIFIED Requirements
+
+### Requirement: Ticket creation
+`TICKET CREATE;Id;Correo;yyyy-MM-dd` SHALL create a ticket for the registered user with that email (case-insensitive), at the current ticket price, and reply exactly `OK TICKET CREATED -> <price>` with the price shown with two decimals. The identifier SHALL be nonblank and unique among all individual, group and constituent tickets, and the date SHALL be a valid `yyyy-MM-dd` date on or after the current system date.
+
+#### Scenario: Successful purchase
+- **GIVEN** system date 2026-10-01 and registered user `ana@correo.com`
+- **WHEN** `TICKET CREATE;T001;ana@correo.com;2026-10-15` is processed
+- **THEN** the reply is `OK TICKET CREATED -> 40.00` and the ticket is stored
+
+#### Scenario: Ticket for today
+- **GIVEN** system date 2026-10-01
+- **WHEN** a ticket is created for 2026-10-01
+- **THEN** creation succeeds
+
+#### Scenario: Nonexistent user
+- **WHEN** `TICKET CREATE;T002;nadie@correo.com;2026-10-15` is processed
+- **THEN** an `ERROR` message is produced and no ticket is created
+
+#### Scenario: Past date
+- **GIVEN** system date 2026-10-01
+- **WHEN** `TICKET CREATE;T003;ana@correo.com;2026-09-30` is processed
+- **THEN** an `ERROR` message is produced and no ticket is created
+
+#### Scenario: Invalid input
+- **WHEN** the identifier is blank or already used, the date is malformed (e.g. `15-10-2026`, `2026-02-30`), or the parameter count is wrong
+- **THEN** an `ERROR` message is produced and no ticket is created
+
+#### Scenario: Identifier used by a group ticket
+- **GIVEN** group ticket `TG01` exists
+- **WHEN** `TICKET CREATE;TG01;ana@correo.com;2026-10-15` is processed
+- **THEN** an `ERROR` message is produced
+
+### Requirement: Ticket deletion
+`TICKET DELETE;Id` SHALL delete a standalone individual ticket only when its date is strictly later than the current system date; a ticket dated on or before the system date, an unknown identifier, or a constituent ticket of a group ticket SHALL be rejected.
+
+#### Scenario: Future ticket
+- **GIVEN** system date 2026-10-01 and ticket `T001` dated 2026-10-15
+- **WHEN** `TICKET DELETE;T001` is processed
+- **THEN** an `OK` message is produced and the ticket no longer exists
+
+#### Scenario: Ticket for today or the past
+- **GIVEN** ticket `T001` dated 2026-10-15
+- **WHEN** the system date is 2026-10-15 or 2026-10-16 and `TICKET DELETE;T001` is processed
+- **THEN** an `ERROR` message is produced and the ticket is kept
+
+#### Scenario: Unknown ticket
+- **WHEN** `TICKET DELETE;T999` is processed
+- **THEN** an `ERROR` message is produced
+
+#### Scenario: Constituent ticket
+- **GIVEN** group ticket `TG01` with constituent ticket `TG01-1`
+- **WHEN** `TICKET DELETE;TG01-1` is processed
+- **THEN** an `ERROR` message is produced and the group ticket keeps all its constituents

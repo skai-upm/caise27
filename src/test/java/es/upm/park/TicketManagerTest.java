@@ -37,12 +37,18 @@ class TicketManagerTest {
         users = new UserManager(new UserFileStorage(usersFile));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         ana = users.findByEmail("ana@correo.com");
-        tickets = new TicketManager(new TicketFileStorage(ticketsFile), users);
+        tickets = newManager();
+    }
+
+    private TicketManager newManager() {
+        GroupManager groups = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), users);
+        return new TicketManager(new TicketFileStorage(ticketsFile),
+                new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), users, groups);
     }
 
     private TicketManager restart() {
         users = new UserManager(new UserFileStorage(usersFile));
-        return new TicketManager(new TicketFileStorage(ticketsFile), users);
+        return newManager();
     }
 
     @Test
@@ -87,7 +93,7 @@ class TicketManagerTest {
     void restartLinksSameUserObject() {
         tickets.create("T001", ana, LocalDate.of(2026, 10, 15), PRICE, TODAY);
         TicketManager again = restart();
-        Ticket t = again.find("T001");
+        IndividualTicket t = again.find("T001");
         assertSame(users.findByDni("12345678Z"), t.getOwner());
         assertEquals(PRICE, t.getPrice());
         assertTrue(again.hasTicketOnOrAfter(users.findByDni("12345678Z"), TODAY));
@@ -98,9 +104,25 @@ class TicketManagerTest {
         tickets.create("T001", ana, LocalDate.of(2026, 10, 15), PRICE, TODAY);
         users.delete("ana@correo.com", "Clave1!");
         TicketManager again = restart();
-        Ticket t = again.find("T001");
+        IndividualTicket t = again.find("T001");
         assertNull(t.getOwner());
         assertEquals("12345678Z", t.getOwnerDni());
         assertEquals(LocalDate.of(2026, 10, 15), t.getDate());
+    }
+
+    @Test
+    void commonAbstractionListsAllTickets() {
+        tickets.create("T001", ana, LocalDate.of(2026, 10, 15), PRICE, TODAY);
+        GroupManager groups = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), users);
+        groups.create("G01", "Familia");
+        groups.addMember("G01", "ana@correo.com");
+        TicketManager manager = new TicketManager(new TicketFileStorage(ticketsFile),
+                new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), users, groups);
+        manager.createGroupTicket("TG01", groups.find("G01"), LocalDate.of(2026, 10, 20), PRICE, TODAY);
+        List<Ticket> all = manager.getAllTickets();
+        assertEquals(2, all.size());
+        assertEquals(new BigDecimal("40.00"), all.get(1).getPrice());
+        assertTrue(manager.hasGroupTicketOnOrAfter(groups.find("G01"), LocalDate.of(2026, 10, 20)));
+        assertFalse(manager.hasGroupTicketOnOrAfter(groups.find("G01"), LocalDate.of(2026, 10, 21)));
     }
 }

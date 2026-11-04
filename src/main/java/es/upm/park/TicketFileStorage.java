@@ -32,14 +32,14 @@ public class TicketFileStorage {
      * Loads all tickets, linking each to the user returned by {@code userByDni}.
      * Tickets of users that no longer exist are kept without owner reference.
      */
-    public List<Ticket> load(Function<String, User> userByDni) {
-        List<Ticket> tickets = new ArrayList<>();
+    public List<IndividualTicket> load(Function<String, User> userByDni) {
+        List<IndividualTicket> tickets = new ArrayList<>();
         if (!Files.exists(file)) {
             return tickets;
         }
         try {
             for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
-                Ticket ticket = parse(line, userByDni);
+                IndividualTicket ticket = parse(line, userByDni);
                 if (ticket != null) {
                     tickets.add(ticket);
                 }
@@ -50,9 +50,9 @@ public class TicketFileStorage {
         return tickets;
     }
 
-    public void save(Collection<Ticket> tickets) {
+    public void save(Collection<IndividualTicket> tickets) {
         List<String> lines = new ArrayList<>();
-        for (Ticket t : tickets) {
+        for (IndividualTicket t : tickets) {
             lines.add(format(t));
         }
         try {
@@ -68,12 +68,12 @@ public class TicketFileStorage {
         }
     }
 
-    static String format(Ticket t) {
+    static String format(IndividualTicket t) {
         return String.join(SEPARATOR, t.getId(), t.getOwnerDni(), t.getDate().toString(),
                 t.getPrice().toPlainString());
     }
 
-    private static Ticket parse(String line, Function<String, User> userByDni) {
+    private static IndividualTicket parse(String line, Function<String, User> userByDni) {
         if (line == null || line.isBlank()) {
             return null;
         }
@@ -84,7 +84,7 @@ public class TicketFileStorage {
         try {
             LocalDate date = LocalDate.parse(f[2]);
             BigDecimal price = new BigDecimal(f[3]);
-            return new Ticket(f[0], userByDni.apply(f[1]), f[1], date, price);
+            return new IndividualTicket(f[0], userByDni.apply(f[1]), f[1], date, price);
         } catch (DateTimeParseException | NumberFormatException e) {
             return null;
         }

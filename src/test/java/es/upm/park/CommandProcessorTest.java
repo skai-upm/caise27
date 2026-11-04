@@ -2,6 +2,7 @@ package es.upm.park;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class CommandProcessorTest {
@@ -29,7 +31,8 @@ class CommandProcessorTest {
     void setUp() {
         manager = new UserManager(new UserFileStorage(dir.resolve("users.txt")));
         groups = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), manager);
-        tickets = new TicketManager(new TicketFileStorage(dir.resolve("tickets.txt")), manager);
+        tickets = new TicketManager(new TicketFileStorage(dir.resolve("tickets.txt")),
+                new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups);
         processor = new CommandProcessor(manager, groups, tickets);
     }
 
@@ -86,6 +89,7 @@ class CommandProcessorTest {
             "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
             "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id",
             "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
+            "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;IdTicket",
             "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Precio", "HELP", "EXIT",
             "NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD"}) {
             assertTrue(help.contains(usage), usage);
@@ -192,7 +196,7 @@ class CommandProcessorTest {
     void ticketCreationReportsPriceAndReferencesUser() {
         ticketSetup();
         assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
-        Ticket t = tickets.find("T001");
+        IndividualTicket t = tickets.find("T001");
         assertEquals(LocalDate.of(2026, 10, 15), t.getDate());
         assertEquals(new BigDecimal("40.00"), t.getPrice());
         assertTrue(t.getOwner() == manager.findByEmail("ana@correo.com"));
@@ -268,5 +272,122 @@ class CommandProcessorTest {
     void invalidPriceIsRejected(String command) {
         assertTrue(processor.process(command).startsWith("ERROR"), command);
         assertEquals(new BigDecimal("40.00"), processor.getCurrentPrice());
+    }
+
+    private void groupOf(int members) {
+        processor.process("SYSTEM DATE;2026-10-01");
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        for (int i = 0; i < members; i++) {
+            int number = 10000000 + i;
+            String dni = number + String.valueOf("TRWAGMYFPDXBNJZSQVHLCKE".charAt(number % 23));
+            String email = "u" + i + "@correo.com";
+            processor.process("USER CREATE;U" + i + ";S;" + dni + ";" + email + ";Clave1!;600;1234567890123456");
+            processor.process("GROUP ADD;G01;" + email);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2,80.00", "3,108.00", "5,180.00", "6,192.00", "10,320.00", "11,220.00"})
+    void groupTicketPurchaseAppliesBrackets(int members, String total) {
+        groupOf(members);
+        assertEquals("OK GROUP TICKET CREATED -> " + total, processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        GroupTicket t = tickets.findGroupTicket("TG01");
+        assertEquals(members, t.getConstituents().size());
+        assertTrue(t.getConstituents().get(0).getOwner() == manager.findByEmail("u0@correo.com"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GROUPTICKET CREATE;TG02;G99;2026-10-15", "GROUPTICKET CREATE;TG02;G01;2026-09-30",
+        "GROUPTICKET CREATE;;G01;2026-10-15", "GROUPTICKET CREATE;TG01;G01;2026-10-15",
+        "GROUPTICKET CREATE;T001;G01;2026-10-15", "GROUPTICKET CREATE;TG02;G01;2026-13-01",
+        "GROUPTICKET CREATE;TG02;G01", "GROUPTICKET CREATE;TG02;G01;2026-10-15;x"})
+    void invalidGroupTicketPurchaseRejected(String command) {
+        groupOf(2);
+        processor.process("TICKET CREATE;T001;u0@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertTrue(processor.process(command).startsWith("ERROR"), command);
+        assertEquals(1, tickets.getGroupTickets().size());
+        assertEquals(1, tickets.getTickets().size());
+    }
+
+    @Test
+    void emptyGroupCannotBuy() {
+        groupOf(0);
+        assertTrue(processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15").startsWith("ERROR"));
+    }
+
+    @Test
+    void constituentIdsShareTheTicketIdSpace() {
+        groupOf(2);
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertTrue(processor.process("TICKET CREATE;TG01-1;u0@correo.com;2026-10-15").startsWith("ERROR"));
+        assertTrue(processor.process("TICKET CREATE;TG01;u0@correo.com;2026-10-15").startsWith("ERROR"));
+        String r = processor.process("TICKET DELETE;TG01-1");
+        assertTrue(r.startsWith("ERROR") && r.contains("group ticket"), r);
+        assertEquals(2, tickets.findGroupTicket("TG01").getConstituents().size());
+    }
+
+    @Test
+    void groupLockedWhileGroupTicketIsCurrentOrFuture() {
+        groupOf(2);
+        processor.process("USER CREATE;Luis;M;11111111H;luis@correo.com;Clave1!;600;1234567890123456");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertTrue(processor.process("GROUP ADD;G01;luis@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP REMOVE;G01;u0@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("ERROR"), "today still locked");
+        assertEquals(2, groups.find("G01").getMembers().size());
+
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertTrue(processor.process("GROUP ADD;G01;luis@correo.com").startsWith("OK"));
+        assertEquals(2, tickets.findGroupTicket("TG01").getConstituents().size(), "composition unchanged");
+        assertTrue(processor.process("GROUP REMOVE;G01;u0@correo.com").startsWith("OK"));
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("OK"));
+        assertNotNull(tickets.findGroupTicket("TG01"), "history kept");
+    }
+
+    @Test
+    void otherGroupsAreNotLocked() {
+        groupOf(2);
+        processor.process("GROUP CREATE;G02;Amigos");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertTrue(processor.process("GROUP ADD;G02;u0@correo.com").startsWith("OK"));
+        assertTrue(processor.process("GROUP DELETE;G02").startsWith("OK"));
+    }
+
+    @Test
+    void constituentTicketsProtectMembers() {
+        groupOf(2);
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertTrue(processor.process("USER DELETE;u0@correo.com;Clave1!").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertTrue(processor.process("USER DELETE;u0@correo.com;Clave1!").startsWith("OK"));
+    }
+
+    @Test
+    void groupTicketDeletionOnlyForFutureAndRemovesConstituents() {
+        groupOf(3);
+        processor.process("GROUPTICKET CREATE;TG001;G01;2026-10-15");
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("GROUPTICKET DELETE;TG001").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertTrue(processor.process("GROUPTICKET DELETE;TG001").startsWith("ERROR"));
+        processor.process("SYSTEM DATE;2026-10-01");
+        assertTrue(processor.process("GROUPTICKET DELETE;TG001").startsWith("OK"));
+        assertNull(tickets.findGroupTicket("TG001"));
+        assertTrue(processor.process("TICKET CREATE;TG001-1;u0@correo.com;2026-10-15").startsWith("OK"),
+                "constituent ids released");
+        assertTrue(processor.process("GROUPTICKET DELETE;TG001").startsWith("ERROR"), "unknown");
+        assertTrue(processor.process("GROUP DELETE;G01").startsWith("OK"), "unlocked");
+        assertTrue(processor.process("GROUPTICKET DELETE").startsWith("ERROR"));
+    }
+
+    @Test
+    void groupTicketUsesCurrentPrice() {
+        groupOf(3);
+        processor.process("SYSTEM PRICE;60.00");
+        assertEquals("OK GROUP TICKET CREATED -> 162.00", processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        assertEquals(new BigDecimal("60.00"), tickets.findGroupTicket("TG01").getConstituents().get(2).getPrice());
     }
 }

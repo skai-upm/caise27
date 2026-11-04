@@ -87,23 +87,46 @@ package es.upm.park {
   }
 
   class TicketManager {
-    +create(id : String, owner : User, date : LocalDate, price : BigDecimal, today : LocalDate) : Ticket
+    +create(id : String, owner : User, date : LocalDate, price : BigDecimal, today : LocalDate) : IndividualTicket
     +delete(id : String, today : LocalDate) : void
+    +createGroupTicket(id : String, group : Group, date : LocalDate, price : BigDecimal, today : LocalDate) : GroupTicket
+    +deleteGroupTicket(id : String, today : LocalDate) : void
     +hasTicketOnOrAfter(user : User, today : LocalDate) : boolean
-    +find(id : String) : Ticket
+    +hasGroupTicketOnOrAfter(group : Group, today : LocalDate) : boolean
+    +getAllTickets() : List<Ticket>
   }
 
   class TicketFileStorage {
     -file : Path
-    +load(userByDni : Function<String, User>) : List<Ticket>
-    +save(tickets : Collection<Ticket>) : void
+    +load(userByDni : Function<String, User>) : List<IndividualTicket>
+    +save(tickets : Collection<IndividualTicket>) : void
   }
 
-  class Ticket {
+  class GroupTicketFileStorage {
+    -file : Path
+    +load(groupById : Function<String, Group>, userByDni : Function<String, User>) : List<GroupTicket>
+    +save(tickets : Collection<GroupTicket>) : void
+  }
+
+  abstract class Ticket {
     -id : String {readOnly}
     -date : LocalDate {readOnly}
+    +isOnOrAfter(day : LocalDate) : boolean
+    {abstract} +getPrice() : BigDecimal
+  }
+
+  class IndividualTicket {
     -price : BigDecimal {readOnly}
     -ownerDni : String {readOnly}
+    +getPrice() : BigDecimal
+  }
+
+  class GroupTicket {
+    -groupId : String {readOnly}
+    -individualPrice : BigDecimal {readOnly}
+    -total : BigDecimal {readOnly}
+    {static} +discountPercent(members : int) : int
+    +getPrice() : BigDecimal
   }
 }
 
@@ -121,7 +144,14 @@ GroupManager "1" *-- "0..*" Group : groups
 Group "0..*" o-- "0..*" User : members
 CommandProcessor --> "1" TicketManager : tickets
 TicketManager --> "1" TicketFileStorage : storage
-TicketManager "1" *-- "0..*" Ticket : tickets
+TicketManager "1" *-- "0..*" IndividualTicket : standalone tickets
+TicketManager "1" *-- "0..*" GroupTicket : group tickets
+TicketManager --> "1" GroupTicketFileStorage : groupStorage
 TicketManager ..> UserManager : resolves owners
-Ticket "0..*" --> "0..1" User : owner
+TicketManager ..> GroupManager : resolves groups
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+IndividualTicket "0..*" --> "0..1" User : owner
+GroupTicket "0..*" o-- "0..1" Group : group
+GroupTicket "1" *-- "1..*" IndividualTicket : constituents
 @enduml

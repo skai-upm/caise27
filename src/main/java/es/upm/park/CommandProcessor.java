@@ -29,6 +29,8 @@ public class CommandProcessor {
             "GROUP DELETE;Id",
             "TICKET CREATE;Id;Correo;yyyy-MM-dd",
             "TICKET DELETE;Id",
+            "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd",
+            "GROUPTICKET DELETE;IdTicket",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -86,6 +88,8 @@ public class CommandProcessor {
                 case "GROUP DELETE" -> groupDelete(parts);
                 case "TICKET CREATE" -> ticketCreate(parts);
                 case "TICKET DELETE" -> ticketDelete(parts);
+                case "GROUPTICKET CREATE" -> groupTicketCreate(parts);
+                case "GROUPTICKET DELETE" -> groupTicketDelete(parts);
                 case "SYSTEM DATE" -> systemDate(parts);
                 case "SYSTEM PRICE" -> systemPrice(parts);
                 case "HELP" -> help(parts);
@@ -123,20 +127,48 @@ public class CommandProcessor {
 
     private String groupAdd(String[] p) {
         requireParams(p, 2, "GROUP ADD;Id;Correo");
+        requireUnlocked(p[1]);
         groups.addMember(p[1], p[2]);
         return "OK: user " + p[2] + " added to group " + p[1];
     }
 
     private String groupRemove(String[] p) {
         requireParams(p, 2, "GROUP REMOVE;Id;Correo");
+        requireUnlocked(p[1]);
         groups.removeMember(p[1], p[2]);
         return "OK: user " + p[2] + " removed from group " + p[1];
     }
 
     private String groupDelete(String[] p) {
         requireParams(p, 1, "GROUP DELETE;Id");
+        requireUnlocked(p[1]);
         groups.delete(p[1]);
         return "OK: group " + p[1] + " deleted";
+    }
+
+    /** A group with a current or future group ticket cannot be modified or deleted. */
+    private void requireUnlocked(String groupId) {
+        Group group = groups.find(groupId);
+        if (group != null && tickets.hasGroupTicketOnOrAfter(group, currentDate)) {
+            throw new IllegalArgumentException("group " + groupId
+                    + " is locked by a group ticket dated on or after " + currentDate);
+        }
+    }
+
+    private String groupTicketCreate(String[] p) {
+        requireParams(p, 3, "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd");
+        Group group = groups.find(p[2]);
+        if (group == null) {
+            throw new IllegalArgumentException("no group with identifier " + p[2]);
+        }
+        GroupTicket ticket = tickets.createGroupTicket(p[1], group, parseDate(p[3]), currentPrice, currentDate);
+        return "OK GROUP TICKET CREATED -> " + ticket.getPrice().toPlainString();
+    }
+
+    private String groupTicketDelete(String[] p) {
+        requireParams(p, 1, "GROUPTICKET DELETE;IdTicket");
+        tickets.deleteGroupTicket(p[1], currentDate);
+        return "OK: group ticket " + p[1] + " deleted";
     }
 
     private String ticketCreate(String[] p) {
@@ -145,7 +177,7 @@ public class CommandProcessor {
         if (owner == null) {
             throw new IllegalArgumentException("no registered user with email " + p[2]);
         }
-        Ticket ticket = tickets.create(p[1], owner, parseDate(p[3]), currentPrice, currentDate);
+        IndividualTicket ticket = tickets.create(p[1], owner, parseDate(p[3]), currentPrice, currentDate);
         return "OK TICKET CREATED -> " + ticket.getPrice().toPlainString();
     }
 

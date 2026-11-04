@@ -21,9 +21,10 @@ public class App {
     static final Path USERS_FILE = Path.of("users.txt");
     static final Path GROUPS_FILE = Path.of("groups.txt");
     static final Path TICKETS_FILE = Path.of("tickets.txt");
+    static final Path GROUP_TICKETS_FILE = Path.of("group-tickets.txt");
 
     public static void main(String[] args) {
-        int status = run(args, new DataFiles(USERS_FILE, GROUPS_FILE, TICKETS_FILE), System.in, System.out, System.err);
+        int status = run(args, new DataFiles(USERS_FILE, GROUPS_FILE, TICKETS_FILE, GROUP_TICKETS_FILE), System.in, System.out, System.err);
         if (status != 0) {
             System.exit(status);
         }
@@ -31,7 +32,7 @@ public class App {
 
     /** Runs the application and returns its exit status (0 on success). */
     /** Locations of the persistence files. */
-    record DataFiles(Path users, Path groups, Path tickets) {
+    record DataFiles(Path users, Path groups, Path tickets, Path groupTickets) {
     }
 
     static int run(String[] args, DataFiles files, InputStream stdin, PrintStream out, PrintStream err) {
@@ -39,7 +40,8 @@ public class App {
         try {
             UserManager users = new UserManager(new UserFileStorage(files.users()));
             GroupManager groups = new GroupManager(new GroupFileStorage(files.groups()), users);
-            TicketManager tickets = new TicketManager(new TicketFileStorage(files.tickets()), users);
+            TicketManager tickets = new TicketManager(new TicketFileStorage(files.tickets()),
+                    new GroupTicketFileStorage(files.groupTickets()), users, groups);
             runner = new CommandRunner(new CommandProcessor(users, groups, tickets));
         } catch (UncheckedIOException e) {
             err.println("ERROR: cannot load data: " + e.getMessage());
