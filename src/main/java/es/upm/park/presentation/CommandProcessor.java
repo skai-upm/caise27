@@ -23,38 +23,19 @@ public class CommandProcessor {
     private static final String PARAM_SEPARATOR = ";";
     private static final String WORD_SEPARATOR = " ";
 
-    /** Syntax of every available command, shown by {@code HELP}. Add new commands here. */
-    private static final List<String> COMMAND_SYNTAX = List.of(
-            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "USER DELETE;Correo;Contraseña",
-            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
-            "GROUP CREATE;Id;Nombre",
-            "GROUP ADD;Id;Correo",
-            "GROUP REMOVE;Id;Correo",
-            "GROUP DELETE;Id",
-            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
-            "TICKET DELETE;Id",
-            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
-            "GROUPTICKET DELETE;Id",
-            "ATTRACTION CREATE;Id;Nombre;Capacidad",
-            "ATTRACTION ENTER;IdAtraccion;IdTicket",
-            "ATTRACTION EXIT;IdAtraccion;IdTicket",
-            "ATTRACTION STATUS;IdAtraccion",
-            "INVOICE CREATE;USER;Correo",
-            "INVOICE CREATE;GROUP;IdGrupo",
-            "SYSTEM DATE;yyyy-MM-dd",
-            "SYSTEM PRICE;Precio",
-            "HELP",
-            "EXIT");
-
     private static final int DATE_LENGTH = "yyyy-MM-dd".length();
 
     private static final int PRICE_DECIMALS = 2;
 
     private final ParkController controller;
+    private final HelpGenerator basicHelp;
+    private final HelpGenerator extendedHelp;
 
-    public CommandProcessor(ParkController controller) {
+    /** Receives the controller and the help generators configured at startup. */
+    public CommandProcessor(ParkController controller, HelpGenerator basicHelp, HelpGenerator extendedHelp) {
         this.controller = controller;
+        this.basicHelp = basicHelp;
+        this.extendedHelp = extendedHelp;
     }
 
     public ParkController getController() {
@@ -77,7 +58,10 @@ public class CommandProcessor {
             }
         }
         if (words.size() == 1 && words.get(0).equals("HELP")) {
-            return params.length == 0 ? help() : Result.error("Usage: HELP");
+            return params.length == 0 ? Result.ok(basicHelp.generate()) : Result.error("Usage: HELP");
+        }
+        if (words.size() == 2 && words.get(0).equals("HELP") && words.get(1).equals("EXTENDED")) {
+            return params.length == 0 ? Result.ok(extendedHelp.generate()) : Result.error("Usage: HELP EXTENDED");
         }
         if (words.size() == 1 && words.get(0).equals("EXIT")) {
             return params.length == 0 ? Result.exit("Bye.") : Result.error("Usage: EXIT");
@@ -112,11 +96,6 @@ public class CommandProcessor {
             case "UPDATE" -> userUpdate(params);
             default -> Result.error("Unknown command: " + parts[0].trim());
         };
-    }
-
-    private Result help() {
-        return Result.ok("Available commands:" + System.lineSeparator()
-                + String.join(System.lineSeparator(), COMMAND_SYNTAX));
     }
 
     private Result systemDate(String[] p) {

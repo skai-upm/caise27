@@ -16,6 +16,21 @@ package es.upm.park.presentation {
   class CommandRunner
 
   class CommandProcessor
+
+  class CommandCatalog
+
+  class CommandInfo <<record>> {
+    + syntax : String
+    + description : String
+  }
+
+  class HelpGenerator
+
+  interface HelpFormatter
+
+  class SyntaxHelpFormatter
+
+  class ExtendedHelpFormatter
 }
 
 package es.upm.park.business {
@@ -166,6 +181,13 @@ package es.upm.park.persistence {
 ' ---- Control ----
 CommandRunner "0..1" x--> "1" CommandProcessor : processor
 CommandProcessor "0..1" x--> "1" ParkController : controller
+CommandProcessor "0..1" x--> "1" HelpGenerator : basicHelp
+CommandProcessor "0..1" x--> "1" HelpGenerator : extendedHelp
+HelpGenerator "0..*" x--> "1" CommandCatalog : catalog
+HelpGenerator "0..*" x--> "1" HelpFormatter : formatter
+CommandCatalog "0..*" x--> "0..*" CommandInfo : commands
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
 ParkController "0..1" x--> "1" UserManager : users
 ParkController "0..1" x--> "1" GroupManager : groups
 ParkController "0..1" x--> "1" TicketManager : tickets
@@ -218,6 +240,8 @@ InvoiceSection "0..*" *--> "1..*" InvoiceLine : lines
 
 ' ---- Usage of classes without incoming relationships ----
 App ..> CommandRunner : creates
+App ..> SyntaxHelpFormatter : creates
+App ..> ExtendedHelpFormatter : creates
 App ..> ApplicationContext
 ApplicationContext ..> DataDirectory
 ApplicationContext ..> UserFileStore : creates

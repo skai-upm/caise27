@@ -44,7 +44,7 @@ class CommandProcessorTest {
         groups = controller.groups();
         tickets = controller.tickets();
         attractions = controller.attractions();
-        processor = new CommandProcessor(controller);
+        processor = App.createProcessor(controller);
     }
 
     @Test
@@ -143,6 +143,7 @@ class CommandProcessorTest {
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
+            "HELP EXTENDED",
             "EXIT"}) {
             assertTrue(r.message().contains(syntax), syntax);
         }
@@ -157,7 +158,7 @@ class CommandProcessorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"HELP;extra", "EXIT;now", "HELP ME", "help", "exit"})
+    @ValueSource(strings = {"HELP;extra", "EXIT;now", "HELP ME", "help", "exit", "HELP EXTENDED;x", "HELP EXTENDED NOW"})
     void generalCommandsRejectExtras(String command) {
         Result r = processor.process(command);
         assertFalse(r.success());
@@ -175,7 +176,7 @@ class CommandProcessorTest {
     private static final LocalDate START = LocalDate.of(2026, 9, 15);
 
     private CommandProcessor processorAt(LocalDate date) {
-        return new CommandProcessor(ParkController.configure(manager, groups, tickets, attractions, new InvoiceDirector(), date));
+        return App.createProcessor(ParkController.configure(manager, groups, tickets, attractions, new InvoiceDirector(), date));
     }
 
     @Test
@@ -532,5 +533,28 @@ class CommandProcessorTest {
             }
         }
         return files;
+    }
+
+    // ---- extended help ----
+
+    @Test
+    void extendedHelpShowsSyntaxAndDescriptions() {
+        Result r = processor.process("HELP EXTENDED");
+        assertTrue(r.success());
+        String text = r.toString();
+        assertTrue(text.startsWith("OK: Available commands (extended):"));
+        assertTrue(text.contains("USER DELETE;Correo;Contraseña" + System.lineSeparator()
+                + "    Deletes a user after checking the password"));
+        assertTrue(text.contains("HELP EXTENDED" + System.lineSeparator() + "    "));
+    }
+
+    @Test
+    void alternativeFormatterInjectedWithoutChangingProcessing() {
+        CommandCatalog catalog = CommandCatalog.standard();
+        HelpFormatter upper = commands -> "COMMANDS: " + commands.size();
+        CommandProcessor custom = new CommandProcessor(processor.getController(),
+                new HelpGenerator(catalog, upper), new HelpGenerator(catalog, new ExtendedHelpFormatter()));
+        assertEquals("OK: COMMANDS: " + catalog.commands().size(), custom.process("HELP").toString());
+        assertTrue(custom.process(CREATE_ANA).success());
     }
 }

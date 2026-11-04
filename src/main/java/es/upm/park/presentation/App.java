@@ -1,6 +1,7 @@
 package es.upm.park.presentation;
 
 import es.upm.park.business.ApplicationContext;
+import es.upm.park.business.ParkController;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,10 +72,18 @@ public class App {
         context.getTemporaryDirectory()
                 .ifPresent(dir -> err.println("INFO: --fly mode, temporary data in " + dir));
         try (context) {
-            return execute(rest, stdin, out, err, new CommandRunner(new CommandProcessor(context.getController())));
+            return execute(rest, stdin, out, err, new CommandRunner(createProcessor(context.getController())));
         } finally {
             ACTIVE.compareAndSet(context, null);
         }
+    }
+
+    /** Presentation wiring: the command processor with its help generators. */
+    static CommandProcessor createProcessor(ParkController controller) {
+        CommandCatalog catalog = CommandCatalog.standard();
+        return new CommandProcessor(controller,
+                new HelpGenerator(catalog, new SyntaxHelpFormatter()),
+                new HelpGenerator(catalog, new ExtendedHelpFormatter()));
     }
 
     private static int execute(String[] args, InputStream stdin, PrintStream out, PrintStream err, CommandRunner runner) {

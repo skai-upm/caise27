@@ -35,7 +35,7 @@ class CommandRunnerTest {
     void setUp() throws IOException {
         ParkController controller = ApplicationContext.start(dir).getController();
         manager = controller.users();
-        runner = new CommandRunner(new CommandProcessor(controller));
+        runner = new CommandRunner(App.createProcessor(controller));
     }
 
     private List<String> run(String... lines) throws IOException {
