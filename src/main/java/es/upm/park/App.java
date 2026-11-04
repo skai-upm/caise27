@@ -10,32 +10,91 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Application entry point. Without arguments commands are read from standard input;
- * with an argument, the first one is the path of a command file. Both modes share
- * the same {@link CommandRunner}.
+ * Application entry point. Without a command-file argument commands are read from
+ * standard input; otherwise the first argument is the path of a command file. Both
+ * modes share the same {@link CommandRunner}. The {@code --fly} option redirects all
+ * persistence files to a temporary per-run directory that is deleted at the end.
  */
 public class App {
 
-    static final Path USERS_FILE = Path.of("users.txt");
-    static final Path GROUPS_FILE = Path.of("groups.txt");
-    static final Path TICKETS_FILE = Path.of("tickets.txt");
-    static final Path GROUP_TICKETS_FILE = Path.of("group-tickets.txt");
-    static final Path ATTRACTIONS_FILE = Path.of("attractions.txt");
+    static final String FLY_OPTION = "--fly";
+    static final String TMP_DIR = "tmp";
 
     public static void main(String[] args) {
-        int status = run(args, new DataFiles(USERS_FILE, GROUPS_FILE, TICKETS_FILE, GROUP_TICKETS_FILE, ATTRACTIONS_FILE), System.in, System.out, System.err);
+        int status = launch(args, Path.of(""), LocalDateTime.now(), System.in, System.out, System.err);
         if (status != 0) {
             System.exit(status);
         }
     }
 
-    /** Runs the application and returns its exit status (0 on success). */
     /** Locations of the persistence files. */
     record DataFiles(Path users, Path groups, Path tickets, Path groupTickets, Path attractions) {
+
+        /** The standard file names inside {@code dir}. */
+        static DataFiles in(Path dir) {
+            return new DataFiles(dir.resolve("users.txt"), dir.resolve("groups.txt"), dir.resolve("tickets.txt"),
+                    dir.resolve("group-tickets.txt"), dir.resolve("attractions.txt"));
+        }
     }
 
+    /**
+     * Interprets the launch arguments: {@code --fly} selects temporary persistence under
+     * {@code workDir/tmp}; the remaining arguments are passed to {@link #run}.
+     */
+    static int launch(String[] args, Path workDir, LocalDateTime start, InputStream stdin, PrintStream out,
+                      PrintStream err) {
+        List<String> rest = new ArrayList<>();
+        boolean fly = false;
+        for (String a : args) {
+            if (FLY_OPTION.equals(a)) {
+                fly = true;
+            } else {
+                rest.add(a);
+            }
+        }
+        String[] commandArgs = rest.toArray(new String[0]);
+        if (!fly) {
+            return run(commandArgs, DataFiles.in(workDir), stdin, out, err);
+        }
+        Path runDir;
+        try {
+            runDir = TemporaryDataDirectory.create(workDir.resolve(TMP_DIR), start);
+        } catch (IOException e) {
+            err.println("ERROR: cannot create temporary directory: " + e.getMessage());
+            return 1;
+        }
+        Thread cleanupOnShutdown = new Thread(() -> deleteQuietly(runDir, err));
+        Runtime.getRuntime().addShutdownHook(cleanupOnShutdown);
+        try {
+            return run(commandArgs, DataFiles.in(runDir), stdin, out, err);
+        } finally {
+            deleteQuietly(runDir, err);
+            removeHook(cleanupOnShutdown);
+        }
+    }
+
+    private static void deleteQuietly(Path dir, PrintStream err) {
+        try {
+            TemporaryDataDirectory.deleteRecursively(dir);
+        } catch (IOException e) {
+            err.println("ERROR: cannot delete temporary directory " + dir + ": " + e.getMessage());
+        }
+    }
+
+    private static void removeHook(Thread hook) {
+        try {
+            Runtime.getRuntime().removeShutdownHook(hook);
+        } catch (IllegalStateException e) {
+            // JVM already shutting down: the hook itself performs the cleanup.
+        }
+    }
+
+    /** Runs the application with the given data files and returns its exit status (0 on success). */
     static int run(String[] args, DataFiles files, InputStream stdin, PrintStream out, PrintStream err) {
         CommandRunner runner;
         try {

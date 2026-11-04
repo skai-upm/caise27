@@ -11,7 +11,9 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -172,5 +174,94 @@ class AppTest {
                 + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nATTRACTION CREATE;A01;Tornado;20\nATTRACTION ENTER;A01;T001\n");
         Run second = run(new String[0], users, "ATTRACTION STATUS;A01\n");
         assertTrue(second.out().contains("Tornado") && second.out().contains("present: 0"), second.out());
+    }
+
+    static final LocalDateTime START = LocalDateTime.of(2026, 8, 26, 19, 3, 15);
+
+    private Run launch(String[] args, String stdin) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int status = App.launch(args, dir, START, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
+                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8));
+        return new Run(status, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
+    }
+
+    private long tmpEntries() throws IOException {
+        Path tmp = dir.resolve("tmp");
+        if (!Files.exists(tmp)) {
+            return 0;
+        }
+        try (Stream<Path> s = Files.list(tmp)) {
+            return s.count();
+        }
+    }
+
+    @Test
+    void flyInteractiveUsesTemporaryDataAndLeavesPermanentFilesUntouched() throws IOException {
+        launch(new String[0], CommandProcessorTest.CREATE_ANA + "\n");
+        byte[] before = Files.readAllBytes(dir.resolve("users.txt"));
+
+        Run fly = launch(new String[] {"--fly"}, "USER DELETE;ana@correo.com;Clave1!\n"
+                + CommandRunnerTest.CREATE_PEDRO + "\nUSER UPDATE;pedro@correo.com;Otra2#;NAME;Pedro Jose\nEXIT\n");
+        String[] lines = fly.out().split("\\R");
+        assertTrue(lines[0].startsWith("ERROR"), "fly run must not see permanent Ana: " + lines[0]);
+        assertTrue(lines[2].startsWith("OK"), "update works on temporary data: " + lines[2]);
+        assertEquals(0, fly.status());
+        assertEquals(0, tmpEntries(), "run directory deleted after EXIT");
+        assertTrue(java.util.Arrays.equals(before, Files.readAllBytes(dir.resolve("users.txt"))));
+        assertFalse(Files.exists(dir.resolve("groups.txt")) && Files.readString(dir.resolve("groups.txt")).contains("Pedro"));
+    }
+
+    @Test
+    void flyFileModeOperatesOnTemporaryData() throws IOException {
+        Path input = dir.resolve("input_fase2.txt");
+        Files.writeString(input, CommandProcessorTest.CREATE_ANA + "\nUSER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\n"
+                + "ATTRACTION CREATE;A01;Tornado;20\n");
+        Run fly = launch(new String[] {"--fly", input.toString()}, "");
+        assertEquals(0, fly.status());
+        assertEquals(3, fly.out().split("\\R").length);
+        assertFalse(fly.out().contains("ERROR"), fly.out());
+        assertFalse(Files.exists(dir.resolve("users.txt")), "no permanent file written");
+        assertFalse(Files.exists(dir.resolve("attractions.txt")));
+        assertEquals(0, tmpEntries(), "run directory deleted at end of file");
+    }
+
+    @Test
+    void flyWithMissingFileCleansUp() throws IOException {
+        Run fly = launch(new String[] {"--fly", dir.resolve("missing.txt").toString()}, "");
+        assertEquals(1, fly.status());
+        assertTrue(fly.err().startsWith("ERROR"));
+        assertEquals(0, tmpEntries());
+    }
+
+    @Test
+    void flyRunDirectoryExistsDuringTheRun() throws IOException {
+        Path input = dir.resolve("cmds.txt");
+        Files.writeString(input, CommandProcessorTest.CREATE_ANA + "\n");
+        Path expected = dir.resolve("tmp").resolve("20260826_190315").resolve("users.txt");
+        java.io.InputStream probe = new java.io.InputStream() {
+            @Override
+            public int read() {
+                return -1;
+            }
+        };
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PrintStream recording = new PrintStream(out, true, StandardCharsets.UTF_8) {
+            @Override
+            public void println(String x) {
+                super.println(x + (Files.exists(expected) ? " [in tmp]" : " [missing]"));
+            }
+        };
+        App.launch(new String[] {"--fly", input.toString()}, dir, START, probe, recording, System.err);
+        assertTrue(out.toString(StandardCharsets.UTF_8).contains("[in tmp]"), out.toString(StandardCharsets.UTF_8));
+        assertFalse(Files.exists(expected));
+    }
+
+    @Test
+    void normalModeCreatesNoTmpDirectory() throws IOException {
+        Run r = launch(new String[0], CommandProcessorTest.CREATE_ANA + "\n");
+        assertEquals(0, r.status());
+        assertTrue(Files.exists(dir.resolve("users.txt")));
+        assertFalse(Files.exists(dir.resolve("tmp")));
     }
 }

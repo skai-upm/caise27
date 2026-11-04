@@ -12,6 +12,8 @@ package es.upm.park {
 
   class CommandRunner
 
+  class TemporaryDataDirectory
+
   class CommandProcessor {
     -exitRequested : boolean
     -currentDate : LocalDate
@@ -128,6 +130,7 @@ Ticket <|-- GroupTicket
 
 ' --- usage, only for classes without incoming relationships
 App ..> CommandRunner : <<use>>
+App ..> TemporaryDataDirectory : <<use>>
 UserManager ..> UserValidator : <<use>>
 GroupManager ..> UserValidator : <<use>>
 TicketManager ..> UserValidator : <<use>>

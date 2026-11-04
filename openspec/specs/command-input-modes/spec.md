@@ -6,7 +6,7 @@ Defines how the application obtains commands — interactively from standard inp
 ## Requirements
 
 ### Requirement: Interactive mode
-When launched without arguments, the application SHALL read commands from standard input, one command per line, and after each non-EXIT command SHALL wait for the next line until `EXIT` is processed or standard input ends.
+When launched without a command-file argument (no arguments, or only the `--fly` option), the application SHALL read commands from standard input, one command per line, and after each non-EXIT command SHALL wait for the next line until `EXIT` is processed or standard input ends.
 
 #### Scenario: Interactive session
 - **GIVEN** the application starts without arguments
@@ -18,13 +18,21 @@ When launched without arguments, the application SHALL read commands from standa
 - **WHEN** standard input ends after a valid command
 - **THEN** the command is processed and the application terminates normally
 
+#### Scenario: Interactive with --fly
+- **WHEN** the application is launched with only `--fly`
+- **THEN** it runs in interactive mode on temporary data
+
 ### Requirement: File mode
-When launched with at least one argument, the application SHALL treat the first argument as the path of a text command file, read it line by line and execute each line as a command in the order it appears.
+When launched with an argument other than the `--fly` option, the application SHALL treat the first such argument as the path of a text command file, read it line by line and execute each line as a command in the order it appears.
 
 #### Scenario: Basic input file
 - **GIVEN** a file `input_basico.txt` containing the creation of Ana and Pedro, `USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999` and `EXIT`
 - **WHEN** the application is launched with `input_basico.txt` as first argument
 - **THEN** both users are created, Ana's phone becomes `699999999`, and processing ends at `EXIT`
+
+#### Scenario: File mode with --fly
+- **WHEN** the application is launched with `--fly input_fase2.txt`
+- **THEN** `input_fase2.txt` is processed as the command file on temporary data
 
 ### Requirement: Blank lines skipped
 Blank or whitespace-only lines SHALL be ignored in both modes: they produce no result message and no error.
