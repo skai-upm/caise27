@@ -9,19 +9,31 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 /**
  * Entry point. Without arguments, commands are read from standard input
  * (interactive mode); with an argument, the first one is the path of a command
  * file (file mode). Both modes share the same {@link CommandRunner}.
+ * A leading {@value #FLY_OPTION} argument redirects all persistence to a
+ * temporary per-run directory that is deleted when the run ends.
  */
 public class App {
 
-    static final Path USERS_FILE = Path.of("users.txt");
+    static final String USERS_FILE_NAME = "users.txt";
+    static final Path USERS_FILE = Path.of(USERS_FILE_NAME);
     static final String GROUPS_FILE_NAME = "groups.txt";
     static final String TICKETS_FILE_NAME = "tickets.txt";
     static final String GROUP_TICKETS_FILE_NAME = "grouptickets.txt";
     static final String ATTRACTIONS_FILE_NAME = "attractions.txt";
+    static final String FLY_OPTION = "--fly";
+    static final String TMP_DIR_NAME = "tmp";
+    private static final DateTimeFormatter RUN_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     public static void main(String[] args) {
         int status = run(args, System.in, System.out, USERS_FILE);
@@ -33,11 +45,37 @@ public class App {
     /**
      * Runs the application.
      *
-     * @param usersFile users file; the other data files ({@value #GROUPS_FILE_NAME}, {@value #TICKETS_FILE_NAME},
-     *                  {@value #GROUP_TICKETS_FILE_NAME}, {@value #ATTRACTIONS_FILE_NAME}) are in the same directory
+     * @param usersFile permanent users file; the other data files ({@value #GROUPS_FILE_NAME},
+     *                  {@value #TICKETS_FILE_NAME}, {@value #GROUP_TICKETS_FILE_NAME},
+     *                  {@value #ATTRACTIONS_FILE_NAME}) are in the same directory. With
+     *                  {@value #FLY_OPTION}, a fresh {@value #TMP_DIR_NAME}/&lt;timestamp&gt; directory next
+     *                  to it is used instead.
      * @return 0 on normal termination, 1 if the stored data or the command file could not be read
      */
     static int run(String[] args, InputStream stdin, PrintStream out, Path usersFile) {
+        if (args.length == 0 || !FLY_OPTION.equals(args[0])) {
+            return runWith(args, stdin, out, usersFile);
+        }
+        Path flyDir;
+        try {
+            flyDir = createFlyDirectory(usersFile.toAbsolutePath().resolveSibling(TMP_DIR_NAME));
+        } catch (IOException e) {
+            out.println("ERROR: Could not create the temporary data directory: " + e);
+            return 1;
+        }
+        Thread cleanupOnShutdown = new Thread(() -> deleteQuietly(flyDir));
+        Runtime.getRuntime().addShutdownHook(cleanupOnShutdown);
+        try {
+            return runWith(Arrays.copyOfRange(args, 1, args.length), stdin, out, flyDir.resolve(USERS_FILE_NAME));
+        } finally {
+            if (!deleteQuietly(flyDir)) {
+                out.println("ERROR: Could not delete temporary directory '" + flyDir + "'");
+            }
+            removeHook(cleanupOnShutdown);
+        }
+    }
+
+    private static int runWith(String[] args, InputStream stdin, PrintStream out, Path usersFile) {
         CommandRunner runner;
         try {
             UserManager users = new UserManager(new UserFileRepository(usersFile));
@@ -63,6 +101,40 @@ public class App {
         } catch (IOException | InvalidPathException e) {
             out.println("ERROR: Cannot open command file '" + file + "': " + e);
             return 1;
+        }
+    }
+
+    /** Creates tmp/yyyyMMdd_HHmmss (or with a _n suffix if taken). Technical timestamp, not a business date. */
+    private static Path createFlyDirectory(Path tmpRoot) throws IOException {
+        Files.createDirectories(tmpRoot);
+        String stamp = LocalDateTime.now(ZoneId.systemDefault()).format(RUN_STAMP);
+        Path dir = tmpRoot.resolve(stamp);
+        for (int n = 1; Files.exists(dir); n++) {
+            dir = tmpRoot.resolve(stamp + "_" + n);
+        }
+        return Files.createDirectory(dir);
+    }
+
+    /** Deletes the directory tree; returns false if something could not be deleted. */
+    private static boolean deleteQuietly(Path dir) {
+        if (!Files.exists(dir)) {
+            return true;
+        }
+        try (Stream<Path> paths = Files.walk(dir)) {
+            for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) {
+                Files.deleteIfExists(p);
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static void removeHook(Thread hook) {
+        try {
+            Runtime.getRuntime().removeShutdownHook(hook);
+        } catch (IllegalStateException e) {
+            // the JVM is already shutting down; the hook will run and find nothing to delete
         }
     }
 }

@@ -134,6 +134,105 @@ class AppTest {
         assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
     }
 
+    private static final List<String> FLY_COMMANDS = List.of(
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+            "SYSTEM DATE;2026-10-15",
+            "GROUP CREATE;G01;Familia Garcia",
+            "GROUP ADD;G01;ana@correo.com",
+            "TICKET CREATE;T001;ana@correo.com;2026-10-15",
+            "GROUPTICKET CREATE;TG01;G01;2026-10-16",
+            "ATTRACTION CREATE;A01;Tornado;20");
+
+    /** Stdin that, when fully read, records which files exist under tmp/ (i.e. while the run is live). */
+    private static InputStream probingInput(String text, Path tmpRoot, List<Path> seen) {
+        InputStream probe = new InputStream() {
+            @Override
+            public int read() throws java.io.IOException {
+                if (seen.isEmpty() && Files.exists(tmpRoot)) {
+                    try (java.util.stream.Stream<Path> files = Files.walk(tmpRoot)) {
+                        files.filter(Files::isRegularFile).forEach(seen::add);
+                    }
+                }
+                return -1;
+            }
+        };
+        return new java.io.SequenceInputStream(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), probe);
+    }
+
+    private static List<Path> tmpChildren(Path tmpRoot) throws java.io.IOException {
+        if (!Files.exists(tmpRoot)) {
+            return List.of();
+        }
+        try (java.util.stream.Stream<Path> children = Files.list(tmpRoot)) {
+            return children.toList();
+        }
+    }
+
+    @Test
+    void flyModeWritesOnlyToATemporaryDirectoryAndRemovesIt() throws Exception {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], String.join("\n", BASIC.get(1), "ATTRACTION CREATE;A09;Noria;5"), users);
+        java.util.Map<Path, byte[]> permanent = new java.util.HashMap<>();
+        try (java.util.stream.Stream<Path> files = Files.list(dir)) {
+            for (Path f : files.filter(Files::isRegularFile).toList()) {
+                permanent.put(f, Files.readAllBytes(f));
+            }
+        }
+        List<Path> seen = new java.util.ArrayList<>();
+        Path tmpRoot = dir.resolve("tmp");
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        int status = App.run(new String[] {"--fly"}, probingInput(String.join("\n", FLY_COMMANDS) + "\n", tmpRoot, seen),
+                new PrintStream(bytes, true, StandardCharsets.UTF_8), users);
+
+        assertEquals(0, status);
+        assertFalse(bytes.toString(StandardCharsets.UTF_8).contains("ERROR"), bytes.toString(StandardCharsets.UTF_8));
+        List<String> names = seen.stream().map(p -> p.getFileName().toString()).sorted().toList();
+        assertEquals(List.of("attractions.txt", "groups.txt", "grouptickets.txt", "tickets.txt", "users.txt"), names);
+        Path runDir = seen.get(0).getParent();
+        assertEquals(tmpRoot, runDir.getParent());
+        assertTrue(runDir.getFileName().toString().matches("\\d{8}_\\d{6}(_\\d+)?"), runDir.toString());
+        for (java.util.Map.Entry<Path, byte[]> e : permanent.entrySet()) {
+            org.junit.jupiter.api.Assertions.assertArrayEquals(e.getValue(), Files.readAllBytes(e.getKey()), e.getKey().toString());
+        }
+        assertTrue(tmpChildren(tmpRoot).isEmpty());
+    }
+
+    @Test
+    void flyModeStartsWithoutStoredData() throws Exception {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], BASIC.get(0), users);
+        Run fly = run(new String[] {"--fly"}, BASIC.get(0) + "\nEXIT\n", users);
+        assertTrue(fly.output().startsWith("OK"), fly.output());
+        assertEquals(1, Files.readAllLines(users).size());
+        assertTrue(tmpChildren(dir.resolve("tmp")).isEmpty());
+    }
+
+    @Test
+    void flyModeWithACommandFileMatchesANormalRun() throws Exception {
+        Path commands = dir.resolve("input_fase2.txt");
+        Files.write(commands, FLY_COMMANDS, StandardCharsets.UTF_8);
+        Path freshDir = Files.createDirectory(dir.resolve("fresh"));
+        Run normal = run(new String[] {commands.toString()}, "", freshDir.resolve("users.txt"));
+        Run fly = run(new String[] {"--fly", commands.toString()}, "", dir.resolve("users.txt"));
+        assertEquals(normal.output(), fly.output());
+        assertFalse(Files.exists(dir.resolve("users.txt")));
+        assertTrue(tmpChildren(dir.resolve("tmp")).isEmpty());
+    }
+
+    @Test
+    void flyModeCleansUpWhenTheCommandFileIsMissing() throws Exception {
+        Run fly = run(new String[] {"--fly", dir.resolve("missing.txt").toString()}, "", dir.resolve("users.txt"));
+        assertEquals(1, fly.status());
+        assertTrue(fly.output().startsWith("ERROR"));
+        assertTrue(tmpChildren(dir.resolve("tmp")).isEmpty());
+    }
+
+    @Test
+    void normalRunCreatesNoTemporaryDirectory() {
+        run(new String[0], BASIC.get(0) + "\nEXIT\n", dir.resolve("users.txt"));
+        assertFalse(Files.exists(dir.resolve("tmp")));
+    }
+
     @Test
     void interactiveModeEndsAtEndOfInput() throws Exception {
         Path users = dir.resolve("users.txt");

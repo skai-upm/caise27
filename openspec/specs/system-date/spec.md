@@ -48,8 +48,8 @@ A `SYSTEM DATE` command whose parameter is not in the exact `yyyy-MM-dd` format,
 - **THEN** the result starts with `ERROR` and the current system date is unchanged
 
 ### Requirement: Time-dependent logic uses the system date
-Every time-dependent business rule SHALL obtain the current date from the application's system date and SHALL NOT read the computer's real date directly. Only the startup initialisation SHALL read the operating system date.
+Every time-dependent business rule SHALL obtain the current date from the application's system date and SHALL NOT read the computer's real date directly. The operating system clock SHALL only be read to initialise the system date at startup and to build technical identifiers that are not business rules, such as the name of the `--fly` temporary directory.
 
 #### Scenario: Code review of date access
 - **WHEN** the production sources are reviewed
-- **THEN** the operating system's date is read only when initialising the system date at startup
+- **THEN** the operating system's date is read only when initialising the system date at startup and when naming the `--fly` temporary directory
