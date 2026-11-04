@@ -33,6 +33,8 @@ public class CommandProcessor {
             "GROUP DELETE;Id",
             "TICKET CREATE;Id;Correo;yyyy-MM-dd",
             "TICKET DELETE;Id",
+            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
+            "GROUPTICKET DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -102,6 +104,9 @@ public class CommandProcessor {
         if (words.size() == 2 && words.get(0).equals("TICKET")) {
             return ticket(words.get(1), params, parts[0].trim());
         }
+        if (words.size() == 2 && words.get(0).equals("GROUPTICKET")) {
+            return groupTicket(words.get(1), params, parts[0].trim());
+        }
         if (words.size() == 2 && words.get(0).equals("GROUP")) {
             return group(words.get(1), params, parts[0].trim());
         }
@@ -159,6 +164,32 @@ public class CommandProcessor {
             }
             case "DELETE" -> {
                 return hasParams(p, 1) ? tickets.delete(p[0], currentDate) : Result.error("Usage: TICKET DELETE;Id");
+            }
+            default -> {
+                return Result.error("Unknown command: " + command);
+            }
+        }
+    }
+
+    private Result groupTicket(String operation, String[] p, String command) {
+        switch (operation) {
+            case "CREATE" -> {
+                if (!hasParams(p, 3)) {
+                    return Result.error("Usage: GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd");
+                }
+                Optional<Group> group = groups.find(p[1]);
+                if (group.isEmpty()) {
+                    return Result.error("Group " + p[1] + " does not exist.");
+                }
+                Optional<LocalDate> date = parseDate(p[2]);
+                if (date.isEmpty()) {
+                    return Result.error("Invalid date '" + p[2] + "': expected format yyyy-MM-dd.");
+                }
+                return tickets.createGroupTicket(p[0], group.get(), date.get(), currentDate, currentPrice);
+            }
+            case "DELETE" -> {
+                return hasParams(p, 1) ? tickets.deleteGroupTicket(p[0], currentDate)
+                        : Result.error("Usage: GROUPTICKET DELETE;Id");
             }
             default -> {
                 return Result.error("Unknown command: " + command);
@@ -225,6 +256,13 @@ public class CommandProcessor {
     }
 
     private Result group(String operation, String[] p, String command) {
+        if (!operation.equals("CREATE") && p.length > 0) {
+            Optional<Group> target = groups.find(p[0]);
+            if (target.isPresent() && tickets.isGroupLocked(target.get(), currentDate)) {
+                return Result.error("Group " + p[0] + " has group tickets dated on or after " + currentDate
+                        + " and cannot be modified or deleted.");
+            }
+        }
         return switch (operation) {
             case "CREATE" -> hasParams(p, 2) ? groups.create(p[0], p[1]) : Result.error("Usage: GROUP CREATE;Id;Nombre");
             case "ADD" -> hasParams(p, 2) ? groups.addMember(p[0], p[1]) : Result.error("Usage: GROUP ADD;Id;Correo");

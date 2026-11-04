@@ -38,7 +38,7 @@ Every ticket SHALL have a unique identifier, a date of use, a reference to its r
 - **THEN** each is rejected and no ticket is created or changed
 
 ### Requirement: Delete ticket
-`TICKET DELETE;<Id>` SHALL delete the ticket only when its date is strictly later than the system date; a ticket dated on or before the system date, or an unknown identifier, SHALL be rejected.
+`TICKET DELETE;<Id>` SHALL delete the ticket only when its date is strictly later than the system date and it does not belong to a group ticket; a ticket dated on or before the system date, a ticket that is part of a group ticket, or an unknown identifier SHALL be rejected.
 
 #### Scenario: Future ticket deleted
 - **GIVEN** system date `2026-10-01` and ticket `T001` dated `2026-10-15`
@@ -50,6 +50,11 @@ Every ticket SHALL have a unique identifier, a date of use, a reference to its r
 - **WHEN** the system date is `2026-10-15` or `2026-10-16` and `TICKET DELETE;T001` is processed
 - **THEN** it is rejected and the ticket is kept
 
+#### Scenario: Constituent of a group ticket
+- **GIVEN** group ticket `TG01` with constituent ticket `TG01-12345678Z` dated in the future
+- **WHEN** `TICKET DELETE;TG01-12345678Z` is processed
+- **THEN** it is rejected and `TG01` keeps all its tickets
+
 ### Requirement: Past tickets kept as history
 Tickets whose date is before the system date SHALL remain stored as historical records; no operation SHALL remove them automatically.
 
@@ -57,3 +62,11 @@ Tickets whose date is before the system date SHALL remain stored as historical r
 - **GIVEN** ticket `T001` dated `2026-10-15`
 - **WHEN** `SYSTEM DATE;2026-12-01` is processed and the application restarts
 - **THEN** ticket `T001` is still stored with its date, user and price
+
+### Requirement: Identifiers unique across all tickets
+A new individual ticket SHALL NOT reuse the identifier of any existing individual ticket, group ticket or constituent ticket, including historical ones.
+
+#### Scenario: Identifier used by a group ticket
+- **GIVEN** group ticket `TG01` exists
+- **WHEN** `TICKET CREATE;TG01;ana@correo.com;2026-10-20` is processed
+- **THEN** it is rejected

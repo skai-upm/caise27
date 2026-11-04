@@ -31,13 +31,15 @@ public class App {
         return run(args, stdin, out, err, DATA_DIR);
     }
 
-    /** Runs with {@code users.txt}, {@code groups.txt} and {@code tickets.txt} inside {@code dataDir}. */
+    /** Runs with the data files ({@code users.txt}, {@code groups.txt}, {@code tickets.txt},
+     *  {@code grouptickets.txt}) inside {@code dataDir}. */
     static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err, Path dataDir) {
         CommandRunner runner;
         try {
             UserManager users = new UserManager(new UserFileStore(dataDir.resolve("users.txt")));
             GroupManager groups = new GroupManager(new GroupFileStore(dataDir.resolve("groups.txt")), users);
-            TicketManager tickets = new TicketManager(new TicketFileStore(dataDir.resolve("tickets.txt")), users);
+            TicketManager tickets = new TicketManager(new TicketFileStore(dataDir.resolve("tickets.txt")),
+                    new GroupTicketFileStore(dataDir.resolve("grouptickets.txt")), users, groups);
             runner = new CommandRunner(new CommandProcessor(users, groups, tickets));
         } catch (IOException e) {
             err.println("ERROR: Cannot load data files: " + describe(e));

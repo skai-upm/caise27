@@ -53,6 +53,11 @@ The system SHALL process `USER DELETE;Correo;Contraseña` by locating the user b
 - **WHEN** `SYSTEM DATE;2026-10-16` and then `USER DELETE;ana@correo.com;Clave1!` are processed
 - **THEN** Ana is deleted and ticket `T001` is retained as history
 
+#### Scenario: Ticket inside a group ticket blocks deletion
+- **GIVEN** system date `2026-10-01` and group ticket `TG01` dated `2026-10-15` containing a ticket for Ana
+- **WHEN** `USER DELETE;ana@correo.com;Clave1!` is processed
+- **THEN** it is rejected and Ana remains registered
+
 ### Requirement: Authenticated update of editable fields
 The system SHALL process `USER UPDATE;Correo;Contraseña;Campo;NuevoValor` where `Campo` is one of `NAME`, `SURNAME`, `EMAIL`, `PASSWORD`, `PHONE`, `CARD` (an enumerated set); it SHALL verify the current email and password first, revalidate the new value with the field's rules, and persist the new state on success.
 

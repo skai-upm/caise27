@@ -30,7 +30,7 @@ class TicketFileStoreTest {
     @Test
     void writesOneLinePerTicketThenHistory() throws IOException {
         Path file = dir.resolve("tickets.txt");
-        Ticket t = new Ticket("T001", LocalDate.of(2026, 10, 15), new BigDecimal("40.00"), ana);
+        IndividualTicket t = new IndividualTicket("T001", LocalDate.of(2026, 10, 15), new BigDecimal("40.00"), ana);
         new TicketFileStore(file).save(List.of(t), List.of("T000;2025-01-01;40.00;87654321X"));
         assertEquals(List.of("T001;2026-10-15;40.00;12345678Z", "T000;2025-01-01;40.00;87654321X"),
                 Files.readAllLines(file));
@@ -43,7 +43,7 @@ class TicketFileStoreTest {
                 "broken", "T009;not-a-date;40.00;12345678Z"));
         TicketFileStore.Contents c = new TicketFileStore(file).load(this::lookup);
         assertEquals(1, c.tickets().size());
-        Ticket t = c.tickets().get(0);
+        IndividualTicket t = c.tickets().get(0);
         assertSame(ana, t.getUser());
         assertEquals(LocalDate.of(2026, 10, 15), t.getDate());
         assertEquals(new BigDecimal("40.00"), t.getPrice());

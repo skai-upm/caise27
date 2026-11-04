@@ -143,4 +143,18 @@ class AppTest {
         assertEquals(List.of("T001;2026-10-15;60.00;12345678Z", "T002;2026-10-20;40.00;12345678Z"),
                 Files.readAllLines(dir.resolve("tickets.txt")));
     }
+
+    @Test
+    void groupTicketLockSurvivesRestart() throws IOException {
+        interactive(CommandRunnerTest.CREATE_ANA, CommandRunnerTest.CREATE_PEDRO, "SYSTEM DATE;2026-10-01",
+                "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com", "GROUP ADD;G01;pedro@correo.com",
+                "GROUPTICKET CREATE;TG01;G01;2026-10-15", "EXIT");
+        Run second = interactive("SYSTEM DATE;2026-10-01", "GROUP REMOVE;G01;ana@correo.com",
+                "USER DELETE;pedro@correo.com;Otra2#", "EXIT");
+        List<String> out = second.out().lines().toList();
+        assertTrue(out.get(1).startsWith("ERROR: Group G01"));
+        assertTrue(out.get(2).startsWith("ERROR: User pedro@correo.com"));
+        assertEquals(List.of("TG01;2026-10-15;80.00;G01;40.00;12345678Z;87654321X"),
+                Files.readAllLines(dir.resolve("grouptickets.txt")));
+    }
 }

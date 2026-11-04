@@ -106,28 +106,65 @@ package es.upm.park {
 
   class TicketManager {
     - historicalLines : List<String>
-    + getTickets() : List<Ticket>
-    + find(id : String) : Optional<Ticket>
+    - groupHistoricalLines : List<String>
+    - historicalIds : Set<String>
+    + getTickets() : List<IndividualTicket>
+    + getGroupTickets() : List<GroupTicket>
+    + allTickets() : List<Ticket>
+    + find(id : String) : Optional<IndividualTicket>
+    + findGroupTicket(id : String) : Optional<GroupTicket>
     + create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Result
     + delete(id : String, today : LocalDate) : Result
+    + createGroupTicket(id : String, group : Group, date : LocalDate, today : LocalDate, price : BigDecimal) : Result
+    + deleteGroupTicket(id : String, today : LocalDate) : Result
     + hasTicketOnOrAfter(user : User, today : LocalDate) : boolean
+    + isGroupLocked(group : Group, today : LocalDate) : boolean
   }
 
   class TicketFileStore {
     - file : Path
     + load(userByDni : Function<String, Optional<User>>) : Contents
-    + save(tickets : List<Ticket>, historicalLines : List<String>) : void
+    + save(tickets : List<IndividualTicket>, historicalLines : List<String>) : void
   }
 
   class "TicketFileStore.Contents" as TicketContents <<record>> {
-    + tickets : List<Ticket>
+    + tickets : List<IndividualTicket>
     + historicalLines : List<String>
   }
 
-  class Ticket {
+  class GroupTicketFileStore {
+    - file : Path
+    + load(groupById : Function<String, Optional<Group>>, userByDni : Function<String, Optional<User>>) : Contents
+    + save(groupTickets : List<GroupTicket>, historicalLines : List<String>) : void
+    + {static} idsOf(line : String) : List<String>
+  }
+
+  class "GroupTicketFileStore.Contents" as GroupTicketContents <<record>> {
+    + groupTickets : List<GroupTicket>
+    + historicalLines : List<String>
+  }
+
+  abstract class Ticket {
     - id : String {readOnly}
     - date : LocalDate {readOnly}
     - price : BigDecimal {readOnly}
+    + getId() : String
+    + getDate() : LocalDate
+    + getPrice() : BigDecimal
+  }
+
+  class IndividualTicket {
+    + getUser() : User
+  }
+
+  class GroupTicket {
+    - basePrice : BigDecimal {readOnly}
+    + {static} purchase(id : String, date : LocalDate, group : Group, basePrice : BigDecimal) : GroupTicket
+    + {static} constituentId(id : String, member : User) : String
+    + {static} discountPercent(members : int) : int
+    + {static} totalPrice(basePrice : BigDecimal, members : int) : BigDecimal
+    + getGroup() : Group
+    + getTickets() : List<IndividualTicket>
   }
 }
 
@@ -147,10 +184,18 @@ GroupManager *-- "0..*" Group : groups
 Group "0..*" o-- "0..*" User : members
 TicketManager --> "1" TicketFileStore : store
 TicketManager --> "1" UserManager : users
-TicketManager *-- "0..*" Ticket : tickets
-Ticket "0..*" --> "1" User : user
+TicketManager --> "1" GroupTicketFileStore : groupStore
+TicketManager *-- "0..*" IndividualTicket : tickets
+TicketManager *-- "0..*" GroupTicket : groupTickets
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+IndividualTicket "0..*" --> "1" User : user
+GroupTicket "0..*" o--> "1" Group : group
+GroupTicket "1" *--> "1..*" IndividualTicket : tickets
 TicketFileStore ..> TicketContents : returns
-TicketFileStore ..> Ticket : reads/writes
+TicketFileStore ..> IndividualTicket : reads/writes
+GroupTicketFileStore ..> GroupTicketContents : returns
+GroupTicketFileStore ..> GroupTicket : reads/writes
 UserFileStore ..> User : reads/writes
 GroupFileStore ..> Group : reads/writes
 @enduml

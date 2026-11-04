@@ -35,7 +35,13 @@ class TicketManagerTest {
         ticketsFile = dir.resolve("tickets.txt");
         users = new UserManager(new UserFileStore(usersFile));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
-        tickets = new TicketManager(new TicketFileStore(ticketsFile), users);
+        tickets = newTickets(users);
+    }
+
+    private TicketManager newTickets(UserManager u) throws IOException {
+        GroupManager g = new GroupManager(new GroupFileStore(dir.resolve("groups.txt")), u);
+        return new TicketManager(new TicketFileStore(ticketsFile),
+                new GroupTicketFileStore(dir.resolve("grouptickets.txt")), u, g);
     }
 
     private List<String> lines() throws IOException {
@@ -46,7 +52,7 @@ class TicketManagerTest {
     void createReportsPriceAndLinksUser() throws IOException {
         Result r = tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
         assertEquals("OK TICKET CREATED -> 40.00", r.toString());
-        Ticket t = tickets.find("T001").orElseThrow();
+        IndividualTicket t = tickets.find("T001").orElseThrow();
         assertSame(users.findByEmail("ana@correo.com").orElseThrow(), t.getUser());
         assertEquals(List.of("T001;2026-10-15;40.00;12345678Z"), lines());
     }
@@ -103,7 +109,7 @@ class TicketManagerTest {
         assertTrue(users.delete("ana@correo.com", "Clave1!").success());
 
         UserManager users2 = new UserManager(new UserFileStore(usersFile));
-        TicketManager tickets2 = new TicketManager(new TicketFileStore(ticketsFile), users2);
+        TicketManager tickets2 = newTickets(users2);
         assertTrue(tickets2.getTickets().isEmpty());
         users2.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
         assertFalse(tickets2.create("T001", "pedro@correo.com", OCT_15, OCT_1, P40).success(), "id reserved by history");
@@ -115,8 +121,8 @@ class TicketManagerTest {
     void restartRestoresLinkedTickets() throws IOException {
         tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
         UserManager users2 = new UserManager(new UserFileStore(usersFile));
-        TicketManager tickets2 = new TicketManager(new TicketFileStore(ticketsFile), users2);
-        Ticket t = tickets2.find("T001").orElseThrow();
+        TicketManager tickets2 = newTickets(users2);
+        IndividualTicket t = tickets2.find("T001").orElseThrow();
         assertSame(users2.findByEmail("ana@correo.com").orElseThrow(), t.getUser());
         assertEquals(P40, t.getPrice());
     }

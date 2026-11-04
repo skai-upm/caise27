@@ -24,7 +24,7 @@ public class TicketFileStore {
     private static final int FIELD_COUNT = 4;
 
     /** Content of the tickets file: tickets linked to users plus preserved historical lines. */
-    public record Contents(List<Ticket> tickets, List<String> historicalLines) {
+    public record Contents(List<IndividualTicket> tickets, List<String> historicalLines) {
     }
 
     private final Path file;
@@ -34,7 +34,7 @@ public class TicketFileStore {
     }
 
     public Contents load(Function<String, Optional<User>> userByDni) throws IOException {
-        List<Ticket> tickets = new ArrayList<>();
+        List<IndividualTicket> tickets = new ArrayList<>();
         List<String> history = new ArrayList<>();
         if (!Files.exists(file)) {
             return new Contents(tickets, history);
@@ -46,7 +46,7 @@ public class TicketFileStore {
                 continue;
             }
             String[] f = line.split(SEPARATOR, -1);
-            Ticket ticket = f.length == FIELD_COUNT ? parse(f, userByDni) : null;
+            IndividualTicket ticket = f.length == FIELD_COUNT ? parse(f, userByDni) : null;
             if (ticket != null) {
                 tickets.add(ticket);
             } else if (f.length == FIELD_COUNT && userByDni.apply(f[3]).isEmpty()) {
@@ -58,22 +58,22 @@ public class TicketFileStore {
         return new Contents(tickets, history);
     }
 
-    private static Ticket parse(String[] f, Function<String, Optional<User>> userByDni) {
+    private static IndividualTicket parse(String[] f, Function<String, Optional<User>> userByDni) {
         Optional<User> user = userByDni.apply(f[3]);
         if (user.isEmpty() || f[0].isBlank()) {
             return null;
         }
         try {
-            return new Ticket(f[0], LocalDate.parse(f[1]), new BigDecimal(f[2]), user.get());
+            return new IndividualTicket(f[0], LocalDate.parse(f[1]), new BigDecimal(f[2]), user.get());
         } catch (DateTimeParseException | NumberFormatException e) {
             return null;
         }
     }
 
     /** Replaces the file content with the tickets followed by the historical lines. */
-    public void save(List<Ticket> tickets, List<String> historicalLines) throws IOException {
+    public void save(List<IndividualTicket> tickets, List<String> historicalLines) throws IOException {
         List<String> lines = new ArrayList<>();
-        for (Ticket t : tickets) {
+        for (IndividualTicket t : tickets) {
             lines.add(String.join(SEPARATOR, t.getId(), t.getDate().toString(),
                     t.getPrice().toPlainString(), t.getUser().getDni()));
         }

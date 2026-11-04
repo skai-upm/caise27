@@ -7,7 +7,7 @@ Keeps a PlantUML class model in the repository that documents the application's 
 ## Requirements
 
 ### Requirement: PlantUML class model
-The repository SHALL contain `uml/model.puml`, a valid PlantUML class diagram representing the application's current classes, including `Group` and `Ticket`, their relationships with `User`, and the classes that manage and persist them, with multiplicities.
+The repository SHALL contain `uml/model.puml`, a valid PlantUML class diagram representing the application's current classes, including `Group`, the ticket hierarchy and their relationships with `User`, and the classes that manage and persist them, with multiplicities.
 
 #### Scenario: Model is valid and current
 - **WHEN** `uml/model.puml` is checked with PlantUML
@@ -15,4 +15,8 @@ The repository SHALL contain `uml/model.puml`, a valid PlantUML class diagram re
 
 #### Scenario: Ticket classes represented
 - **WHEN** `uml/model.puml` is reviewed
-- **THEN** it contains `Ticket`, `TicketManager`, `TicketFileStore` and a `Ticket`–`User` association where each ticket refers to exactly one user and a user has zero or more tickets
+- **THEN** it contains `TicketManager`, `TicketFileStore` and an individual-ticket–`User` association where each individual ticket refers to exactly one user and a user has zero or more tickets
+
+#### Scenario: Group ticket relationships represented
+- **WHEN** `uml/model.puml` is reviewed
+- **THEN** it shows abstract `Ticket` specialized by `IndividualTicket` and `GroupTicket`, an aggregation from `GroupTicket` to `Group` (each group ticket belongs to exactly one group), a composition from `GroupTicket` to its one or more `IndividualTicket`s, and `GroupTicketFileStore`
