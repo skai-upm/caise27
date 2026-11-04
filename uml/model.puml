@@ -1,28 +1,24 @@
 @startuml model
-' Class model of the amusement-park application (package es.upm.park).
+' Class model of the amusement-park application (package es.upm.park),
+' derived from the current implementation.
+' Notation: class bodies list attributes only (primitive/value types and enums);
+' references to modelled classes are drawn as relationships named after the
+' holding attribute, with a cross (association) or diamond (aggregation /
+' composition) at the holder end and an arrowhead at the referenced class.
+' Dependency arrows are shown only for classes without incoming relationships.
 hide empty members
+hide circle
 skinparam classAttributeIconSize 0
 
 package es.upm.park {
 
-  class App {
-    ~ {static} DATA_DIR : Path
-    + {static} main(args : String[]) : void
-    ~ {static} run(args : String[], stdin : InputStream, out : PrintStream, err : PrintStream) : int
-  }
+  class App
 
-  class CommandRunner {
-    + run(in : BufferedReader, out : PrintStream) : void
-  }
+  class CommandRunner
 
   class CommandProcessor {
-    - {static} COMMAND_SYNTAX : List<String>
-    ~ {static} DEFAULT_PRICE : BigDecimal
     - currentDate : LocalDate
     - currentPrice : BigDecimal
-    + process(line : String) : Result
-    + getCurrentDate() : LocalDate
-    + getCurrentPrice() : BigDecimal
   }
 
   class Result <<record>> {
@@ -30,32 +26,12 @@ package es.upm.park {
     + message : String
     + terminate : boolean
     + verbatim : boolean
-    + {static} ok(message : String) : Result
-    + {static} error(message : String) : Result
-    + {static} exit(message : String) : Result
-    + {static} verbatim(success : boolean, text : String) : Result
-  }
-
-  class UserManager {
-    + getUsers() : List<User>
-    + findByEmail(email : String) : Optional<User>
-    + findByDni(dni : String) : Optional<User>
-    + authenticate(email : String, password : String) : Optional<User>
-    + create(firstName : String, surnames : String, dni : String, email : String, password : String, phone : String, card : String) : Result
-    + delete(email : String, password : String) : Result
-    + update(email : String, password : String, field : UserField, newValue : String) : Result
-  }
-
-  class UserFileStore {
-    - file : Path
-    + load() : List<User>
-    + save(users : List<User>) : void
   }
 
   class User {
     - firstName : String
     - surnames : String
-    - dni : String {readOnly}
+    - dni : String
     - email : String
     - password : String
     - phone : String
@@ -71,169 +47,125 @@ package es.upm.park {
     CARD
   }
 
-  class UserValidator <<utility>> {
-    + {static} isValidDni(dni : String) : boolean
-    + {static} isValidEmail(email : String) : boolean
-    + {static} isValidPassword(password : String) : boolean
-    + {static} isValidCard(card : String) : boolean
-    + {static} isNonBlank(value : String) : boolean
-  }
+  class UserValidator
 
-  class GroupManager {
-    + getGroups() : List<Group>
-    + find(id : String) : Optional<Group>
-    + create(id : String, name : String) : Result
-    + delete(id : String) : Result
-    + addMember(id : String, email : String) : Result
-    + removeMember(id : String, email : String) : Result
-    + removeUserEverywhere(user : User) : Result
-  }
+  class UserManager
 
-  class GroupFileStore {
+  class UserFileStore {
     - file : Path
-    + load(userByDni : Function<String, Optional<User>>) : List<Group>
-    + save(groups : List<Group>) : void
   }
 
   class Group {
-    - id : String {readOnly}
-    - name : String {readOnly}
-    + getMembers() : List<User>
-    + contains(user : User) : boolean
-    + addMember(user : User) : boolean
-    + removeMember(user : User) : boolean
+    - id : String
+    - name : String
+  }
+
+  class GroupManager
+
+  class GroupFileStore {
+    - file : Path
+  }
+
+  abstract class Ticket {
+    - id : String
+    - date : LocalDate
+    - price : BigDecimal
+  }
+
+  class IndividualTicket
+
+  class GroupTicket {
+    - basePrice : BigDecimal
   }
 
   class TicketManager {
     - historicalLines : List<String>
     - groupHistoricalLines : List<String>
     - historicalIds : Set<String>
-    + getTickets() : List<IndividualTicket>
-    + getGroupTickets() : List<GroupTicket>
-    + allTickets() : List<Ticket>
-    + find(id : String) : Optional<IndividualTicket>
-    + findGroupTicket(id : String) : Optional<GroupTicket>
-    + findForAccess(id : String) : Optional<Ticket>
-    + create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Result
-    + delete(id : String, today : LocalDate) : Result
-    + createGroupTicket(id : String, group : Group, date : LocalDate, today : LocalDate, price : BigDecimal) : Result
-    + deleteGroupTicket(id : String, today : LocalDate) : Result
-    + hasTicketOnOrAfter(user : User, today : LocalDate) : boolean
-    + isGroupLocked(group : Group, today : LocalDate) : boolean
   }
 
   class TicketFileStore {
     - file : Path
-    + load(userByDni : Function<String, Optional<User>>) : Contents
-    + save(tickets : List<IndividualTicket>, historicalLines : List<String>) : void
   }
 
   class "TicketFileStore.Contents" as TicketContents <<record>> {
-    + tickets : List<IndividualTicket>
     + historicalLines : List<String>
   }
 
   class GroupTicketFileStore {
     - file : Path
-    + load(groupById : Function<String, Optional<Group>>, userByDni : Function<String, Optional<User>>) : Contents
-    + save(groupTickets : List<GroupTicket>, historicalLines : List<String>) : void
-    + {static} idsOf(line : String) : List<String>
   }
 
   class "GroupTicketFileStore.Contents" as GroupTicketContents <<record>> {
-    + groupTickets : List<GroupTicket>
     + historicalLines : List<String>
   }
 
-  abstract class Ticket {
-    - id : String {readOnly}
-    - date : LocalDate {readOnly}
-    - price : BigDecimal {readOnly}
-    + getId() : String
-    + getDate() : LocalDate
-    + getPrice() : BigDecimal
-    + {abstract} getHolders() : List<User>
-  }
-
-  class IndividualTicket {
-    + getUser() : User
-    + getHolders() : List<User>
-  }
-
-  class GroupTicket {
-    - basePrice : BigDecimal {readOnly}
-    + {static} purchase(id : String, date : LocalDate, group : Group, basePrice : BigDecimal) : GroupTicket
-    + {static} constituentId(id : String, member : User) : String
-    + {static} discountPercent(members : int) : int
-    + {static} totalPrice(basePrice : BigDecimal, members : int) : BigDecimal
-    + getGroup() : Group
-    + getTickets() : List<IndividualTicket>
-    + getHolders() : List<User>
-  }
-
   class Attraction {
-    - id : String {readOnly}
-    - name : String {readOnly}
-    - capacity : int {readOnly}
-    + getAvailable() : int
-    + getPresent() : List<User>
-    + isPresent(user : User) : boolean
-    + enter(ticket : Ticket, today : LocalDate) : Result
-    + exit(ticket : Ticket) : Result
-    + remove(user : User) : void
+    - id : String
+    - name : String
+    - capacity : int
   }
 
-  class AttractionManager {
-    + getAttractions() : List<Attraction>
-    + find(id : String) : Optional<Attraction>
-    + create(id : String, name : String, capacityText : String) : Result
-    + enter(attractionId : String, ticket : Optional<Ticket>, ticketId : String, today : LocalDate) : Result
-    + exit(attractionId : String, ticket : Optional<Ticket>, ticketId : String) : Result
-    + status(attractionId : String) : Result
-    + removeUserEverywhere(user : User) : void
-  }
+  class AttractionManager
 
   class AttractionFileStore {
     - file : Path
-    + load() : List<Attraction>
-    + save(attractions : List<Attraction>) : void
   }
 }
 
-App ..> CommandRunner : creates
-CommandRunner --> "1" CommandProcessor : processor
-CommandProcessor --> "1" UserManager : users
-CommandProcessor --> "1" GroupManager : groups
-CommandProcessor --> "1" TicketManager : tickets
-CommandProcessor --> "1" AttractionManager : attractions
-CommandProcessor ..> Result : returns
-UserManager --> "1" UserFileStore : store
-UserManager *-- "0..*" User : users
-UserManager ..> UserValidator : uses
-UserManager ..> UserField : uses
-GroupManager --> "1" GroupFileStore : store
-GroupManager --> "1" UserManager : users
-GroupManager *-- "0..*" Group : groups
-Group "0..*" o-- "0..*" User : members
-TicketManager --> "1" TicketFileStore : store
-TicketManager --> "1" UserManager : users
-TicketManager --> "1" GroupTicketFileStore : groupStore
-TicketManager *-- "0..*" IndividualTicket : tickets
-TicketManager *-- "0..*" GroupTicket : groupTickets
+' ---- Control ----
+CommandRunner "0..1" x--> "1" CommandProcessor : processor
+CommandProcessor "0..1" x--> "1" UserManager : users
+CommandProcessor "0..1" x--> "1" GroupManager : groups
+CommandProcessor "0..1" x--> "1" TicketManager : tickets
+CommandProcessor "0..1" x--> "1" AttractionManager : attractions
+
+' ---- Users ----
+UserManager "0..1" x--> "1" UserFileStore : store
+UserManager "1" *--> "0..*" User : users
+
+' ---- Groups ----
+GroupManager "0..1" x--> "1" GroupFileStore : store
+GroupManager "0..*" x--> "1" UserManager : users
+GroupManager "1" *--> "0..*" Group : groups
+Group "0..*" o--> "0..*" User : members
+
+' ---- Tickets ----
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
-IndividualTicket "0..*" --> "1" User : user
+IndividualTicket "0..*" x--> "1" User : user
 GroupTicket "0..*" o--> "1" Group : group
-GroupTicket "1" *--> "1..*" IndividualTicket : tickets
-TicketFileStore ..> TicketContents : returns
-TicketFileStore ..> IndividualTicket : reads/writes
-GroupTicketFileStore ..> GroupTicketContents : returns
-GroupTicketFileStore ..> GroupTicket : reads/writes
-AttractionManager --> "1" AttractionFileStore : store
-AttractionManager *-- "0..*" Attraction : attractions
-Attraction "0..*" o-- "0..*" User : present
-Attraction ..> Ticket : admits holders of
-AttractionFileStore ..> Attraction : reads/writes
-UserFileStore ..> User : reads/writes
-GroupFileStore ..> Group : reads/writes
+GroupTicket "0..1" *--> "1..*" IndividualTicket : tickets
+TicketManager "0..1" x--> "1" TicketFileStore : store
+TicketManager "0..1" x--> "1" GroupTicketFileStore : groupStore
+TicketManager "0..*" x--> "1" UserManager : users
+TicketManager "1" *--> "0..*" IndividualTicket : tickets
+TicketManager "1" *--> "0..*" GroupTicket : groupTickets
+TicketContents "0..*" x--> "0..*" IndividualTicket : tickets
+GroupTicketContents "0..*" x--> "0..*" GroupTicket : groupTickets
+
+' ---- Attractions ----
+AttractionManager "0..1" x--> "1" AttractionFileStore : store
+AttractionManager "1" *--> "0..*" Attraction : attractions
+Attraction "0..*" o--> "0..*" User : present
+
+' ---- Usage of classes without incoming relationships ----
+App ..> CommandRunner : creates
+UserManager ..> UserValidator
+GroupManager ..> UserValidator
+TicketManager ..> UserValidator
+AttractionManager ..> UserValidator
+UserManager ..> UserField
+CommandProcessor ..> UserField
+CommandProcessor ..> Result
+CommandRunner ..> Result
+UserManager ..> Result
+GroupManager ..> Result
+TicketManager ..> Result
+AttractionManager ..> Result
+Attraction ..> Result
+TicketFileStore ..> TicketContents
+TicketManager ..> TicketContents
+GroupTicketFileStore ..> GroupTicketContents
+TicketManager ..> GroupTicketContents
 @enduml
