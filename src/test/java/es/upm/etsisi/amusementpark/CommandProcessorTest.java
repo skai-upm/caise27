@@ -41,7 +41,8 @@ class CommandProcessorTest {
         UserManager users = new UserManager(new UserFileRepository(file));
         GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users);
         return new CommandProcessor(users, groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
-                new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups), START);
+                new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups),
+                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))), START);
     }
 
     private static void assertOk(String result) {
@@ -137,9 +138,10 @@ class CommandProcessorTest {
         GroupManager g = new GroupManager(new GroupFileRepository(dir.resolve("other-groups.txt")), m);
         TicketManager t = new TicketManager(new TicketFileRepository(dir.resolve("other-tickets.txt")),
                 new GroupTicketFileRepository(dir.resolve("other-grouptickets.txt")), m, g);
-        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(m, g, t, LocalDate.of(2026, 1, 1)).getCurrentDate());
+        AttractionManager a = new AttractionManager(new AttractionFileRepository(dir.resolve("other-attractions.txt")));
+        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(m, g, t, a, LocalDate.of(2026, 1, 1)).getCurrentDate());
         LocalDate before = LocalDate.now();
-        LocalDate actual = new CommandProcessor(m, g, t).getCurrentDate();
+        LocalDate actual = new CommandProcessor(m, g, t, a).getCurrentDate();
         assertFalse(actual.isBefore(before));
         assertFalse(actual.isAfter(LocalDate.now()));
     }
@@ -401,6 +403,84 @@ class CommandProcessorTest {
         String help = processor.process("HELP");
         assertTrue(help.contains("GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd"));
         assertTrue(help.contains("GROUPTICKET DELETE;Id"));
+    }
+
+    private void sourceAttractionSetup() {
+        groupOfThree();
+        assertOk(processor.process("ATTRACTION CREATE;A01;Tornado;20"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-15"));
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertOk(processor.process("USER CREATE;Eva;Sanz;22222222J;eva@correo.com;Eva4%a;645678901;5555666677778888"));
+        assertOk(processor.process("GROUP CREATE;G02;Amigos"));
+        assertOk(processor.process("GROUP ADD;G02;pedro@correo.com"));
+        assertOk(processor.process("GROUP ADD;G02;luis@correo.com"));
+        assertOk(processor.process("GROUP ADD;G02;eva@correo.com"));
+        assertEquals("OK GROUP TICKET CREATED -> 108.00", processor.process("GROUPTICKET CREATE;TG01;G02;2026-10-15"));
+    }
+
+    @Test
+    void attractionSourceExample() {
+        sourceAttractionSetup();
+        assertOk(processor.process("ATTRACTION ENTER;A01;T001"));
+        assertOk(processor.process("ATTRACTION ENTER;A01;TG01"));
+        String status = processor.process("ATTRACTION STATUS;A01");
+        assertTrue(status.startsWith("OK: Attraction A01 (Tornado) capacity=20 present=4 available=16"), status);
+        for (String email : List.of("ana@correo.com", "pedro@correo.com", "luis@correo.com", "eva@correo.com")) {
+            assertTrue(status.contains(email), email);
+        }
+        assertOk(processor.process("ATTRACTION EXIT;A01;T001"));
+        status = processor.process("ATTRACTION STATUS;A01");
+        assertTrue(status.contains("present=3 available=17"), status);
+        assertFalse(status.contains("ana@correo.com"));
+    }
+
+    @Test
+    void attractionEntryRules() {
+        sourceAttractionSetup();
+        assertOk(processor.process("ATTRACTION CREATE;A02;Mini;3"));
+        assertOk(processor.process("ATTRACTION ENTER;A02;T001"));
+        assertError(processor.process("ATTRACTION ENTER;A02;TG01"));
+        assertTrue(processor.process("ATTRACTION STATUS;A02").contains("present=1 available=2"));
+        assertError(processor.process("ATTRACTION ENTER;A02;T001"));
+        assertOk(processor.process("ATTRACTION EXIT;A02;T001"));
+        assertOk(processor.process("ATTRACTION ENTER;A02;TG01"));
+        assertTrue(processor.process("ATTRACTION STATUS;A02").contains("present=3 available=0"));
+        assertOk(processor.process("ATTRACTION ENTER;A01;TG01-87654321X"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-16"));
+        assertError(processor.process("ATTRACTION ENTER;A01;T001"));
+        assertOk(processor.process("ATTRACTION EXIT;A02;TG01"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-14"));
+        assertError(processor.process("ATTRACTION ENTER;A01;T001"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ATTRACTION CREATE;A01;Otra;5", "ATTRACTION CREATE;A09;X;0", "ATTRACTION CREATE;A09;X;dos",
+        "ATTRACTION CREATE;A09;X", "ATTRACTION ENTER;A99;T001", "ATTRACTION ENTER;A01;T999", "ATTRACTION ENTER;A01",
+        "ATTRACTION EXIT;A01;T001", "ATTRACTION EXIT;A01;T999", "ATTRACTION EXIT;A99;T001", "ATTRACTION STATUS;A99",
+        "ATTRACTION STATUS", "ATTRACTION OPEN;A01"})
+    void invalidAttractionCommands(String command) {
+        sourceAttractionSetup();
+        assertError(processor.process(command));
+        assertTrue(processor.process("ATTRACTION STATUS;A01").contains("present=0 available=20"));
+    }
+
+    @Test
+    void deletedUserLeavesAttractions() {
+        sourceAttractionSetup();
+        assertOk(processor.process("ATTRACTION ENTER;A01;T001"));
+        assertOk(processor.process("SYSTEM DATE;2026-10-16"));
+        assertOk(processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        String status = processor.process("ATTRACTION STATUS;A01");
+        assertTrue(status.contains("present=0 available=20"), status);
+    }
+
+    @Test
+    void helpListsAttractionCommands() {
+        String help = processor.process("HELP");
+        for (String syntax : List.of("ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION ENTER;IdAtraccion;IdTicket",
+                "ATTRACTION EXIT;IdAtraccion;IdTicket", "ATTRACTION STATUS;IdAtraccion")) {
+            assertTrue(help.contains(syntax), syntax);
+        }
     }
 
     @Test

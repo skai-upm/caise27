@@ -124,6 +124,17 @@ class AppTest {
     }
 
     @Test
+    void attractionsSurviveRestartEmpty() throws Exception {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], String.join("\n", BASIC.get(0), "SYSTEM DATE;2026-10-15", "ATTRACTION CREATE;A01;Tornado;20",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15", "ATTRACTION ENTER;A01;T001"), users);
+        Run second = run(new String[0], "ATTRACTION STATUS;A01\n", users);
+        assertTrue(second.output().startsWith("OK: Attraction A01 (Tornado) capacity=20 present=0 available=20"),
+                second.output());
+        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+    }
+
+    @Test
     void interactiveModeEndsAtEndOfInput() throws Exception {
         Path users = dir.resolve("users.txt");
         Run r = run(new String[0], BASIC.get(0) + "\n", users);

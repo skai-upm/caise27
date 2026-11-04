@@ -103,6 +103,16 @@ public class GroupTicket extends Ticket {
         group = null;
     }
 
+    /** The users of all constituent tickets. */
+    @Override
+    public List<User> getVisitors() {
+        List<User> visitors = new ArrayList<>();
+        for (IndividualTicket part : parts) {
+            visitors.addAll(part.getVisitors());
+        }
+        return visitors;
+    }
+
     /** The constituent individual tickets (fixed at purchase). */
     public List<IndividualTicket> getParts() {
         return Collections.unmodifiableList(parts);

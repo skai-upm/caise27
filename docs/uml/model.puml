@@ -10,6 +10,7 @@ class App {
   {static} ~GROUPS_FILE_NAME : String
   {static} ~TICKETS_FILE_NAME : String
   {static} ~GROUP_TICKETS_FILE_NAME : String
+  {static} ~ATTRACTIONS_FILE_NAME : String
   {static} +main(args : String[]) : void
   {static} ~run(args : String[], stdin : InputStream, out : PrintStream, usersFile : Path) : int
 }
@@ -103,6 +104,7 @@ class TicketManager {
   +allTickets() : List<Ticket>
   +find(id : String) : Optional<IndividualTicket>
   +findGroupTicket(id : String) : Optional<GroupTicket>
+  +findAnyTicket(id : String) : Optional<Ticket>
   +create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : IndividualTicket
   +createGroupTicket(id : String, group : Group, date : LocalDate, today : LocalDate, price : BigDecimal) : GroupTicket
   +delete(id : String, today : LocalDate) : void
@@ -129,6 +131,7 @@ abstract class Ticket {
   -id : String {readOnly}
   -date : LocalDate {readOnly}
   +{abstract} getPrice() : BigDecimal
+  +{abstract} getVisitors() : List<User>
   +isOnOrAfter(day : LocalDate) : boolean
 }
 
@@ -136,6 +139,7 @@ class IndividualTicket {
   -price : BigDecimal {readOnly}
   -ownerDni : String {readOnly}
   +getPrice() : BigDecimal
+  +getVisitors() : List<User>
   +getUser() : Optional<User>
   +belongsTo(user : User) : boolean
   +detachUser() : void
@@ -148,9 +152,35 @@ class GroupTicket {
   {static} +discountPercent(members : int) : int
   {static} +totalFor(basePrice : BigDecimal, members : int) : BigDecimal
   +getPrice() : BigDecimal
+  +getVisitors() : List<User>
   +getGroup() : Optional<Group>
   +getParts() : List<IndividualTicket>
   +detachGroup() : void
+}
+
+class AttractionManager {
+  +getAttractions() : Collection<Attraction>
+  +find(id : String) : Optional<Attraction>
+  +require(id : String) : Attraction
+  +create(id : String, name : String, capacityText : String) : Attraction
+  +removeUserEverywhere(user : User) : void
+}
+
+class AttractionFileRepository {
+  -file : Path
+  +load() : List<Attraction>
+  +save(attractions : Collection<Attraction>) : void
+}
+
+class Attraction {
+  -id : String {readOnly}
+  -name : String {readOnly}
+  -capacity : int {readOnly}
+  +getAvailable() : int
+  +isPresent(user : User) : boolean
+  +enter(ticket : Ticket, today : LocalDate) : void
+  +exit(ticket : Ticket) : void
+  +remove(user : User) : void
 }
 
 Ticket <|-- IndividualTicket
@@ -180,6 +210,13 @@ GroupTicket "1" *-- "1..*" IndividualTicket : parts
 GroupTicket "0..*" o-- "0..1" Group : group
 TicketFileRepository ..> IndividualTicket
 GroupTicketFileRepository ..> GroupTicket
+CommandProcessor "1" --> "1" AttractionManager : attractions
+AttractionManager "1" --> "1" AttractionFileRepository : repository
+AttractionManager "1" *-- "0..*" Attraction : attractions
+Attraction "0..*" o-- "0..*" User : present
+Attraction ..> Ticket : enter/exit via getVisitors()
+AttractionFileRepository ..> Attraction
+AttractionManager ..> UserException : throws
 TicketManager ..> UserException : throws
 UserFileRepository ..> User
 GroupFileRepository ..> Group

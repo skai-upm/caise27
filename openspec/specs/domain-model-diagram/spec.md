@@ -21,6 +21,10 @@ The repository SHALL contain a PlantUML class diagram at `docs/uml/model.puml` t
 - **WHEN** `docs/uml/model.puml` is reviewed after the group-ticket change
 - **THEN** it shows `IndividualTicket` and `GroupTicket` inheriting from the abstract `Ticket`, a `GroupTicket` to `IndividualTicket` composition with `1..*` constituent tickets, and a `GroupTicket` to `Group` aggregation with `0..*` group tickets to `0..1` group
 
+#### Scenario: Diagram covers attractions
+- **WHEN** `docs/uml/model.puml` is reviewed after the attraction change
+- **THEN** it contains `Attraction`, `AttractionManager` and `AttractionFileRepository`, an `Attraction` to `User` association for present users with multiplicities `0..*` on both ends, an `AttractionManager` to `Attraction` composition with `0..*` attractions, and the abstract `Ticket.getVisitors()` operation used by `Attraction`
+
 #### Scenario: Diagram is valid PlantUML
 - **WHEN** the file is read
 - **THEN** it starts with `@startuml` and ends with `@enduml`

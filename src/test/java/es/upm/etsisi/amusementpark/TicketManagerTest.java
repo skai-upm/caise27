@@ -156,6 +156,17 @@ class TicketManagerTest {
     }
 
     @Test
+    void findAnyTicketResolvesEveryKind() throws Exception {
+        Group g = groupWithAnaAndPedro();
+        tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, PRICE);
+        tickets.createGroupTicket("TG01", g, OCT_15, OCT_1, PRICE);
+        assertTrue(tickets.findAnyTicket("T001").orElseThrow() instanceof IndividualTicket);
+        assertTrue(tickets.findAnyTicket("TG01").orElseThrow() instanceof GroupTicket);
+        assertEquals("TG01-87654321X", tickets.findAnyTicket("TG01-87654321X").orElseThrow().getId());
+        assertTrue(tickets.findAnyTicket("T999").isEmpty());
+    }
+
+    @Test
     void groupTicketsSurviveRestartLinkedToSameObjects() throws Exception {
         Group g = groupWithAnaAndPedro();
         tickets.createGroupTicket("TG01", g, OCT_15, OCT_1, PRICE);

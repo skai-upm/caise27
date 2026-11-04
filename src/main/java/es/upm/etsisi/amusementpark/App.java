@@ -21,6 +21,7 @@ public class App {
     static final String GROUPS_FILE_NAME = "groups.txt";
     static final String TICKETS_FILE_NAME = "tickets.txt";
     static final String GROUP_TICKETS_FILE_NAME = "grouptickets.txt";
+    static final String ATTRACTIONS_FILE_NAME = "attractions.txt";
 
     public static void main(String[] args) {
         int status = run(args, System.in, System.out, USERS_FILE);
@@ -32,8 +33,8 @@ public class App {
     /**
      * Runs the application.
      *
-     * @param usersFile users file; the groups, tickets and group tickets files ({@value #GROUPS_FILE_NAME},
-     *                  {@value #TICKETS_FILE_NAME}, {@value #GROUP_TICKETS_FILE_NAME}) are in the same directory
+     * @param usersFile users file; the other data files ({@value #GROUPS_FILE_NAME}, {@value #TICKETS_FILE_NAME},
+     *                  {@value #GROUP_TICKETS_FILE_NAME}, {@value #ATTRACTIONS_FILE_NAME}) are in the same directory
      * @return 0 on normal termination, 1 if the stored data or the command file could not be read
      */
     static int run(String[] args, InputStream stdin, PrintStream out, Path usersFile) {
@@ -45,7 +46,9 @@ public class App {
             TicketManager tickets = new TicketManager(
                     new TicketFileRepository(usersFile.resolveSibling(TICKETS_FILE_NAME)),
                     new GroupTicketFileRepository(usersFile.resolveSibling(GROUP_TICKETS_FILE_NAME)), users, groups);
-            runner = new CommandRunner(new CommandProcessor(users, groups, tickets));
+            AttractionManager attractions = new AttractionManager(
+                    new AttractionFileRepository(usersFile.resolveSibling(ATTRACTIONS_FILE_NAME)));
+            runner = new CommandRunner(new CommandProcessor(users, groups, tickets, attractions));
         } catch (IOException e) {
             out.println("ERROR: Could not load stored data next to '" + usersFile + "': " + e);
             return 1;

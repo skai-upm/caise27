@@ -55,6 +55,19 @@ class GroupTicketTest {
     }
 
     @Test
+    void visitorsAreAllConstituentUsers() {
+        User ana = new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "1", "1234567890123456");
+        User pedro = new User("Pedro", "L", "87654321X", "pedro@correo.com", "Otra2#", "2", "9876543210987654");
+        Group g = new Group("G01", "Familia Garcia");
+        g.addMember(ana);
+        g.addMember(pedro);
+        Ticket t = new GroupTicket("TG01", DAY, g, FORTY);
+        assertEquals(java.util.List.of(ana, pedro), t.getVisitors());
+        ((GroupTicket) t).getParts().get(0).detachUser();
+        assertEquals(java.util.List.of(pedro), t.getVisitors());
+    }
+
+    @Test
     void detachGroupKeepsId() {
         Group g = new Group("G01", "Familia Garcia");
         g.addMember(new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "1", "1234567890123456"));

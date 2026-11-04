@@ -2,6 +2,7 @@ package es.upm.etsisi.amusementpark;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -39,6 +40,12 @@ public class IndividualTicket extends Ticket {
     /** The owning user, or empty if that user has been deleted. */
     public Optional<User> getUser() {
         return Optional.ofNullable(user);
+    }
+
+    /** Its owner, or nobody if the owner has been deleted. */
+    @Override
+    public List<User> getVisitors() {
+        return user == null ? List.of() : List.of(user);
     }
 
     public boolean belongsTo(User candidate) {

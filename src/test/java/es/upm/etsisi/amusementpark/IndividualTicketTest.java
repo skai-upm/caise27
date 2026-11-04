@@ -27,6 +27,14 @@ class IndividualTicketTest {
     }
 
     @Test
+    void visitorsAreTheOwnerOrNobodyOnceDetached() {
+        IndividualTicket t = new IndividualTicket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
+        assertEquals(java.util.List.of(ana), t.getVisitors());
+        t.detachUser();
+        assertTrue(t.getVisitors().isEmpty());
+    }
+
+    @Test
     void detachKeepsDniAsHistory() {
         IndividualTicket t = new IndividualTicket("T001", LocalDate.of(2026, 10, 15), ana, new BigDecimal("40.00"));
         t.detachUser();

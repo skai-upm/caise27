@@ -38,7 +38,8 @@ class CommandRunnerTest {
         GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), manager);
         runner = new CommandRunner(new CommandProcessor(manager,
                 groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
-                        new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), manager, groups)));
+                        new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), manager, groups),
+                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt")))));
         bytes = new ByteArrayOutputStream();
         out = new PrintStream(bytes, true, StandardCharsets.UTF_8);
     }
