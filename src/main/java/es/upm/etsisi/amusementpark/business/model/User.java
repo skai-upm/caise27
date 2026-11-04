@@ -10,6 +10,7 @@ public class User {
     private String surname;
     private final String dni;
     private String email;
+    /** BCrypt hash of the password (never the plaintext). */
     private String password;
     private String phone;
     private String card;

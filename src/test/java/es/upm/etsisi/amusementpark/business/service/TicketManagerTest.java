@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.business.service;
 
+import es.upm.etsisi.amusementpark.TestSupport;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
 import es.upm.etsisi.amusementpark.business.model.IndividualTicket;
@@ -44,7 +45,7 @@ class TicketManagerTest {
     void setUp() throws Exception {
         usersFile = dir.resolve("users.txt");
         ticketsFile = dir.resolve("tickets.txt");
-        users = new UserManager(new UserFileRepository(usersFile));
+        users = new UserManager(new UserFileRepository(usersFile), TestSupport.HASHER);
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         tickets = newManager(users);
     }
@@ -106,7 +107,7 @@ class TicketManagerTest {
         tickets.detachUser(ana);
         assertFalse(tickets.hasTicketOnOrAfter(ana, OCT_1));
 
-        UserManager restartedUsers = new UserManager(new UserFileRepository(usersFile));
+        UserManager restartedUsers = new UserManager(new UserFileRepository(usersFile), TestSupport.HASHER);
         TicketManager restarted = newManager(restartedUsers);
         IndividualTicket t = restarted.find("T001").orElseThrow();
         assertTrue(t.getUser().isEmpty());
@@ -118,7 +119,7 @@ class TicketManagerTest {
     void restartRestoresTicketsLinkedToSameUser() throws Exception {
         tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, PRICE);
         tickets.create("T002", "ana@correo.com", OCT_16, OCT_1, new BigDecimal("60.00"));
-        UserManager restartedUsers = new UserManager(new UserFileRepository(usersFile));
+        UserManager restartedUsers = new UserManager(new UserFileRepository(usersFile), TestSupport.HASHER);
         TicketManager restarted = newManager(restartedUsers);
         User restartedAna = restartedUsers.findByEmail("ana@correo.com").orElseThrow();
         assertSame(restartedAna, restarted.find("T001").orElseThrow().getUser().orElseThrow());
@@ -180,7 +181,7 @@ class TicketManagerTest {
     void groupTicketsSurviveRestartLinkedToSameObjects() throws Exception {
         Group g = groupWithAnaAndPedro();
         tickets.createGroupTicket("TG01", g, OCT_15, OCT_1, PRICE);
-        UserManager u2 = new UserManager(new UserFileRepository(usersFile));
+        UserManager u2 = new UserManager(new UserFileRepository(usersFile), TestSupport.HASHER);
         GroupManager g2 = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), u2);
         TicketManager t2 = new TicketManager(new TicketFileRepository(ticketsFile),
                 new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), u2, g2);

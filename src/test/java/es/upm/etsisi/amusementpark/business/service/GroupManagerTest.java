@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.business.service;
 
+import es.upm.etsisi.amusementpark.TestSupport;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserException;
@@ -34,7 +35,7 @@ class GroupManagerTest {
     void setUp() throws Exception {
         usersFile = dir.resolve("users.txt");
         groupsFile = dir.resolve("groups.txt");
-        users = new UserManager(new UserFileRepository(usersFile));
+        users = new UserManager(new UserFileRepository(usersFile), TestSupport.HASHER);
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
         groups = new GroupManager(new GroupFileRepository(groupsFile), users);
@@ -130,7 +131,7 @@ class GroupManagerTest {
         User ana = users.delete("ana@correo.com", "Clave1!");
         groups.removeUserEverywhere(ana);
 
-        UserManager restartedUsers = new UserManager(new UserFileRepository(usersFile));
+        UserManager restartedUsers = new UserManager(new UserFileRepository(usersFile), TestSupport.HASHER);
         GroupManager restarted = new GroupManager(new GroupFileRepository(groupsFile), restartedUsers);
         assertEquals(1, restarted.find("G01").orElseThrow().getMembers().size());
         assertTrue(restarted.find("G02").orElseThrow().getMembers().isEmpty());
@@ -144,7 +145,7 @@ class GroupManagerTest {
         groups.addMember("G01", "pedro@correo.com");
         groups.addMember("G02", "ana@correo.com");
 
-        UserManager restartedUsers = new UserManager(new UserFileRepository(usersFile));
+        UserManager restartedUsers = new UserManager(new UserFileRepository(usersFile), TestSupport.HASHER);
         GroupManager restarted = new GroupManager(new GroupFileRepository(groupsFile), restartedUsers);
         User restartedAna = restartedUsers.findByEmail("ana@correo.com").orElseThrow();
         assertEquals(2, restarted.find("G01").orElseThrow().getMembers().size());

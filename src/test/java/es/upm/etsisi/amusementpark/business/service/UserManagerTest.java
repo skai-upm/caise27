@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.business.service;
 
+import es.upm.etsisi.amusementpark.TestSupport;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserException;
 import es.upm.etsisi.amusementpark.business.model.UserField;
@@ -30,12 +31,12 @@ class UserManagerTest {
     @BeforeEach
     void setUp() throws Exception {
         file = dir.resolve("users.txt");
-        manager = new UserManager(new UserFileRepository(file));
+        manager = new UserManager(new UserFileRepository(file), TestSupport.HASHER);
         manager.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
     }
 
     private UserManager restart() throws IOException {
-        return new UserManager(new UserFileRepository(file));
+        return new UserManager(new UserFileRepository(file), TestSupport.HASHER);
     }
 
     private User ana(UserManager m) {
@@ -106,7 +107,11 @@ class UserManagerTest {
             case CARD -> u.getCard();
             case EMAIL -> u.getEmail();
         };
-        assertEquals(value, stored);
+        if (field == UserField.PASSWORD) {
+            assertTrue(TestSupport.HASHER.matches(value, stored), "stored value must be a hash of the new password");
+        } else {
+            assertEquals(value, stored);
+        }
         assertEquals("12345678Z", u.getDni());
     }
 
@@ -120,7 +125,7 @@ class UserManagerTest {
         assertThrows(UserException.class, () -> manager.update("ana.nueva@correo.com", "Clave1!", UserField.NAME, "X"));
 
         User u = restart().findByEmail("ana.nueva@correo.com").orElseThrow();
-        assertEquals("Nueva2#", u.getPassword());
+        assertTrue(TestSupport.HASHER.matches("Nueva2#", u.getPassword()));
         assertEquals("9999888877776666", u.getCard());
         assertEquals("12345678Z", u.getDni());
     }
@@ -146,7 +151,7 @@ class UserManagerTest {
 
         User u = ana(manager);
         assertEquals("ana@correo.com", u.getEmail());
-        assertEquals("Clave1!", u.getPassword());
+        assertTrue(TestSupport.HASHER.matches("Clave1!", u.getPassword()));
         assertEquals("1234567890123456", u.getCard());
         assertEquals("Ana", u.getName());
         assertEquals(new String(before), new String(Files.readAllBytes(file)));
@@ -168,7 +173,7 @@ class UserManagerTest {
     void failedSaveRollsBack() throws Exception {
         Path notADirectory = dir.resolve("plain-file");
         Files.writeString(notADirectory, "x");
-        UserManager m = new UserManager(new UserFileRepository(notADirectory.resolve("users.txt")));
+        UserManager m = new UserManager(new UserFileRepository(notADirectory.resolve("users.txt")), TestSupport.HASHER);
         assertThrows(UserException.class, () -> m.create("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "1", "1234567890123456"));
         assertTrue(m.getUsers().isEmpty());
     }

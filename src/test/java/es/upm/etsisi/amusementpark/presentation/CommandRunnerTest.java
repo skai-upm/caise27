@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.presentation;
 
+import es.upm.etsisi.amusementpark.TestSupport;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
 import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelpFormatter;
@@ -51,7 +52,7 @@ class CommandRunnerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        manager = new UserManager(new UserFileRepository(dir.resolve("users.txt")));
+        manager = new UserManager(new UserFileRepository(dir.resolve("users.txt")), TestSupport.HASHER);
         GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), manager);
         ParkController.shutdown();
         runner = new CommandRunner(new CommandProcessor(ParkController.initialize(manager,

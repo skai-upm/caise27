@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.presentation;
 
+import es.upm.etsisi.amusementpark.TestSupport;
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
 import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelpFormatter;
@@ -55,7 +56,7 @@ class CommandProcessorTest {
     }
 
     private CommandProcessor newProcessor() throws Exception {
-        UserManager users = new UserManager(new UserFileRepository(file));
+        UserManager users = new UserManager(new UserFileRepository(file), TestSupport.HASHER);
         GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users);
         ParkController.shutdown();
         return new CommandProcessor(ParkController.initialize(users, groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
@@ -77,18 +78,34 @@ class CommandProcessorTest {
         assertTrue(result.startsWith("ERROR"), result);
     }
 
+    /** The users file holds exactly this user, with a BCrypt hash of the given password instead of the plaintext. */
+    private void assertStoredUser(String expectedWithPlainPassword) throws Exception {
+        List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+        assertEquals(1, lines.size());
+        String[] expected = expectedWithPlainPassword.split(";", -1);
+        String[] actual = lines.get(0).split(";", -1);
+        assertEquals(expected.length, actual.length);
+        for (int i = 0; i < expected.length; i++) {
+            if (i == 4) {
+                assertTrue(actual[i].startsWith("$2a$"), actual[i]);
+                assertTrue(TestSupport.HASHER.matches(expected[i], actual[i]));
+                assertFalse(lines.get(0).contains(expected[i]), "plaintext password stored");
+            } else {
+                assertEquals(expected[i], actual[i]);
+            }
+        }
+    }
+
     @Test
     void appendixExampleSequence() throws Exception {
         assertOk(processor.process(CREATE_ANA));
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
-                Files.readAllLines(file, StandardCharsets.UTF_8));
+        assertStoredUser("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456");
 
         assertOk(processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria"));
         assertOk(processor.process("USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com"));
         assertOk(processor.process("USER UPDATE;ana.nueva@correo.com;Clave1!;PASSWORD;Nueva2#"));
         assertOk(processor.process("USER UPDATE;ana.nueva@correo.com;Nueva2#;CARD;9999888877776666"));
-        assertEquals(List.of("Ana Maria;Garcia Lopez;12345678Z;ana.nueva@correo.com;Nueva2#;612345678;9999888877776666"),
-                Files.readAllLines(file, StandardCharsets.UTF_8));
+        assertStoredUser("Ana Maria;Garcia Lopez;12345678Z;ana.nueva@correo.com;Nueva2#;612345678;9999888877776666");
 
         CommandProcessor restarted = newProcessor();
         assertError(restarted.process("USER DELETE;ana.nueva@correo.com;Clave1!"));
@@ -158,7 +175,7 @@ class CommandProcessorTest {
 
     @Test
     void startupDateIsTheInjectedDateOrToday() throws Exception {
-        UserManager m = new UserManager(new UserFileRepository(dir.resolve("other.txt")));
+        UserManager m = new UserManager(new UserFileRepository(dir.resolve("other.txt")), TestSupport.HASHER);
         GroupManager g = new GroupManager(new GroupFileRepository(dir.resolve("other-groups.txt")), m);
         TicketManager t = new TicketManager(new TicketFileRepository(dir.resolve("other-tickets.txt")),
                 new GroupTicketFileRepository(dir.resolve("other-grouptickets.txt")), m, g);
@@ -578,6 +595,41 @@ class CommandProcessorTest {
         assertTrue(processor.process("help extended").startsWith("OK"));
         assertError(processor.process("HELP EXTENDED;all"));
         assertTrue(processor.process("HELP").contains("  HELP EXTENDED"));
+    }
+
+    @Test
+    void passwordsAreStoredAsHashesAndVerified() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        assertFalse(Files.readString(file).contains("Clave1!"));
+        String before = Files.readString(file);
+        assertError(processor.process("USER UPDATE;ana@correo.com;Wrong1!;PHONE;699999999"));
+        assertError(processor.process("USER DELETE;ana@correo.com;Wrong1!"));
+        assertEquals(before, Files.readString(file));
+        assertError(processor.process("USER UPDATE;ana@correo.com;Clave1!;PASSWORD;nueva"));
+        assertEquals(before, Files.readString(file));
+        assertError(processor.process(CREATE_ANA.replace("Clave1!", "clave1!").replace("12345678Z", "87654321X")
+                .replace("ana@", "otra@")));
+    }
+
+    @Test
+    void passwordRotationSurvivesRestartWithANewHash() throws Exception {
+        assertOk(processor.process(CREATE_ANA));
+        String oldHash = Files.readString(file).split(";")[4];
+        assertOk(processor.process("USER UPDATE;ana@correo.com;Clave1!;PASSWORD;Nueva2#"));
+        String newHash = Files.readString(file).split(";")[4];
+        assertFalse(oldHash.equals(newHash));
+        CommandProcessor restarted = newProcessor();
+        assertError(restarted.process("USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999"));
+        assertOk(restarted.process("USER UPDATE;ana@correo.com;Nueva2#;PHONE;699999999"));
+    }
+
+    @Test
+    void legacyPlaintextEntryDoesNotAuthenticate() throws Exception {
+        Files.write(file, List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
+                StandardCharsets.UTF_8);
+        CommandProcessor legacy = newProcessor();
+        assertError(legacy.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals(1, Files.readAllLines(file).size());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.business.controller;
 
+import es.upm.etsisi.amusementpark.TestSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -39,7 +40,7 @@ class ParkControllerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        users = new UserManager(new UserFileRepository(dir.resolve("users.txt")));
+        users = new UserManager(new UserFileRepository(dir.resolve("users.txt")), TestSupport.HASHER);
         groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users);
         tickets = new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
                 new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups);

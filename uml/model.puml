@@ -102,6 +102,13 @@ class InvoiceLine {
 }
 }
 
+package business.security {
+interface PasswordHasher
+class BCryptPasswordHasher {
+  logRounds : int
+}
+}
+
 package business.service {
 class UserManager
 class GroupManager
@@ -135,6 +142,7 @@ Ticket <|-- GroupTicket
 Exception <|-- UserException
 HelpFormatter <|.. SyntaxHelpFormatter
 HelpFormatter <|.. ExtendedHelpFormatter
+PasswordHasher <|.. BCryptPasswordHasher
 InvoiceBuilder <|-- UserInvoiceBuilder
 InvoiceBuilder <|-- GroupInvoiceBuilder
 
@@ -156,6 +164,7 @@ ParkController "0..1" x--> "0..1" ParkController : instance
 ' ---------- Managers and their entities ----------
 UserManager "1" *--> "0..*" User : users
 UserManager "0..1" x--> "1" UserFileRepository : repository
+UserManager "0..*" x--> "1" PasswordHasher : passwordHasher
 
 GroupManager "1" *--> "0..*" Group : groups
 GroupManager "0..1" x--> "1" GroupFileRepository : repository

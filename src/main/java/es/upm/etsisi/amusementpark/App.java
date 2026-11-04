@@ -2,6 +2,7 @@ package es.upm.etsisi.amusementpark;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
 import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
+import es.upm.etsisi.amusementpark.business.security.BCryptPasswordHasher;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
 import es.upm.etsisi.amusementpark.business.service.GroupManager;
 import es.upm.etsisi.amusementpark.business.service.TicketManager;
@@ -96,7 +97,8 @@ public class App {
     private static int runWith(String[] args, InputStream stdin, PrintStream out, Path usersFile) {
         CommandRunner runner;
         try {
-            UserManager users = new UserManager(new UserFileRepository(usersFile));
+            UserManager users = new UserManager(new UserFileRepository(usersFile),
+                    new BCryptPasswordHasher(BCryptPasswordHasher.DEFAULT_LOG_ROUNDS));
             GroupManager groups = new GroupManager(
                     new GroupFileRepository(usersFile.resolveSibling(GROUPS_FILE_NAME)), users);
             TicketManager tickets = new TicketManager(

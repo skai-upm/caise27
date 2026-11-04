@@ -1,5 +1,6 @@
 package es.upm.etsisi.amusementpark.business.service;
 
+import es.upm.etsisi.amusementpark.business.security.PasswordHasher;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserException;
 import es.upm.etsisi.amusementpark.business.model.UserField;
@@ -20,10 +21,12 @@ import java.util.Optional;
 public class UserManager {
 
     private final UserFileRepository repository;
+    private final PasswordHasher passwordHasher;
     private final List<User> users;
 
-    public UserManager(UserFileRepository repository) throws IOException {
+    public UserManager(UserFileRepository repository, PasswordHasher passwordHasher) throws IOException {
         this.repository = repository;
+        this.passwordHasher = passwordHasher;
         this.users = new ArrayList<>(repository.load());
     }
 
@@ -52,7 +55,7 @@ public class UserManager {
         if (findByEmail(email).isPresent()) {
             throw new UserException("A user with email " + email + " already exists");
         }
-        User user = new User(name, surname, dni, email, password, phone, card);
+        User user = new User(name, surname, dni, email, passwordHasher.hash(password), phone, card);
         users.add(user);
         try {
             repository.save(users);
@@ -94,7 +97,7 @@ public class UserManager {
             }
         }
         User previous = new User(user);
-        apply(user, field, newValue);
+        apply(user, field, field == UserField.PASSWORD ? passwordHasher.hash(newValue) : newValue);
         try {
             repository.save(users);
         } catch (IOException e) {
@@ -117,7 +120,7 @@ public class UserManager {
     /** Returns the user with that email if the password matches, otherwise rejects. */
     public User authenticate(String email, String password) throws UserException {
         Optional<User> user = findByEmail(email);
-        if (user.isEmpty() || !user.get().getPassword().equals(password)) {
+        if (user.isEmpty() || !passwordHasher.matches(password, user.get().getPassword())) {
             throw new UserException("Incorrect email or password");
         }
         return user.get();

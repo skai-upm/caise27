@@ -68,6 +68,16 @@ class AppTest {
         assertEquals(1, Files.readAllLines(users, StandardCharsets.UTF_8).size());
     }
 
+    /** User lines with the (randomly salted) password hash replaced by a marker. */
+    private static List<String> withoutPasswordHashes(Path usersFile) throws java.io.IOException {
+        return Files.readAllLines(usersFile).stream().map(l -> {
+            String[] f = l.split(";", -1);
+            assertTrue(f[4].startsWith("$2a$"), f[4]);
+            f[4] = "<hash>";
+            return String.join(";", f);
+        }).toList();
+    }
+
     @Test
     void interactiveAndFileModesAreEquivalent() throws Exception {
         Path commands = dir.resolve("input.txt");
@@ -79,7 +89,7 @@ class AppTest {
         Run fromStdin = run(new String[0], String.join("\n", BASIC) + "\nUSER DELETE;ana@correo.com;Clave1!\n", usersFromStdin);
 
         assertEquals(fromFile.output(), fromStdin.output());
-        assertEquals(Files.readAllLines(usersFromFile), Files.readAllLines(usersFromStdin));
+        assertEquals(withoutPasswordHashes(usersFromFile), withoutPasswordHashes(usersFromStdin));
     }
 
     @Test
