@@ -7,7 +7,7 @@ Defines the text commands that create, delete and update users, how they are par
 ## Requirements
 
 ### Requirement: Command parsing
-The application SHALL read text commands from the terminal, one per line, and split each command into its components with `String.split` on `;`. The first component SHALL name the operation (`USER CREATE`, `USER DELETE` or `USER UPDATE`). Each command SHALL produce exactly one result line starting with `OK` on success or `ERROR` on failure.
+The application SHALL split each command line into its components with `String.split` on `;`, whether the line comes from the terminal or from a command file. The first component SHALL name the operation (`USER CREATE`, `USER DELETE`, `USER UPDATE`, or a general command such as `HELP` or `EXIT`). Each user command SHALL produce exactly one result line starting with `OK` on success or `ERROR` on failure.
 
 #### Scenario: Unknown operation
 - **WHEN** the command `USER RENAME;ana@correo.com` is processed

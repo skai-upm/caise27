@@ -17,10 +17,24 @@ public class CommandProcessor {
     private static final int DELETE_PARAMS = 2;
     private static final int UPDATE_PARAMS = 4;
 
+    /** Syntax of every available command, shown by {@code HELP}. Extend when adding commands. */
+    static final List<String> HELP_LINES = List.of(
+            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+            "USER DELETE;Correo;Contraseña",
+            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "HELP",
+            "EXIT");
+
     private final UserManager users;
+    private boolean exitRequested;
 
     public CommandProcessor(UserManager users) {
         this.users = users;
+    }
+
+    /** True once an {@code EXIT} command has been processed. */
+    public boolean isExitRequested() {
+        return exitRequested;
     }
 
     /**
@@ -43,6 +57,8 @@ public class CommandProcessor {
                 case "USER CREATE" -> create(params);
                 case "USER DELETE" -> delete(params);
                 case "USER UPDATE" -> update(params);
+                case "HELP" -> help(params);
+                case "EXIT" -> exit(params);
                 default -> error("Unknown command: " + parts[0].trim());
             };
         } catch (UserException e) {
@@ -50,6 +66,21 @@ public class CommandProcessor {
         } catch (RuntimeException e) {
             return error("Unexpected problem processing the command: " + e.getMessage());
         }
+    }
+
+    private static String help(String[] p) throws UserException {
+        requireParams(p, 0, "HELP");
+        StringBuilder sb = new StringBuilder(ok("Available commands:"));
+        for (String line : HELP_LINES) {
+            sb.append(System.lineSeparator()).append("  ").append(line);
+        }
+        return sb.toString();
+    }
+
+    private String exit(String[] p) throws UserException {
+        requireParams(p, 0, "EXIT");
+        exitRequested = true;
+        return ok("Bye");
     }
 
     private String create(String[] p) throws UserException {

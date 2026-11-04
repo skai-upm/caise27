@@ -1,6 +1,7 @@
 package es.upm.etsisi.amusementpark;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -102,6 +103,25 @@ class CommandProcessorTest {
     void fieldNameIsCaseInsensitiveAndOperationWhitespaceTolerated() {
         assertOk(processor.process(CREATE_ANA.replace("USER CREATE", "user  create")));
         assertOk(processor.process("USER UPDATE;ana@correo.com;Clave1!;phone;699999999"));
+    }
+
+    @Test
+    void helpListsAllCommands() {
+        String help = processor.process("HELP");
+        assertOk(help);
+        for (String syntax : List.of("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+                "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT")) {
+            assertTrue(help.contains(syntax), syntax);
+        }
+        assertError(processor.process("HELP;extra"));
+    }
+
+    @Test
+    void exitSetsFlagAndRejectsParameters() {
+        assertError(processor.process("EXIT;now"));
+        assertFalse(processor.isExitRequested());
+        assertOk(processor.process("exit"));
+        assertTrue(processor.isExitRequested());
     }
 
     @Test
