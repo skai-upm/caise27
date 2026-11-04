@@ -1,6 +1,7 @@
 package es.upm.etsisi.amusementpark.presentation;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
 import es.upm.etsisi.amusementpark.business.service.GroupManager;
 import es.upm.etsisi.amusementpark.business.service.TicketManager;
@@ -23,6 +24,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -51,9 +53,15 @@ class CommandProcessorTest {
     private CommandProcessor newProcessor() throws Exception {
         UserManager users = new UserManager(new UserFileRepository(file));
         GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users);
-        return new CommandProcessor(new ParkController(users, groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
+        ParkController.shutdown();
+        return new CommandProcessor(ParkController.initialize(users, groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
                 new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups),
-                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))), START));
+                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))), new InvoiceDirector(), START));
+    }
+
+    @AfterEach
+    void tearDown() {
+        ParkController.shutdown();
     }
 
     private static void assertOk(String result) {
@@ -150,9 +158,12 @@ class CommandProcessorTest {
         TicketManager t = new TicketManager(new TicketFileRepository(dir.resolve("other-tickets.txt")),
                 new GroupTicketFileRepository(dir.resolve("other-grouptickets.txt")), m, g);
         AttractionManager a = new AttractionManager(new AttractionFileRepository(dir.resolve("other-attractions.txt")));
-        assertEquals(LocalDate.of(2026, 1, 1), new ParkController(m, g, t, a, LocalDate.of(2026, 1, 1)).getCurrentDate());
+        ParkController.shutdown();
+        assertEquals(LocalDate.of(2026, 1, 1),
+                ParkController.initialize(m, g, t, a, new InvoiceDirector(), LocalDate.of(2026, 1, 1)).getCurrentDate());
+        ParkController.shutdown();
         LocalDate before = LocalDate.now();
-        LocalDate actual = new ParkController(m, g, t, a).getCurrentDate();
+        LocalDate actual = ParkController.initialize(m, g, t, a, new InvoiceDirector()).getCurrentDate();
         assertFalse(actual.isBefore(before));
         assertFalse(actual.isAfter(LocalDate.now()));
     }

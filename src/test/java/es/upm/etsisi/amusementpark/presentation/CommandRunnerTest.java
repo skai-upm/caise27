@@ -1,6 +1,7 @@
 package es.upm.etsisi.amusementpark.presentation;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
 import es.upm.etsisi.amusementpark.business.service.GroupManager;
 import es.upm.etsisi.amusementpark.business.service.TicketManager;
@@ -24,6 +25,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -47,12 +49,19 @@ class CommandRunnerTest {
     void setUp() throws Exception {
         manager = new UserManager(new UserFileRepository(dir.resolve("users.txt")));
         GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), manager);
-        runner = new CommandRunner(new CommandProcessor(new ParkController(manager,
+        ParkController.shutdown();
+        runner = new CommandRunner(new CommandProcessor(ParkController.initialize(manager,
                 groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
                         new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), manager, groups),
-                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))))));
+                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))),
+                new InvoiceDirector())));
         bytes = new ByteArrayOutputStream();
         out = new PrintStream(bytes, true, StandardCharsets.UTF_8);
+    }
+
+    @AfterEach
+    void tearDown() {
+        ParkController.shutdown();
     }
 
     private String output() {

@@ -23,12 +23,15 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Main controller of the park. It owns the run-wide system date and ticket
- * price and carries out every business operation, including the rules that
- * involve several kinds of entity (user deletion, group locks, attraction
- * access). It knows nothing about the text command format.
+ * Main controller of the park (Singleton: one instance per execution). It owns
+ * the run-wide system date and ticket price and carries out every business
+ * operation, including the rules that involve several kinds of entity (user
+ * deletion, group locks, attraction access). It knows nothing about the text
+ * command format. Its collaborators are injected by {@link #initialize}.
  */
-public class ParkController {
+public final class ParkController {
+
+    private static ParkController instance;
 
     /** Price of new individual tickets at the start of every run. */
     public static final BigDecimal DEFAULT_TICKET_PRICE = new BigDecimal("40.00");
@@ -37,24 +40,63 @@ public class ParkController {
     private final GroupManager groups;
     private final TicketManager tickets;
     private final AttractionManager attractions;
+    private final InvoiceDirector invoiceDirector;
     /** The single simulated current date of this run; never persisted. */
     private LocalDate currentDate;
     /** Price of new individual tickets; never persisted. */
     private BigDecimal ticketPrice = DEFAULT_TICKET_PRICE;
 
-    /** Creates the controller with the operating system's local date as current date. */
-    public ParkController(UserManager users, GroupManager groups, TicketManager tickets,
-                          AttractionManager attractions) {
-        this(users, groups, tickets, attractions, LocalDate.now());
-    }
-
-    public ParkController(UserManager users, GroupManager groups, TicketManager tickets,
-                          AttractionManager attractions, LocalDate startupDate) {
+    private ParkController(UserManager users, GroupManager groups, TicketManager tickets,
+                           AttractionManager attractions, InvoiceDirector invoiceDirector, LocalDate startupDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
+        this.invoiceDirector = invoiceDirector;
         this.currentDate = startupDate;
+    }
+
+    /**
+     * Creates the single controller of this execution with the operating system's
+     * local date as current date.
+     *
+     * @throws IllegalStateException if it was already created and not shut down
+     */
+    public static ParkController initialize(UserManager users, GroupManager groups, TicketManager tickets,
+                                            AttractionManager attractions, InvoiceDirector invoiceDirector) {
+        return initialize(users, groups, tickets, attractions, invoiceDirector, LocalDate.now());
+    }
+
+    /**
+     * Creates the single controller of this execution.
+     *
+     * @throws IllegalStateException if it was already created and not shut down
+     */
+    public static synchronized ParkController initialize(UserManager users, GroupManager groups,
+                                                         TicketManager tickets, AttractionManager attractions,
+                                                         InvoiceDirector invoiceDirector, LocalDate startupDate) {
+        if (instance != null) {
+            throw new IllegalStateException("The park controller has already been initialized for this execution");
+        }
+        instance = new ParkController(users, groups, tickets, attractions, invoiceDirector, startupDate);
+        return instance;
+    }
+
+    /**
+     * The controller of the current execution.
+     *
+     * @throws IllegalStateException if it has not been initialized
+     */
+    public static synchronized ParkController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("The park controller has not been initialized");
+        }
+        return instance;
+    }
+
+    /** Releases the controller at the end of an execution. */
+    public static synchronized void shutdown() {
+        instance = null;
     }
 
     // ---------- System settings ----------
@@ -164,14 +206,14 @@ public class ParkController {
     public Invoice createUserInvoice(String email) throws UserException {
         User user = users.findByEmail(email).orElseThrow(() -> new UserException("No user with email " + email));
         List<IndividualTicket> direct = tickets.getTickets().stream().filter(t -> t.belongsTo(user)).toList();
-        return new InvoiceDirector().construct(new UserInvoiceBuilder(user, direct));
+        return invoiceDirector.construct(new UserInvoiceBuilder(user, direct));
     }
 
     /** Invoice of the group tickets bought by the group. */
     public Invoice createGroupInvoice(String groupId) throws UserException {
         Group group = requireGroup(groupId);
         List<GroupTicket> bought = tickets.getGroupTickets().stream().filter(t -> t.belongsTo(group)).toList();
-        return new InvoiceDirector().construct(new GroupInvoiceBuilder(group, bought));
+        return invoiceDirector.construct(new GroupInvoiceBuilder(group, bought));
     }
 
     // ---------- Attractions ----------

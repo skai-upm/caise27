@@ -18,7 +18,7 @@ class CommandProcessor {
 }
 
 package business.controller {
-class ParkController {
+class ParkController <<Singleton>> {
   currentDate : LocalDate
   ticketPrice : BigDecimal
 }
@@ -130,6 +130,8 @@ ParkController "0..1" x--> "1" UserManager : users
 ParkController "0..1" x--> "1" GroupManager : groups
 ParkController "0..1" x--> "1" TicketManager : tickets
 ParkController "0..1" x--> "1" AttractionManager : attractions
+ParkController "0..1" x--> "1" InvoiceDirector : invoiceDirector
+ParkController "0..1" x--> "0..1" ParkController : instance
 
 ' ---------- Managers and their entities ----------
 UserManager "1" *--> "0..*" User : users
@@ -165,7 +167,6 @@ GroupInvoiceBuilder "0..*" x--> "1" Group : group
 GroupInvoiceBuilder "0..*" x--> "0..*" GroupTicket : groupTickets
 
 ' ---------- Usage of classes without incoming relationships ----------
-ParkController ..> InvoiceDirector : <<use>>
 ParkController ..> UserInvoiceBuilder : <<create>>
 ParkController ..> GroupInvoiceBuilder : <<create>>
 InvoiceDirector ..> Invoice : <<create>>

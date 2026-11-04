@@ -1,8 +1,11 @@
 package es.upm.etsisi.amusementpark.business.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.etsisi.amusementpark.business.model.UserException;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
 import es.upm.etsisi.amusementpark.business.service.GroupManager;
@@ -18,6 +21,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -28,15 +32,50 @@ class ParkControllerTest {
     Path dir;
 
     private ParkController controller;
+    private UserManager users;
+    private GroupManager groups;
+    private TicketManager tickets;
+    private AttractionManager attractions;
 
     @BeforeEach
     void setUp() throws Exception {
-        UserManager users = new UserManager(new UserFileRepository(dir.resolve("users.txt")));
-        GroupManager groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users);
-        TicketManager tickets = new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
+        users = new UserManager(new UserFileRepository(dir.resolve("users.txt")));
+        groups = new GroupManager(new GroupFileRepository(dir.resolve("groups.txt")), users);
+        tickets = new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
                 new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups);
-        AttractionManager attractions = new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt")));
-        controller = new ParkController(users, groups, tickets, attractions, LocalDate.of(2026, 10, 1));
+        attractions = new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt")));
+        ParkController.shutdown();
+        controller = ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector(),
+                LocalDate.of(2026, 10, 1));
+    }
+
+    @AfterEach
+    void tearDown() {
+        ParkController.shutdown();
+    }
+
+    @Test
+    void everyRequesterGetsTheSameInstance() {
+        assertSame(controller, ParkController.getInstance());
+        assertSame(ParkController.getInstance(), ParkController.getInstance());
+    }
+
+    @Test
+    void secondInitializationIsRefused() {
+        assertThrows(IllegalStateException.class, () -> ParkController.initialize(users, groups, tickets, attractions,
+                new InvoiceDirector(), LocalDate.of(2027, 1, 1)));
+        assertSame(controller, ParkController.getInstance());
+        assertEquals(LocalDate.of(2026, 10, 1), ParkController.getInstance().getCurrentDate());
+    }
+
+    @Test
+    void notAvailableBeforeInitializationAndRenewedAfterShutdown() {
+        ParkController.shutdown();
+        assertThrows(IllegalStateException.class, ParkController::getInstance);
+        ParkController next = ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector(),
+                LocalDate.of(2026, 10, 2));
+        assertNotSame(controller, next);
+        assertSame(next, ParkController.getInstance());
     }
 
     @Test

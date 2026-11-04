@@ -44,6 +44,16 @@ class UserFileRepositoryTest {
     }
 
     @Test
+    void repositoryInstancesWithDifferentFilesCoexist() throws IOException {
+        UserFileRepository first = new UserFileRepository(dir.resolve("a/users.txt"));
+        UserFileRepository second = new UserFileRepository(dir.resolve("b/users.txt"));
+        first.save(List.of(new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "1", "1234567890123456")));
+        second.save(List.of());
+        assertEquals(1, first.load().size());
+        assertTrue(second.load().isEmpty());
+    }
+
+    @Test
     void skipsMalformedAndBlankLines() throws IOException {
         Path file = dir.resolve("users.txt");
         Files.write(file, List.of(

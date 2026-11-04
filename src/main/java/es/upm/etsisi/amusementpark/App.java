@@ -1,6 +1,7 @@
 package es.upm.etsisi.amusementpark;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
 import es.upm.etsisi.amusementpark.business.service.GroupManager;
 import es.upm.etsisi.amusementpark.business.service.TicketManager;
@@ -99,11 +100,20 @@ public class App {
                     new GroupTicketFileRepository(usersFile.resolveSibling(GROUP_TICKETS_FILE_NAME)), users, groups);
             AttractionManager attractions = new AttractionManager(
                     new AttractionFileRepository(usersFile.resolveSibling(ATTRACTIONS_FILE_NAME)));
-            runner = new CommandRunner(new CommandProcessor(new ParkController(users, groups, tickets, attractions)));
+            ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector());
+            runner = new CommandRunner(new CommandProcessor(ParkController.getInstance()));
         } catch (IOException e) {
             out.println("ERROR: Could not load stored data next to '" + usersFile + "': " + e);
             return 1;
         }
+        try {
+            return runCommands(args, stdin, out, runner);
+        } finally {
+            ParkController.shutdown();
+        }
+    }
+
+    private static int runCommands(String[] args, InputStream stdin, PrintStream out, CommandRunner runner) {
         if (args.length == 0) {
             BufferedReader in = new BufferedReader(new InputStreamReader(stdin, StandardCharsets.UTF_8));
             return runner.run(in, out) ? 0 : 1;
