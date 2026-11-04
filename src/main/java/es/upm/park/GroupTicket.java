@@ -80,6 +80,15 @@ public class GroupTicket extends Ticket {
     }
 
     @Override
+    public List<User> getHolders() {
+        List<User> holders = new ArrayList<>();
+        for (IndividualTicket c : constituents) {
+            holders.addAll(c.getHolders());
+        }
+        return holders;
+    }
+
+    @Override
     public BigDecimal getPrice() {
         return total;
     }

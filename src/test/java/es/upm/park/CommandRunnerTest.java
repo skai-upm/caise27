@@ -32,7 +32,8 @@ class CommandRunnerTest {
         GroupManager groups = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), manager);
         runner = new CommandRunner(new CommandProcessor(manager, groups,
                 new TicketManager(new TicketFileStorage(dir.resolve("tickets.txt")),
-                        new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups)));
+                        new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups),
+                new AttractionManager(new AttractionFileStorage(dir.resolve("attractions.txt")))));
     }
 
     private String[] run(String input) throws IOException {

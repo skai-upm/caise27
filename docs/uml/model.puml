@@ -94,6 +94,7 @@ package es.upm.park {
     +hasTicketOnOrAfter(user : User, today : LocalDate) : boolean
     +hasGroupTicketOnOrAfter(group : Group, today : LocalDate) : boolean
     +getAllTickets() : List<Ticket>
+    +findAnyTicket(id : String) : Ticket
   }
 
   class TicketFileStorage {
@@ -112,12 +113,14 @@ package es.upm.park {
     -id : String {readOnly}
     -date : LocalDate {readOnly}
     +isOnOrAfter(day : LocalDate) : boolean
+    {abstract} +getHolders() : List<User>
     {abstract} +getPrice() : BigDecimal
   }
 
   class IndividualTicket {
     -price : BigDecimal {readOnly}
     -ownerDni : String {readOnly}
+    +getHolders() : List<User>
     +getPrice() : BigDecimal
   }
 
@@ -126,7 +129,29 @@ package es.upm.park {
     -individualPrice : BigDecimal {readOnly}
     -total : BigDecimal {readOnly}
     {static} +discountPercent(members : int) : int
+    +getHolders() : List<User>
     +getPrice() : BigDecimal
+  }
+
+  class AttractionManager {
+    +create(id : String, name : String, capacity : String) : Attraction
+    +find(id : String) : Attraction
+  }
+
+  class AttractionFileStorage {
+    -file : Path
+    +load() : List<Attraction>
+    +save(attractions : Collection<Attraction>) : void
+  }
+
+  class Attraction {
+    -id : String {readOnly}
+    -name : String {readOnly}
+    -capacity : int {readOnly}
+    +enter(ticket : Ticket, today : LocalDate) : void
+    +exit(ticket : Ticket) : int
+    +getPresentCount() : int
+    +getAvailablePlaces() : int
   }
 }
 
@@ -154,4 +179,9 @@ Ticket <|-- GroupTicket
 IndividualTicket "0..*" --> "0..1" User : owner
 GroupTicket "0..*" o-- "0..1" Group : group
 GroupTicket "1" *-- "1..*" IndividualTicket : constituents
+CommandProcessor --> "1" AttractionManager : attractions
+AttractionManager --> "1" AttractionFileStorage : storage
+AttractionManager "1" *-- "0..*" Attraction : attractions
+Attraction "0..*" o-- "0..*" User : present
+Attraction ..> Ticket : admits holders
 @enduml

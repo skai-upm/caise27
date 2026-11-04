@@ -35,7 +35,8 @@ class AppTest {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         App.DataFiles files = new App.DataFiles(usersFile, usersFile.resolveSibling("groups-" + usersFile.getFileName()),
                 usersFile.resolveSibling("tickets-" + usersFile.getFileName()),
-                usersFile.resolveSibling("group-tickets-" + usersFile.getFileName()));
+                usersFile.resolveSibling("group-tickets-" + usersFile.getFileName()),
+                usersFile.resolveSibling("attractions-" + usersFile.getFileName()));
         int status = App.run(args, files, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8));
         return new Run(status, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
@@ -162,5 +163,14 @@ class AppTest {
         assertTrue(lines[2].startsWith("ERROR"), lines[2]);
         assertTrue(lines[3].startsWith("OK"), lines[3]);
         assertTrue(lines[4].startsWith("OK"), lines[4]);
+    }
+
+    @Test
+    void attractionsRestartEmpty() {
+        Path users = dir.resolve("users.txt");
+        run(new String[0], users, CommandProcessorTest.CREATE_ANA + "\nSYSTEM DATE;2026-10-15\n"
+                + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nATTRACTION CREATE;A01;Tornado;20\nATTRACTION ENTER;A01;T001\n");
+        Run second = run(new String[0], users, "ATTRACTION STATUS;A01\n");
+        assertTrue(second.out().contains("Tornado") && second.out().contains("present: 0"), second.out());
     }
 }

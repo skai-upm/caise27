@@ -2,6 +2,7 @@ package es.upm.park;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Common abstraction of every ticket: an identifier, a date of use and a price.
@@ -28,6 +29,9 @@ public abstract class Ticket {
     public boolean isOnOrAfter(LocalDate day) {
         return !date.isBefore(day);
     }
+
+    /** Users admitted with this ticket; {@code null} entries stand for deleted users. */
+    public abstract List<User> getHolders();
 
     /** Price paid for this ticket. */
     public abstract BigDecimal getPrice();

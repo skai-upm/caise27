@@ -25,6 +25,7 @@ class CommandProcessorTest {
     UserManager manager;
     GroupManager groups;
     TicketManager tickets;
+    AttractionManager attractions;
     CommandProcessor processor;
 
     @BeforeEach
@@ -33,7 +34,8 @@ class CommandProcessorTest {
         groups = new GroupManager(new GroupFileStorage(dir.resolve("groups.txt")), manager);
         tickets = new TicketManager(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups);
-        processor = new CommandProcessor(manager, groups, tickets);
+        attractions = new AttractionManager(new AttractionFileStorage(dir.resolve("attractions.txt")));
+        processor = new CommandProcessor(manager, groups, tickets, attractions);
     }
 
     @Test
@@ -90,6 +92,8 @@ class CommandProcessorTest {
             "GROUP CREATE;Id;Nombre", "GROUP ADD;Id;Correo", "GROUP REMOVE;Id;Correo", "GROUP DELETE;Id",
             "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
             "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;IdTicket",
+            "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION EXIT;IdAtraccion;IdTicket", "ATTRACTION STATUS;IdAtraccion",
             "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Precio", "HELP", "EXIT",
             "NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD"}) {
             assertTrue(help.contains(usage), usage);
@@ -113,7 +117,7 @@ class CommandProcessorTest {
     @Test
     void startsWithLocalDate() {
         LocalDate before = LocalDate.now();
-        LocalDate date = new CommandProcessor(manager, groups, tickets).getCurrentDate();
+        LocalDate date = new CommandProcessor(manager, groups, tickets, attractions).getCurrentDate();
         LocalDate after = LocalDate.now();
         assertTrue(!date.isBefore(before) && !date.isAfter(after));
     }
@@ -141,7 +145,7 @@ class CommandProcessorTest {
 
     @Test
     void injectedInitialDateIsUsed() {
-        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(manager, groups, tickets, LocalDate.of(2026, 1, 1)).getCurrentDate());
+        assertEquals(LocalDate.of(2026, 1, 1), new CommandProcessor(manager, groups, tickets, attractions, LocalDate.of(2026, 1, 1)).getCurrentDate());
     }
 
     @Test
@@ -262,7 +266,7 @@ class CommandProcessorTest {
         processor.process("SYSTEM PRICE;55");
         assertEquals(new BigDecimal("55.00"), processor.getCurrentPrice());
         assertEquals(new BigDecimal("40.00"),
-                new CommandProcessor(manager, groups, tickets).getCurrentPrice(), "new execution starts at 40.00");
+                new CommandProcessor(manager, groups, tickets, attractions).getCurrentPrice(), "new execution starts at 40.00");
     }
 
     @ParameterizedTest
@@ -389,5 +393,56 @@ class CommandProcessorTest {
         processor.process("SYSTEM PRICE;60.00");
         assertEquals("OK GROUP TICKET CREATED -> 162.00", processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
         assertEquals(new BigDecimal("60.00"), tickets.findGroupTicket("TG01").getConstituents().get(2).getPrice());
+    }
+
+    @Test
+    void attractionSourceExample() {
+        processor.process(CREATE_ANA);
+        processor.process(CommandRunnerTest.CREATE_PEDRO);
+        processor.process("USER CREATE;Luis;Martin;11111111H;luis@correo.com;Clave1!;600;1234567890123456");
+        processor.process("GROUP CREATE;G01;Amigos");
+        processor.process("GROUP ADD;G01;pedro@correo.com");
+        processor.process("GROUP ADD;G01;luis@correo.com");
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertTrue(processor.process("ATTRACTION CREATE;A01;Tornado;20").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;TG01").startsWith("OK"));
+        String status = processor.process("ATTRACTION STATUS;A01");
+        for (String expected : new String[] {"A01", "Tornado", "capacity: 20", "present: 3", "available: 17",
+            "ana@correo.com", "pedro@correo.com", "luis@correo.com"}) {
+            assertTrue(status.contains(expected), expected + " in " + status);
+        }
+        processor.process("SYSTEM DATE;2026-10-16");
+        assertTrue(processor.process("ATTRACTION EXIT;A01;T001").startsWith("OK"), "exit has no date check");
+        status = processor.process("ATTRACTION STATUS;A01");
+        assertTrue(status.contains("present: 2") && status.contains("available: 18") && !status.contains("ana@"), status);
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001").startsWith("ERROR"), "not valid on 2026-10-16");
+        assertTrue(processor.process("ATTRACTION EXIT;A01;T001").startsWith("ERROR"), "not present");
+        assertTrue(processor.process("ATTRACTION EXIT;A01;TG01").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION STATUS;A01").contains("users: (none)"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ATTRACTION CREATE;A01;Tornado", "ATTRACTION CREATE;A02;X;0", "ATTRACTION ENTER;A99;T001",
+        "ATTRACTION ENTER;A01;T999", "ATTRACTION ENTER;A01", "ATTRACTION EXIT;A99;T001", "ATTRACTION EXIT;A01;T999",
+        "ATTRACTION STATUS;A99", "ATTRACTION STATUS", "ATTRACTION ENTER;A01;TG01-1"})
+    void invalidAttractionCommandsRejected(String command) {
+        ticketSetup();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-01");
+        processor.process("ATTRACTION CREATE;A01;Tornado;20");
+        assertTrue(processor.process(command).startsWith("ERROR"), command);
+        assertEquals(0, attractions.find("A01").getPresentCount());
+    }
+
+    @Test
+    void groupDeniedWhenCapacityShort() {
+        groupOf(4);
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("ATTRACTION CREATE;A01;Tornado;3");
+        assertTrue(processor.process("ATTRACTION ENTER;A01;TG01").startsWith("ERROR"));
+        assertTrue(processor.process("ATTRACTION STATUS;A01").contains("present: 0"));
     }
 }

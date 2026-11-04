@@ -54,6 +54,12 @@ public class TicketManager {
         return tickets.get(id);
     }
 
+    /** A standalone individual ticket or a group ticket, through the common abstraction. */
+    public Ticket findAnyTicket(String id) {
+        Ticket t = tickets.get(id);
+        return t != null ? t : groupTickets.get(id);
+    }
+
     public GroupTicket findGroupTicket(String id) {
         return groupTickets.get(id);
     }

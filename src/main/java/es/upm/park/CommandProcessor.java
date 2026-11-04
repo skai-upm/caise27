@@ -31,6 +31,10 @@ public class CommandProcessor {
             "TICKET DELETE;Id",
             "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd",
             "GROUPTICKET DELETE;IdTicket",
+            "ATTRACTION CREATE;Id;Nombre;Capacidad",
+            "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION EXIT;IdAtraccion;IdTicket",
+            "ATTRACTION STATUS;IdAtraccion",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -45,6 +49,7 @@ public class CommandProcessor {
     private final UserManager users;
     private final GroupManager groups;
     private final TicketManager tickets;
+    private final AttractionManager attractions;
     private boolean exitRequested;
     /** The single current date of the application; time-dependent rules must use it. */
     private LocalDate currentDate;
@@ -52,14 +57,17 @@ public class CommandProcessor {
     private BigDecimal currentPrice = DEFAULT_PRICE;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets) {
-        this(users, groups, tickets, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
+                            AttractionManager attractions) {
+        this(users, groups, tickets, attractions, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets, LocalDate initialDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
+                            AttractionManager attractions, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        this.attractions = attractions;
         this.currentDate = initialDate;
     }
 
@@ -90,6 +98,10 @@ public class CommandProcessor {
                 case "TICKET DELETE" -> ticketDelete(parts);
                 case "GROUPTICKET CREATE" -> groupTicketCreate(parts);
                 case "GROUPTICKET DELETE" -> groupTicketDelete(parts);
+                case "ATTRACTION CREATE" -> attractionCreate(parts);
+                case "ATTRACTION ENTER" -> attractionEnter(parts);
+                case "ATTRACTION EXIT" -> attractionExit(parts);
+                case "ATTRACTION STATUS" -> attractionStatus(parts);
                 case "SYSTEM DATE" -> systemDate(parts);
                 case "SYSTEM PRICE" -> systemPrice(parts);
                 case "HELP" -> help(parts);
@@ -169,6 +181,63 @@ public class CommandProcessor {
         requireParams(p, 1, "GROUPTICKET DELETE;IdTicket");
         tickets.deleteGroupTicket(p[1], currentDate);
         return "OK: group ticket " + p[1] + " deleted";
+    }
+
+    private String attractionCreate(String[] p) {
+        requireParams(p, 3, "ATTRACTION CREATE;Id;Nombre;Capacidad");
+        attractions.create(p[1], p[2], p[3]);
+        return "OK: attraction " + p[1] + " created";
+    }
+
+    private String attractionEnter(String[] p) {
+        requireParams(p, 2, "ATTRACTION ENTER;IdAtraccion;IdTicket");
+        Attraction attraction = requireAttraction(p[1]);
+        Ticket ticket = requireTicket(p[2]);
+        attraction.enter(ticket, currentDate);
+        return "OK: " + ticket.getHolders().size() + " user(s) entered attraction " + p[1]
+                + " (" + attraction.getAvailablePlaces() + " places available)";
+    }
+
+    private String attractionExit(String[] p) {
+        requireParams(p, 2, "ATTRACTION EXIT;IdAtraccion;IdTicket");
+        Attraction attraction = requireAttraction(p[1]);
+        int left = attraction.exit(requireTicket(p[2]));
+        return "OK: " + left + " user(s) left attraction " + p[1]
+                + " (" + attraction.getAvailablePlaces() + " places available)";
+    }
+
+    private String attractionStatus(String[] p) {
+        requireParams(p, 1, "ATTRACTION STATUS;IdAtraccion");
+        Attraction a = requireAttraction(p[1]);
+        String nl = System.lineSeparator();
+        StringBuilder users = new StringBuilder();
+        for (User u : a.getPresentUsers()) {
+            if (!users.isEmpty()) {
+                users.append(", ");
+            }
+            users.append(u.getName()).append(' ').append(u.getSurnames()).append(" <").append(u.getEmail()).append('>');
+        }
+        return "OK: attraction " + a.getId() + " - " + a.getName() + nl
+                + "  capacity: " + a.getCapacity() + nl
+                + "  present: " + a.getPresentCount() + nl
+                + "  available: " + a.getAvailablePlaces() + nl
+                + "  users: " + (users.isEmpty() ? "(none)" : users);
+    }
+
+    private Attraction requireAttraction(String id) {
+        Attraction a = attractions.find(id);
+        if (a == null) {
+            throw new IllegalArgumentException("no attraction with identifier " + id);
+        }
+        return a;
+    }
+
+    private Ticket requireTicket(String id) {
+        Ticket t = tickets.findAnyTicket(id);
+        if (t == null) {
+            throw new IllegalArgumentException("no ticket with identifier " + id);
+        }
+        return t;
     }
 
     private String ticketCreate(String[] p) {

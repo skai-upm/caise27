@@ -2,6 +2,8 @@ package es.upm.park;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * An individual ticket for one date of use, bought on its own or as a constituent
@@ -24,6 +26,11 @@ public class IndividualTicket extends Ticket {
         this.owner = owner;
         this.ownerDni = ownerDni;
         this.price = price;
+    }
+
+    @Override
+    public List<User> getHolders() {
+        return Collections.singletonList(owner);
     }
 
     @Override
