@@ -1,5 +1,6 @@
 package com.parque.presentation;
 
+import com.parque.TestPark;
 import com.parque.business.controller.*;
 import com.parque.business.model.*;
 import com.parque.business.service.*;
@@ -36,13 +37,13 @@ class SystemDateTest {
         tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")),
                 new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups);
         attractions = new AttractionService(new AttractionRepository(dir.resolve("attractions.txt")));
-        processor = new CommandProcessor(users, groups, tickets, attractions, LocalDate.of(2026, 9, 15));
+        processor = new CommandProcessor(TestPark.controller(users, groups, tickets, attractions, LocalDate.of(2026, 9, 15)));
     }
 
     @Test
     void startsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        CommandProcessor fresh = new CommandProcessor(users, groups, tickets, attractions);
+        CommandProcessor fresh = new CommandProcessor(TestPark.controller(users, groups, tickets, attractions));
         LocalDate after = LocalDate.now();
         LocalDate date = fresh.getCurrentDate();
         assertTrue(!date.isBefore(before) && !date.isAfter(after), date.toString());
@@ -50,7 +51,7 @@ class SystemDateTest {
 
     @Test
     void setsValidDate() {
-        CommandProcessor fresh = new CommandProcessor(users, groups, tickets, attractions);
+        CommandProcessor fresh = new CommandProcessor(TestPark.controller(users, groups, tickets, attractions));
         assertEquals("OK: System date set to 2026-09-15", fresh.process("SYSTEM DATE;2026-09-15"));
         assertEquals(LocalDate.of(2026, 9, 15), fresh.getCurrentDate());
     }
@@ -88,13 +89,13 @@ class SystemDateTest {
     void notPersistedAcrossExecutions() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(out, true, StandardCharsets.UTF_8);
-        int status = new CommandRunner(new CommandProcessor(ParkController.open(dir)), ps, ps).runInteractive(
+        int status = new CommandRunner(new CommandProcessor(TestPark.start(dir)), ps, ps).runInteractive(
                 new ByteArrayInputStream("SYSTEM DATE;2026-09-15\nSYSTEM DATE;bad\nEXIT\n".getBytes(StandardCharsets.UTF_8)));
         assertEquals(0, status);
         String[] lines = out.toString(StandardCharsets.UTF_8).split("\\R");
         assertEquals("OK: System date set to 2026-09-15", lines[0]);
         assertTrue(lines[1].startsWith("ERROR: Invalid date"));
         // a new execution builds a new controller starting at the OS date again
-        assertEquals(LocalDate.now(), new CommandProcessor(users, groups, tickets, attractions).getCurrentDate());
+        assertEquals(LocalDate.now(), new CommandProcessor(TestPark.controller(users, groups, tickets, attractions)).getCurrentDate());
     }
 }

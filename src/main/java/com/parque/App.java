@@ -1,6 +1,5 @@
 package com.parque;
 
-import com.parque.business.controller.ParkController;
 import com.parque.persistence.DataDirectory;
 import com.parque.presentation.CommandProcessor;
 import com.parque.presentation.CommandRunner;
@@ -78,15 +77,19 @@ public class App {
 
     private static int runWithDataDir(String commandFile, InputStream stdin, PrintStream out, PrintStream err,
             Path dataDir) {
-        ParkController controller;
         try {
-            controller = ParkController.open(dataDir);
+            ApplicationContext.start(dataDir);
         } catch (IOException e) {
+            ApplicationContext.stop();
             err.println("ERROR: Cannot load data from '" + dataDir.toAbsolutePath() + "': " + CommandRunner.describe(e));
             return 1;
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(controller), out, err);
-        return commandFile == null ? runner.runInteractive(stdin) : runner.runFile(commandFile);
+        try {
+            CommandRunner runner = new CommandRunner(new CommandProcessor(), out, err);
+            return commandFile == null ? runner.runInteractive(stdin) : runner.runFile(commandFile);
+        } finally {
+            ApplicationContext.stop();
+        }
     }
 
     private static void deleteQuietly(Path dir, PrintStream err) {

@@ -15,14 +15,7 @@ import com.parque.business.service.InvoiceDirector;
 import com.parque.business.service.TicketService;
 import com.parque.business.service.UserInvoiceBuilder;
 import com.parque.business.service.UserService;
-import com.parque.persistence.AttractionRepository;
-import com.parque.persistence.GroupRepository;
-import com.parque.persistence.GroupTicketRepository;
-import com.parque.persistence.TicketRepository;
-import com.parque.persistence.UserRepository;
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Path;
 import java.time.LocalDate;
 
 /**
@@ -30,47 +23,66 @@ import java.time.LocalDate;
  * price of the execution, and applies the rules that involve several entities (tickets blocking user deletion,
  * group locks, purchases at the current date and price, attraction access). Rejected operations throw
  * {@link IllegalArgumentException} with the reason.
+ * <p>
+ * Singleton per execution: it cannot be instantiated directly; the composition root calls
+ * {@link #initialize} once at startup with the collaborators it injects, every element obtains it with
+ * {@link #getInstance()}, and {@link #release()} ends the execution's instance.
  */
 public class ParkController {
     /** Individual ticket price at the start of every execution. */
     public static final BigDecimal DEFAULT_TICKET_PRICE = new BigDecimal("40.00");
 
-    public static final String USERS_FILE = "users.txt";
-    public static final String GROUPS_FILE = "groups.txt";
-    public static final String TICKETS_FILE = "tickets.txt";
-    public static final String GROUP_TICKETS_FILE = "grouptickets.txt";
-    public static final String ATTRACTIONS_FILE = "attractions.txt";
+    private static ParkController instance;
 
     private final UserService users;
     private final GroupService groups;
     private final TicketService tickets;
     private final AttractionService attractions;
+    private final InvoiceDirector invoiceDirector;
     private LocalDate currentDate;
     private BigDecimal ticketPrice = DEFAULT_TICKET_PRICE;
 
-    /** Creates the controller with the operating system's local date as the current date. */
-    public ParkController(UserService users, GroupService groups, TicketService tickets,
-            AttractionService attractions) {
-        this(users, groups, tickets, attractions, LocalDate.now());
-    }
-
-    public ParkController(UserService users, GroupService groups, TicketService tickets,
-            AttractionService attractions, LocalDate initialDate) {
+    private ParkController(UserService users, GroupService groups, TicketService tickets,
+            AttractionService attractions, InvoiceDirector invoiceDirector, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.attractions = attractions;
+        this.invoiceDirector = invoiceDirector;
         this.currentDate = initialDate;
     }
 
-    /** Builds the services over the data files of {@code dataDir} and loads the stored state. */
-    public static ParkController open(Path dataDir) throws IOException {
-        UserService users = new UserService(new UserRepository(dataDir.resolve(USERS_FILE)));
-        GroupService groups = new GroupService(new GroupRepository(dataDir.resolve(GROUPS_FILE)), users);
-        TicketService tickets = new TicketService(new TicketRepository(dataDir.resolve(TICKETS_FILE)),
-                new GroupTicketRepository(dataDir.resolve(GROUP_TICKETS_FILE)), users, groups);
-        AttractionService attractions = new AttractionService(new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE)));
-        return new ParkController(users, groups, tickets, attractions);
+    /**
+     * Creates the unique controller of this execution with the injected collaborators, starting at the
+     * operating system's local date. Fails if the execution already has a controller.
+     */
+    public static synchronized ParkController initialize(UserService users, GroupService groups,
+            TicketService tickets, AttractionService attractions, InvoiceDirector invoiceDirector) {
+        return initialize(users, groups, tickets, attractions, invoiceDirector, LocalDate.now());
+    }
+
+    /** As {@link #initialize(UserService, GroupService, TicketService, AttractionService, InvoiceDirector)} with an explicit start date. */
+    public static synchronized ParkController initialize(UserService users, GroupService groups,
+            TicketService tickets, AttractionService attractions, InvoiceDirector invoiceDirector,
+            LocalDate initialDate) {
+        if (instance != null) {
+            throw new IllegalStateException("The park controller has already been initialized for this execution");
+        }
+        instance = new ParkController(users, groups, tickets, attractions, invoiceDirector, initialDate);
+        return instance;
+    }
+
+    /** The unique controller of the current execution. */
+    public static synchronized ParkController getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("The park controller has not been initialized");
+        }
+        return instance;
+    }
+
+    /** Ends the current execution's controller (idempotent). */
+    public static synchronized void release() {
+        instance = null;
     }
 
     /** The single current date of the execution; every date-dependent rule must use it. */
@@ -196,7 +208,7 @@ public class ParkController {
         if (user == null) {
             throw new IllegalArgumentException("No user with email " + email);
         }
-        return new InvoiceDirector().construct(new UserInvoiceBuilder(user, tickets.directTicketsOf(user)));
+        return invoiceDirector.construct(new UserInvoiceBuilder(user, tickets.directTicketsOf(user)));
     }
 
     /** Invoice of the group ticket purchases of an existing group, built on demand. */
@@ -205,7 +217,7 @@ public class ParkController {
         if (group == null) {
             throw new IllegalArgumentException("No group with identifier " + groupId);
         }
-        return new InvoiceDirector().construct(new GroupInvoiceBuilder(group, tickets.groupTicketsOf(group)));
+        return invoiceDirector.construct(new GroupInvoiceBuilder(group, tickets.groupTicketsOf(group)));
     }
 
     private Ticket existingTicket(String id) {

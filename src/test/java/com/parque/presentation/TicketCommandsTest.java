@@ -1,5 +1,6 @@
 package com.parque.presentation;
 
+import com.parque.TestPark;
 import com.parque.business.controller.*;
 import com.parque.business.model.*;
 import com.parque.business.service.*;
@@ -35,7 +36,7 @@ class TicketCommandsTest {
         groups = new GroupService(new GroupRepository(dir.resolve("groups.txt")), users);
         tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")),
                 new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups);
-        processor = new CommandProcessor(users, groups, tickets, new AttractionService(new AttractionRepository(dir.resolve("attractions.txt"))), LocalDate.of(2026, 9, 15));
+        processor = new CommandProcessor(TestPark.controller(users, groups, tickets, new AttractionService(new AttractionRepository(dir.resolve("attractions.txt"))), LocalDate.of(2026, 9, 15)));
         processor.process(ANA);
     }
 

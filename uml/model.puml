@@ -10,6 +10,7 @@ set separator none
 
 package com.parque {
   class App
+  class ApplicationContext
 }
 
 package com.parque.presentation {
@@ -24,7 +25,7 @@ package com.parque.presentation {
 }
 
 package com.parque.business.controller {
-  class ParkController {
+  class ParkController <<Singleton>> {
     -currentDate : LocalDate
     -ticketPrice : BigDecimal
   }
@@ -135,7 +136,9 @@ InvoiceBuilder <|-- GroupInvoiceBuilder
 CommandRunner "0..*" x--> "1" CommandProcessor : processor
 CommandProcessor "1" x--> "1" ParkController : controller
 
-' Main controller
+'' Main controller (Singleton per execution, collaborators injected at startup)
+ParkController "1" x--> "0..1" ParkController : instance
+ParkController "1" x--> "1" InvoiceDirector : invoiceDirector
 ParkController "1" x--> "1" UserService : users
 ParkController "1" x--> "1" GroupService : groups
 ParkController "1" x--> "1" TicketService : tickets
@@ -179,6 +182,7 @@ GroupInvoiceBuilder "0..*" o--> "0..*" GroupTicket : groupTickets
 ' Usage of classes without incoming relationships
 App ..> CommandRunner : <<use>>
 App ..> DataDirectory : <<use>>
+App ..> ApplicationContext : <<use>>
 User ..> UserField : <<use>>
 UserService ..> UserField : <<use>>
 ParkController ..> UserField : <<use>>
@@ -187,7 +191,6 @@ UserService ..> UserValidator : <<use>>
 GroupService ..> UserValidator : <<use>>
 TicketService ..> UserValidator : <<use>>
 AttractionService ..> UserValidator : <<use>>
-ParkController ..> InvoiceDirector : <<use>>
 ParkController ..> UserInvoiceBuilder : <<use>>
 ParkController ..> GroupInvoiceBuilder : <<use>>
 ParkController ..> Invoice : <<use>>

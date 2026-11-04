@@ -1,5 +1,6 @@
 package com.parque.presentation;
 
+import com.parque.TestPark;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,7 +27,7 @@ class InvoiceCommandsTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        p = new CommandProcessor(ParkController.open(dir));
+        p = new CommandProcessor(TestPark.start(dir));
         ok("SYSTEM DATE;2026-10-01");
         ok("USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456");
         ok("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");

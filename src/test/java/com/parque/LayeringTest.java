@@ -26,7 +26,7 @@ class LayeringTest {
             ROOT + ".business.model", List.of(ROOT + ".persistence", ROOT + ".presentation", ROOT + ".business.service",
                     ROOT + ".business.controller", "java.nio.file", "java.io"),
             ROOT + ".business.service", List.of(ROOT + ".presentation", ROOT + ".business.controller"),
-            ROOT + ".business.controller", List.of(ROOT + ".presentation"),
+            ROOT + ".business.controller", List.of(ROOT + ".presentation", ROOT + ".persistence"),
             ROOT + ".persistence", List.of(ROOT + ".presentation", ROOT + ".business.service",
                     ROOT + ".business.controller"));
 
@@ -56,8 +56,9 @@ class LayeringTest {
             String expectedDir = s.pkg().replace('.', '/');
             assertTrue(s.path().getParent().toString().replace('\\', '/').endsWith(expectedDir), s.path().toString());
             if (s.pkg().equals(ROOT)) {
-                assertTrue(s.path().getFileName().toString().equals("App.java"),
-                        "only the App bootstrap may live in " + ROOT + ": " + s.path());
+                assertTrue(List.of("App.java", "ApplicationContext.java").contains(s.path().getFileName().toString()),
+                        "only the App bootstrap and the ApplicationContext composition root may live in " + ROOT
+                                + ": " + s.path());
             }
         }
     }

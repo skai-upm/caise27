@@ -9,10 +9,6 @@ import com.parque.business.model.InvoiceLine;
 import com.parque.business.model.InvoiceSection;
 import com.parque.business.model.User;
 import com.parque.business.model.UserField;
-import com.parque.business.service.AttractionService;
-import com.parque.business.service.GroupService;
-import com.parque.business.service.TicketService;
-import com.parque.business.service.UserService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -62,16 +58,9 @@ public class CommandProcessor {
         this.controller = controller;
     }
 
-    /** Convenience constructor: controller over the given services, starting at the OS local date. */
-    public CommandProcessor(UserService users, GroupService groups, TicketService tickets,
-            AttractionService attractions) {
-        this(new ParkController(users, groups, tickets, attractions));
-    }
-
-    /** Convenience constructor: controller over the given services, starting at {@code initialDate}. */
-    public CommandProcessor(UserService users, GroupService groups, TicketService tickets,
-            AttractionService attractions, LocalDate initialDate) {
-        this(new ParkController(users, groups, tickets, attractions, initialDate));
+    /** Uses the unique controller of the current execution. */
+    public CommandProcessor() {
+        this(ParkController.getInstance());
     }
 
     public ParkController getController() {

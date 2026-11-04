@@ -1,5 +1,6 @@
 package com.parque.business.controller;
 
+import com.parque.TestPark;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -20,7 +21,7 @@ class InvoiceControllerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        ParkController opened = ParkController.open(dir);
+        ParkController opened = TestPark.start(dir);
         c = opened;
         c.setSystemDate(LocalDate.of(2026, 10, 1));
         c.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");

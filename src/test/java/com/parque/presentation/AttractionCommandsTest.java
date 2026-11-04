@@ -1,5 +1,6 @@
 package com.parque.presentation;
 
+import com.parque.TestPark;
 import com.parque.business.controller.*;
 import com.parque.business.model.*;
 import com.parque.business.service.*;
@@ -33,7 +34,7 @@ class AttractionCommandsTest {
         TicketService tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")),
                 new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups);
         attractions = new AttractionService(new AttractionRepository(dir.resolve("attractions.txt")));
-        processor = new CommandProcessor(users, groups, tickets, attractions, LocalDate.of(2026, 10, 1));
+        processor = new CommandProcessor(TestPark.controller(users, groups, tickets, attractions, LocalDate.of(2026, 10, 1)));
         ok("USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456");
         ok("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
         ok("USER CREATE;Luis;Perez;11111111H;luis@correo.com;Luis3$;634567890;1111222233334444");
