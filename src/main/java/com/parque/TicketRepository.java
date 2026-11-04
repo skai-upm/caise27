@@ -27,8 +27,8 @@ public class TicketRepository {
      * Loads every well-formed ticket, resolving the owner's DNI with {@code userByDni}. Tickets whose DNI
      * matches no registered user are kept as history. A missing file means no tickets.
      */
-    public List<Ticket> load(Function<String, User> userByDni) throws IOException {
-        List<Ticket> tickets = new ArrayList<>();
+    public List<IndividualTicket> load(Function<String, User> userByDni) throws IOException {
+        List<IndividualTicket> tickets = new ArrayList<>();
         if (!Files.exists(file)) {
             return tickets;
         }
@@ -43,7 +43,7 @@ public class TicketRepository {
                 if (f.length != 4) {
                     throw new IllegalArgumentException("wrong number of fields");
                 }
-                tickets.add(new Ticket(f[0], userByDni.apply(f[1]), f[1], LocalDate.parse(f[2]), new BigDecimal(f[3])));
+                tickets.add(new IndividualTicket(f[0], userByDni.apply(f[1]), f[1], LocalDate.parse(f[2]), new BigDecimal(f[3])));
             } catch (IllegalArgumentException | DateTimeParseException e) {
                 System.err.println("Skipping malformed ticket line " + lineNumber + " in " + file);
             }
@@ -52,9 +52,9 @@ public class TicketRepository {
     }
 
     /** Rewrites the file with exactly the given tickets. */
-    public void save(List<Ticket> tickets) throws IOException {
+    public void save(List<IndividualTicket> tickets) throws IOException {
         List<String> lines = new ArrayList<>();
-        for (Ticket t : tickets) {
+        for (IndividualTicket t : tickets) {
             lines.add(String.join(SEPARATOR, t.getId(), t.getHolderDni(), t.getDate().toString(), t.getPriceText()));
         }
         Path parent = file.toAbsolutePath().getParent();

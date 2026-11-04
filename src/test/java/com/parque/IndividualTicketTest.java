@@ -8,13 +8,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
-class TicketTest {
+class IndividualTicketTest {
     final User ana = new User("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678",
             "1234567890123456");
 
     @Test
     void holdsAllFieldsAndOwnerReference() {
-        Ticket t = new Ticket("T001", ana, LocalDate.of(2026, 10, 15), new BigDecimal("40"));
+        IndividualTicket t = new IndividualTicket("T001", ana, LocalDate.of(2026, 10, 15), new BigDecimal("40"));
         assertEquals("T001", t.getId());
         assertSame(ana, t.getUser());
         assertEquals("12345678Z", t.getHolderDni());
@@ -24,7 +24,7 @@ class TicketTest {
 
     @Test
     void historyTicketWithoutRegisteredUser() {
-        Ticket t = new Ticket("T001", null, "12345678Z", LocalDate.of(2026, 10, 15), new BigDecimal("60.5"));
+        IndividualTicket t = new IndividualTicket("T001", null, "12345678Z", LocalDate.of(2026, 10, 15), new BigDecimal("60.5"));
         assertNull(t.getUser());
         assertEquals("12345678Z", t.getHolderDni());
         assertEquals("60.50", t.getPriceText());

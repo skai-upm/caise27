@@ -27,6 +27,8 @@ public class CommandProcessor {
             "GROUP DELETE;Identificador",
             "TICKET CREATE;Identificador;Correo;yyyy-MM-dd",
             "TICKET DELETE;Identificador",
+            "GROUPTICKET CREATE;Identificador;Grupo;yyyy-MM-dd",
+            "GROUPTICKET DELETE;Identificador",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -139,22 +141,25 @@ public class CommandProcessor {
             }
             case "GROUP ADD" -> {
                 expectParameters(parts, 2, "GROUP ADD;Identificador;Correo");
+                requireGroupUnlocked(parts[1]);
                 groups.addMember(parts[1], parts[2]);
                 return ok("User added to group");
             }
             case "GROUP REMOVE" -> {
                 expectParameters(parts, 2, "GROUP REMOVE;Identificador;Correo");
+                requireGroupUnlocked(parts[1]);
                 groups.removeMember(parts[1], parts[2]);
                 return ok("User removed from group");
             }
             case "GROUP DELETE" -> {
                 expectParameters(parts, 1, "GROUP DELETE;Identificador");
+                requireGroupUnlocked(parts[1]);
                 groups.delete(parts[1]);
                 return ok("Group deleted");
             }
             case "TICKET CREATE" -> {
                 expectParameters(parts, 3, "TICKET CREATE;Identificador;Correo;yyyy-MM-dd");
-                Ticket ticket = tickets.create(parts[1], parts[2], parseDate(parts[3]), currentDate, ticketPrice);
+                IndividualTicket ticket = tickets.create(parts[1], parts[2], parseDate(parts[3]), currentDate, ticketPrice);
                 return "OK TICKET CREATED -> " + ticket.getPriceText();
             }
             case "TICKET DELETE" -> {
@@ -162,7 +167,27 @@ public class CommandProcessor {
                 tickets.delete(parts[1], currentDate);
                 return ok("Ticket deleted");
             }
+            case "GROUPTICKET CREATE" -> {
+                expectParameters(parts, 3, "GROUPTICKET CREATE;Identificador;Grupo;yyyy-MM-dd");
+                GroupTicket ticket = tickets.createGroupTicket(parts[1], parts[2], parseDate(parts[3]), currentDate,
+                        ticketPrice);
+                return "OK GROUP TICKET CREATED -> " + ticket.getPriceText();
+            }
+            case "GROUPTICKET DELETE" -> {
+                expectParameters(parts, 1, "GROUPTICKET DELETE;Identificador");
+                tickets.deleteGroupTicket(parts[1], currentDate);
+                return ok("Group ticket deleted");
+            }
             default -> throw new IllegalArgumentException("Unknown command: " + operation);
+        }
+    }
+
+    /** Rejects changes to a group that has a group ticket dated on or after the system date. */
+    private void requireGroupUnlocked(String groupId) {
+        Group group = groups.find(groupId);
+        if (group != null && tickets.isGroupLocked(group, currentDate)) {
+            throw new IllegalArgumentException("Group " + groupId + " has group tickets dated on or after "
+                    + currentDate + " and cannot be modified or deleted");
         }
     }
 

@@ -180,4 +180,21 @@ class AppTest {
         assertEquals(0, third.status());
         assertEquals(2, Files.readAllLines(dir.resolve("tickets.txt")).size(), "history retained after restart");
     }
+
+    @Test
+    void groupTicketLockRestoredAfterRestart() throws Exception {
+        Path users = dir.resolve("users.txt");
+        Run first = run(new String[0], String.join("\n", ANA, PEDRO, "SYSTEM DATE;2026-10-01",
+                "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com", "GROUP ADD;G01;pedro@correo.com",
+                "GROUPTICKET CREATE;TG01;G01;2026-10-15", "EXIT") + "\n", users);
+        assertEquals("OK GROUP TICKET CREATED -> 80.00", first.out().get(6));
+        Run second = run(new String[0], String.join("\n", "SYSTEM DATE;2026-10-10", "GROUP REMOVE;G01;ana@correo.com",
+                "USER DELETE;pedro@correo.com;Otra2#", "SYSTEM DATE;2026-10-16", "GROUP REMOVE;G01;ana@correo.com",
+                "EXIT") + "\n", users);
+        assertTrue(second.out().get(1).startsWith("ERROR: "), second.out().toString());
+        assertTrue(second.out().get(2).startsWith("ERROR: "), second.out().toString());
+        assertEquals("OK: User removed from group", second.out().get(4));
+        assertEquals(List.of("TG01;G01;2026-10-15;40.00;80.00;TG01-1,TG01-2"),
+                Files.readAllLines(dir.resolve("grouptickets.txt")));
+    }
 }

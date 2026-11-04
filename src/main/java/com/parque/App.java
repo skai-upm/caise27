@@ -20,6 +20,7 @@ public class App {
     static final String USERS_FILE = "users.txt";
     static final String GROUPS_FILE = "groups.txt";
     static final String TICKETS_FILE = "tickets.txt";
+    static final String GROUP_TICKETS_FILE = "grouptickets.txt";
 
     public static void main(String[] args) {
         int status = run(args, System.in, System.out, System.err, DATA_DIR);
@@ -36,7 +37,8 @@ public class App {
         try {
             UserService users = new UserService(new UserRepository(dataDir.resolve(USERS_FILE)));
             GroupService groups = new GroupService(new GroupRepository(dataDir.resolve(GROUPS_FILE)), users);
-            TicketService tickets = new TicketService(new TicketRepository(dataDir.resolve(TICKETS_FILE)), users);
+            TicketService tickets = new TicketService(new TicketRepository(dataDir.resolve(TICKETS_FILE)),
+                    new GroupTicketRepository(dataDir.resolve(GROUP_TICKETS_FILE)), users, groups);
             processor = new CommandProcessor(users, groups, tickets);
         } catch (IOException e) {
             err.println("ERROR: Cannot load data from '" + dataDir.toAbsolutePath() + "': " + describe(e));

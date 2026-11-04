@@ -25,6 +25,7 @@ class TicketServiceTest {
     @TempDir
     Path dir;
     UserService users;
+    GroupService groups;
     TicketService tickets;
     User ana;
 
@@ -33,7 +34,9 @@ class TicketServiceTest {
         users = new UserService(new UserRepository(dir.resolve("users.txt")));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         ana = users.findByEmail("ana@correo.com");
-        tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")), users);
+        groups = new GroupService(new GroupRepository(dir.resolve("groups.txt")), users);
+        tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")),
+                new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups);
     }
 
     private List<String> lines() throws Exception {
@@ -43,7 +46,7 @@ class TicketServiceTest {
 
     @Test
     void createForRegisteredUserFromTodayOn() throws Exception {
-        Ticket t = tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
+        IndividualTicket t = tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
         assertSame(ana, t.getUser());
         tickets.create("T002", "ana@correo.com", OCT_1, OCT_1, P40);
         assertEquals(List.of("T001;12345678Z;2026-10-15;40.00", "T002;12345678Z;2026-10-01;40.00"), lines());
@@ -86,7 +89,8 @@ class TicketServiceTest {
     void capturedPriceIsKeptAndRestored() throws Exception {
         tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
         tickets.create("T002", "ana@correo.com", OCT_15, OCT_1, new BigDecimal("60.00"));
-        TicketService restarted = new TicketService(new TicketRepository(dir.resolve("tickets.txt")), users);
+        TicketService restarted = new TicketService(new TicketRepository(dir.resolve("tickets.txt")),
+                new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups);
         assertEquals("40.00", restarted.find("T001").getPriceText());
         assertEquals("60.00", restarted.find("T002").getPriceText());
         assertSame(ana, restarted.find("T001").getUser());

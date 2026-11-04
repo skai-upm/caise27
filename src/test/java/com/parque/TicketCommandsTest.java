@@ -29,7 +29,8 @@ class TicketCommandsTest {
     void setUp() throws Exception {
         users = new UserService(new UserRepository(dir.resolve("users.txt")));
         groups = new GroupService(new GroupRepository(dir.resolve("groups.txt")), users);
-        tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")), users);
+        tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")),
+                new GroupTicketRepository(dir.resolve("grouptickets.txt")), users, groups);
         processor = new CommandProcessor(users, groups, tickets, LocalDate.of(2026, 9, 15));
         processor.process(ANA);
     }

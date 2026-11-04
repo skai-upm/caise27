@@ -88,25 +88,50 @@ package com.parque {
     +save(groups : List<Group>) : void
   }
 
-  class Ticket {
+  abstract class Ticket {
     -id : String {readOnly}
-    -holderDni : String {readOnly}
     -date : LocalDate {readOnly}
-    -price : BigDecimal {readOnly}
+    +{abstract} getPrice() : BigDecimal
     +getPriceText() : String
+    +isCurrentOrFuture(today : LocalDate) : boolean
+    +isFuture(today : LocalDate) : boolean
+  }
+
+  class IndividualTicket {
+    -holderDni : String {readOnly}
+    -price : BigDecimal {readOnly}
+    +getPrice() : BigDecimal
+  }
+
+  class GroupTicket {
+    -groupId : String {readOnly}
+    -unitPrice : BigDecimal {readOnly}
+    -total : BigDecimal {readOnly}
+    {static} +discountPercent(members : int) : int
+    {static} +totalFor(unitPrice : BigDecimal, members : int) : BigDecimal
+    +getPrice() : BigDecimal
   }
 
   class TicketService {
-    +create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Ticket
+    +create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : IndividualTicket
     +delete(id : String, today : LocalDate) : void
+    +createGroupTicket(id : String, groupId : String, date : LocalDate, today : LocalDate, unitPrice : BigDecimal) : GroupTicket
+    +deleteGroupTicket(id : String, today : LocalDate) : void
     +hasCurrentOrFutureTicket(user : User, today : LocalDate) : boolean
-    +find(id : String) : Ticket
+    +isGroupLocked(group : Group, today : LocalDate) : boolean
+    +findAny(id : String) : Ticket
   }
 
   class TicketRepository {
     -file : Path
-    +load(userByDni : Function<String, User>) : List<Ticket>
-    +save(tickets : List<Ticket>) : void
+    +load(userByDni : Function<String, User>) : List<IndividualTicket>
+    +save(tickets : List<IndividualTicket>) : void
+  }
+
+  class GroupTicketRepository {
+    -file : Path
+    +load(groupById : Function<String, Group>, ticketById : Function<String, IndividualTicket>) : List<GroupTicket>
+    +save(groupTickets : List<GroupTicket>) : void
   }
 }
 
@@ -129,7 +154,15 @@ UserRepository ..> User : reads/writes
 GroupRepository ..> Group : reads/writes
 TicketService "1" --> "1" TicketRepository : repository
 TicketService "1" --> "1" UserService : users
-TicketService "1" o-- "0..*" Ticket : tickets
-Ticket "0..*" --> "0..1" User : owner
-TicketRepository ..> Ticket : reads/writes
+TicketService "1" --> "1" GroupTicketRepository : groupRepository
+TicketService "1" --> "1" GroupService : groups
+TicketService "1" o-- "0..*" IndividualTicket : tickets
+TicketService "1" o-- "0..*" GroupTicket : groupTickets
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+IndividualTicket "0..*" --> "0..1" User : owner
+GroupTicket "0..*" o-- "0..1" Group : buyer
+GroupTicket "1" *-- "1..*" IndividualTicket : constituents
+TicketRepository ..> IndividualTicket : reads/writes
+GroupTicketRepository ..> GroupTicket : reads/writes
 @enduml

@@ -34,6 +34,10 @@ class UmlModelTest {
     void groupUserAssociationWithMultiplicities() throws Exception {
         String model = Files.readString(Path.of("uml/model.puml"));
         assertTrue(model.contains("Group \"0..*\" o-- \"0..*\" User : members"));
-        assertTrue(model.contains("Ticket \"0..*\" --> \"0..1\" User : owner"));
+        assertTrue(model.contains("IndividualTicket \"0..*\" --> \"0..1\" User : owner"));
+        assertTrue(model.contains("Ticket <|-- IndividualTicket"));
+        assertTrue(model.contains("Ticket <|-- GroupTicket"));
+        assertTrue(model.contains("GroupTicket \"0..*\" o-- \"0..1\" Group : buyer"));
+        assertTrue(model.contains("GroupTicket \"1\" *-- \"1..*\" IndividualTicket : constituents"));
     }
 }

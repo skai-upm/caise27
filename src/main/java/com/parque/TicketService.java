@@ -8,27 +8,40 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Individual-ticket operations. The current date and price are always supplied by the controller, so the
- * service never consults the real clock. Rejected operations throw {@link IllegalArgumentException} and
- * leave memory and file unchanged.
+ * Individual and group ticket operations. The current date and price are always supplied by the controller,
+ * so the service never consults the real clock. Rejected operations throw {@link IllegalArgumentException}
+ * and leave memory and files unchanged.
  */
 public class TicketService {
     private final TicketRepository repository;
+    private final GroupTicketRepository groupRepository;
     private final UserService users;
-    private List<Ticket> tickets;
+    private final GroupService groups;
+    private List<IndividualTicket> tickets;
+    private List<GroupTicket> groupTickets;
 
-    public TicketService(TicketRepository repository, UserService users) throws IOException {
+    public TicketService(TicketRepository repository, GroupTicketRepository groupRepository, UserService users,
+            GroupService groups) throws IOException {
         this.repository = repository;
+        this.groupRepository = groupRepository;
         this.users = users;
+        this.groups = groups;
         this.tickets = new ArrayList<>(repository.load(users::findByDni));
+        this.groupTickets = new ArrayList<>(groupRepository.load(groups::find, this::find));
     }
 
-    public List<Ticket> getTickets() {
+    /** Individual tickets, including the constituents of group tickets. */
+    public List<IndividualTicket> getTickets() {
         return Collections.unmodifiableList(tickets);
     }
 
-    public Ticket find(String id) {
-        for (Ticket t : tickets) {
+    public List<GroupTicket> getGroupTickets() {
+        return Collections.unmodifiableList(groupTickets);
+    }
+
+    /** Individual ticket with that identifier, or null. */
+    public IndividualTicket find(String id) {
+        for (IndividualTicket t : tickets) {
             if (t.getId().equals(id)) {
                 return t;
             }
@@ -36,48 +49,144 @@ public class TicketService {
         return null;
     }
 
-    /** Creates a ticket for a registered user and a date not earlier than {@code today}. */
-    public Ticket create(String id, String email, LocalDate date, LocalDate today, BigDecimal price) {
+    public GroupTicket findGroupTicket(String id) {
+        for (GroupTicket g : groupTickets) {
+            if (g.getId().equals(id)) {
+                return g;
+            }
+        }
+        return null;
+    }
+
+    /** Any ticket (individual or group) with that identifier, or null. */
+    public Ticket findAny(String id) {
+        Ticket t = find(id);
+        return t != null ? t : findGroupTicket(id);
+    }
+
+    /** Creates an individual ticket for a registered user and a date not earlier than {@code today}. */
+    public IndividualTicket create(String id, String email, LocalDate date, LocalDate today, BigDecimal price) {
         require(UserValidator.isNonBlank(id), "Ticket identifier must not be empty");
-        require(find(id) == null, "A ticket with identifier " + id + " already exists");
+        require(findAny(id) == null, "A ticket with identifier " + id + " already exists");
         User user = users.findByEmail(email);
         require(user != null, "No user with email " + email);
         require(!date.isBefore(today), "Ticket date " + date + " is before the system date " + today);
-        Ticket ticket = new Ticket(id, user, date, price);
-        List<Ticket> next = new ArrayList<>(tickets);
+        IndividualTicket ticket = new IndividualTicket(id, user, date, price);
+        List<IndividualTicket> next = new ArrayList<>(tickets);
         next.add(ticket);
-        commit(next);
+        saveIndividual(next);
+        tickets = next;
         return ticket;
     }
 
-    /** Deletes a ticket whose date is strictly later than {@code today}. */
+    /** Deletes an individual ticket whose date is strictly later than {@code today}; constituents are refused. */
     public void delete(String id, LocalDate today) {
-        Ticket ticket = find(id);
+        IndividualTicket ticket = find(id);
         require(ticket != null, "No ticket with identifier " + id);
-        require(ticket.getDate().isAfter(today),
+        GroupTicket owner = groupTicketContaining(ticket);
+        require(owner == null, "Ticket " + id + " belongs to group ticket " + (owner == null ? "" : owner.getId())
+                + " and can only be deleted with it");
+        require(ticket.isFuture(today),
                 "Ticket " + id + " cannot be deleted: its date " + ticket.getDate() + " is not after " + today);
-        List<Ticket> next = new ArrayList<>(tickets);
+        List<IndividualTicket> next = new ArrayList<>(tickets);
         next.remove(ticket);
-        commit(next);
+        saveIndividual(next);
+        tickets = next;
     }
 
-    /** True if the user owns a ticket dated on or after {@code today} (ticketDate >= SYSTEM DATE). */
+    /** Buys a group ticket: one individual ticket per current member, discounted total. */
+    public GroupTicket createGroupTicket(String id, String groupId, LocalDate date, LocalDate today,
+            BigDecimal unitPrice) {
+        require(UserValidator.isNonBlank(id), "Group ticket identifier must not be empty");
+        require(findAny(id) == null, "A ticket with identifier " + id + " already exists");
+        Group group = groups.find(groupId);
+        require(group != null, "No group with identifier " + groupId);
+        List<User> members = group.getMembers();
+        require(!members.isEmpty(), "Group " + groupId + " has no members");
+        require(!date.isBefore(today), "Ticket date " + date + " is before the system date " + today);
+        List<IndividualTicket> constituents = new ArrayList<>();
+        for (int i = 0; i < members.size(); i++) {
+            String constituentId = id + "-" + (i + 1);
+            require(findAny(constituentId) == null, "A ticket with identifier " + constituentId + " already exists");
+            constituents.add(new IndividualTicket(constituentId, members.get(i), date, unitPrice));
+        }
+        GroupTicket groupTicket = new GroupTicket(id, group, groupId, date, unitPrice,
+                GroupTicket.totalFor(unitPrice, members.size()), constituents);
+        List<IndividualTicket> nextTickets = new ArrayList<>(tickets);
+        nextTickets.addAll(constituents);
+        List<GroupTicket> nextGroupTickets = new ArrayList<>(groupTickets);
+        nextGroupTickets.add(groupTicket);
+        saveBoth(nextTickets, nextGroupTickets);
+        tickets = nextTickets;
+        groupTickets = nextGroupTickets;
+        return groupTicket;
+    }
+
+    /** Deletes a group ticket dated strictly after {@code today}, together with its constituent tickets. */
+    public void deleteGroupTicket(String id, LocalDate today) {
+        GroupTicket groupTicket = findGroupTicket(id);
+        require(groupTicket != null, "No group ticket with identifier " + id);
+        require(groupTicket.isFuture(today), "Group ticket " + id + " cannot be deleted: its date "
+                + groupTicket.getDate() + " is not after " + today);
+        List<IndividualTicket> nextTickets = new ArrayList<>(tickets);
+        nextTickets.removeIf(groupTicket::contains);
+        List<GroupTicket> nextGroupTickets = new ArrayList<>(groupTickets);
+        nextGroupTickets.remove(groupTicket);
+        saveBoth(nextTickets, nextGroupTickets);
+        tickets = nextTickets;
+        groupTickets = nextGroupTickets;
+    }
+
+    /** True if the user owns an individual (or constituent) ticket dated on or after {@code today}. */
     public boolean hasCurrentOrFutureTicket(User user, LocalDate today) {
-        for (Ticket t : tickets) {
-            if (t.getUser() == user && !t.getDate().isBefore(today)) {
+        for (IndividualTicket t : tickets) {
+            if (t.getUser() == user && t.isCurrentOrFuture(today)) {
                 return true;
             }
         }
         return false;
     }
 
-    private void commit(List<Ticket> next) {
+    /** True if the group has a group ticket dated on or after {@code today}. */
+    public boolean isGroupLocked(Group group, LocalDate today) {
+        for (GroupTicket g : groupTickets) {
+            if (g.getGroup() == group && g.isCurrentOrFuture(today)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private GroupTicket groupTicketContaining(IndividualTicket ticket) {
+        for (GroupTicket g : groupTickets) {
+            if (g.contains(ticket)) {
+                return g;
+            }
+        }
+        return null;
+    }
+
+    private void saveIndividual(List<IndividualTicket> state) {
         try {
-            repository.save(next);
+            repository.save(state);
         } catch (IOException e) {
             throw new IllegalStateException("Could not save tickets: " + e.getMessage(), e);
         }
-        tickets = next;
+    }
+
+    /** Writes both files; if the second write fails the first file is restored to the current state. */
+    private void saveBoth(List<IndividualTicket> nextTickets, List<GroupTicket> nextGroupTickets) {
+        saveIndividual(nextTickets);
+        try {
+            groupRepository.save(nextGroupTickets);
+        } catch (IOException e) {
+            try {
+                repository.save(tickets);
+            } catch (IOException ignored) {
+                // the original error is reported below
+            }
+            throw new IllegalStateException("Could not save group tickets: " + e.getMessage(), e);
+        }
     }
 
     private static void require(boolean condition, String message) {
