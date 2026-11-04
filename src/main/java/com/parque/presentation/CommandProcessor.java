@@ -2,6 +2,7 @@ package com.parque.presentation;
 
 import com.parque.business.controller.ParkController;
 import com.parque.business.model.Attraction;
+import com.parque.business.model.AttractionType;
 import com.parque.business.model.GroupTicket;
 import com.parque.business.model.IndividualTicket;
 import com.parque.business.model.Invoice;
@@ -170,8 +171,12 @@ public class CommandProcessor {
                 return ok("Group ticket deleted");
             }
             case "ATTRACTION CREATE" -> {
-                expectParameters(parts, 3, "ATTRACTION CREATE;Identificador;Nombre;Aforo");
-                controller.createAttraction(parts[1], parts[2], parts[3]);
+                if (parts.length - 1 == 4) {
+                    controller.createAttraction(parts[1], parts[2], parts[3], AttractionType.parse(parts[4]));
+                } else {
+                    expectParameters(parts, 3, "ATTRACTION CREATE;Identificador;Nombre;Aforo[;Tipo]");
+                    controller.createAttraction(parts[1], parts[2], parts[3]);
+                }
                 return ok("Attraction created");
             }
             case "ATTRACTION ENTER" -> {
@@ -222,9 +227,10 @@ public class CommandProcessor {
         }
     }
 
-    private static String status(Attraction a) {
+    private static String status(Attraction<?> a) {
         String nl = System.lineSeparator();
         StringBuilder sb = new StringBuilder("Attraction " + a.getId() + " - " + a.getName());
+        sb.append(nl).append("  Type: ").append(a.getType());
         sb.append(nl).append("  Maximum capacity: ").append(a.getCapacity());
         sb.append(nl).append("  Users present: ").append(a.getPresent().size());
         sb.append(nl).append("  Available places: ").append(a.available());

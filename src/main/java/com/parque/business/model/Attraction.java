@@ -6,21 +6,27 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A park attraction with a maximum capacity and the users currently present. Visitors enter and leave with
- * any {@link Ticket}; the attraction only relies on {@link Ticket#getVisitors()}, so individual and group
- * tickets are handled by the same logic. Occupancy is not persisted.
+ * A park attraction with a maximum capacity and the users currently present, generic in the ticket access
+ * capability it admits. The bound {@code T extends Admission} plus the accepted capability class decide which
+ * tickets are admitted, and the typed {@link #enter} receives them as {@code T}. Occupancy is not persisted.
+ *
+ * @param <T> access capability admitted by this attraction
  */
-public class Attraction {
+public abstract class Attraction<T extends Admission> {
     private final String id;
     private final String name;
     private final int capacity;
+    private final Class<T> acceptedType;
     private final List<User> present = new ArrayList<>();
 
-    public Attraction(String id, String name, int capacity) {
+    protected Attraction(String id, String name, int capacity, Class<T> acceptedType) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+        this.acceptedType = acceptedType;
     }
+
+    public abstract AttractionType getType();
 
     public String getId() {
         return id;
@@ -52,11 +58,25 @@ public class Attraction {
         return false;
     }
 
+    /** True if tickets with this capability are admitted by this attraction type. */
+    public boolean accepts(Admission ticket) {
+        return acceptedType.isInstance(ticket);
+    }
+
+    /** Admits any ticket whose capability this attraction accepts; others are rejected. */
+    public void admit(Admission ticket, LocalDate today) {
+        if (!accepts(ticket)) {
+            throw new IllegalArgumentException(getType() + " attraction " + id + " does not admit ticket "
+                    + ticket.getId());
+        }
+        enter(acceptedType.cast(ticket), today);
+    }
+
     /**
-     * Admits all visitors of the ticket or none: the ticket must be for {@code today}, none of its visitors may
-     * already be inside, and they must all fit in the available places.
+     * Admits all visitors of the ticket or none: the ticket must be for {@code today}, the type-specific
+     * conditions must hold, none of its visitors may already be inside, and they must all fit.
      */
-    public void enter(Ticket ticket, LocalDate today) {
+    public void enter(T ticket, LocalDate today) {
         if (!ticket.getDate().equals(today)) {
             throw new IllegalArgumentException("Ticket " + ticket.getId() + " is valid for " + ticket.getDate()
                     + ", not for the system date " + today);
@@ -74,11 +94,16 @@ public class Attraction {
             throw new IllegalArgumentException("Not enough places in attraction " + id + ": " + visitors.size()
                     + " needed, " + available() + " available");
         }
+        checkAdditionalConditions(ticket, today);
         present.addAll(visitors);
     }
 
+    /** Extra admission conditions of a type; must not change state when it rejects. None by default. */
+    protected void checkAdditionalConditions(T ticket, LocalDate today) {
+    }
+
     /** Removes the ticket's visitors that are present; returns how many left. Rejects if none was present. */
-    public int exit(Ticket ticket) {
+    public int exit(Admission ticket) {
         int removed = 0;
         for (User v : ticket.getVisitors()) {
             if (present.removeIf(u -> u == v)) {

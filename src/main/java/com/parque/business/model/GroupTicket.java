@@ -11,7 +11,7 @@ import java.util.List;
  * A ticket bought by a group for one date. It aggregates the group that bought it and is composed of one
  * {@link IndividualTicket} per member at the time of purchase; later membership changes do not alter it.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
     private final Group group;
     private final String groupId;
     private final BigDecimal unitPrice;
@@ -87,6 +87,7 @@ public class GroupTicket extends Ticket {
     }
 
     /** The individual tickets composing this group ticket (read-only). */
+    @Override
     public List<IndividualTicket> getConstituents() {
         return Collections.unmodifiableList(constituents);
     }

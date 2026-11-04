@@ -9,7 +9,7 @@ import java.util.List;
  * An individual ticket for one date of use, owned by a registered user (a reference, not a copy).
  * Immutable: the price captured at purchase never changes. It may be a constituent of a {@link GroupTicket}.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
     private final User user;
     private final String holderDni;
     private final BigDecimal price;
@@ -31,6 +31,7 @@ public class IndividualTicket extends Ticket {
     }
 
     /** The owner, or null for the history of a user deleted in an earlier execution. */
+    @Override
     public User getUser() {
         return user;
     }

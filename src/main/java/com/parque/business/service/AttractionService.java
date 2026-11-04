@@ -1,6 +1,7 @@
 package com.parque.business.service;
 
 import com.parque.business.model.Attraction;
+import com.parque.business.model.AttractionType;
 import com.parque.persistence.AttractionRepository;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,19 +13,19 @@ import java.util.List;
  */
 public class AttractionService {
     private final AttractionRepository repository;
-    private List<Attraction> attractions;
+    private List<Attraction<?>> attractions;
 
     public AttractionService(AttractionRepository repository) throws IOException {
         this.repository = repository;
         this.attractions = new ArrayList<>(repository.load());
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         return Collections.unmodifiableList(attractions);
     }
 
-    public Attraction find(String id) {
-        for (Attraction a : attractions) {
+    public Attraction<?> find(String id) {
+        for (Attraction<?> a : attractions) {
             if (a.getId().equals(id)) {
                 return a;
             }
@@ -33,21 +34,26 @@ public class AttractionService {
     }
 
     /** Finds an attraction or rejects the operation. */
-    public Attraction existing(String id) {
-        Attraction a = find(id);
+    public Attraction<?> existing(String id) {
+        Attraction<?> a = find(id);
         if (a == null) {
             throw new IllegalArgumentException("No attraction with identifier " + id);
         }
         return a;
     }
 
-    public Attraction create(String id, String name, String capacityText) {
+    /** Creates a GENERAL attraction (E2 syntax). */
+    public Attraction<?> create(String id, String name, String capacityText) {
+        return create(id, name, capacityText, AttractionType.GENERAL);
+    }
+
+    public Attraction<?> create(String id, String name, String capacityText, AttractionType type) {
         require(UserValidator.isNonBlank(id), "Attraction identifier must not be empty");
         require(UserValidator.isNonBlank(name), "Attraction name must not be empty");
         require(find(id) == null, "An attraction with identifier " + id + " already exists");
         int capacity = parseCapacity(capacityText);
-        Attraction attraction = new Attraction(id, name, capacity);
-        List<Attraction> next = new ArrayList<>(attractions);
+        Attraction<?> attraction = type.create(id, name, capacity);
+        List<Attraction<?>> next = new ArrayList<>(attractions);
         next.add(attraction);
         try {
             repository.save(next);

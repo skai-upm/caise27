@@ -1,6 +1,7 @@
 package com.parque.business.controller;
 
 import com.parque.business.model.Attraction;
+import com.parque.business.model.AttractionType;
 import com.parque.business.model.Group;
 import com.parque.business.model.GroupTicket;
 import com.parque.business.model.IndividualTicket;
@@ -212,25 +213,29 @@ public class ParkController {
 
     // ----- attractions
 
-    public Attraction createAttraction(String id, String name, String capacity) {
+    public Attraction<?> createAttraction(String id, String name, String capacity) {
         return attractions.create(id, name, capacity);
+    }
+
+    public Attraction<?> createAttraction(String id, String name, String capacity, AttractionType type) {
+        return attractions.create(id, name, capacity, type);
     }
 
     /** Admits the visitors of the ticket; returns how many entered. */
     public int enterAttraction(String attractionId, String ticketId) {
-        Attraction attraction = attractions.existing(attractionId);
+        Attraction<?> attraction = attractions.existing(attractionId);
         Ticket ticket = existingTicket(ticketId);
-        attraction.enter(ticket, currentDate);
+        attraction.admit(ticket, currentDate);
         return ticket.getVisitors().size();
     }
 
     /** Removes the visitors of the ticket that are present; returns how many left. */
     public int exitAttraction(String attractionId, String ticketId) {
-        Attraction attraction = attractions.existing(attractionId);
+        Attraction<?> attraction = attractions.existing(attractionId);
         return attraction.exit(existingTicket(ticketId));
     }
 
-    public Attraction attraction(String id) {
+    public Attraction<?> attraction(String id) {
         return attractions.existing(id);
     }
 

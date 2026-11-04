@@ -66,7 +66,7 @@ The system SHALL process `ATTRACTION EXIT;Identificador;Ticket`, removing from t
 - **THEN** an `ERROR:` response is printed
 
 ### Requirement: Attraction status
-The system SHALL process `ATTRACTION STATUS;Identificador`, answering with an `OK:` response that shows the identifier, name, maximum capacity, number of users present, number of available places and the users present, reflecting the state at that moment and counting every present user once regardless of the ticket kind used.
+The system SHALL process `ATTRACTION STATUS;Identificador`, answering with an `OK:` response that shows the identifier, name, type, maximum capacity, number of users present, number of available places and the users present, reflecting the state at that moment and counting every present user once regardless of the ticket kind used.
 
 #### Scenario: Status after mixed entries and an exit
 - **GIVEN** `A01` (capacity 20); Ana entered with `T001` and Pedro, Luis and Marta with `TG01`
@@ -78,3 +78,8 @@ The system SHALL process `ATTRACTION STATUS;Identificador`, answering with an `O
 #### Scenario: Unknown attraction
 - **WHEN** `ATTRACTION STATUS;A99` is processed and `A99` does not exist
 - **THEN** an `ERROR:` response is printed
+
+#### Scenario: Status shows the type
+- **GIVEN** GROUP attraction `A02`
+- **WHEN** `ATTRACTION STATUS;A02` is processed
+- **THEN** the response shows the type GROUP

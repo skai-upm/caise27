@@ -24,14 +24,14 @@ class AttractionServiceTest {
     @Test
     void createPersistsDefinitionsOnly() throws Exception {
         AttractionService s = new AttractionService(new AttractionRepository(dir.resolve("attractions.txt")));
-        Attraction a = s.create("A01", "Tornado", "20");
+        Attraction<?> a = s.create("A01", "Tornado", "20");
         User ana = new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
         LocalDate today = LocalDate.of(2026, 10, 15);
-        a.enter(new IndividualTicket("T001", ana, today, new BigDecimal("40")), today);
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        a.admit(new IndividualTicket("T001", ana, today, new BigDecimal("40")), today);
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
 
         AttractionService restarted = new AttractionService(new AttractionRepository(dir.resolve("attractions.txt")));
-        Attraction again = restarted.find("A01");
+        Attraction<?> again = restarted.find("A01");
         assertEquals("Tornado", again.getName());
         assertEquals(20, again.getCapacity());
         assertEquals(0, again.getPresent().size(), "attractions start empty");
@@ -45,7 +45,7 @@ class AttractionServiceTest {
         s.create("A01", "Tornado", "20");
         assertThrows(IllegalArgumentException.class, () -> s.create(id, name, capacity));
         assertEquals(1, s.getAttractions().size());
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
     }
 
     @Test

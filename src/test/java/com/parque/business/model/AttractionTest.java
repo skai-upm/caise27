@@ -32,7 +32,7 @@ class AttractionTest {
 
     @Test
     void individualAndGroupEntryThroughSameAbstraction() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 20);
         User ana = user(1);
         Ticket t001 = new IndividualTicket("T001", ana, TODAY, P40);
         Ticket tg01 = groupTicket("TG01", 3, TODAY);
@@ -49,7 +49,7 @@ class AttractionTest {
 
     @Test
     void groupLargerThanRemainingPlacesEntersNobody() {
-        Attraction a = new Attraction("A01", "Tornado", 5);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 5);
         a.enter(groupTicket("TG00", 2, TODAY), TODAY);
         assertThrows(IllegalArgumentException.class, () -> a.enter(groupTicket("TG01", 4, TODAY), TODAY));
         assertEquals(2, a.getPresent().size());
@@ -60,7 +60,7 @@ class AttractionTest {
 
     @Test
     void ticketMustBeForToday() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 20);
         Ticket t = new IndividualTicket("T001", user(1), TODAY, P40);
         assertThrows(IllegalArgumentException.class, () -> a.enter(t, TODAY.minusDays(1)));
         assertThrows(IllegalArgumentException.class, () -> a.enter(t, TODAY.plusDays(1)));
@@ -69,7 +69,7 @@ class AttractionTest {
 
     @Test
     void alreadyInsideRejectedAndExitNeedsSomebody() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 20);
         User ana = user(1);
         Ticket t = new IndividualTicket("T001", ana, TODAY, P40);
         a.enter(t, TODAY);
@@ -84,7 +84,7 @@ class AttractionTest {
 
     @Test
     void historyTicketWithoutVisitorsRejected() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 20);
         assertThrows(IllegalArgumentException.class,
                 () -> a.enter(new IndividualTicket("T001", null, "x", TODAY, P40), TODAY));
     }

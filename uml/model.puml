@@ -87,10 +87,27 @@ package com.parque.business.model {
     -total : BigDecimal
   }
 
-  class Attraction {
+  interface Admission
+  interface IndividualAccess
+  interface GroupAccess
+
+  abstract class Attraction<T extends Admission> {
     -id : String
     -name : String
     -capacity : int
+    -acceptedType : Class<T>
+  }
+
+  class GeneralAttraction
+  class IndividualAttraction
+  class GroupAttraction
+  class SpecialAttraction
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 
   abstract class Pass {
@@ -159,7 +176,16 @@ package com.parque.persistence {
   }
 }
 
-' Inheritance
+'' Inheritance and capabilities
+Admission <|-- IndividualAccess
+Admission <|-- GroupAccess
+Admission <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <<bind>> T::Admission
+Attraction <|-- IndividualAttraction : <<bind>> T::IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T::GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T::IndividualAccess
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 InvoiceBuilder <|-- UserInvoiceBuilder
@@ -235,6 +261,11 @@ GroupInvoiceBuilder "0..*" o--> "0..*" GroupTicket : groupTickets
 App ..> CommandRunner : <<use>>
 App ..> DataDirectory : <<use>>
 App ..> ApplicationContext : <<use>>
+AttractionService ..> AttractionType : <<use>>
+AttractionType ..> GeneralAttraction : <<use>>
+AttractionType ..> IndividualAttraction : <<use>>
+AttractionType ..> GroupAttraction : <<use>>
+AttractionType ..> SpecialAttraction : <<use>>
 PassService ..> SpeedPass : <<use>>
 PassService ..> SpecialPass : <<use>>
 PassRepository ..> SpeedPass : <<use>>

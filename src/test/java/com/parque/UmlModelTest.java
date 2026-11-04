@@ -110,11 +110,18 @@ class UmlModelTest {
         for (String l : lines) {
             if (l.contains("<|--")) {
                 String[] p = l.split("\\s*<\\|--\\s*");
-                assertEquals(type(p[0]), type(p[1]).getSuperclass(), l);
-                drawn.add(p[1]);
+                p[1] = p[1].split(" ")[0];
+                if (type(p[1]).isInterface()) {
+                    assertTrue(List.of(type(p[1]).getInterfaces()).contains(type(p[0])), l);
+                    drawn.add(p[1] + " implements " + p[0]);
+                } else {
+                    assertEquals(type(p[0]), type(p[1]).getSuperclass(), l);
+                    drawn.add(p[1]);
+                }
             }
             if (l.contains("<|..")) {
                 String[] p = l.split("\\s*<\\|\\.\\.\\s*");
+                p[1] = p[1].split(" ")[0];
                 assertTrue(List.of(type(p[1]).getInterfaces()).contains(type(p[0])), l);
                 drawn.add(p[1] + " implements " + p[0]);
             }
@@ -147,7 +154,9 @@ class UmlModelTest {
             Type t = f.getGenericType();
             if (t instanceof ParameterizedType pt) {
                 assertTrue(List.class.isAssignableFrom(f.getType()), l);
-                assertEquals(target, pt.getActualTypeArguments()[0], l);
+                Type arg = pt.getActualTypeArguments()[0];
+                Type raw = arg instanceof ParameterizedType ap ? ap.getRawType() : arg;
+                assertEquals(target, raw, l);
                 assertTrue(m.group(4).endsWith("*"), "collection needs a many multiplicity: " + l);
             } else {
                 assertEquals(target, f.getType(), l);
@@ -171,8 +180,14 @@ class UmlModelTest {
                     continue;
                 }
                 Class<?> ft = f.getType();
-                if (f.getGenericType() instanceof ParameterizedType pt && pt.getActualTypeArguments()[0] instanceof Class<?> a) {
-                    ft = a;
+                if (f.getGenericType() instanceof ParameterizedType pt) {
+                    Type arg = pt.getActualTypeArguments()[0];
+                    if (arg instanceof ParameterizedType ap) {
+                        arg = ap.getRawType();
+                    }
+                    if (arg instanceof Class<?> a) {
+                        ft = a;
+                    }
                 }
                 if (ft.getPackageName().startsWith("com.parque") && !ft.isEnum()) {
                     assertTrue(drawn.contains(name + "." + f.getName()), "relationship not drawn: " + name + "." + f.getName());

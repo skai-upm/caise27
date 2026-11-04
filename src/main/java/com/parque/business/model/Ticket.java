@@ -8,7 +8,7 @@ import java.util.List;
  * Common abstraction of every ticket: an identifier (unique across all kinds of tickets), a date of use
  * and a price. Specialised by {@link IndividualTicket} and {@link GroupTicket}.
  */
-public abstract class Ticket {
+public abstract class Ticket implements Admission {
     private final String id;
     private final LocalDate date;
 
@@ -28,6 +28,7 @@ public abstract class Ticket {
     /**
      * Users admitted with this ticket. Lets attractions treat every kind of ticket uniformly.
      */
+    @Override
     public abstract List<User> getVisitors();
 
     /** Price paid for this ticket. */
