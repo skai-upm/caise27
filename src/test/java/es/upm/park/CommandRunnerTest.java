@@ -33,7 +33,8 @@ class CommandRunnerTest {
         manager = new UserManager(new UserFileStore(dir.resolve("users.txt")));
         GroupManager groups = new GroupManager(new GroupFileStore(dir.resolve("groups.txt")), manager);
         TicketManager tickets = new TicketManager(new TicketFileStore(dir.resolve("tickets.txt")), new GroupTicketFileStore(dir.resolve("grouptickets.txt")), manager, groups);
-        runner = new CommandRunner(new CommandProcessor(manager, groups, tickets));
+        AttractionManager attractions = new AttractionManager(new AttractionFileStore(dir.resolve("attractions.txt")));
+        runner = new CommandRunner(new CommandProcessor(manager, groups, tickets, attractions));
     }
 
     private List<String> run(String... lines) throws IOException {

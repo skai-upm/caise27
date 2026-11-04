@@ -35,6 +35,10 @@ public class CommandProcessor {
             "TICKET DELETE;Id",
             "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
             "GROUPTICKET DELETE;Id",
+            "ATTRACTION CREATE;Id;Nombre;Capacidad",
+            "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION EXIT;IdAtraccion;IdTicket",
+            "ATTRACTION STATUS;IdAtraccion",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -49,18 +53,22 @@ public class CommandProcessor {
     private final UserManager users;
     private final GroupManager groups;
     private final TicketManager tickets;
+    private final AttractionManager attractions;
     private LocalDate currentDate;
     private BigDecimal currentPrice = DEFAULT_PRICE;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets) {
-        this(users, groups, tickets, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
+                            AttractionManager attractions) {
+        this(users, groups, tickets, attractions, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets, LocalDate initialDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets,
+                            AttractionManager attractions, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        this.attractions = attractions;
         this.currentDate = initialDate;
     }
 
@@ -106,6 +114,9 @@ public class CommandProcessor {
         }
         if (words.size() == 2 && words.get(0).equals("GROUPTICKET")) {
             return groupTicket(words.get(1), params, parts[0].trim());
+        }
+        if (words.size() == 2 && words.get(0).equals("ATTRACTION")) {
+            return attraction(words.get(1), params, parts[0].trim());
         }
         if (words.size() == 2 && words.get(0).equals("GROUP")) {
             return group(words.get(1), params, parts[0].trim());
@@ -197,6 +208,22 @@ public class CommandProcessor {
         }
     }
 
+    private Result attraction(String operation, String[] p, String command) {
+        return switch (operation) {
+            case "CREATE" -> hasParams(p, 3) ? attractions.create(p[0], p[1], p[2])
+                    : Result.error("Usage: ATTRACTION CREATE;Id;Nombre;Capacidad");
+            case "ENTER" -> hasParams(p, 2)
+                    ? attractions.enter(p[0], tickets.findForAccess(p[1]), p[1], currentDate)
+                    : Result.error("Usage: ATTRACTION ENTER;IdAtraccion;IdTicket");
+            case "EXIT" -> hasParams(p, 2)
+                    ? attractions.exit(p[0], tickets.findForAccess(p[1]), p[1])
+                    : Result.error("Usage: ATTRACTION EXIT;IdAtraccion;IdTicket");
+            case "STATUS" -> hasParams(p, 1) ? attractions.status(p[0])
+                    : Result.error("Usage: ATTRACTION STATUS;IdAtraccion");
+            default -> Result.error("Unknown command: " + command);
+        };
+    }
+
     /** Strict {@code yyyy-MM-dd} calendar date. */
     private static Optional<LocalDate> parseDate(String text) {
         if (text.length() != DATE_LENGTH) {
@@ -247,6 +274,7 @@ public class CommandProcessor {
         }
         Result result = users.delete(p[0], p[1]);
         if (result.success() && target.isPresent()) {
+            attractions.removeUserEverywhere(target.get());
             Result cleanup = groups.removeUserEverywhere(target.get());
             if (!cleanup.success()) {
                 return Result.error(result.message() + " " + cleanup.message());

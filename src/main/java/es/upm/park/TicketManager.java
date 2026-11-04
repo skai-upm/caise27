@@ -65,6 +65,12 @@ public class TicketManager {
         return tickets.stream().filter(t -> t.getId().equals(id)).findFirst();
     }
 
+    /** Ticket usable for attraction access: a standalone individual ticket or a group ticket. */
+    public Optional<Ticket> findForAccess(String id) {
+        Optional<Ticket> individual = find(id).map(Ticket.class::cast);
+        return individual.isPresent() ? individual : findGroupTicket(id).map(Ticket.class::cast);
+    }
+
     public Optional<GroupTicket> findGroupTicket(String id) {
         return groupTickets.stream().filter(t -> t.getId().equals(id)).findFirst();
     }

@@ -32,7 +32,7 @@ public class App {
     }
 
     /** Runs with the data files ({@code users.txt}, {@code groups.txt}, {@code tickets.txt},
-     *  {@code grouptickets.txt}) inside {@code dataDir}. */
+     *  {@code grouptickets.txt}, {@code attractions.txt}) inside {@code dataDir}. */
     static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err, Path dataDir) {
         CommandRunner runner;
         try {
@@ -40,7 +40,9 @@ public class App {
             GroupManager groups = new GroupManager(new GroupFileStore(dataDir.resolve("groups.txt")), users);
             TicketManager tickets = new TicketManager(new TicketFileStore(dataDir.resolve("tickets.txt")),
                     new GroupTicketFileStore(dataDir.resolve("grouptickets.txt")), users, groups);
-            runner = new CommandRunner(new CommandProcessor(users, groups, tickets));
+            AttractionManager attractions = new AttractionManager(
+                    new AttractionFileStore(dataDir.resolve("attractions.txt")));
+            runner = new CommandRunner(new CommandProcessor(users, groups, tickets, attractions));
         } catch (IOException e) {
             err.println("ERROR: Cannot load data files: " + describe(e));
             return 1;

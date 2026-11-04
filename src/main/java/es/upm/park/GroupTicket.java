@@ -72,4 +72,9 @@ public class GroupTicket extends Ticket {
     public List<IndividualTicket> getTickets() {
         return tickets;
     }
+
+    @Override
+    public List<User> getHolders() {
+        return tickets.stream().map(IndividualTicket::getUser).toList();
+    }
 }

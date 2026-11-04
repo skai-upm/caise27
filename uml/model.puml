@@ -113,6 +113,7 @@ package es.upm.park {
     + allTickets() : List<Ticket>
     + find(id : String) : Optional<IndividualTicket>
     + findGroupTicket(id : String) : Optional<GroupTicket>
+    + findForAccess(id : String) : Optional<Ticket>
     + create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Result
     + delete(id : String, today : LocalDate) : Result
     + createGroupTicket(id : String, group : Group, date : LocalDate, today : LocalDate, price : BigDecimal) : Result
@@ -151,10 +152,12 @@ package es.upm.park {
     + getId() : String
     + getDate() : LocalDate
     + getPrice() : BigDecimal
+    + {abstract} getHolders() : List<User>
   }
 
   class IndividualTicket {
     + getUser() : User
+    + getHolders() : List<User>
   }
 
   class GroupTicket {
@@ -165,6 +168,35 @@ package es.upm.park {
     + {static} totalPrice(basePrice : BigDecimal, members : int) : BigDecimal
     + getGroup() : Group
     + getTickets() : List<IndividualTicket>
+    + getHolders() : List<User>
+  }
+
+  class Attraction {
+    - id : String {readOnly}
+    - name : String {readOnly}
+    - capacity : int {readOnly}
+    + getAvailable() : int
+    + getPresent() : List<User>
+    + isPresent(user : User) : boolean
+    + enter(ticket : Ticket, today : LocalDate) : Result
+    + exit(ticket : Ticket) : Result
+    + remove(user : User) : void
+  }
+
+  class AttractionManager {
+    + getAttractions() : List<Attraction>
+    + find(id : String) : Optional<Attraction>
+    + create(id : String, name : String, capacityText : String) : Result
+    + enter(attractionId : String, ticket : Optional<Ticket>, ticketId : String, today : LocalDate) : Result
+    + exit(attractionId : String, ticket : Optional<Ticket>, ticketId : String) : Result
+    + status(attractionId : String) : Result
+    + removeUserEverywhere(user : User) : void
+  }
+
+  class AttractionFileStore {
+    - file : Path
+    + load() : List<Attraction>
+    + save(attractions : List<Attraction>) : void
   }
 }
 
@@ -173,6 +205,7 @@ CommandRunner --> "1" CommandProcessor : processor
 CommandProcessor --> "1" UserManager : users
 CommandProcessor --> "1" GroupManager : groups
 CommandProcessor --> "1" TicketManager : tickets
+CommandProcessor --> "1" AttractionManager : attractions
 CommandProcessor ..> Result : returns
 UserManager --> "1" UserFileStore : store
 UserManager *-- "0..*" User : users
@@ -196,6 +229,11 @@ TicketFileStore ..> TicketContents : returns
 TicketFileStore ..> IndividualTicket : reads/writes
 GroupTicketFileStore ..> GroupTicketContents : returns
 GroupTicketFileStore ..> GroupTicket : reads/writes
+AttractionManager --> "1" AttractionFileStore : store
+AttractionManager *-- "0..*" Attraction : attractions
+Attraction "0..*" o-- "0..*" User : present
+Attraction ..> Ticket : admits holders of
+AttractionFileStore ..> Attraction : reads/writes
 UserFileStore ..> User : reads/writes
 GroupFileStore ..> Group : reads/writes
 @enduml

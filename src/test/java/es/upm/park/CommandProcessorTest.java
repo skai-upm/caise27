@@ -25,6 +25,7 @@ class CommandProcessorTest {
     private UserManager manager;
     private GroupManager groups;
     private TicketManager tickets;
+    private AttractionManager attractions;
     private CommandProcessor processor;
 
     @BeforeEach
@@ -32,7 +33,8 @@ class CommandProcessorTest {
         manager = new UserManager(new UserFileStore(dir.resolve("users.txt")));
         groups = new GroupManager(new GroupFileStore(dir.resolve("groups.txt")), manager);
         tickets = new TicketManager(new TicketFileStore(dir.resolve("tickets.txt")), new GroupTicketFileStore(dir.resolve("grouptickets.txt")), manager, groups);
-        processor = new CommandProcessor(manager, groups, tickets);
+        attractions = new AttractionManager(new AttractionFileStore(dir.resolve("attractions.txt")));
+        processor = new CommandProcessor(manager, groups, tickets, attractions);
     }
 
     @Test
@@ -122,6 +124,10 @@ class CommandProcessorTest {
             "TICKET DELETE;Id",
             "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
             "GROUPTICKET DELETE;Id",
+            "ATTRACTION CREATE;Id;Nombre;Capacidad",
+            "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION EXIT;IdAtraccion;IdTicket",
+            "ATTRACTION STATUS;IdAtraccion",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -157,7 +163,7 @@ class CommandProcessorTest {
     private static final LocalDate START = LocalDate.of(2026, 9, 15);
 
     private CommandProcessor processorAt(LocalDate date) {
-        return new CommandProcessor(manager, groups, tickets, date);
+        return new CommandProcessor(manager, groups, tickets, attractions, date);
     }
 
     @Test
@@ -391,5 +397,57 @@ class CommandProcessorTest {
         CommandProcessor p = groupOf(1);
         assertFalse(p.process(command).success());
         assertTrue(tickets.getGroupTickets().isEmpty());
+    }
+
+    // ---- attractions ----
+
+    @Test
+    void sourceAttractionExample() {
+        CommandProcessor p = groupOf(2);
+        p.process(CREATE_ANA);
+        p.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        p.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertTrue(p.process("ATTRACTION CREATE;A01;Tornado;20").success());
+        assertFalse(p.process("ATTRACTION ENTER;A01;T001").success(), "ticket not for today");
+        p.process("SYSTEM DATE;2026-10-15");
+        assertTrue(p.process("ATTRACTION ENTER;A01;T001").success());
+        assertTrue(p.process("ATTRACTION ENTER;A01;TG01").success());
+        String status = p.process("ATTRACTION STATUS;A01").toString();
+        assertTrue(status.contains("Present: 3") && status.contains("Available: 17"), status);
+        assertTrue(status.contains("ana@correo.com") && status.contains("u0@correo.com") && status.contains("u1@correo.com"));
+        assertTrue(p.process("ATTRACTION EXIT;A01;T001").success());
+        status = p.process("ATTRACTION STATUS;A01").toString();
+        assertTrue(status.contains("Present: 2") && status.contains("Available: 18") && !status.contains("ana@correo.com"));
+    }
+
+    @Test
+    void groupDoesNotFitAndNobodyEnters() {
+        CommandProcessor p = groupOf(4);
+        p.process("GROUPTICKET CREATE;TG01;G01;2026-10-01");
+        p.process("ATTRACTION CREATE;A01;Tornado;3");
+        assertFalse(p.process("ATTRACTION ENTER;A01;TG01").success());
+        assertTrue(p.process("ATTRACTION STATUS;A01").toString().contains("Present: 0"));
+    }
+
+    @Test
+    void deletedUserLeavesAttraction() {
+        CommandProcessor p = processorAt(LocalDate.of(2026, 10, 15));
+        p.process(CREATE_ANA);
+        p.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        p.process("ATTRACTION CREATE;A01;Tornado;20");
+        p.process("ATTRACTION ENTER;A01;T001");
+        p.process("SYSTEM DATE;2026-10-16");
+        assertTrue(p.process("USER DELETE;ana@correo.com;Clave1!").success());
+        assertTrue(p.process("ATTRACTION STATUS;A01").toString().contains("Present: 0"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ATTRACTION CREATE;A01;Tornado", "ATTRACTION ENTER;A01", "ATTRACTION EXIT;A01",
+        "ATTRACTION STATUS", "ATTRACTION STATUS;A99", "ATTRACTION ENTER;A99;T001", "ATTRACTION ENTER;A01;T999",
+        "ATTRACTION OPEN;A01", "ATTRACTION EXIT;A01;TG01-00000000T"})
+    void malformedAttractionCommands(String command) {
+        CommandProcessor p = groupOf(1);
+        p.process("ATTRACTION CREATE;A01;Tornado;20");
+        assertFalse(p.process(command).success());
     }
 }

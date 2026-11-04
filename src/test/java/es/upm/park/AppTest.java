@@ -157,4 +157,15 @@ class AppTest {
         assertEquals(List.of("TG01;2026-10-15;80.00;G01;40.00;12345678Z;87654321X"),
                 Files.readAllLines(dir.resolve("grouptickets.txt")));
     }
+
+    @Test
+    void attractionsPersistButStartEmpty() throws IOException {
+        interactive(CommandRunnerTest.CREATE_ANA, "SYSTEM DATE;2026-10-15",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15", "ATTRACTION CREATE;A01;Tornado;20",
+                "ATTRACTION ENTER;A01;T001", "EXIT");
+        Run second = interactive("ATTRACTION STATUS;A01", "EXIT");
+        assertTrue(second.out().contains("Present: 0"));
+        assertTrue(second.out().contains("Available: 20"));
+        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+    }
 }

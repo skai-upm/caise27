@@ -114,4 +114,14 @@ class GroupTicketManagerTest {
         assertEquals(List.of("TG01;2026-10-15;80.00;G01;40.00;12345678Z;87654321X"),
                 Files.readAllLines(dir.resolve("grouptickets.txt")));
     }
+
+    @Test
+    void accessLookupAcceptsStandaloneAndGroupTicketsOnly() {
+        tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
+        tickets.createGroupTicket("TG01", g01(), OCT_15, OCT_1, P40);
+        assertEquals(List.of(ana()), tickets.findForAccess("T001").orElseThrow().getHolders());
+        assertEquals(2, tickets.findForAccess("TG01").orElseThrow().getHolders().size());
+        assertTrue(tickets.findForAccess("TG01-12345678Z").isEmpty());
+        assertTrue(tickets.findForAccess("T999").isEmpty());
+    }
 }

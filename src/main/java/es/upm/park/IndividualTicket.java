@@ -2,6 +2,7 @@ package es.upm.park;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * An individual ticket for a date of use, owned by a registered user, with the price captured
@@ -18,5 +19,10 @@ public class IndividualTicket extends Ticket {
 
     public User getUser() {
         return user;
+    }
+
+    @Override
+    public List<User> getHolders() {
+        return List.of(user);
     }
 }
