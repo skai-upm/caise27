@@ -46,10 +46,3 @@ The project SHALL include a unit-testing framework dependency and at least one t
 #### Scenario: Tests are executed
 - **WHEN** `mvn test` is run
 - **THEN** the test report shows at least one executed test and zero failures
-
-### Requirement: No premature domain functionality
-This change SHALL NOT add amusement-park business functionality (users, commands, tickets, groups, attractions or persistence).
-
-#### Scenario: Production code review
-- **WHEN** the production sources are reviewed after this change
-- **THEN** they contain only the entry-point class and no domain types
