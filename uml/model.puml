@@ -1,0 +1,140 @@
+@startuml model
+' Class model of the current implementation (package es.upm.etsisi.amusementpark).
+' Conventions: attributes are datatypes/enums only; object references are drawn as
+' relationships named after the holding field; the cross (x) or diamond marks the
+' holder end; no methods; usage arrows only for classes without incoming relationships.
+
+hide empty members
+hide circle
+skinparam classAttributeIconSize 0
+
+' ---------- Application and control ----------
+class App
+class CommandRunner
+class CommandProcessor {
+  exitRequested : boolean
+  currentDate : LocalDate
+  ticketPrice : BigDecimal
+}
+
+' ---------- Users ----------
+class User {
+  name : String
+  surname : String
+  dni : String
+  email : String
+  password : String
+  phone : String
+  card : String
+}
+enum UserField {
+  NAME
+  SURNAME
+  EMAIL
+  PASSWORD
+  PHONE
+  CARD
+}
+class UserValidator
+class UserException
+class Exception
+class UserManager
+class UserFileRepository {
+  file : Path
+}
+
+' ---------- Groups ----------
+class Group {
+  id : String
+  name : String
+}
+class GroupManager
+class GroupFileRepository {
+  file : Path
+}
+
+' ---------- Tickets ----------
+abstract class Ticket {
+  id : String
+  date : LocalDate
+}
+class IndividualTicket {
+  price : BigDecimal
+  ownerDni : String
+}
+class GroupTicket {
+  groupId : String
+  basePrice : BigDecimal
+  totalPrice : BigDecimal
+}
+class TicketManager
+class TicketFileRepository {
+  file : Path
+}
+class GroupTicketFileRepository {
+  file : Path
+}
+
+' ---------- Attractions ----------
+class Attraction {
+  id : String
+  name : String
+  capacity : int
+}
+class AttractionManager
+class AttractionFileRepository {
+  file : Path
+}
+
+' ---------- Inheritance ----------
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+Exception <|-- UserException
+
+' ---------- Control relationships ----------
+CommandRunner "0..1" x--> "1" CommandProcessor : processor
+CommandProcessor "0..1" x--> "1" UserManager : users
+CommandProcessor "0..1" x--> "1" GroupManager : groups
+CommandProcessor "0..1" x--> "1" TicketManager : tickets
+CommandProcessor "0..1" x--> "1" AttractionManager : attractions
+
+' ---------- Managers and their entities ----------
+UserManager "1" *--> "0..*" User : users
+UserManager "0..1" x--> "1" UserFileRepository : repository
+
+GroupManager "1" *--> "0..*" Group : groups
+GroupManager "0..1" x--> "1" GroupFileRepository : repository
+GroupManager "0..*" x--> "1" UserManager : users
+
+TicketManager "1" *--> "0..*" IndividualTicket : tickets
+TicketManager "1" *--> "0..*" GroupTicket : groupTickets
+TicketManager "0..1" x--> "1" TicketFileRepository : repository
+TicketManager "0..1" x--> "1" GroupTicketFileRepository : groupRepository
+TicketManager "0..*" x--> "1" UserManager : users
+
+AttractionManager "1" *--> "0..*" Attraction : attractions
+AttractionManager "0..1" x--> "1" AttractionFileRepository : repository
+
+' ---------- Domain relationships ----------
+Group "0..*" o--> "0..*" User : members
+IndividualTicket "0..*" x--> "0..1" User : user
+GroupTicket "1" *--> "1..*" IndividualTicket : parts
+GroupTicket "0..*" o--> "0..1" Group : group
+Attraction "0..*" o--> "0..*" User : present
+
+' ---------- Usage of classes without incoming relationships ----------
+App ..> CommandRunner : <<use>>
+CommandProcessor ..> UserField : <<use>>
+UserManager ..> UserField : <<use>>
+UserManager ..> UserValidator : <<use>>
+GroupManager ..> UserValidator : <<use>>
+TicketManager ..> UserValidator : <<use>>
+AttractionManager ..> UserValidator : <<use>>
+UserManager ..> UserException : <<throw>>
+GroupManager ..> UserException : <<throw>>
+TicketManager ..> UserException : <<throw>>
+AttractionManager ..> UserException : <<throw>>
+Attraction ..> UserException : <<throw>>
+CommandProcessor ..> UserException : <<catch>>
+
+@enduml
