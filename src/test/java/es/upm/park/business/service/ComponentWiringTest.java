@@ -10,6 +10,7 @@ import es.upm.park.business.model.Invoice;
 import es.upm.park.persistence.AttractionFileStorage;
 import es.upm.park.persistence.GroupFileStorage;
 import es.upm.park.persistence.GroupTicketFileStorage;
+import es.upm.park.persistence.PassFileStorage;
 import es.upm.park.persistence.TicketFileStorage;
 import es.upm.park.persistence.UserFileStorage;
 import java.nio.file.Files;
@@ -97,7 +98,8 @@ class ComponentWiringTest {
         TicketManager tickets = TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), users, groups);
         AttractionManager attractions = AttractionManager.initialize(new AttractionFileStorage(dir.resolve("a.txt")));
-        ParkController park = ParkController.initialize(users, groups, tickets, attractions, counting);
+        PassManager passes = PassManager.initialize(new PassFileStorage(dir.resolve("passes.txt")), tickets);
+        ParkController park = ParkController.initialize(users, groups, tickets, attractions, passes, counting);
         park.createUser("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "1", "1234567890123456");
         park.createGroup("G01", "Familia");
         park.createUserInvoice("ana@correo.com");

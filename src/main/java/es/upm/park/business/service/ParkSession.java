@@ -4,6 +4,7 @@ import es.upm.park.persistence.AttractionFileStorage;
 import es.upm.park.persistence.DataFiles;
 import es.upm.park.persistence.GroupFileStorage;
 import es.upm.park.persistence.GroupTicketFileStorage;
+import es.upm.park.persistence.PassFileStorage;
 import es.upm.park.persistence.TemporaryDataDirectory;
 import es.upm.park.persistence.TicketFileStorage;
 import es.upm.park.persistence.UserFileStorage;
@@ -69,7 +70,8 @@ public final class ParkSession implements AutoCloseable {
                     new GroupTicketFileStorage(files.groupTickets()), users, groups);
             AttractionManager attractions =
                     AttractionManager.initialize(new AttractionFileStorage(files.attractions()));
-            return ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector());
+            PassManager passes = PassManager.initialize(new PassFileStorage(files.passes()), tickets);
+            return ParkController.initialize(users, groups, tickets, attractions, passes, new InvoiceDirector());
         } catch (RuntimeException e) {
             resetControllers();
             throw e;
@@ -79,6 +81,7 @@ public final class ParkSession implements AutoCloseable {
     /** Ends the execution of every singleton controller. */
     public static void resetControllers() {
         ParkController.reset();
+        PassManager.reset();
         AttractionManager.reset();
         TicketManager.reset();
         GroupManager.reset();

@@ -24,6 +24,9 @@ public abstract class InvoiceBuilder {
     /** Step 3: group tickets purchased by the recipient. */
     public abstract void buildGroupTickets();
 
+    /** Step 4: personal passes purchased by the recipient. */
+    public abstract void buildPasses();
+
     public Invoice getResult() {
         return new Invoice(recipient, sections);
     }

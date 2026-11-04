@@ -7,11 +7,13 @@ import es.upm.park.business.service.InvoiceDirector;
 import es.upm.park.business.service.AttractionManager;
 import es.upm.park.business.service.GroupManager;
 import es.upm.park.business.service.ParkController;
+import es.upm.park.business.service.PassManager;
 import es.upm.park.business.service.TicketManager;
 import es.upm.park.business.service.UserManager;
 import es.upm.park.persistence.AttractionFileStorage;
 import es.upm.park.persistence.GroupFileStorage;
 import es.upm.park.persistence.GroupTicketFileStorage;
+import es.upm.park.persistence.PassFileStorage;
 import es.upm.park.persistence.TicketFileStorage;
 import es.upm.park.persistence.UserFileStorage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -43,7 +45,6 @@ class CommandRunnerTest {
     UserManager manager;
     CommandRunner runner;
 
-    @BeforeEach
     @AfterEach
     void resetControllers() {
         ParkSession.resetControllers();
@@ -51,12 +52,14 @@ class CommandRunnerTest {
 
     @BeforeEach
     void setUp() {
+        ParkSession.resetControllers();
         manager = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")), FAST_HASHER);
         GroupManager groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), manager);
-        runner = new CommandRunner(App.newCommandProcessor(ParkController.initialize(manager, groups,
-                TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
-                        new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups),
+        TicketManager tickets = TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
+                new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups);
+        runner = new CommandRunner(App.newCommandProcessor(ParkController.initialize(manager, groups, tickets,
                 AttractionManager.initialize(new AttractionFileStorage(dir.resolve("attractions.txt"))),
+                PassManager.initialize(new PassFileStorage(dir.resolve("passes.txt")), tickets),
                 new InvoiceDirector())));
     }
 

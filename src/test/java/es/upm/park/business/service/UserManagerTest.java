@@ -31,7 +31,6 @@ class UserManagerTest {
     Path file;
     UserManager manager;
 
-    @BeforeEach
     @AfterEach
     void resetControllers() {
         ParkSession.resetControllers();
@@ -39,6 +38,7 @@ class UserManagerTest {
 
     @BeforeEach
     void setUp() {
+        ParkSession.resetControllers();
         file = dir.resolve("users.txt");
         manager = UserManager.initialize(new UserFileStorage(file), FAST_HASHER);
     }

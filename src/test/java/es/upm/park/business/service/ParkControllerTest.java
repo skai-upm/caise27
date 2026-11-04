@@ -8,6 +8,7 @@ import es.upm.park.business.model.Attraction;
 import es.upm.park.persistence.AttractionFileStorage;
 import es.upm.park.persistence.GroupFileStorage;
 import es.upm.park.persistence.GroupTicketFileStorage;
+import es.upm.park.persistence.PassFileStorage;
 import es.upm.park.persistence.TicketFileStorage;
 import es.upm.park.persistence.UserFileStorage;
 import java.math.BigDecimal;
@@ -28,7 +29,6 @@ class ParkControllerTest {
     UserManager users;
     GroupManager groups;
 
-    @BeforeEach
     @AfterEach
     void resetControllers() {
         ParkSession.resetControllers();
@@ -36,12 +36,15 @@ class ParkControllerTest {
 
     @BeforeEach
     void setUp() {
+        ParkSession.resetControllers();
         users = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")), FAST_HASHER);
         groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), users);
         TicketManager tickets = TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), users, groups);
         AttractionManager attractions = AttractionManager.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")));
-        park = ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector(), LocalDate.of(2026, 10, 1));
+        PassManager passes = PassManager.initialize(new PassFileStorage(dir.resolve("passes.txt")), tickets);
+        park = ParkController.initialize(users, groups, tickets, attractions, passes, new InvoiceDirector(),
+                LocalDate.of(2026, 10, 1));
         park.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         park.createUser("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "6", "1234567890123456");
     }

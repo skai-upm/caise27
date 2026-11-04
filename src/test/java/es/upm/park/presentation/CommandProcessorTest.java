@@ -9,11 +9,13 @@ import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.service.AttractionManager;
 import es.upm.park.business.service.GroupManager;
 import es.upm.park.business.service.ParkController;
+import es.upm.park.business.service.PassManager;
 import es.upm.park.business.service.TicketManager;
 import es.upm.park.business.service.UserManager;
 import es.upm.park.persistence.AttractionFileStorage;
 import es.upm.park.persistence.GroupFileStorage;
 import es.upm.park.persistence.GroupTicketFileStorage;
+import es.upm.park.persistence.PassFileStorage;
 import es.upm.park.persistence.TicketFileStorage;
 import es.upm.park.persistence.UserFileStorage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,10 +47,10 @@ class CommandProcessorTest {
     GroupManager groups;
     TicketManager tickets;
     AttractionManager attractions;
+    PassManager passes;
     ParkController park;
     CommandProcessor processor;
 
-    @BeforeEach
     @AfterEach
     void resetControllers() {
         ParkSession.resetControllers();
@@ -56,12 +58,14 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() {
+        ParkSession.resetControllers();
         manager = UserManager.initialize(new UserFileStorage(dir.resolve("users.txt")), FAST_HASHER);
         groups = GroupManager.initialize(new GroupFileStorage(dir.resolve("groups.txt")), manager);
         tickets = TicketManager.initialize(new TicketFileStorage(dir.resolve("tickets.txt")),
                 new GroupTicketFileStorage(dir.resolve("group-tickets.txt")), manager, groups);
         attractions = AttractionManager.initialize(new AttractionFileStorage(dir.resolve("attractions.txt")));
-        park = ParkController.initialize(manager, groups, tickets, attractions, new InvoiceDirector());
+        passes = PassManager.initialize(new PassFileStorage(dir.resolve("passes.txt")), tickets);
+        park = ParkController.initialize(manager, groups, tickets, attractions, passes, new InvoiceDirector());
         processor = App.newCommandProcessor(park);
     }
 
@@ -122,6 +126,8 @@ class CommandProcessorTest {
             "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket", "ATTRACTION STATUS;IdAtraccion",
             "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo", "HELP EXTENDED",
+            "SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad", "SPEEDPASS DELETE;IdPase",
+            "SPECIALPASS CREATE;IdPase;IdTicket", "SPECIALPASS DELETE;IdPase",
             "SYSTEM DATE;yyyy-MM-dd", "SYSTEM PRICE;Precio", "HELP", "EXIT",
             "NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD"}) {
             assertTrue(help.contains(usage), usage);
@@ -146,7 +152,7 @@ class CommandProcessorTest {
     void startsWithLocalDate() {
         LocalDate before = LocalDate.now();
         ParkController.reset();
-        LocalDate date = ParkController.initialize(manager, groups, tickets, attractions, new InvoiceDirector()).getCurrentDate();
+        LocalDate date = ParkController.initialize(manager, groups, tickets, attractions, passes, new InvoiceDirector()).getCurrentDate();
         LocalDate after = LocalDate.now();
         assertTrue(!date.isBefore(before) && !date.isAfter(after));
     }
@@ -175,7 +181,7 @@ class CommandProcessorTest {
     @Test
     void injectedInitialDateIsUsed() {
         ParkController.reset();
-        assertEquals(LocalDate.of(2026, 1, 1), ParkController.initialize(manager, groups, tickets, attractions, new InvoiceDirector(), LocalDate.of(2026, 1, 1)).getCurrentDate());
+        assertEquals(LocalDate.of(2026, 1, 1), ParkController.initialize(manager, groups, tickets, attractions, passes, new InvoiceDirector(), LocalDate.of(2026, 1, 1)).getCurrentDate());
     }
 
     @Test
@@ -298,7 +304,7 @@ class CommandProcessorTest {
         assertEquals(new BigDecimal("55.00"), park.getCurrentPrice());
         ParkController.reset();
         assertEquals(new BigDecimal("40.00"),
-                ParkController.initialize(manager, groups, tickets, attractions, new InvoiceDirector()).getCurrentPrice(), "new execution starts at 40.00");
+                ParkController.initialize(manager, groups, tickets, attractions, passes, new InvoiceDirector()).getCurrentPrice(), "new execution starts at 40.00");
     }
 
     @ParameterizedTest
@@ -533,5 +539,55 @@ class CommandProcessorTest {
         assertTrue(help.contains("TICKET DELETE;Id") && help.contains("Deletes an individual ticket"), help);
         assertTrue(processor.process("HELP EXTENDED;x").startsWith("ERROR"));
         assertTrue(processor.process("HELP").contains("  HELP EXTENDED"));
+    }
+
+    @Test
+    void passCommandsSourceScenarios() {
+        ticketSetup();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertEquals("OK SPEEDPASS CREATED -> 8.00", processor.process("SPEEDPASS CREATE;SP1;T001;1"));
+        assertEquals("OK SPEEDPASS CREATED -> 80.00", processor.process("SPEEDPASS CREATE;PK;T001;10"));
+        assertEquals("OK SPECIALPASS CREATED -> 40.00", processor.process("SPECIALPASS CREATE;SX1;T001"));
+        assertTrue(processor.process("SPECIALPASS CREATE;SX2;T001").startsWith("ERROR"));
+        assertEquals(12, passes.getPasses().size());
+        assertTrue(processor.process("SPEEDPASS DELETE;PK-4").startsWith("OK"));
+        assertTrue(processor.process("SPECIALPASS DELETE;SP1").startsWith("ERROR"), "wrong kind");
+        processor.process("SYSTEM DATE;2026-10-15");
+        assertTrue(processor.process("SPEEDPASS DELETE;SP1").startsWith("ERROR"), "ticket is today");
+        assertTrue(processor.process("SPECIALPASS DELETE;SX1").startsWith("ERROR"));
+        assertEquals(11, passes.getPasses().size());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SPEEDPASS CREATE;SP1;T001;0", "SPEEDPASS CREATE;SP1;T001;2", "SPEEDPASS CREATE;SP1;T001;diez",
+        "SPEEDPASS CREATE;SP1;T001;", "SPEEDPASS CREATE;SP1;T999;1", "SPEEDPASS CREATE;SP1;T001",
+        "SPECIALPASS CREATE;SX1;T999", "SPECIALPASS CREATE;SX1", "SPEEDPASS DELETE;NOPE", "SPECIALPASS DELETE",
+        "SPEEDPASS CREATE;;T001;1", "SPEEDPASS CREATE;SP1;T001;99999999999"})
+    void invalidPassCommandsRejected(String command) {
+        ticketSetup();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertTrue(processor.process(command).startsWith("ERROR"), command);
+        assertTrue(passes.getPasses().isEmpty());
+    }
+
+    @Test
+    void passesOnConstituentTicketsAndInvoices() {
+        groupOf(3);
+        processor.process("SYSTEM PRICE;60.00");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("TICKET CREATE;T001;u0@correo.com;2026-10-15");
+        assertEquals("OK SPEEDPASS CREATED -> 12.00", processor.process("SPEEDPASS CREATE;SP1;TG01-1;1"));
+        assertEquals("OK SPECIALPASS CREATED -> 60.00", processor.process("SPECIALPASS CREATE;SX1;T001"));
+        assertTrue(processor.process("SPEEDPASS CREATE;SP2;TG01;1").startsWith("ERROR"), "group ticket is not individual");
+
+        String user = processor.process("INVOICE CREATE;USER;u0@correo.com");
+        assertTrue(user.contains("Personal passes:"), user);
+        assertTrue(user.contains("SPEED pass SP1 (ticket TG01-1): 12.00"), user);
+        assertTrue(user.contains("SPECIAL pass SX1 (ticket T001): 60.00"), user);
+        assertTrue(user.contains("TOTAL: 132.00") && !user.contains("TG01-1 2026"), user);
+
+        String group = processor.process("INVOICE CREATE;GROUP;G01");
+        assertTrue(!group.contains("pass") && group.contains("TOTAL: 162.00"), group);
+        assertTrue(processor.process("INVOICE CREATE;USER;u1@correo.com").endsWith("TOTAL: 0.00"));
     }
 }

@@ -53,6 +53,8 @@ package es.upm.park.business.service {
 
   class UserValidator
 
+  class PassManager
+
   interface PasswordHasher
 
   class BCryptPasswordHasher {
@@ -118,6 +120,17 @@ package es.upm.park.business.model {
     -capacity : int
   }
 
+  abstract class Pass {
+    -id : String
+    -ticketId : String
+    -price : BigDecimal
+    -consumed : boolean
+  }
+
+  class SpeedPass
+
+  class SpecialPass
+
   class Invoice {
     -recipient : String
   }
@@ -140,6 +153,7 @@ package es.upm.park.persistence {
     -tickets : Path
     -groupTickets : Path
     -attractions : Path
+    -passes : Path
   }
 
   class TemporaryDataDirectory
@@ -163,6 +177,10 @@ package es.upm.park.persistence {
   class AttractionFileStorage {
     -file : Path
   }
+
+  class PassFileStorage {
+    -file : Path
+  }
 }
 
 note top of App : Entry point (main); not used by other classes.
@@ -181,6 +199,11 @@ ParkController "0..*" x--> "1" UserManager : users
 ParkController "0..*" x--> "1" GroupManager : groups
 ParkController "0..*" x--> "1" TicketManager : tickets
 ParkController "0..*" x--> "1" AttractionManager : attractions
+ParkController "0..*" x--> "1" PassManager : passes
+PassManager "0..*" x--> "1" PassFileStorage : storage
+PassManager "0..*" x--> "0..*" Pass : passes
+Pass "0..*" x--> "0..1" IndividualTicket : ticket
+UserInvoiceBuilder "0..*" x--> "0..*" Pass : passes
 UserManager "0..*" x--> "1" UserFileStorage : storage
 UserManager "0..*" x--> "1" PasswordHasher : hasher
 UserManager "0..*" x--> "0..*" User : users
@@ -203,6 +226,7 @@ UserManager "0..1" x--> "0..1" UserManager : instance
 GroupManager "0..1" x--> "0..1" GroupManager : instance
 TicketManager "0..1" x--> "0..1" TicketManager : instance
 AttractionManager "0..1" x--> "0..1" AttractionManager : instance
+PassManager "0..1" x--> "0..1" PassManager : instance
 
 ' --- aggregation and composition
 GroupTicket "0..*" o--> "0..1" Group : group
@@ -219,6 +243,8 @@ GroupInvoiceBuilder "0..*" x--> "0..*" GroupTicket : groupTickets
 ' --- inheritance
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
 InvoiceBuilder <|-- UserInvoiceBuilder
 InvoiceBuilder <|-- GroupInvoiceBuilder
 PasswordHasher <|.. BCryptPasswordHasher

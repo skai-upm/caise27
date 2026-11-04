@@ -4,6 +4,7 @@ import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.Invoice;
 import es.upm.park.business.model.InvoiceLine;
 import es.upm.park.business.model.InvoiceSection;
+import es.upm.park.business.model.Pass;
 import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
 import es.upm.park.business.service.ParkController;
@@ -64,6 +65,10 @@ public class CommandProcessor {
                 case "ATTRACTION EXIT" -> attractionExit(parts);
                 case "ATTRACTION STATUS" -> attractionStatus(parts);
                 case "INVOICE CREATE" -> invoiceCreate(parts);
+                case "SPEEDPASS CREATE" -> speedPassCreate(parts);
+                case "SPEEDPASS DELETE" -> speedPassDelete(parts);
+                case "SPECIALPASS CREATE" -> specialPassCreate(parts);
+                case "SPECIALPASS DELETE" -> specialPassDelete(parts);
                 case "SYSTEM DATE" -> systemDate(parts);
                 case "SYSTEM PRICE" -> systemPrice(parts);
                 case "HELP" -> help(parts);
@@ -217,6 +222,43 @@ public class CommandProcessor {
             sb.append(nl).append("    subtotal: ").append(section.subtotal().toPlainString());
         }
         return sb.append(nl).append("  TOTAL: ").append(invoice.total().toPlainString()).toString();
+    }
+
+    // --- passes
+
+    private String speedPassCreate(String[] p) {
+        requireParams(p, 3, "SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad");
+        int quantity = parseQuantity(p[3]);
+        BigDecimal total = BigDecimal.ZERO.setScale(PRICE_DECIMALS);
+        for (Pass pass : park.buySpeedPasses(p[1], p[2], quantity)) {
+            total = total.add(pass.getPrice());
+        }
+        return "OK SPEEDPASS CREATED -> " + total.toPlainString();
+    }
+
+    private String speedPassDelete(String[] p) {
+        requireParams(p, 1, "SPEEDPASS DELETE;IdPase");
+        park.refundSpeedPass(p[1]);
+        return "OK: SpeedPass " + p[1] + " refunded";
+    }
+
+    private String specialPassCreate(String[] p) {
+        requireParams(p, 2, "SPECIALPASS CREATE;IdPase;IdTicket");
+        return "OK SPECIALPASS CREATED -> " + park.buySpecialPass(p[1], p[2]).getPrice().toPlainString();
+    }
+
+    private String specialPassDelete(String[] p) {
+        requireParams(p, 1, "SPECIALPASS DELETE;IdPase");
+        park.refundSpecialPass(p[1]);
+        return "OK: Special Pass " + p[1] + " refunded";
+    }
+
+    /** Whole number written with digits only (validated against 1/10 by the business layer). */
+    private static int parseQuantity(String text) {
+        if (text.isEmpty() || !isDigits(text) || text.length() > 9) {
+            throw new IllegalArgumentException("invalid quantity '" + text + "', expected 1 or 10");
+        }
+        return Integer.parseInt(text);
     }
 
     // --- system and general commands

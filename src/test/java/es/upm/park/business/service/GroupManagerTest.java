@@ -33,7 +33,6 @@ class GroupManagerTest {
     UserManager users;
     GroupManager groups;
 
-    @BeforeEach
     @AfterEach
     void resetControllers() {
         ParkSession.resetControllers();
@@ -41,6 +40,7 @@ class GroupManagerTest {
 
     @BeforeEach
     void setUp() {
+        ParkSession.resetControllers();
         usersFile = dir.resolve("users.txt");
         groupsFile = dir.resolve("groups.txt");
         users = UserManager.initialize(new UserFileStorage(usersFile), FAST_HASHER);

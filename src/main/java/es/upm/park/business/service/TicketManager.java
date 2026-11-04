@@ -92,6 +92,22 @@ public class TicketManager {
         return t != null ? t : groupTickets.get(id);
     }
 
+    /** A standalone individual ticket or a constituent ticket of a group ticket. */
+    public IndividualTicket findIndividualTicket(String id) {
+        IndividualTicket t = tickets.get(id);
+        if (t != null) {
+            return t;
+        }
+        for (GroupTicket g : groupTickets.values()) {
+            for (IndividualTicket c : g.getConstituents()) {
+                if (c.getId().equals(id)) {
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
+
     public GroupTicket findGroupTicket(String id) {
         return groupTickets.get(id);
     }

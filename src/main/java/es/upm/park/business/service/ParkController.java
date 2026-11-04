@@ -5,6 +5,11 @@ import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.model.Invoice;
+import es.upm.park.business.model.Pass;
+import es.upm.park.business.model.SpecialPass;
+import es.upm.park.business.model.SpeedPass;
+import java.util.ArrayList;
+import java.util.List;
 import es.upm.park.business.model.Ticket;
 import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
@@ -25,6 +30,7 @@ public class ParkController {
     private final GroupManager groups;
     private final TicketManager tickets;
     private final AttractionManager attractions;
+    private final PassManager passes;
     private final InvoiceDirector director;
     /** The single current date of the application; time-dependent rules must use it. */
     private LocalDate currentDate;
@@ -39,19 +45,21 @@ public class ParkController {
      */
     public static synchronized ParkController initialize(UserManager users, GroupManager groups,
                                                          TicketManager tickets, AttractionManager attractions,
-                                                         InvoiceDirector director) {
-        return initialize(users, groups, tickets, attractions, director, LocalDate.now());
+                                                         PassManager passes, InvoiceDirector director) {
+        return initialize(users, groups, tickets, attractions, passes, director, LocalDate.now());
     }
 
-    /** As {@link #initialize(UserManager, GroupManager, TicketManager, AttractionManager, InvoiceDirector)}
+    /** As {@link #initialize(UserManager, GroupManager, TicketManager, AttractionManager, PassManager,
+     *  InvoiceDirector)}
      *  with an explicit initial date. */
     public static synchronized ParkController initialize(UserManager users, GroupManager groups,
                                                          TicketManager tickets, AttractionManager attractions,
-                                                         InvoiceDirector director, LocalDate initialDate) {
+                                                         PassManager passes, InvoiceDirector director,
+                                                         LocalDate initialDate) {
         if (instance != null) {
             throw new IllegalStateException("ParkController is already initialized");
         }
-        instance = new ParkController(users, groups, tickets, attractions, director, initialDate);
+        instance = new ParkController(users, groups, tickets, attractions, passes, director, initialDate);
         return instance;
     }
 
@@ -69,7 +77,9 @@ public class ParkController {
     }
 
     private ParkController(UserManager users, GroupManager groups, TicketManager tickets,
-                           AttractionManager attractions, InvoiceDirector director, LocalDate initialDate) {
+                           AttractionManager attractions, PassManager passes, InvoiceDirector director,
+                           LocalDate initialDate) {
+        this.passes = passes;
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
@@ -175,7 +185,13 @@ public class ParkController {
     public Invoice createUserInvoice(String email) {
         User user = users.findByEmail(email);
         requireValid(user != null, "no registered user with email " + email);
-        return director.construct(new UserInvoiceBuilder(user, tickets.getTickets()));
+        List<Pass> userPasses = new ArrayList<>();
+        for (Pass p : passes.getPasses()) {
+            if (p.getTicket() != null && p.getTicket().isOwnedBy(user)) {
+                userPasses.add(p);
+            }
+        }
+        return director.construct(new UserInvoiceBuilder(user, tickets.getTickets(), userPasses));
     }
 
     /** Builds, on demand, the invoice of the group with that identifier. */
@@ -183,6 +199,31 @@ public class ParkController {
         Group group = groups.find(groupId);
         requireValid(group != null, "no group with identifier " + groupId);
         return director.construct(new GroupInvoiceBuilder(group, tickets.getGroupTickets()));
+    }
+
+    // --- passes
+
+    /** Buys 1 or 10 SpeedPasses for an individual ticket (standalone or constituent). */
+    public List<Pass> buySpeedPasses(String id, String ticketId, int quantity) {
+        return passes.buySpeedPasses(id, requireIndividualTicket(ticketId), quantity);
+    }
+
+    public Pass buySpecialPass(String id, String ticketId) {
+        return passes.buySpecialPass(id, requireIndividualTicket(ticketId));
+    }
+
+    public void refundSpeedPass(String id) {
+        passes.refund(id, SpeedPass.KIND, currentDate);
+    }
+
+    public void refundSpecialPass(String id) {
+        passes.refund(id, SpecialPass.KIND, currentDate);
+    }
+
+    private IndividualTicket requireIndividualTicket(String ticketId) {
+        IndividualTicket t = tickets.findIndividualTicket(ticketId);
+        requireValid(t != null, "no individual ticket with identifier " + ticketId);
+        return t;
     }
 
     // --- attractions

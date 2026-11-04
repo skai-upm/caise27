@@ -35,7 +35,7 @@ class InvoiceBuilderTest {
                 new IndividualTicket("T001", ana, DAY, new BigDecimal("40.00")),
                 new IndividualTicket("T002", ana, DAY, new BigDecimal("60.00")),
                 new IndividualTicket("T003", pedro, DAY, new BigDecimal("40.00")));
-        Invoice invoice = new InvoiceDirector().construct(new UserInvoiceBuilder(ana, standalone));
+        Invoice invoice = new InvoiceDirector().construct(new UserInvoiceBuilder(ana, standalone, List.of()));
         assertTrue(invoice.recipient().contains("ana@correo.com"));
         assertEquals(1, invoice.sections().size());
         assertEquals(2, invoice.sections().get(0).lines().size());
@@ -61,7 +61,7 @@ class InvoiceBuilderTest {
 
     @Test
     void emptySectionsAreOmitted() {
-        Invoice user = new InvoiceDirector().construct(new UserInvoiceBuilder(luis, List.of()));
+        Invoice user = new InvoiceDirector().construct(new UserInvoiceBuilder(luis, List.of(), List.of()));
         Invoice grp = new InvoiceDirector().construct(new GroupInvoiceBuilder(group("G01"), List.of()));
         assertTrue(user.sections().isEmpty());
         assertTrue(grp.sections().isEmpty());
@@ -84,10 +84,15 @@ class InvoiceBuilderTest {
 
             @Override
             public void buildGroupTickets() {
-                trace.append("group");
+                trace.append("group,");
+            }
+
+            @Override
+            public void buildPasses() {
+                trace.append("passes");
             }
         };
         new InvoiceDirector().construct(recording);
-        assertEquals("header,individual,group", trace.toString());
+        assertEquals("header,individual,group,passes", trace.toString());
     }
 }

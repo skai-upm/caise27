@@ -40,4 +40,9 @@ public class GroupInvoiceBuilder extends InvoiceBuilder {
         }
         addSection("Group tickets", lines);
     }
+
+    @Override
+    public void buildPasses() {
+        // Members' personal passes are charged on their own invoices, not to the group.
+    }
 }

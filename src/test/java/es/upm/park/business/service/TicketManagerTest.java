@@ -40,7 +40,6 @@ class TicketManagerTest {
     TicketManager tickets;
     User ana;
 
-    @BeforeEach
     @AfterEach
     void resetControllers() {
         ParkSession.resetControllers();
@@ -48,6 +47,7 @@ class TicketManagerTest {
 
     @BeforeEach
     void setUp() {
+        ParkSession.resetControllers();
         usersFile = dir.resolve("users.txt");
         ticketsFile = dir.resolve("tickets.txt");
         users = UserManager.initialize(new UserFileStorage(usersFile), FAST_HASHER);
