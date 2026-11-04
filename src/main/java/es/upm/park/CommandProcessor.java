@@ -1,5 +1,7 @@
 package es.upm.park;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -8,8 +10,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Main controller of the application: interprets API-like text commands and owns the single
- * current system date used by every time-dependent operation.
+ * Main controller of the application: interprets API-like text commands and owns the
+ * execution-wide settings (current system date and ticket price) used by every operation.
  * <p>
  * Interprets API-like text commands. A command is split on {@code ;} into the operation and
  * its parameters; the operation is split on spaces into its words. Invalid input always
@@ -29,25 +31,40 @@ public class CommandProcessor {
             "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo",
             "GROUP DELETE;Id",
+            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
+            "TICKET DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
+            "SYSTEM PRICE;Precio",
             "HELP",
             "EXIT");
 
     private static final int DATE_LENGTH = "yyyy-MM-dd".length();
 
+    /** Ticket price at the start of every execution. */
+    static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
+    private static final int PRICE_DECIMALS = 2;
+
     private final UserManager users;
     private final GroupManager groups;
+    private final TicketManager tickets;
     private LocalDate currentDate;
+    private BigDecimal currentPrice = DEFAULT_PRICE;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserManager users, GroupManager groups) {
-        this(users, groups, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets) {
+        this(users, groups, tickets, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, GroupManager groups, LocalDate initialDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
+        this.tickets = tickets;
         this.currentDate = initialDate;
+    }
+
+    /** The price that the next ticket will capture. */
+    public BigDecimal getCurrentPrice() {
+        return currentPrice;
     }
 
     /** The current system date; time-dependent operations must use this, never the real clock. */
@@ -79,6 +96,12 @@ public class CommandProcessor {
         if (words.size() == 2 && words.get(0).equals("SYSTEM") && words.get(1).equals("DATE")) {
             return systemDate(params);
         }
+        if (words.size() == 2 && words.get(0).equals("SYSTEM") && words.get(1).equals("PRICE")) {
+            return systemPrice(params);
+        }
+        if (words.size() == 2 && words.get(0).equals("TICKET")) {
+            return ticket(words.get(1), params, parts[0].trim());
+        }
         if (words.size() == 2 && words.get(0).equals("GROUP")) {
             return group(words.get(1), params, parts[0].trim());
         }
@@ -102,15 +125,78 @@ public class CommandProcessor {
         if (!hasParams(p, 1)) {
             return Result.error("Usage: SYSTEM DATE;yyyy-MM-dd");
         }
-        if (p[0].length() != DATE_LENGTH) {
+        Optional<LocalDate> date = parseDate(p[0]);
+        if (date.isEmpty()) {
             return Result.error("Invalid date '" + p[0] + "': expected format yyyy-MM-dd.");
+        }
+        currentDate = date.get();
+        return Result.ok("System date set to " + currentDate + ".");
+    }
+
+    private Result systemPrice(String[] p) {
+        if (!hasParams(p, 1)) {
+            return Result.error("Usage: SYSTEM PRICE;Precio");
+        }
+        Optional<BigDecimal> price = parsePrice(p[0]);
+        if (price.isEmpty()) {
+            return Result.error("Invalid price '" + p[0] + "': expected a non-negative amount such as 60.00.");
+        }
+        currentPrice = price.get();
+        return Result.ok("Ticket price set to " + currentPrice.toPlainString() + ".");
+    }
+
+    private Result ticket(String operation, String[] p, String command) {
+        switch (operation) {
+            case "CREATE" -> {
+                if (!hasParams(p, 3)) {
+                    return Result.error("Usage: TICKET CREATE;Id;Correo;yyyy-MM-dd");
+                }
+                Optional<LocalDate> date = parseDate(p[2]);
+                if (date.isEmpty()) {
+                    return Result.error("Invalid date '" + p[2] + "': expected format yyyy-MM-dd.");
+                }
+                return tickets.create(p[0], p[1], date.get(), currentDate, currentPrice);
+            }
+            case "DELETE" -> {
+                return hasParams(p, 1) ? tickets.delete(p[0], currentDate) : Result.error("Usage: TICKET DELETE;Id");
+            }
+            default -> {
+                return Result.error("Unknown command: " + command);
+            }
+        }
+    }
+
+    /** Strict {@code yyyy-MM-dd} calendar date. */
+    private static Optional<LocalDate> parseDate(String text) {
+        if (text.length() != DATE_LENGTH) {
+            return Optional.empty();
         }
         try {
-            currentDate = LocalDate.parse(p[0], DateTimeFormatter.ISO_LOCAL_DATE);
+            return Optional.of(LocalDate.parse(text, DateTimeFormatter.ISO_LOCAL_DATE));
         } catch (DateTimeParseException e) {
-            return Result.error("Invalid date '" + p[0] + "': expected format yyyy-MM-dd.");
+            return Optional.empty();
         }
-        return Result.ok("System date set to " + currentDate + ".");
+    }
+
+    /** Non-negative amount: digits, optionally a point and at most two decimals. */
+    private static Optional<BigDecimal> parsePrice(String text) {
+        int point = text.indexOf('.');
+        String whole = point < 0 ? text : text.substring(0, point);
+        String decimals = point < 0 ? "" : text.substring(point + 1);
+        if (whole.isEmpty() || !isAsciiDigits(whole) || !isAsciiDigits(decimals)
+                || decimals.length() > PRICE_DECIMALS || (point >= 0 && decimals.isEmpty())) {
+            return Optional.empty();
+        }
+        return Optional.of(new BigDecimal(text).setScale(PRICE_DECIMALS, RoundingMode.UNNECESSARY));
+    }
+
+    private static boolean isAsciiDigits(String s) {
+        for (char c : s.toCharArray()) {
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     private Result userCreate(String[] p) {
@@ -124,7 +210,10 @@ public class CommandProcessor {
         if (!hasParams(p, 2)) {
             return Result.error("Usage: USER DELETE;Correo;Contraseña");
         }
-        Optional<User> target = users.findByEmail(p[0]);
+        Optional<User> target = users.authenticate(p[0], p[1]);
+        if (target.isPresent() && tickets.hasTicketOnOrAfter(target.get(), currentDate)) {
+            return Result.error("User " + p[0] + " has tickets dated on or after " + currentDate + " and cannot be deleted.");
+        }
         Result result = users.delete(p[0], p[1]);
         if (result.success() && target.isPresent()) {
             Result cleanup = groups.removeUserEverywhere(target.get());

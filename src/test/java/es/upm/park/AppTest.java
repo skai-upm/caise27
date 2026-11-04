@@ -35,34 +35,33 @@ class AppTest {
     private record Run(int status, String out, String err) {
     }
 
-    private Run launch(String[] args, String stdin, Path usersFile) {
-        return launch(args, stdin, usersFile, usersFile.resolveSibling(usersFile.getFileName() + ".groups"));
-    }
-
-    private Run launch(String[] args, String stdin, Path usersFile, Path groupsFile) {
+    private Run launch(String[] args, String stdin, Path dataDir) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         int status = App.run(args,
                 new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(out, true, StandardCharsets.UTF_8),
                 new PrintStream(err, true, StandardCharsets.UTF_8),
-                usersFile, groupsFile);
+                dataDir);
         return new Run(status, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
+    }
+
+    private Run interactive(String... lines) {
+        return launch(new String[0], String.join("\n", lines), dir);
     }
 
     @Test
     void interactiveSessionStopsAtExit() throws IOException {
-        Path users = dir.resolve("users.txt");
-        Run r = launch(new String[0], String.join("\n", SESSION), users);
+        Run r = interactive(SESSION.toArray(String[]::new));
         assertEquals(0, r.status());
         assertTrue(r.out().contains("Available commands:"));
         assertTrue(r.out().trim().endsWith("OK: Bye."));
-        assertEquals(2, Files.readAllLines(users).size(), "delete after EXIT must not run");
+        assertEquals(2, Files.readAllLines(dir.resolve("users.txt")).size(), "delete after EXIT must not run");
     }
 
     @Test
     void interactiveEndOfInputWithoutExit() {
-        Run r = launch(new String[0], CommandRunnerTest.CREATE_ANA, dir.resolve("users.txt"));
+        Run r = interactive(CommandRunnerTest.CREATE_ANA);
         assertEquals(0, r.status());
         assertEquals("OK: User ana@correo.com created.", r.out().trim());
     }
@@ -71,23 +70,23 @@ class AppTest {
     void fileModeMatchesInteractiveMode() throws IOException {
         Path commands = dir.resolve("input_basico.txt");
         Files.write(commands, SESSION);
-        Path fileUsers = dir.resolve("file-users.txt");
-        Path stdinUsers = dir.resolve("stdin-users.txt");
+        Path fileData = Files.createDirectory(dir.resolve("file"));
+        Path stdinData = Files.createDirectory(dir.resolve("stdin"));
 
-        Run fromFile = launch(new String[] {commands.toString()}, "", fileUsers);
-        Run fromStdin = launch(new String[0], String.join("\n", SESSION), stdinUsers);
+        Run fromFile = launch(new String[] {commands.toString()}, "", fileData);
+        Run fromStdin = launch(new String[0], String.join("\n", SESSION), stdinData);
 
         assertEquals(0, fromFile.status());
         assertEquals(fromStdin.out(), fromFile.out());
-        assertEquals(Files.readAllLines(stdinUsers), Files.readAllLines(fileUsers));
-        assertTrue(Files.readString(fileUsers).contains("699999999"));
+        assertEquals(Files.readAllLines(stdinData.resolve("users.txt")), Files.readAllLines(fileData.resolve("users.txt")));
+        assertTrue(Files.readString(fileData.resolve("users.txt")).contains("699999999"));
     }
 
     @Test
     void fileModeIgnoresStandardInput() throws IOException {
         Path commands = dir.resolve("cmds.txt");
         Files.write(commands, List.of("HELP"));
-        Run r = launch(new String[] {commands.toString()}, CommandRunnerTest.CREATE_ANA, dir.resolve("users.txt"));
+        Run r = launch(new String[] {commands.toString()}, CommandRunnerTest.CREATE_ANA, dir);
         assertEquals(0, r.status());
         assertFalse(Files.exists(dir.resolve("users.txt")));
     }
@@ -95,7 +94,7 @@ class AppTest {
     @Test
     void missingFileIsReportedWithoutStackTrace() {
         String missing = dir.resolve("nope.txt").toString();
-        Run r = launch(new String[] {missing}, "", dir.resolve("users.txt"));
+        Run r = launch(new String[] {missing}, "", dir);
         assertNotEquals(0, r.status());
         assertTrue(r.err().contains("ERROR: Cannot read command file '" + missing + "'"));
         assertFalse(r.err().contains("\tat "), "no stack trace");
@@ -104,7 +103,7 @@ class AppTest {
 
     @Test
     void directoryPathIsReportedWithoutStackTrace() {
-        Run r = launch(new String[] {dir.toString()}, "", dir.resolve("users.txt"));
+        Run r = launch(new String[] {dir.toString()}, "", dir);
         assertNotEquals(0, r.status());
         assertTrue(r.err().startsWith("ERROR: Cannot read command file"));
         assertFalse(r.err().contains("\tat "));
@@ -112,27 +111,36 @@ class AppTest {
 
     @Test
     void invalidPathIsReported() {
-        Run r = launch(new String[] {"bad\u0000name"}, "", dir.resolve("users.txt"));
+        Run r = launch(new String[] {"bad\u0000name"}, "", dir);
         assertNotEquals(0, r.status());
         assertTrue(r.err().startsWith("ERROR: Cannot read command file"));
     }
 
     @Test
     void groupsSurviveRestart() throws IOException {
-        Path users = dir.resolve("users.txt");
-        Path groups = dir.resolve("groups.txt");
-        launch(new String[0], String.join("\n",
-                CommandRunnerTest.CREATE_ANA,
-                CommandRunnerTest.CREATE_PEDRO,
-                "GROUP CREATE;G01;Familia Garcia",
-                "GROUP ADD;G01;ana@correo.com",
-                "GROUP ADD;G01;pedro@correo.com",
-                "EXIT"), users, groups);
-        Run second = launch(new String[0], String.join("\n",
-                "GROUP ADD;G01;ana@correo.com",
-                "GROUP REMOVE;G01;pedro@correo.com",
-                "EXIT"), users, groups);
+        interactive(CommandRunnerTest.CREATE_ANA, CommandRunnerTest.CREATE_PEDRO,
+                "GROUP CREATE;G01;Familia Garcia", "GROUP ADD;G01;ana@correo.com",
+                "GROUP ADD;G01;pedro@correo.com", "EXIT");
+        Run second = interactive("GROUP ADD;G01;ana@correo.com", "GROUP REMOVE;G01;pedro@correo.com", "EXIT");
         assertTrue(second.out().startsWith("ERROR: User ana@correo.com is already in group G01."));
-        assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(groups));
+        assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(dir.resolve("groups.txt")));
+    }
+
+    @Test
+    void ticketsPersistPriceResetsAndHistorySurvivesUserDeletion() throws IOException {
+        interactive(CommandRunnerTest.CREATE_ANA, "SYSTEM DATE;2026-10-01", "SYSTEM PRICE;60.00",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15", "EXIT");
+        Run second = interactive("SYSTEM DATE;2026-10-01", "TICKET CREATE;T002;ana@correo.com;2026-10-20",
+                "USER DELETE;ana@correo.com;Clave1!", "SYSTEM DATE;2026-10-21",
+                "USER DELETE;ana@correo.com;Clave1!", "EXIT");
+        List<String> out = second.out().lines().toList();
+        assertEquals("OK TICKET CREATED -> 40.00", out.get(1), "price is not persisted");
+        assertTrue(out.get(2).startsWith("ERROR: "), "active ticket blocks deletion");
+        assertTrue(out.get(4).startsWith("OK: "), "past tickets do not block deletion");
+
+        Run third = interactive("TICKET CREATE;T001;x@correo.com;2030-01-01", "EXIT");
+        assertTrue(third.out().startsWith("ERROR: "));
+        assertEquals(List.of("T001;2026-10-15;60.00;12345678Z", "T002;2026-10-20;40.00;12345678Z"),
+                Files.readAllLines(dir.resolve("tickets.txt")));
     }
 }

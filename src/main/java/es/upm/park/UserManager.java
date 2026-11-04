@@ -29,6 +29,12 @@ public class UserManager {
         return users.stream().filter(u -> u.getEmail().equalsIgnoreCase(email)).findFirst();
     }
 
+    /** The registered user with this email and password, if the credentials match. */
+    public Optional<User> authenticate(String email, String password) {
+        int index = indexOfCredentials(email, password);
+        return index < 0 ? Optional.empty() : Optional.of(users.get(index));
+    }
+
     /** The registered user with this DNI, if any. */
     public Optional<User> findByDni(String dni) {
         return users.stream().filter(u -> u.getDni().equals(dni)).findFirst();
@@ -71,7 +77,7 @@ public class UserManager {
     }
 
     public Result delete(String email, String password) {
-        int index = authenticate(email, password);
+        int index = indexOfCredentials(email, password);
         if (index < 0) {
             return Result.error("Unknown email or wrong password.");
         }
@@ -81,7 +87,7 @@ public class UserManager {
     }
 
     public Result update(String email, String password, UserField field, String newValue) {
-        int index = authenticate(email, password);
+        int index = indexOfCredentials(email, password);
         if (index < 0) {
             return Result.error("Unknown email or wrong password.");
         }
@@ -142,7 +148,7 @@ public class UserManager {
     }
 
     /** Index of the user with this email and password, or -1. */
-    private int authenticate(String email, String password) {
+    private int indexOfCredentials(String email, String password) {
         for (int i = 0; i < users.size(); i++) {
             User u = users.get(i);
             if (u.getEmail().equalsIgnoreCase(email)) {

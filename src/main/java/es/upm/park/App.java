@@ -16,8 +16,8 @@ import java.nio.file.Path;
  */
 public class App {
 
-    static final Path USERS_FILE = Path.of("users.txt");
-    static final Path GROUPS_FILE = Path.of("groups.txt");
+    /** Data files live in the working directory. */
+    static final Path DATA_DIR = Path.of("");
 
     public static void main(String[] args) {
         int status = run(args, System.in, System.out, System.err);
@@ -28,16 +28,17 @@ public class App {
 
     /** Runs the application and returns its exit status (0 = normal end). */
     static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err) {
-        return run(args, stdin, out, err, USERS_FILE, GROUPS_FILE);
+        return run(args, stdin, out, err, DATA_DIR);
     }
 
-    static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err,
-                   Path usersFile, Path groupsFile) {
+    /** Runs with {@code users.txt}, {@code groups.txt} and {@code tickets.txt} inside {@code dataDir}. */
+    static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err, Path dataDir) {
         CommandRunner runner;
         try {
-            UserManager users = new UserManager(new UserFileStore(usersFile));
-            GroupManager groups = new GroupManager(new GroupFileStore(groupsFile), users);
-            runner = new CommandRunner(new CommandProcessor(users, groups));
+            UserManager users = new UserManager(new UserFileStore(dataDir.resolve("users.txt")));
+            GroupManager groups = new GroupManager(new GroupFileStore(dataDir.resolve("groups.txt")), users);
+            TicketManager tickets = new TicketManager(new TicketFileStore(dataDir.resolve("tickets.txt")), users);
+            runner = new CommandRunner(new CommandProcessor(users, groups, tickets));
         } catch (IOException e) {
             err.println("ERROR: Cannot load data files: " + describe(e));
             return 1;

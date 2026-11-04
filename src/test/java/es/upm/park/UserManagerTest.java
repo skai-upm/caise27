@@ -215,4 +215,12 @@ class UserManagerTest {
         assertTrue(manager.findByEmail("nadie@correo.com").isEmpty());
         assertTrue(manager.findByDni("87654321X").isEmpty());
     }
+
+    @Test
+    void authenticateReturnsUserOnlyForValidCredentials() {
+        createAna();
+        assertSame(manager.getUsers().get(0), manager.authenticate("ana@correo.com", "Clave1!").orElseThrow());
+        assertTrue(manager.authenticate("ana@correo.com", "Mala1!").isEmpty());
+        assertTrue(manager.authenticate("nadie@correo.com", "Clave1!").isEmpty());
+    }
 }

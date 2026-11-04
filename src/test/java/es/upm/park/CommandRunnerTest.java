@@ -32,7 +32,8 @@ class CommandRunnerTest {
     void setUp() throws IOException {
         manager = new UserManager(new UserFileStore(dir.resolve("users.txt")));
         GroupManager groups = new GroupManager(new GroupFileStore(dir.resolve("groups.txt")), manager);
-        runner = new CommandRunner(new CommandProcessor(manager, groups));
+        TicketManager tickets = new TicketManager(new TicketFileStore(dir.resolve("tickets.txt")), manager);
+        runner = new CommandRunner(new CommandProcessor(manager, groups, tickets));
     }
 
     private List<String> run(String... lines) throws IOException {

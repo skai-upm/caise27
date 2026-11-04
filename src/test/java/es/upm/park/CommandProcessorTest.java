@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
@@ -23,13 +24,15 @@ class CommandProcessorTest {
     Path dir;
     private UserManager manager;
     private GroupManager groups;
+    private TicketManager tickets;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws IOException {
         manager = new UserManager(new UserFileStore(dir.resolve("users.txt")));
         groups = new GroupManager(new GroupFileStore(dir.resolve("groups.txt")), manager);
-        processor = new CommandProcessor(manager, groups);
+        tickets = new TicketManager(new TicketFileStore(dir.resolve("tickets.txt")), manager);
+        processor = new CommandProcessor(manager, groups, tickets);
     }
 
     @Test
@@ -115,7 +118,10 @@ class CommandProcessorTest {
             "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo",
             "GROUP DELETE;Id",
+            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
+            "TICKET DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
+            "SYSTEM PRICE;Precio",
             "HELP",
             "EXIT"}) {
             assertTrue(r.message().contains(syntax), syntax);
@@ -149,7 +155,7 @@ class CommandProcessorTest {
     private static final LocalDate START = LocalDate.of(2026, 9, 15);
 
     private CommandProcessor processorAt(LocalDate date) {
-        return new CommandProcessor(manager, groups, date);
+        return new CommandProcessor(manager, groups, tickets, date);
     }
 
     @Test
@@ -250,5 +256,77 @@ class CommandProcessorTest {
         processor.process("GROUP ADD;G01;ana@correo.com");
         assertFalse(processor.process("USER DELETE;ana@correo.com;Mala1!").success());
         assertEquals(1, groups.find("G01").orElseThrow().getMembers().size());
+    }
+
+    // ---- tickets and price ----
+
+    @Test
+    void sourceTicketExample() {
+        CommandProcessor p = processorAt(START);
+        p.process(CREATE_ANA);
+        assertTrue(p.process("SYSTEM DATE;2026-10-01").success());
+        assertEquals("OK TICKET CREATED -> 40.00", p.process("TICKET CREATE;T001;ana@correo.com;2026-10-15").toString());
+        assertFalse(p.process("USER DELETE;ana@correo.com;Clave1!").success());
+        p.process("SYSTEM DATE;2026-10-15");
+        assertFalse(p.process("USER DELETE;ana@correo.com;Clave1!").success(), "ticket for today still blocks");
+        p.process("SYSTEM DATE;2026-10-16");
+        assertTrue(p.process("USER DELETE;ana@correo.com;Clave1!").success());
+        assertTrue(manager.getUsers().isEmpty());
+        assertTrue(tickets.find("T001").isPresent(), "history retained");
+    }
+
+    @Test
+    void wrongPasswordReportedBeforeTicketRule() {
+        CommandProcessor p = processorAt(LocalDate.of(2026, 10, 1));
+        p.process(CREATE_ANA);
+        p.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        Result r = p.process("USER DELETE;ana@correo.com;Mala1!");
+        assertEquals("ERROR: Unknown email or wrong password.", r.toString());
+    }
+
+    @Test
+    void priceStartsAt40AndAppliesToLaterTicketsOnly() {
+        CommandProcessor p = processorAt(LocalDate.of(2026, 10, 1));
+        p.process(CREATE_ANA);
+        assertEquals(new BigDecimal("40.00"), p.getCurrentPrice());
+        p.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertTrue(p.process("SYSTEM PRICE;60.00").success());
+        assertEquals("OK TICKET CREATED -> 60.00", p.process("TICKET CREATE;T002;ana@correo.com;2026-10-20").toString());
+        assertEquals(new BigDecimal("40.00"), tickets.find("T001").orElseThrow().getPrice());
+        assertTrue(p.process("SYSTEM PRICE;55").success());
+        assertEquals("OK TICKET CREATED -> 55.00", p.process("TICKET CREATE;T003;ana@correo.com;2026-10-20").toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SYSTEM PRICE;-5", "SYSTEM PRICE;abc", "SYSTEM PRICE;60,00", "SYSTEM PRICE;1.234",
+        "SYSTEM PRICE;1e3", "SYSTEM PRICE", "SYSTEM PRICE;", "SYSTEM PRICE;.5", "SYSTEM PRICE;5.", "SYSTEM PRICE;1;2"})
+    void invalidPricesRejected(String command) {
+        CommandProcessor p = processorAt(START);
+        assertFalse(p.process(command).success());
+        assertEquals(new BigDecimal("40.00"), p.getCurrentPrice());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"TICKET CREATE;T005;ana@correo.com", "TICKET CREATE;T005;ana@correo.com;2026-02-30",
+        "TICKET CREATE;T005;ana@correo.com;15-10-2026", "TICKET CREATE;;ana@correo.com;2026-10-15",
+        "TICKET DELETE", "TICKET DELETE;T001;x", "TICKET LIST", "TICKET CREATE;T005;nadie@correo.com;2026-10-15",
+        "TICKET CREATE;T005;ana@correo.com;2026-09-14"})
+    void malformedTicketCommandsRejected(String command) {
+        CommandProcessor p = processorAt(START);
+        p.process(CREATE_ANA);
+        assertFalse(p.process(command).success());
+        assertTrue(tickets.getTickets().isEmpty());
+    }
+
+    @Test
+    void ticketDeleteUsesSystemDate() {
+        CommandProcessor p = processorAt(LocalDate.of(2026, 10, 1));
+        p.process(CREATE_ANA);
+        p.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        p.process("SYSTEM DATE;2026-10-15");
+        assertFalse(p.process("TICKET DELETE;T001").success());
+        p.process("SYSTEM DATE;2026-10-14");
+        assertTrue(p.process("TICKET DELETE;T001").success());
+        assertTrue(p.process("USER DELETE;ana@correo.com;Clave1!").success());
     }
 }
