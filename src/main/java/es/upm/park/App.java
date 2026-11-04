@@ -17,6 +17,7 @@ import java.nio.file.Path;
 public class App {
 
     static final Path USERS_FILE = Path.of("users.txt");
+    static final Path GROUPS_FILE = Path.of("groups.txt");
 
     public static void main(String[] args) {
         int status = run(args, System.in, System.out, System.err);
@@ -27,15 +28,18 @@ public class App {
 
     /** Runs the application and returns its exit status (0 = normal end). */
     static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err) {
-        return run(args, stdin, out, err, USERS_FILE);
+        return run(args, stdin, out, err, USERS_FILE, GROUPS_FILE);
     }
 
-    static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err, Path usersFile) {
+    static int run(String[] args, InputStream stdin, PrintStream out, PrintStream err,
+                   Path usersFile, Path groupsFile) {
         CommandRunner runner;
         try {
-            runner = new CommandRunner(new CommandProcessor(new UserManager(new UserFileStore(usersFile))));
+            UserManager users = new UserManager(new UserFileStore(usersFile));
+            GroupManager groups = new GroupManager(new GroupFileStore(groupsFile), users);
+            runner = new CommandRunner(new CommandProcessor(users, groups));
         } catch (IOException e) {
-            err.println("ERROR: Cannot load users from '" + usersFile + "': " + describe(e));
+            err.println("ERROR: Cannot load data files: " + describe(e));
             return 1;
         }
         if (args.length == 0) {

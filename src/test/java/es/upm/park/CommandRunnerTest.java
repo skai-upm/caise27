@@ -31,7 +31,8 @@ class CommandRunnerTest {
     @BeforeEach
     void setUp() throws IOException {
         manager = new UserManager(new UserFileStore(dir.resolve("users.txt")));
-        runner = new CommandRunner(new CommandProcessor(manager));
+        GroupManager groups = new GroupManager(new GroupFileStore(dir.resolve("groups.txt")), manager);
+        runner = new CommandRunner(new CommandProcessor(manager, groups));
     }
 
     private List<String> run(String... lines) throws IOException {

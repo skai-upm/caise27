@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Main controller of the application: interprets API-like text commands and owns the single
@@ -24,6 +25,10 @@ public class CommandProcessor {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "GROUP CREATE;Id;Nombre",
+            "GROUP ADD;Id;Correo",
+            "GROUP REMOVE;Id;Correo",
+            "GROUP DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT");
@@ -31,15 +36,17 @@ public class CommandProcessor {
     private static final int DATE_LENGTH = "yyyy-MM-dd".length();
 
     private final UserManager users;
+    private final GroupManager groups;
     private LocalDate currentDate;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserManager users) {
-        this(users, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups) {
+        this(users, groups, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, LocalDate initialDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, LocalDate initialDate) {
         this.users = users;
+        this.groups = groups;
         this.currentDate = initialDate;
     }
 
@@ -71,6 +78,9 @@ public class CommandProcessor {
         }
         if (words.size() == 2 && words.get(0).equals("SYSTEM") && words.get(1).equals("DATE")) {
             return systemDate(params);
+        }
+        if (words.size() == 2 && words.get(0).equals("GROUP")) {
+            return group(words.get(1), params, parts[0].trim());
         }
         if (words.size() != 2 || !words.get(0).equals("USER")) {
             return Result.error("Unknown command: " + parts[0].trim());
@@ -114,7 +124,25 @@ public class CommandProcessor {
         if (!hasParams(p, 2)) {
             return Result.error("Usage: USER DELETE;Correo;Contraseña");
         }
-        return users.delete(p[0], p[1]);
+        Optional<User> target = users.findByEmail(p[0]);
+        Result result = users.delete(p[0], p[1]);
+        if (result.success() && target.isPresent()) {
+            Result cleanup = groups.removeUserEverywhere(target.get());
+            if (!cleanup.success()) {
+                return Result.error(result.message() + " " + cleanup.message());
+            }
+        }
+        return result;
+    }
+
+    private Result group(String operation, String[] p, String command) {
+        return switch (operation) {
+            case "CREATE" -> hasParams(p, 2) ? groups.create(p[0], p[1]) : Result.error("Usage: GROUP CREATE;Id;Nombre");
+            case "ADD" -> hasParams(p, 2) ? groups.addMember(p[0], p[1]) : Result.error("Usage: GROUP ADD;Id;Correo");
+            case "REMOVE" -> hasParams(p, 2) ? groups.removeMember(p[0], p[1]) : Result.error("Usage: GROUP REMOVE;Id;Correo");
+            case "DELETE" -> hasParams(p, 1) ? groups.delete(p[0]) : Result.error("Usage: GROUP DELETE;Id");
+            default -> Result.error("Unknown command: " + command);
+        };
     }
 
     private Result userUpdate(String[] p) {

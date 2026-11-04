@@ -1,0 +1,118 @@
+@startuml model
+' Class model of the amusement-park application (package es.upm.park).
+hide empty members
+skinparam classAttributeIconSize 0
+
+package es.upm.park {
+
+  class App {
+    ~ {static} USERS_FILE : Path
+    ~ {static} GROUPS_FILE : Path
+    + {static} main(args : String[]) : void
+    ~ {static} run(args : String[], stdin : InputStream, out : PrintStream, err : PrintStream) : int
+  }
+
+  class CommandRunner {
+    + run(in : BufferedReader, out : PrintStream) : void
+  }
+
+  class CommandProcessor {
+    - {static} COMMAND_SYNTAX : List<String>
+    - currentDate : LocalDate
+    + process(line : String) : Result
+    + getCurrentDate() : LocalDate
+  }
+
+  class Result <<record>> {
+    + success : boolean
+    + message : String
+    + terminate : boolean
+    + {static} ok(message : String) : Result
+    + {static} error(message : String) : Result
+    + {static} exit(message : String) : Result
+  }
+
+  class UserManager {
+    + getUsers() : List<User>
+    + findByEmail(email : String) : Optional<User>
+    + findByDni(dni : String) : Optional<User>
+    + create(firstName : String, surnames : String, dni : String, email : String, password : String, phone : String, card : String) : Result
+    + delete(email : String, password : String) : Result
+    + update(email : String, password : String, field : UserField, newValue : String) : Result
+  }
+
+  class UserFileStore {
+    - file : Path
+    + load() : List<User>
+    + save(users : List<User>) : void
+  }
+
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - cardNumber : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class UserValidator <<utility>> {
+    + {static} isValidDni(dni : String) : boolean
+    + {static} isValidEmail(email : String) : boolean
+    + {static} isValidPassword(password : String) : boolean
+    + {static} isValidCard(card : String) : boolean
+    + {static} isNonBlank(value : String) : boolean
+  }
+
+  class GroupManager {
+    + getGroups() : List<Group>
+    + find(id : String) : Optional<Group>
+    + create(id : String, name : String) : Result
+    + delete(id : String) : Result
+    + addMember(id : String, email : String) : Result
+    + removeMember(id : String, email : String) : Result
+    + removeUserEverywhere(user : User) : Result
+  }
+
+  class GroupFileStore {
+    - file : Path
+    + load(userByDni : Function<String, Optional<User>>) : List<Group>
+    + save(groups : List<Group>) : void
+  }
+
+  class Group {
+    - id : String {readOnly}
+    - name : String {readOnly}
+    + getMembers() : List<User>
+    + contains(user : User) : boolean
+    + addMember(user : User) : boolean
+    + removeMember(user : User) : boolean
+  }
+}
+
+App ..> CommandRunner : creates
+CommandRunner --> "1" CommandProcessor : processor
+CommandProcessor --> "1" UserManager : users
+CommandProcessor --> "1" GroupManager : groups
+CommandProcessor ..> Result : returns
+UserManager --> "1" UserFileStore : store
+UserManager *-- "0..*" User : users
+UserManager ..> UserValidator : uses
+UserManager ..> UserField : uses
+GroupManager --> "1" GroupFileStore : store
+GroupManager --> "1" UserManager : users
+GroupManager *-- "0..*" Group : groups
+Group "0..*" o-- "0..*" User : members
+UserFileStore ..> User : reads/writes
+GroupFileStore ..> Group : reads/writes
+@enduml

@@ -36,13 +36,17 @@ class AppTest {
     }
 
     private Run launch(String[] args, String stdin, Path usersFile) {
+        return launch(args, stdin, usersFile, usersFile.resolveSibling(usersFile.getFileName() + ".groups"));
+    }
+
+    private Run launch(String[] args, String stdin, Path usersFile, Path groupsFile) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         int status = App.run(args,
                 new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(out, true, StandardCharsets.UTF_8),
                 new PrintStream(err, true, StandardCharsets.UTF_8),
-                usersFile);
+                usersFile, groupsFile);
         return new Run(status, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
     }
 
@@ -111,5 +115,24 @@ class AppTest {
         Run r = launch(new String[] {"bad\u0000name"}, "", dir.resolve("users.txt"));
         assertNotEquals(0, r.status());
         assertTrue(r.err().startsWith("ERROR: Cannot read command file"));
+    }
+
+    @Test
+    void groupsSurviveRestart() throws IOException {
+        Path users = dir.resolve("users.txt");
+        Path groups = dir.resolve("groups.txt");
+        launch(new String[0], String.join("\n",
+                CommandRunnerTest.CREATE_ANA,
+                CommandRunnerTest.CREATE_PEDRO,
+                "GROUP CREATE;G01;Familia Garcia",
+                "GROUP ADD;G01;ana@correo.com",
+                "GROUP ADD;G01;pedro@correo.com",
+                "EXIT"), users, groups);
+        Run second = launch(new String[0], String.join("\n",
+                "GROUP ADD;G01;ana@correo.com",
+                "GROUP REMOVE;G01;pedro@correo.com",
+                "EXIT"), users, groups);
+        assertTrue(second.out().startsWith("ERROR: User ana@correo.com is already in group G01."));
+        assertEquals(List.of("G01;Familia Garcia;12345678Z"), Files.readAllLines(groups));
     }
 }

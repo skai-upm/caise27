@@ -2,6 +2,7 @@ package es.upm.park;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -181,5 +182,37 @@ class UserManagerTest {
         assertEquals(1, recovered.size());
         assertEquals("12345678Z", recovered.get(0).getDni());
         assertEquals("600000000", recovered.get(0).getPhone());
+    }
+
+    // ---- identity and lookup ----
+
+    @Test
+    void updateKeepsTheSameUserInstance() {
+        createAna();
+        User before = manager.getUsers().get(0);
+        manager.update("ana@correo.com", "Clave1!", UserField.EMAIL, "ana.nueva@correo.com");
+        manager.update("ana.nueva@correo.com", "Clave1!", UserField.PHONE, "600000000");
+        assertSame(before, manager.getUsers().get(0));
+        assertEquals("ana.nueva@correo.com", before.getEmail());
+        assertEquals("600000000", before.getPhone());
+    }
+
+    @Test
+    void rejectedUpdateDoesNotTouchInstance() {
+        createAna();
+        User before = manager.getUsers().get(0);
+        manager.update("ana@correo.com", "Clave1!", UserField.CARD, "123");
+        assertSame(before, manager.getUsers().get(0));
+        assertEquals("1234567890123456", before.getCardNumber());
+    }
+
+    @Test
+    void findsUsersByEmailAndDni() {
+        createAna();
+        User ana = manager.getUsers().get(0);
+        assertSame(ana, manager.findByEmail("ANA@correo.com").orElseThrow());
+        assertSame(ana, manager.findByDni("12345678Z").orElseThrow());
+        assertTrue(manager.findByEmail("nadie@correo.com").isEmpty());
+        assertTrue(manager.findByDni("87654321X").isEmpty());
     }
 }

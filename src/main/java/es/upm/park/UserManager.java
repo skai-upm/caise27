@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Creates, deletes and updates users. Every successful change is persisted before it
@@ -21,6 +22,16 @@ public class UserManager {
 
     public List<User> getUsers() {
         return Collections.unmodifiableList(users);
+    }
+
+    /** The registered user with this email (case-insensitive), if any. */
+    public Optional<User> findByEmail(String email) {
+        return users.stream().filter(u -> u.getEmail().equalsIgnoreCase(email)).findFirst();
+    }
+
+    /** The registered user with this DNI, if any. */
+    public Optional<User> findByDni(String dni) {
+        return users.stream().filter(u -> u.getDni().equals(dni)).findFirst();
     }
 
     public Result create(String firstName, String surnames, String dni, String email,
@@ -74,53 +85,60 @@ public class UserManager {
         if (index < 0) {
             return Result.error("Unknown email or wrong password.");
         }
-        User changed = new User(users.get(index));
-        switch (field) {
-            case NAME -> {
-                if (!UserValidator.isNonBlank(newValue)) {
-                    return Result.error("First name must not be empty.");
-                }
-                changed.setFirstName(newValue);
-            }
-            case SURNAME -> {
-                if (!UserValidator.isNonBlank(newValue)) {
-                    return Result.error("Surnames must not be empty.");
-                }
-                changed.setSurnames(newValue);
-            }
-            case EMAIL -> {
-                if (!UserValidator.isValidEmail(newValue)) {
-                    return Result.error("Invalid email: " + newValue);
-                }
-                for (int i = 0; i < users.size(); i++) {
-                    if (i != index && users.get(i).getEmail().equalsIgnoreCase(newValue)) {
-                        return Result.error("A user with email " + newValue + " already exists.");
-                    }
-                }
-                changed.setEmail(newValue);
-            }
-            case PASSWORD -> {
-                if (!UserValidator.isValidPassword(newValue)) {
-                    return Result.error("Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol.");
-                }
-                changed.setPassword(newValue);
-            }
-            case PHONE -> {
-                if (!UserValidator.isNonBlank(newValue)) {
-                    return Result.error("Telephone number must not be empty.");
-                }
-                changed.setPhone(newValue);
-            }
-            case CARD -> {
-                if (!UserValidator.isValidCard(newValue)) {
-                    return Result.error("Invalid card number: it must have exactly 16 digits.");
-                }
-                changed.setCardNumber(newValue);
+        String problem = validateUpdate(index, field, newValue);
+        if (problem != null) {
+            return Result.error(problem);
+        }
+        User original = users.get(index);
+        User changed = new User(original);
+        apply(changed, field, newValue);
+        List<User> candidate = new ArrayList<>(users);
+        candidate.set(index, changed);
+        try {
+            store.save(candidate);
+        } catch (IOException e) {
+            return Result.error("Could not save users: " + e.getMessage());
+        }
+        // Keep the same instance so every object referring to this user sees the change.
+        apply(original, field, newValue);
+        return Result.ok("User " + original.getEmail() + " updated (" + field + ").");
+    }
+
+    /** Error message for an invalid new value, or {@code null} when the value is acceptable. */
+    private String validateUpdate(int index, UserField field, String newValue) {
+        return switch (field) {
+            case NAME -> UserValidator.isNonBlank(newValue) ? null : "First name must not be empty.";
+            case SURNAME -> UserValidator.isNonBlank(newValue) ? null : "Surnames must not be empty.";
+            case PHONE -> UserValidator.isNonBlank(newValue) ? null : "Telephone number must not be empty.";
+            case PASSWORD -> UserValidator.isValidPassword(newValue) ? null
+                    : "Invalid password: it needs an uppercase letter, a lowercase letter, a digit and a symbol.";
+            case CARD -> UserValidator.isValidCard(newValue) ? null
+                    : "Invalid card number: it must have exactly 16 digits.";
+            case EMAIL -> validateNewEmail(index, newValue);
+        };
+    }
+
+    private String validateNewEmail(int index, String newValue) {
+        if (!UserValidator.isValidEmail(newValue)) {
+            return "Invalid email: " + newValue;
+        }
+        for (int i = 0; i < users.size(); i++) {
+            if (i != index && users.get(i).getEmail().equalsIgnoreCase(newValue)) {
+                return "A user with email " + newValue + " already exists.";
             }
         }
-        List<User> updated = new ArrayList<>(users);
-        updated.set(index, changed);
-        return commit(updated, "User " + changed.getEmail() + " updated (" + field + ").");
+        return null;
+    }
+
+    private static void apply(User user, UserField field, String value) {
+        switch (field) {
+            case NAME -> user.setFirstName(value);
+            case SURNAME -> user.setSurnames(value);
+            case EMAIL -> user.setEmail(value);
+            case PASSWORD -> user.setPassword(value);
+            case PHONE -> user.setPhone(value);
+            case CARD -> user.setCardNumber(value);
+        }
     }
 
     /** Index of the user with this email and password, or -1. */

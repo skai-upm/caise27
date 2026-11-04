@@ -22,12 +22,14 @@ class CommandProcessorTest {
     @TempDir
     Path dir;
     private UserManager manager;
+    private GroupManager groups;
     private CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws IOException {
         manager = new UserManager(new UserFileStore(dir.resolve("users.txt")));
-        processor = new CommandProcessor(manager);
+        groups = new GroupManager(new GroupFileStore(dir.resolve("groups.txt")), manager);
+        processor = new CommandProcessor(manager, groups);
     }
 
     @Test
@@ -109,6 +111,10 @@ class CommandProcessorTest {
             "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
             "USER DELETE;Correo;Contraseña",
             "USER UPDATE;Correo;Contraseña;Campo;NuevoValor",
+            "GROUP CREATE;Id;Nombre",
+            "GROUP ADD;Id;Correo",
+            "GROUP REMOVE;Id;Correo",
+            "GROUP DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
             "HELP",
             "EXIT"}) {
@@ -143,7 +149,7 @@ class CommandProcessorTest {
     private static final LocalDate START = LocalDate.of(2026, 9, 15);
 
     private CommandProcessor processorAt(LocalDate date) {
-        return new CommandProcessor(manager, date);
+        return new CommandProcessor(manager, groups, date);
     }
 
     @Test
@@ -203,5 +209,46 @@ class CommandProcessorTest {
         CommandProcessor p = processorAt(START);
         p.process("HELP");
         assertEquals(START, p.getCurrentDate());
+    }
+
+    // ---- groups ----
+
+    @Test
+    void sourceGroupCommands() {
+        processor.process(CREATE_ANA);
+        assertTrue(processor.process("GROUP CREATE;G01;Familia Garcia").success());
+        assertTrue(processor.process("GROUP ADD;G01;ana@correo.com").success());
+        assertEquals(1, groups.find("G01").orElseThrow().getMembers().size());
+        assertTrue(processor.process("GROUP REMOVE;G01;ana@correo.com").success());
+        assertTrue(processor.process("GROUP DELETE;G01").success());
+        assertTrue(groups.getGroups().isEmpty());
+        assertEquals(1, manager.getUsers().size());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GROUP CREATE;G01", "GROUP CREATE;;Familia", "GROUP CREATE;G01;Familia;x",
+        "GROUP ADD;G01", "GROUP REMOVE;G01;", "GROUP DELETE", "GROUP DELETE;G01;x", "GROUP LIST", "GROUP"})
+    void malformedGroupCommandsRejected(String command) {
+        Result r = processor.process(command);
+        assertFalse(r.success());
+        assertTrue(groups.getGroups().isEmpty());
+    }
+
+    @Test
+    void deletingUserRemovesItFromGroups() {
+        processor.process(CREATE_ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").success());
+        assertTrue(groups.find("G01").orElseThrow().getMembers().isEmpty());
+    }
+
+    @Test
+    void failedUserDeleteKeepsMembership() {
+        processor.process(CREATE_ANA);
+        processor.process("GROUP CREATE;G01;Familia Garcia");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertFalse(processor.process("USER DELETE;ana@correo.com;Mala1!").success());
+        assertEquals(1, groups.find("G01").orElseThrow().getMembers().size());
     }
 }
