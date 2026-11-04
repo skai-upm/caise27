@@ -33,7 +33,9 @@ class AppTest {
     private Run run(String[] args, Path usersFile, String stdin) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
-        int status = App.run(args, usersFile, usersFile.resolveSibling("groups-" + usersFile.getFileName()), new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
+        App.DataFiles files = new App.DataFiles(usersFile, usersFile.resolveSibling("groups-" + usersFile.getFileName()),
+                usersFile.resolveSibling("tickets-" + usersFile.getFileName()));
+        int status = App.run(args, files, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8));
         return new Run(status, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
     }
@@ -129,5 +131,19 @@ class AppTest {
         String[] lines = second.out().split("\\R");
         assertTrue(lines[0].startsWith("ERROR"), "membership restored, so duplicate add is rejected");
         assertTrue(lines[1].startsWith("OK"));
+    }
+
+    @Test
+    void restoredTicketBlocksDeletionAndPriceResets() {
+        Path users = dir.resolve("users.txt");
+        Run first = run(new String[0], users, CommandProcessorTest.CREATE_ANA + "\nSYSTEM DATE;2026-10-01\n"
+                + "SYSTEM PRICE;60.00\nTICKET CREATE;T001;ana@correo.com;2026-10-15\n");
+        assertTrue(first.out().contains("OK TICKET CREATED -> 60.00"), first.out());
+        Run second = run(new String[0], users, "SYSTEM DATE;2026-10-01\nUSER DELETE;ana@correo.com;Clave1!\n"
+                + "TICKET CREATE;T002;ana@correo.com;2026-10-20\nSYSTEM DATE;2026-10-16\nUSER DELETE;ana@correo.com;Clave1!\n");
+        String[] lines = second.out().split("\\R");
+        assertTrue(lines[1].startsWith("ERROR"), lines[1]);
+        assertEquals("OK TICKET CREATED -> 40.00", lines[2]);
+        assertTrue(lines[4].startsWith("ERROR"), "T002 (2026-10-20) still blocks: " + lines[4]);
     }
 }

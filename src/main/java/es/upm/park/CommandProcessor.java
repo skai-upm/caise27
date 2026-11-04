@@ -1,5 +1,7 @@
 package es.upm.park;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -25,32 +27,46 @@ public class CommandProcessor {
             "GROUP ADD;Id;Correo",
             "GROUP REMOVE;Id;Correo",
             "GROUP DELETE;Id",
+            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
+            "TICKET DELETE;Id",
             "SYSTEM DATE;yyyy-MM-dd",
+            "SYSTEM PRICE;Precio",
             "HELP",
             "EXIT");
+
+    static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
+    private static final int PRICE_DECIMALS = 2;
 
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
     private final UserManager users;
     private final GroupManager groups;
+    private final TicketManager tickets;
     private boolean exitRequested;
     /** The single current date of the application; time-dependent rules must use it. */
     private LocalDate currentDate;
+    /** Current individual-ticket price; starts at 40.00 on every execution, never persisted. */
+    private BigDecimal currentPrice = DEFAULT_PRICE;
 
     /** Creates the controller with the operating system's local date as current date. */
-    public CommandProcessor(UserManager users, GroupManager groups) {
-        this(users, groups, LocalDate.now());
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets) {
+        this(users, groups, tickets, LocalDate.now());
     }
 
-    public CommandProcessor(UserManager users, GroupManager groups, LocalDate initialDate) {
+    public CommandProcessor(UserManager users, GroupManager groups, TicketManager tickets, LocalDate initialDate) {
         this.users = users;
         this.groups = groups;
+        this.tickets = tickets;
         this.currentDate = initialDate;
     }
 
     public LocalDate getCurrentDate() {
         return currentDate;
+    }
+
+    public BigDecimal getCurrentPrice() {
+        return currentPrice;
     }
 
     public String process(String line) {
@@ -68,7 +84,10 @@ public class CommandProcessor {
                 case "GROUP ADD" -> groupAdd(parts);
                 case "GROUP REMOVE" -> groupRemove(parts);
                 case "GROUP DELETE" -> groupDelete(parts);
+                case "TICKET CREATE" -> ticketCreate(parts);
+                case "TICKET DELETE" -> ticketDelete(parts);
                 case "SYSTEM DATE" -> systemDate(parts);
+                case "SYSTEM PRICE" -> systemPrice(parts);
                 case "HELP" -> help(parts);
                 case "EXIT" -> exit(parts);
                 default -> "ERROR: unknown command '" + operation + "'";
@@ -120,14 +139,67 @@ public class CommandProcessor {
         return "OK: group " + p[1] + " deleted";
     }
 
+    private String ticketCreate(String[] p) {
+        requireParams(p, 3, "TICKET CREATE;Id;Correo;yyyy-MM-dd");
+        User owner = users.findByEmail(p[2]);
+        if (owner == null) {
+            throw new IllegalArgumentException("no registered user with email " + p[2]);
+        }
+        Ticket ticket = tickets.create(p[1], owner, parseDate(p[3]), currentPrice, currentDate);
+        return "OK TICKET CREATED -> " + ticket.getPrice().toPlainString();
+    }
+
+    private String ticketDelete(String[] p) {
+        requireParams(p, 1, "TICKET DELETE;Id");
+        tickets.delete(p[1], currentDate);
+        return "OK: ticket " + p[1] + " deleted";
+    }
+
     private String systemDate(String[] p) {
         requireParams(p, 1, "SYSTEM DATE;yyyy-MM-dd");
-        try {
-            currentDate = LocalDate.parse(p[1], DATE_FORMAT);
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("invalid date '" + p[1] + "', expected format yyyy-MM-dd");
-        }
+        currentDate = parseDate(p[1]);
         return "OK: system date set to " + currentDate;
+    }
+
+    private String systemPrice(String[] p) {
+        requireParams(p, 1, "SYSTEM PRICE;Precio");
+        currentPrice = parsePrice(p[1]);
+        return "OK: ticket price set to " + currentPrice.toPlainString();
+    }
+
+    private static LocalDate parseDate(String value) {
+        try {
+            return LocalDate.parse(value, DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("invalid date '" + value + "', expected format yyyy-MM-dd");
+        }
+    }
+
+    /** Positive decimal: digits, optionally '.' and one or two decimals (no regex). */
+    static BigDecimal parsePrice(String value) {
+        String error = "invalid price '" + value + "', expected a positive amount such as 60.00";
+        int dot = value.indexOf('.');
+        String integer = dot < 0 ? value : value.substring(0, dot);
+        String decimals = dot < 0 ? "" : value.substring(dot + 1);
+        boolean wellFormed = !integer.isEmpty() && isDigits(integer) && isDigits(decimals)
+                && (dot < 0 || (!decimals.isEmpty() && decimals.length() <= PRICE_DECIMALS));
+        if (!wellFormed) {
+            throw new IllegalArgumentException(error);
+        }
+        BigDecimal price = new BigDecimal(value).setScale(PRICE_DECIMALS, RoundingMode.UNNECESSARY);
+        if (price.signum() <= 0) {
+            throw new IllegalArgumentException(error);
+        }
+        return price;
+    }
+
+    private static boolean isDigits(String value) {
+        for (char c : value.toCharArray()) {
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String exit(String[] p) {
@@ -144,6 +216,10 @@ public class CommandProcessor {
 
     private String delete(String[] p) {
         requireParams(p, 2, "USER DELETE;Correo;Contraseña");
+        User user = users.authenticate(p[1], p[2]);
+        if (tickets.hasTicketOnOrAfter(user, currentDate)) {
+            throw new IllegalArgumentException("user " + p[1] + " has tickets dated on or after " + currentDate);
+        }
         User removed = users.delete(p[1], p[2]);
         groups.removeUserFromAllGroups(removed);
         return "OK: user " + p[1] + " deleted";

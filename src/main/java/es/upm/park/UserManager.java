@@ -105,7 +105,8 @@ public class UserManager {
         current.copyEditableFrom(changed);
     }
 
-    private User authenticate(String email, String password) {
+    /** Returns the user with that email if the password matches, otherwise fails. */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         if (user == null || !user.getPassword().equals(password)) {
             throw new IllegalArgumentException("invalid email or password");

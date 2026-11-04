@@ -16,15 +16,18 @@ package es.upm.park {
   class CommandProcessor {
     -exitRequested : boolean
     -currentDate : LocalDate
+    -currentPrice : BigDecimal
     +process(line : String) : String
     +isExitRequested() : boolean
     +getCurrentDate() : LocalDate
+    +getCurrentPrice() : BigDecimal
   }
 
   class UserManager {
     +create(...) : void
     +delete(email : String, password : String) : User
     +update(email : String, password : String, field : UserField, value : String) : void
+    +authenticate(email : String, password : String) : User
     +findByEmail(email : String) : User
     +findByDni(dni : String) : User
   }
@@ -82,6 +85,26 @@ package es.upm.park {
     -name : String {readOnly}
     +contains(user : User) : boolean
   }
+
+  class TicketManager {
+    +create(id : String, owner : User, date : LocalDate, price : BigDecimal, today : LocalDate) : Ticket
+    +delete(id : String, today : LocalDate) : void
+    +hasTicketOnOrAfter(user : User, today : LocalDate) : boolean
+    +find(id : String) : Ticket
+  }
+
+  class TicketFileStorage {
+    -file : Path
+    +load(userByDni : Function<String, User>) : List<Ticket>
+    +save(tickets : Collection<Ticket>) : void
+  }
+
+  class Ticket {
+    -id : String {readOnly}
+    -date : LocalDate {readOnly}
+    -price : BigDecimal {readOnly}
+    -ownerDni : String {readOnly}
+  }
 }
 
 App ..> CommandRunner : creates
@@ -96,4 +119,9 @@ GroupManager --> "1" GroupFileStorage : storage
 GroupManager --> "1" UserManager : users
 GroupManager "1" *-- "0..*" Group : groups
 Group "0..*" o-- "0..*" User : members
+CommandProcessor --> "1" TicketManager : tickets
+TicketManager --> "1" TicketFileStorage : storage
+TicketManager "1" *-- "0..*" Ticket : tickets
+TicketManager ..> UserManager : resolves owners
+Ticket "0..*" --> "0..1" User : owner
 @enduml
