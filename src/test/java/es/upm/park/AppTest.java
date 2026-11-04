@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -167,5 +168,97 @@ class AppTest {
         assertTrue(second.out().contains("Present: 0"));
         assertTrue(second.out().contains("Available: 20"));
         assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+    }
+
+    // ---- --fly mode ----
+
+    private Run fly(String[] args, String stdin, Path dataDir, Path tmpRoot) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int status = App.run(args,
+                new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
+                new PrintStream(out, true, StandardCharsets.UTF_8),
+                new PrintStream(err, true, StandardCharsets.UTF_8),
+                dataDir, tmpRoot);
+        return new Run(status, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
+    }
+
+    private static long entries(Path dir) throws IOException {
+        if (!Files.exists(dir)) {
+            return 0;
+        }
+        try (Stream<Path> s = Files.list(dir)) {
+            return s.count();
+        }
+    }
+
+    @Test
+    void flyRunLeavesPersistentDataUntouchedAndCleansUp() throws IOException {
+        interactive(CommandRunnerTest.CREATE_ANA, "EXIT");
+        byte[] before = Files.readAllBytes(dir.resolve("users.txt"));
+        Path tmpRoot = dir.resolve("tmp");
+        Run r = fly(new String[] {"--fly"}, String.join("\n",
+                CommandRunnerTest.CREATE_ANA, CommandRunnerTest.CREATE_PEDRO,
+                "GROUP CREATE;G01;Familia", "SYSTEM DATE;2026-10-01",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15", "ATTRACTION CREATE;A01;Tornado;20", "EXIT"), dir, tmpRoot);
+        assertEquals(0, r.status());
+        assertTrue(r.out().startsWith("OK: User ana@correo.com created."), "fly data starts empty");
+        assertTrue(r.err().startsWith("INFO: --fly mode, temporary data in "));
+        try (Stream<Path> files = Files.list(dir)) {
+            assertEquals(List.of("users.txt"), files.map(p -> p.getFileName().toString())
+                    .filter(n -> !n.equals("tmp")).sorted().toList());
+        }
+        assertTrue(java.util.Arrays.equals(before, Files.readAllBytes(dir.resolve("users.txt"))));
+        assertEquals(0, entries(tmpRoot), "run directory deleted");
+    }
+
+    @Test
+    void flyRunUsesPersistenceWithinTheRun() throws IOException {
+        Path tmpRoot = dir.resolve("tmp");
+        Path commands = dir.resolve("input_fase2.txt");
+        Files.write(commands, List.of(CommandRunnerTest.CREATE_ANA, CommandRunnerTest.CREATE_ANA, "EXIT"));
+        Run r = fly(new String[] {"--fly", commands.toString()}, "", dir, tmpRoot);
+        assertEquals(0, r.status());
+        assertTrue(r.out().contains("ERROR: A user with DNI 12345678Z already exists."));
+        assertFalse(Files.exists(dir.resolve("users.txt")));
+        assertEquals(0, entries(tmpRoot));
+    }
+
+    @Test
+    void flyFlagMayFollowTheCommandFile() throws IOException {
+        Path commands = dir.resolve("cmds.txt");
+        Files.write(commands, List.of(CommandRunnerTest.CREATE_ANA));
+        Run r = fly(new String[] {commands.toString(), "--fly"}, "", dir, dir.resolve("tmp"));
+        assertEquals(0, r.status());
+        assertFalse(Files.exists(dir.resolve("users.txt")));
+    }
+
+    @Test
+    void flyRunWithMissingFileCleansUp() throws IOException {
+        Path tmpRoot = dir.resolve("tmp");
+        Run r = fly(new String[] {"--fly", dir.resolve("missing.txt").toString()}, "", dir, tmpRoot);
+        assertNotEquals(0, r.status());
+        assertTrue(r.err().contains("ERROR: Cannot read command file"));
+        assertEquals(0, entries(tmpRoot));
+    }
+
+    @Test
+    void normalRunCreatesNoTemporaryDirectory() {
+        Path tmpRoot = dir.resolve("tmp");
+        fly(new String[0], CommandRunnerTest.CREATE_ANA, dir, tmpRoot);
+        assertFalse(Files.exists(tmpRoot));
+        assertTrue(Files.exists(dir.resolve("users.txt")));
+    }
+
+    @Test
+    void runDirectoriesAreUniqueAndTimestamped() throws IOException {
+        Path tmpRoot = dir.resolve("tmp");
+        Path first = App.createRunDirectory(tmpRoot);
+        Path second = App.createRunDirectory(tmpRoot);
+        assertNotEquals(first, second);
+        assertTrue(first.getFileName().toString().matches("\\d{8}_\\d{6}(_\\d+)?"));
+        App.deleteQuietly(first);
+        App.deleteQuietly(second);
+        assertEquals(0, entries(tmpRoot));
     }
 }

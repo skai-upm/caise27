@@ -7,7 +7,7 @@ Defines how commands reach the application, interactively from standard input or
 ## Requirements
 
 ### Requirement: Interactive mode
-When launched without arguments, the application SHALL read commands from standard input one line at a time, print one result per non-blank line, and keep waiting for further commands until it processes `EXIT` or standard input ends.
+When launched without a command-file argument (no arguments, or only `--fly`), the application SHALL read commands from standard input one line at a time, print one result per non-blank line, and keep waiting for further commands until it processes `EXIT` or standard input ends.
 
 #### Scenario: Interactive session ends with EXIT
 - **GIVEN** the application is started without arguments
@@ -19,8 +19,12 @@ When launched without arguments, the application SHALL read commands from standa
 - **WHEN** standard input ends without `EXIT`
 - **THEN** the application terminates normally after processing the commands received
 
+#### Scenario: Interactive with --fly
+- **WHEN** the application is started with only `--fly`
+- **THEN** it reads commands from standard input
+
 ### Requirement: File mode
-When launched with at least one argument, the application SHALL treat the first argument as the path of a text file of commands, read it line by line, and process each non-blank line as a command in the order it appears.
+When launched with at least one argument other than `--fly`, the application SHALL treat the first such argument as the path of a text file of commands, read it line by line, and process each non-blank line as a command in the order it appears.
 
 #### Scenario: File with commands in order
 - **GIVEN** a file with lines creating Ana, creating Pedro, `USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999` and `EXIT`
@@ -31,6 +35,10 @@ When launched with at least one argument, the application SHALL treat the first 
 - **GIVEN** a file with an empty line and a whitespace-only line between valid commands
 - **WHEN** it is processed
 - **THEN** the blank lines produce no output and no error, and the valid commands execute
+
+#### Scenario: File after --fly
+- **WHEN** the application is started with `--fly input_fase2.txt`
+- **THEN** `input_fase2.txt` is processed as the command file
 
 ### Requirement: Shared command processing
 Interactive mode and file mode SHALL use the same command interpretation and execution, so the same command sequence produces the same output and the same persisted effects from either source.
