@@ -63,7 +63,7 @@ class AppTest {
         assertEquals("OK: Available commands:", r.out().get(2));
         assertEquals("OK: Exiting", r.out().get(r.out().size() - 1));
         assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456"),
-                Files.readAllLines(users));
+                TestPark.unhash(Files.readAllLines(users)));
     }
 
     @Test
@@ -85,7 +85,7 @@ class AppTest {
         assertEquals(List.of(
                 "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699999999;1234567890123456",
                 "Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"),
-                Files.readAllLines(users));
+                TestPark.unhash(Files.readAllLines(users)));
     }
 
     @Test
@@ -94,7 +94,7 @@ class AppTest {
         Path file = commandFile("cmds.txt", ANA + "\nEXIT\n" + PEDRO + "\n");
         Run r = run(new String[] {file.toString()}, "", users);
         assertEquals(List.of("OK: User created", "OK: Exiting"), r.out());
-        assertEquals(1, Files.readAllLines(users).size());
+        assertEquals(1, TestPark.unhash(Files.readAllLines(users)).size());
     }
 
     @Test
@@ -117,7 +117,7 @@ class AppTest {
         Run interactive = run(new String[0], sequence, usersA);
         Run fromFile = run(new String[] {commandFile("seq.txt", sequence).toString()}, "", usersB);
         assertEquals(interactive.out(), fromFile.out());
-        assertEquals(Files.readAllLines(usersA), Files.readAllLines(usersB));
+        assertEquals(TestPark.unhash(Files.readAllLines(usersA)), TestPark.unhash(Files.readAllLines(usersB)));
     }
 
     @Test

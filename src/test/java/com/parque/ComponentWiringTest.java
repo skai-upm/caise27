@@ -92,9 +92,9 @@ class ComponentWiringTest {
         TestPark.start(b).createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789",
                 "9876543210987654");
         assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
-                Files.readAllLines(a.resolve("users.txt")));
+                TestPark.unhash(Files.readAllLines(a.resolve("users.txt"))));
         assertEquals(List.of("Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"),
-                Files.readAllLines(b.resolve("users.txt")));
+                TestPark.unhash(Files.readAllLines(b.resolve("users.txt"))));
     }
 
     @Test

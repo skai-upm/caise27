@@ -111,6 +111,10 @@ package com.parque.business.model {
 package com.parque.business.service {
   class UserValidator
   class UserService
+  interface PasswordHasher
+  class BCryptPasswordHasher {
+    -logRounds : int
+  }
   class GroupService
   class TicketService
   class AttractionService
@@ -168,6 +172,8 @@ ParkController "1" x--> "1" AttractionService : attractions
 
 ' Users
 UserService "1" x--> "1" UserRepository : repository
+UserService "0..*" x--> "1" PasswordHasher : hasher
+PasswordHasher <|.. BCryptPasswordHasher
 UserService "1" o--> "0..*" User : users
 
 ' Groups
@@ -205,6 +211,7 @@ GroupInvoiceBuilder "0..*" o--> "0..*" GroupTicket : groupTickets
 App ..> CommandRunner : <<use>>
 App ..> DataDirectory : <<use>>
 App ..> ApplicationContext : <<use>>
+ApplicationContext ..> BCryptPasswordHasher : <<use>>
 ApplicationContext ..> SyntaxHelpFormatter : <<use>>
 ApplicationContext ..> ExtendedHelpFormatter : <<use>>
 User ..> UserField : <<use>>

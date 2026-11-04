@@ -14,10 +14,18 @@ import java.util.List;
  */
 public class UserService {
     private final UserRepository repository;
+    private final PasswordHasher hasher;
     private List<User> users;
 
+    /** Convenience constructor with the standard BCrypt hasher. */
     public UserService(UserRepository repository) throws IOException {
+        this(repository, new BCryptPasswordHasher());
+    }
+
+    /** Main constructor: repository and password hasher are injected. */
+    public UserService(UserRepository repository, PasswordHasher hasher) throws IOException {
         this.repository = repository;
+        this.hasher = hasher;
         this.users = new ArrayList<>(repository.load());
     }
 
@@ -57,7 +65,7 @@ public class UserService {
         require(findByEmail(email) == null, "A user with email " + email + " already exists");
 
         List<User> next = new ArrayList<>(users);
-        next.add(new User(name, surname, dni, email, password, phone, card));
+        next.add(new User(name, surname, dni, email, hasher.hash(password), phone, card));
         commit(next);
     }
 
@@ -88,19 +96,21 @@ public class UserService {
         }
         // Save the edited state first; only then change the stored object in place, so that every
         // reference to this user (e.g. from groups) sees the new value and a failed save changes nothing.
+        // Passwords are stored only as hashes (validated above with the E1 rules).
+        String stored = field == UserField.PASSWORD ? hasher.hash(value) : value;
         User changed = new User(user);
-        changed.set(field, value);
+        changed.set(field, stored);
         List<User> toSave = new ArrayList<>(users);
         toSave.set(toSave.indexOf(user), changed);
         save(toSave);
-        user.set(field, value);
+        user.set(field, stored);
     }
 
     /** Returns the user with that email if the password matches; otherwise rejects. */
     public User authenticate(String email, String password) {
         User user = findByEmail(email);
         require(user != null, "No user with email " + email);
-        require(user.getPassword().equals(password), "Incorrect password");
+        require(hasher.matches(password, user.getPassword()), "Incorrect password");
         return user;
     }
 

@@ -1,5 +1,6 @@
 package com.parque.business.service;
 
+import com.parque.TestPark;
 import com.parque.business.controller.*;
 import com.parque.business.model.*;
 import com.parque.persistence.*;
@@ -35,7 +36,7 @@ class UserServiceTest {
     }
 
     private List<String> fileLines() throws Exception {
-        return Files.readAllLines(file);
+        return TestPark.unhash(Files.readAllLines(file));
     }
 
     @Test

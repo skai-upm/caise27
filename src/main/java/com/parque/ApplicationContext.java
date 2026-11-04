@@ -2,6 +2,7 @@ package com.parque;
 
 import com.parque.business.controller.ParkController;
 import com.parque.business.service.AttractionService;
+import com.parque.business.service.BCryptPasswordHasher;
 import com.parque.business.service.GroupService;
 import com.parque.business.service.InvoiceDirector;
 import com.parque.business.service.TicketService;
@@ -42,7 +43,7 @@ public final class ApplicationContext {
         GroupTicketRepository groupTicketRepository = new GroupTicketRepository(dataDir.resolve(GROUP_TICKETS_FILE));
         AttractionRepository attractionRepository = new AttractionRepository(dataDir.resolve(ATTRACTIONS_FILE));
 
-        UserService users = new UserService(userRepository);
+        UserService users = new UserService(userRepository, new BCryptPasswordHasher());
         GroupService groups = new GroupService(groupRepository, users);
         TicketService tickets = new TicketService(ticketRepository, groupTicketRepository, users, groups);
         AttractionService attractions = new AttractionService(attractionRepository);
