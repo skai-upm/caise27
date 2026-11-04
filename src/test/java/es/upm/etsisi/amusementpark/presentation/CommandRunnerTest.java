@@ -1,6 +1,10 @@
 package es.upm.etsisi.amusementpark.presentation;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
+import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
+import es.upm.etsisi.amusementpark.presentation.help.SyntaxHelpFormatter;
 import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
 import es.upm.etsisi.amusementpark.business.service.GroupManager;
@@ -54,7 +58,8 @@ class CommandRunnerTest {
                 groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
                         new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), manager, groups),
                 new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))),
-                new InvoiceDirector())));
+                new InvoiceDirector()),
+                new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter(), new ExtendedHelpFormatter())));
         bytes = new ByteArrayOutputStream();
         out = new PrintStream(bytes, true, StandardCharsets.UTF_8);
     }

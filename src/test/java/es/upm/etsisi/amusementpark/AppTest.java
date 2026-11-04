@@ -1,6 +1,6 @@
 package es.upm.etsisi.amusementpark;
 
-import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,7 +52,7 @@ class AppTest {
         List<String> stored = Files.readAllLines(users, StandardCharsets.UTF_8);
         assertEquals(2, stored.size());
         assertTrue(stored.get(0).contains(";699999999;"));
-        for (String syntax : CommandProcessor.HELP_LINES) {
+        for (String syntax : CommandCatalog.standard().commands().stream().map(c -> c.syntax()).toList()) {
             assertTrue(r.output().contains(syntax), syntax);
         }
     }

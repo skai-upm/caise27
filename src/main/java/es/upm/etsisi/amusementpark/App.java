@@ -13,6 +13,10 @@ import es.upm.etsisi.amusementpark.persistence.TicketFileRepository;
 import es.upm.etsisi.amusementpark.persistence.UserFileRepository;
 import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
 import es.upm.etsisi.amusementpark.presentation.CommandRunner;
+import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
+import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
+import es.upm.etsisi.amusementpark.presentation.help.SyntaxHelpFormatter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -101,7 +105,9 @@ public class App {
             AttractionManager attractions = new AttractionManager(
                     new AttractionFileRepository(usersFile.resolveSibling(ATTRACTIONS_FILE_NAME)));
             ParkController.initialize(users, groups, tickets, attractions, new InvoiceDirector());
-            runner = new CommandRunner(new CommandProcessor(ParkController.getInstance()));
+            HelpGenerator help = new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter(),
+                    new ExtendedHelpFormatter());
+            runner = new CommandRunner(new CommandProcessor(ParkController.getInstance(), help));
         } catch (IOException e) {
             out.println("ERROR: Could not load stored data next to '" + usersFile + "': " + e);
             return 1;

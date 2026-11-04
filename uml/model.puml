@@ -17,6 +17,19 @@ class CommandProcessor {
 }
 }
 
+package presentation.help {
+class HelpGenerator
+class CommandCatalog
+class CommandInfo {
+  operation : String
+  syntax : String
+  description : String
+}
+interface HelpFormatter
+class SyntaxHelpFormatter
+class ExtendedHelpFormatter
+}
+
 package business.controller {
 class ParkController <<Singleton>> {
   currentDate : LocalDate
@@ -120,12 +133,19 @@ class Exception
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 Exception <|-- UserException
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
 InvoiceBuilder <|-- UserInvoiceBuilder
 InvoiceBuilder <|-- GroupInvoiceBuilder
 
 ' ---------- Control relationships ----------
 CommandRunner "0..1" x--> "1" CommandProcessor : processor
 CommandProcessor "0..1" x--> "1" ParkController : controller
+CommandProcessor "0..1" x--> "1" HelpGenerator : helpGenerator
+HelpGenerator "0..*" x--> "1" CommandCatalog : catalog
+HelpGenerator "0..*" x--> "1" HelpFormatter : conciseFormatter
+HelpGenerator "0..*" x--> "1" HelpFormatter : extendedFormatter
+CommandCatalog "1" *--> "0..*" CommandInfo : commands
 ParkController "0..1" x--> "1" UserManager : users
 ParkController "0..1" x--> "1" GroupManager : groups
 ParkController "0..1" x--> "1" TicketManager : tickets

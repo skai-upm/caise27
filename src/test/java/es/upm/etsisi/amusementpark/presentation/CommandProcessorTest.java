@@ -1,6 +1,10 @@
 package es.upm.etsisi.amusementpark.presentation;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.presentation.help.CommandCatalog;
+import es.upm.etsisi.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
+import es.upm.etsisi.amusementpark.presentation.help.SyntaxHelpFormatter;
 import es.upm.etsisi.amusementpark.business.invoice.InvoiceDirector;
 import es.upm.etsisi.amusementpark.business.service.AttractionManager;
 import es.upm.etsisi.amusementpark.business.service.GroupManager;
@@ -56,7 +60,8 @@ class CommandProcessorTest {
         ParkController.shutdown();
         return new CommandProcessor(ParkController.initialize(users, groups, new TicketManager(new TicketFileRepository(dir.resolve("tickets.txt")),
                 new GroupTicketFileRepository(dir.resolve("grouptickets.txt")), users, groups),
-                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))), new InvoiceDirector(), START));
+                new AttractionManager(new AttractionFileRepository(dir.resolve("attractions.txt"))), new InvoiceDirector(), START),
+                new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter(), new ExtendedHelpFormatter()));
     }
 
     @AfterEach
@@ -562,6 +567,17 @@ class CommandProcessorTest {
         String help = processor.process("HELP");
         assertTrue(help.contains("INVOICE CREATE;USER;Correo"));
         assertTrue(help.contains("INVOICE CREATE;GROUP;IdGrupo"));
+    }
+
+    @Test
+    void helpExtendedShowsDescriptions() {
+        String extended = processor.process("HELP EXTENDED");
+        assertTrue(extended.startsWith("OK: Available commands (extended):"));
+        assertTrue(extended.contains("USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta"));
+        assertTrue(extended.contains("Registers a user"));
+        assertTrue(processor.process("help extended").startsWith("OK"));
+        assertError(processor.process("HELP EXTENDED;all"));
+        assertTrue(processor.process("HELP").contains("  HELP EXTENDED"));
     }
 
     @Test

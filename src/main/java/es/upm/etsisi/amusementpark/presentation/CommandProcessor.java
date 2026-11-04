@@ -12,6 +12,7 @@ import es.upm.etsisi.amusementpark.business.model.Ticket;
 import es.upm.etsisi.amusementpark.business.model.User;
 import es.upm.etsisi.amusementpark.business.model.UserException;
 import es.upm.etsisi.amusementpark.business.model.UserField;
+import es.upm.etsisi.amusementpark.presentation.help.HelpGenerator;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -38,37 +39,15 @@ public class CommandProcessor {
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
-    /** Syntax of every available command, shown by {@code HELP}. Extend when adding commands. */
-    public static final List<String> HELP_LINES = List.of(
-            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
-            "USER DELETE;Correo;Contraseña",
-            "USER UPDATE;Correo;Contraseña;Campo;NuevoValor   (Campo: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
-            "GROUP CREATE;Id;Nombre",
-            "GROUP ADD;Id;Correo",
-            "GROUP REMOVE;Id;Correo",
-            "GROUP DELETE;Id",
-            "TICKET CREATE;Id;Correo;yyyy-MM-dd",
-            "TICKET DELETE;Id",
-            "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
-            "GROUPTICKET DELETE;Id",
-            "ATTRACTION CREATE;Id;Nombre;Capacidad",
-            "ATTRACTION ENTER;IdAtraccion;IdTicket",
-            "ATTRACTION EXIT;IdAtraccion;IdTicket",
-            "ATTRACTION STATUS;IdAtraccion",
-            "INVOICE CREATE;USER;Correo",
-            "INVOICE CREATE;GROUP;IdGrupo",
-            "SYSTEM DATE;yyyy-MM-dd",
-            "SYSTEM PRICE;Precio",
-            "HELP",
-            "EXIT");
-
     private static final int PRICE_DECIMALS = 2;
 
     private final ParkController controller;
+    private final HelpGenerator helpGenerator;
     private boolean exitRequested;
 
-    public CommandProcessor(ParkController controller) {
+    public CommandProcessor(ParkController controller, HelpGenerator helpGenerator) {
         this.controller = controller;
+        this.helpGenerator = helpGenerator;
     }
 
     /** The business controller that executes the commands. */
@@ -117,6 +96,7 @@ public class CommandProcessor {
                 case "SYSTEM DATE" -> systemDate(params);
                 case "SYSTEM PRICE" -> systemPrice(params);
                 case "HELP" -> help(params);
+                case "HELP EXTENDED" -> helpExtended(params);
                 case "EXIT" -> exit(params);
                 default -> error("Unknown command: " + parts[0].trim());
             };
@@ -133,13 +113,14 @@ public class CommandProcessor {
         return ok("System date set to " + controller.getCurrentDate());
     }
 
-    private static String help(String[] p) throws UserException {
+    private String help(String[] p) throws UserException {
         requireParams(p, 0, "HELP");
-        StringBuilder sb = new StringBuilder(ok("Available commands:"));
-        for (String line : HELP_LINES) {
-            sb.append(System.lineSeparator()).append("  ").append(line);
-        }
-        return sb.toString();
+        return helpGenerator.concise();
+    }
+
+    private String helpExtended(String[] p) throws UserException {
+        requireParams(p, 0, "HELP EXTENDED");
+        return helpGenerator.extended();
     }
 
     private String exit(String[] p) throws UserException {
