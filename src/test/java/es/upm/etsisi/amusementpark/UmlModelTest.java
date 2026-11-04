@@ -46,7 +46,7 @@ class UmlModelTest {
     void everyProductionTypeIsDeclared() throws IOException {
         List<String> declared = declarations();
         List<String> missing = new ArrayList<>();
-        try (Stream<Path> files = Files.list(SOURCES)) {
+        try (Stream<Path> files = Files.walk(SOURCES)) {
             files.map(p -> p.getFileName().toString())
                     .filter(n -> n.endsWith(".java"))
                     .map(n -> n.substring(0, n.length() - ".java".length()))

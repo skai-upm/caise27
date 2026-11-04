@@ -8,16 +8,23 @@ hide empty members
 hide circle
 skinparam classAttributeIconSize 0
 
-' ---------- Application and control ----------
 class App
+
+package presentation {
 class CommandRunner
 class CommandProcessor {
   exitRequested : boolean
+}
+}
+
+package business.controller {
+class ParkController {
   currentDate : LocalDate
   ticketPrice : BigDecimal
 }
+}
 
-' ---------- Users ----------
+package business.model {
 class User {
   name : String
   surname : String
@@ -37,23 +44,10 @@ enum UserField {
 }
 class UserValidator
 class UserException
-class Exception
-class UserManager
-class UserFileRepository {
-  file : Path
-}
-
-' ---------- Groups ----------
 class Group {
   id : String
   name : String
 }
-class GroupManager
-class GroupFileRepository {
-  file : Path
-}
-
-' ---------- Tickets ----------
 abstract class Ticket {
   id : String
   date : LocalDate
@@ -67,24 +61,39 @@ class GroupTicket {
   basePrice : BigDecimal
   totalPrice : BigDecimal
 }
+class Attraction {
+  id : String
+  name : String
+  capacity : int
+}
+}
+
+package business.service {
+class UserManager
+class GroupManager
 class TicketManager
+class AttractionManager
+}
+
+package persistence {
+class UserFileRepository {
+  file : Path
+}
+class GroupFileRepository {
+  file : Path
+}
 class TicketFileRepository {
   file : Path
 }
 class GroupTicketFileRepository {
   file : Path
 }
-
-' ---------- Attractions ----------
-class Attraction {
-  id : String
-  name : String
-  capacity : int
-}
-class AttractionManager
 class AttractionFileRepository {
   file : Path
 }
+}
+
+class Exception
 
 ' ---------- Inheritance ----------
 Ticket <|-- IndividualTicket
@@ -93,10 +102,11 @@ Exception <|-- UserException
 
 ' ---------- Control relationships ----------
 CommandRunner "0..1" x--> "1" CommandProcessor : processor
-CommandProcessor "0..1" x--> "1" UserManager : users
-CommandProcessor "0..1" x--> "1" GroupManager : groups
-CommandProcessor "0..1" x--> "1" TicketManager : tickets
-CommandProcessor "0..1" x--> "1" AttractionManager : attractions
+CommandProcessor "0..1" x--> "1" ParkController : controller
+ParkController "0..1" x--> "1" UserManager : users
+ParkController "0..1" x--> "1" GroupManager : groups
+ParkController "0..1" x--> "1" TicketManager : tickets
+ParkController "0..1" x--> "1" AttractionManager : attractions
 
 ' ---------- Managers and their entities ----------
 UserManager "1" *--> "0..*" User : users
@@ -125,6 +135,7 @@ Attraction "0..*" o--> "0..*" User : present
 ' ---------- Usage of classes without incoming relationships ----------
 App ..> CommandRunner : <<use>>
 CommandProcessor ..> UserField : <<use>>
+ParkController ..> UserField : <<use>>
 UserManager ..> UserField : <<use>>
 UserManager ..> UserValidator : <<use>>
 GroupManager ..> UserValidator : <<use>>
@@ -136,5 +147,6 @@ TicketManager ..> UserException : <<throw>>
 AttractionManager ..> UserException : <<throw>>
 Attraction ..> UserException : <<throw>>
 CommandProcessor ..> UserException : <<catch>>
+ParkController ..> UserException : <<throw>>
 
 @enduml

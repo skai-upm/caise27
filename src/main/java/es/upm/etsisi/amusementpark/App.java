@@ -1,5 +1,18 @@
 package es.upm.etsisi.amusementpark;
 
+import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.service.AttractionManager;
+import es.upm.etsisi.amusementpark.business.service.GroupManager;
+import es.upm.etsisi.amusementpark.business.service.TicketManager;
+import es.upm.etsisi.amusementpark.business.service.UserManager;
+import es.upm.etsisi.amusementpark.persistence.AttractionFileRepository;
+import es.upm.etsisi.amusementpark.persistence.GroupFileRepository;
+import es.upm.etsisi.amusementpark.persistence.GroupTicketFileRepository;
+import es.upm.etsisi.amusementpark.persistence.TicketFileRepository;
+import es.upm.etsisi.amusementpark.persistence.UserFileRepository;
+import es.upm.etsisi.amusementpark.presentation.CommandProcessor;
+import es.upm.etsisi.amusementpark.presentation.CommandRunner;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -86,7 +99,7 @@ public class App {
                     new GroupTicketFileRepository(usersFile.resolveSibling(GROUP_TICKETS_FILE_NAME)), users, groups);
             AttractionManager attractions = new AttractionManager(
                     new AttractionFileRepository(usersFile.resolveSibling(ATTRACTIONS_FILE_NAME)));
-            runner = new CommandRunner(new CommandProcessor(users, groups, tickets, attractions));
+            runner = new CommandRunner(new CommandProcessor(new ParkController(users, groups, tickets, attractions)));
         } catch (IOException e) {
             out.println("ERROR: Could not load stored data next to '" + usersFile + "': " + e);
             return 1;
