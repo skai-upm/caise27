@@ -15,9 +15,11 @@ package com.parque {
     {static} ~COMMAND_SYNTAX : List<String>
     -exitRequested : boolean
     -currentDate : LocalDate
+    -ticketPrice : BigDecimal
     +process(line : String) : String
     +isExitRequested() : boolean
     +getCurrentDate() : LocalDate
+    +getTicketPrice() : BigDecimal
   }
 
   class User {
@@ -54,6 +56,7 @@ package com.parque {
     +update(email : String, password : String, field : UserField, value : String) : void
     +findByEmail(email : String) : User
     +findByDni(dni : String) : User
+    +authenticate(email : String, password : String) : User
   }
 
   class UserRepository {
@@ -84,13 +87,36 @@ package com.parque {
     +load(userByDni : Function<String, User>) : List<Group>
     +save(groups : List<Group>) : void
   }
+
+  class Ticket {
+    -id : String {readOnly}
+    -holderDni : String {readOnly}
+    -date : LocalDate {readOnly}
+    -price : BigDecimal {readOnly}
+    +getPriceText() : String
+  }
+
+  class TicketService {
+    +create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : Ticket
+    +delete(id : String, today : LocalDate) : void
+    +hasCurrentOrFutureTicket(user : User, today : LocalDate) : boolean
+    +find(id : String) : Ticket
+  }
+
+  class TicketRepository {
+    -file : Path
+    +load(userByDni : Function<String, User>) : List<Ticket>
+    +save(tickets : List<Ticket>) : void
+  }
 }
 
 App ..> CommandProcessor : creates
 App ..> UserService : creates
 App ..> GroupService : creates
+App ..> TicketService : creates
 CommandProcessor "1" --> "1" UserService : users
 CommandProcessor "1" --> "1" GroupService : groups
+CommandProcessor "1" --> "1" TicketService : tickets
 UserService "1" --> "1" UserRepository : repository
 UserService "1" o-- "0..*" User : users
 UserService ..> UserValidator : uses
@@ -101,4 +127,9 @@ GroupService "1" o-- "0..*" Group : groups
 Group "0..*" o-- "0..*" User : members
 UserRepository ..> User : reads/writes
 GroupRepository ..> Group : reads/writes
+TicketService "1" --> "1" TicketRepository : repository
+TicketService "1" --> "1" UserService : users
+TicketService "1" o-- "0..*" Ticket : tickets
+Ticket "0..*" --> "0..1" User : owner
+TicketRepository ..> Ticket : reads/writes
 @enduml

@@ -161,4 +161,23 @@ class AppTest {
         assertEquals("OK: User deleted", second.out().get(2));
         assertEquals(List.of("G01;Familia Garcia;"), Files.readAllLines(dir.resolve("groups.txt")));
     }
+
+    @Test
+    void ticketsRestoredAndPriceResetAfterRestart() throws Exception {
+        Path users = dir.resolve("users.txt");
+        Run first = run(new String[0], String.join("\n", ANA, "SYSTEM DATE;2026-10-01", "SYSTEM PRICE;60.00",
+                "TICKET CREATE;T001;ana@correo.com;2026-10-15", "EXIT") + "\n", users);
+        assertEquals("OK TICKET CREATED -> 60.00", first.out().get(3));
+        Run second = run(new String[0], String.join("\n", "SYSTEM DATE;2026-10-01",
+                "TICKET CREATE;T002;ana@correo.com;2026-10-20", "USER DELETE;ana@correo.com;Clave1!",
+                "SYSTEM DATE;2026-10-21", "USER DELETE;ana@correo.com;Clave1!", "EXIT") + "\n", users);
+        assertEquals("OK TICKET CREATED -> 40.00", second.out().get(1));
+        assertTrue(second.out().get(2).startsWith("ERROR: "), "restored future tickets block deletion");
+        assertEquals("OK: User deleted", second.out().get(4));
+        assertEquals(List.of("T001;12345678Z;2026-10-15;60.00", "T002;12345678Z;2026-10-20;40.00"),
+                Files.readAllLines(dir.resolve("tickets.txt")));
+        Run third = run(new String[0], "EXIT\n", users);
+        assertEquals(0, third.status());
+        assertEquals(2, Files.readAllLines(dir.resolve("tickets.txt")).size(), "history retained after restart");
+    }
 }

@@ -93,7 +93,8 @@ public class UserService {
         user.set(field, value);
     }
 
-    private User authenticate(String email, String password) {
+    /** Returns the user with that email if the password matches; otherwise rejects. */
+    public User authenticate(String email, String password) {
         User user = findByEmail(email);
         require(user != null, "No user with email " + email);
         require(user.getPassword().equals(password), "Incorrect password");

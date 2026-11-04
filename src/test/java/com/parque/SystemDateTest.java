@@ -21,19 +21,21 @@ class SystemDateTest {
     Path dir;
     UserService users;
     GroupService groups;
+    TicketService tickets;
     CommandProcessor processor;
 
     @BeforeEach
     void setUp() throws Exception {
         users = new UserService(new UserRepository(dir.resolve("users.txt")));
         groups = new GroupService(new GroupRepository(dir.resolve("groups.txt")), users);
-        processor = new CommandProcessor(users, groups, LocalDate.of(2026, 9, 15));
+        tickets = new TicketService(new TicketRepository(dir.resolve("tickets.txt")), users);
+        processor = new CommandProcessor(users, groups, tickets, LocalDate.of(2026, 9, 15));
     }
 
     @Test
     void startsWithOperatingSystemDate() {
         LocalDate before = LocalDate.now();
-        CommandProcessor fresh = new CommandProcessor(users, groups);
+        CommandProcessor fresh = new CommandProcessor(users, groups, tickets);
         LocalDate after = LocalDate.now();
         LocalDate date = fresh.getCurrentDate();
         assertTrue(!date.isBefore(before) && !date.isAfter(after), date.toString());
@@ -41,7 +43,7 @@ class SystemDateTest {
 
     @Test
     void setsValidDate() {
-        CommandProcessor fresh = new CommandProcessor(users, groups);
+        CommandProcessor fresh = new CommandProcessor(users, groups, tickets);
         assertEquals("OK: System date set to 2026-09-15", fresh.process("SYSTEM DATE;2026-09-15"));
         assertEquals(LocalDate.of(2026, 9, 15), fresh.getCurrentDate());
     }
@@ -87,6 +89,6 @@ class SystemDateTest {
         assertEquals("OK: System date set to 2026-09-15", lines[0]);
         assertTrue(lines[1].startsWith("ERROR: Invalid date"));
         // a new execution builds a new controller starting at the OS date again
-        assertEquals(LocalDate.now(), new CommandProcessor(users, groups).getCurrentDate());
+        assertEquals(LocalDate.now(), new CommandProcessor(users, groups, tickets).getCurrentDate());
     }
 }
