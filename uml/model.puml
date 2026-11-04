@@ -1,0 +1,137 @@
+@startuml model
+' Class model of the amusement-park application (package es.upm.park),
+' derived from the current implementation. Relationships are named after
+' the attribute that holds them; the cross marks the holder end.
+skinparam classAttributeIconSize 0
+hide empty members
+hide circle
+
+package es.upm.park {
+
+  class App
+
+  class CommandRunner
+
+  class CommandProcessor {
+    -exitRequested : boolean
+    -currentDate : LocalDate
+    -currentPrice : BigDecimal
+  }
+
+  class UserManager
+
+  class UserFileStorage {
+    -file : Path
+  }
+
+  class UserValidator
+
+  class User {
+    -name : String
+    -surnames : String
+    -dni : String
+    -email : String
+    -password : String
+    -phone : String
+    -card : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class GroupManager
+
+  class GroupFileStorage {
+    -file : Path
+  }
+
+  class Group {
+    -id : String
+    -name : String
+  }
+
+  class TicketManager
+
+  class TicketFileStorage {
+    -file : Path
+  }
+
+  class GroupTicketFileStorage {
+    -file : Path
+  }
+
+  abstract class Ticket {
+    -id : String
+    -date : LocalDate
+  }
+
+  class IndividualTicket {
+    -price : BigDecimal
+    -ownerDni : String
+  }
+
+  class GroupTicket {
+    -groupId : String
+    -individualPrice : BigDecimal
+    -total : BigDecimal
+  }
+
+  class AttractionManager
+
+  class AttractionFileStorage {
+    -file : Path
+  }
+
+  class Attraction {
+    -id : String
+    -name : String
+    -capacity : int
+  }
+}
+
+note top of App : Entry point (main); not used by other classes.
+
+' --- associations (holder x--> target : attribute)
+CommandRunner "0..*" x--> "1" CommandProcessor : processor
+CommandProcessor "0..*" x--> "1" UserManager : users
+CommandProcessor "0..*" x--> "1" GroupManager : groups
+CommandProcessor "0..*" x--> "1" TicketManager : tickets
+CommandProcessor "0..*" x--> "1" AttractionManager : attractions
+UserManager "0..*" x--> "1" UserFileStorage : storage
+UserManager "0..*" x--> "0..*" User : users
+GroupManager "0..*" x--> "1" GroupFileStorage : storage
+GroupManager "0..*" x--> "1" UserManager : users
+GroupManager "0..*" x--> "0..*" Group : groups
+Group "0..*" x--> "0..*" User : members
+TicketManager "0..*" x--> "1" TicketFileStorage : storage
+TicketManager "0..*" x--> "1" GroupTicketFileStorage : groupStorage
+TicketManager "0..*" x--> "0..*" IndividualTicket : tickets
+TicketManager "0..*" x--> "0..*" GroupTicket : groupTickets
+IndividualTicket "0..*" x--> "0..1" User : owner
+AttractionManager "0..*" x--> "1" AttractionFileStorage : storage
+AttractionManager "0..*" x--> "0..*" Attraction : attractions
+Attraction "0..*" x--> "0..*" User : present
+
+' --- aggregation and composition
+GroupTicket "0..*" o--> "0..1" Group : group
+GroupTicket "1" *--> "1..*" IndividualTicket : constituents
+
+' --- inheritance
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' --- usage, only for classes without incoming relationships
+App ..> CommandRunner : <<use>>
+UserManager ..> UserValidator : <<use>>
+GroupManager ..> UserValidator : <<use>>
+TicketManager ..> UserValidator : <<use>>
+AttractionManager ..> UserValidator : <<use>>
+UserManager ..> UserField : <<use>>
+CommandProcessor ..> UserField : <<use>>
+@enduml
