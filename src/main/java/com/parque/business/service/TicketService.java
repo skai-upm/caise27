@@ -88,6 +88,18 @@ public class TicketService {
 
     /** Deletes an individual ticket whose date is strictly later than {@code today}; constituents are refused. */
     public void delete(String id, LocalDate today) {
+        IndividualTicket ticket = checkDeletable(id, today);
+        List<IndividualTicket> next = new ArrayList<>(tickets);
+        next.remove(ticket);
+        saveIndividual(next);
+        tickets = next;
+    }
+
+    /**
+     * Validates that the individual ticket can be deleted (exists, is not a constituent, is dated after
+     * {@code today}) without changing anything; returns it.
+     */
+    public IndividualTicket checkDeletable(String id, LocalDate today) {
         IndividualTicket ticket = find(id);
         require(ticket != null, "No ticket with identifier " + id);
         GroupTicket owner = groupTicketContaining(ticket);
@@ -95,10 +107,16 @@ public class TicketService {
                 + " and can only be deleted with it");
         require(ticket.isFuture(today),
                 "Ticket " + id + " cannot be deleted: its date " + ticket.getDate() + " is not after " + today);
-        List<IndividualTicket> next = new ArrayList<>(tickets);
-        next.remove(ticket);
-        saveIndividual(next);
-        tickets = next;
+        return ticket;
+    }
+
+    /** Validates that the group ticket can be deleted (exists, dated after {@code today}); changes nothing. */
+    public GroupTicket checkGroupDeletable(String id, LocalDate today) {
+        GroupTicket groupTicket = findGroupTicket(id);
+        require(groupTicket != null, "No group ticket with identifier " + id);
+        require(groupTicket.isFuture(today), "Group ticket " + id + " cannot be deleted: its date "
+                + groupTicket.getDate() + " is not after " + today);
+        return groupTicket;
     }
 
     /** Buys a group ticket: one individual ticket per current member, discounted total. */
@@ -132,10 +150,7 @@ public class TicketService {
 
     /** Deletes a group ticket dated strictly after {@code today}, together with its constituent tickets. */
     public void deleteGroupTicket(String id, LocalDate today) {
-        GroupTicket groupTicket = findGroupTicket(id);
-        require(groupTicket != null, "No group ticket with identifier " + id);
-        require(groupTicket.isFuture(today), "Group ticket " + id + " cannot be deleted: its date "
-                + groupTicket.getDate() + " is not after " + today);
+        GroupTicket groupTicket = checkGroupDeletable(id, today);
         List<IndividualTicket> nextTickets = new ArrayList<>(tickets);
         nextTickets.removeIf(groupTicket::contains);
         List<GroupTicket> nextGroupTickets = new ArrayList<>(groupTickets);

@@ -257,4 +257,16 @@ class UmlModelTest {
         assertTrue(lines.contains("GroupTicket \"0..1\" *--> \"1..*\" IndividualTicket : constituents"));
         assertTrue(lines.contains("Attraction \"0..*\" o--> \"0..*\" User : present"));
     }
+
+    @Test
+    void delivery3DesignRepresented() {
+        for (String expected : List.of("abstract class Pass {", "Pass <|-- SpeedPass", "Pass <|-- SpecialPass",
+                "Pass \"0..*\" x--> \"1\" IndividualTicket : ticket", "interface Admission",
+                "Admission <|-- IndividualAccess", "Admission <|-- GroupAccess", "IndividualAccess <|.. IndividualTicket",
+                "GroupAccess <|.. GroupTicket", "abstract class Attraction<T extends Admission> {", "enum AttractionType {",
+                "InvoiceBuilder <|-- UserInvoiceBuilder", "HelpFormatter <|.. SyntaxHelpFormatter",
+                "PasswordHasher <|.. BCryptPasswordHasher", "class ParkController <<Singleton>> {")) {
+            assertTrue(lines.contains(expected), "missing in uml/model.puml: " + expected);
+        }
+    }
 }

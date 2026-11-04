@@ -113,13 +113,20 @@ public class PassService {
         return result;
     }
 
-    /** Removes the passes of deleted tickets. */
-    public void removePassesOf(Collection<IndividualTicket> deleted) {
+    /** Removes (and saves) the passes of the given tickets; returns the previous pass list for {@link #restore}. */
+    public List<Pass> removePassesOf(Collection<IndividualTicket> deleted) {
+        List<Pass> previous = passes;
         List<Pass> next = new ArrayList<>(passes);
         boolean changed = next.removeIf(p -> deleted.contains(p.getTicket()));
         if (changed) {
             commit(next);
         }
+        return previous;
+    }
+
+    /** Restores a pass list previously returned by {@link #removePassesOf} (compensation after a failure). */
+    public void restore(List<Pass> previous) {
+        commit(new ArrayList<>(previous));
     }
 
     /** The individual tickets behind an admission: itself, or the constituents of a group ticket. */

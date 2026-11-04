@@ -173,23 +173,35 @@ public class ParkController {
         return tickets.create(id, email, date, currentDate, ticketPrice);
     }
 
-    /** Deletes a future individual ticket together with its passes. */
+    /** Deletes a future individual ticket: validates, deletes its passes, then the ticket; no partial cascade. */
     public void deleteTicket(String id) {
-        IndividualTicket ticket = tickets.find(id);
-        tickets.delete(id, currentDate);
-        passes.removePassesOf(List.of(ticket));
+        IndividualTicket ticket = tickets.checkDeletable(id, currentDate);
+        List<Pass> previousPasses = passes.removePassesOf(List.of(ticket));
+        try {
+            tickets.delete(id, currentDate);
+        } catch (RuntimeException e) {
+            passes.restore(previousPasses);
+            throw e;
+        }
     }
 
     public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) {
         return tickets.createGroupTicket(id, groupId, date, currentDate, ticketPrice);
     }
 
-    /** Deletes a future group ticket, its constituent tickets and their passes. */
+    /**
+     * Deletes a future group ticket: validates, deletes the constituents' passes, then the constituent tickets
+     * and the group ticket; no partial cascade.
+     */
     public void deleteGroupTicket(String id) {
-        GroupTicket groupTicket = tickets.findGroupTicket(id);
-        List<IndividualTicket> constituents = groupTicket == null ? List.of() : new ArrayList<>(groupTicket.getConstituents());
-        tickets.deleteGroupTicket(id, currentDate);
-        passes.removePassesOf(constituents);
+        GroupTicket groupTicket = tickets.checkGroupDeletable(id, currentDate);
+        List<Pass> previousPasses = passes.removePassesOf(new ArrayList<>(groupTicket.getConstituents()));
+        try {
+            tickets.deleteGroupTicket(id, currentDate);
+        } catch (RuntimeException e) {
+            passes.restore(previousPasses);
+            throw e;
+        }
     }
 
     // ----- passes

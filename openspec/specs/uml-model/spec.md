@@ -35,3 +35,7 @@ The repository SHALL contain a valid PlantUML class diagram at `uml/model.puml` 
 #### Scenario: Behaviour unchanged
 - **WHEN** the test suite is run before and after regenerating the diagram
 - **THEN** the same tests pass
+
+#### Scenario: Delivery 3 design represented
+- **WHEN** the diagram is inspected after Delivery 3
+- **THEN** it shows the abstract `Pass` with `SpeedPass` and `SpecialPass` and its association to `IndividualTicket`, the `Admission` / `IndividualAccess` / `GroupAccess` interfaces with their realizations, the generic `Attraction<T extends Admission>` with its four bound subclasses and `AttractionType`, the invoice builder hierarchy, the help strategy, the password hasher and the singleton controller

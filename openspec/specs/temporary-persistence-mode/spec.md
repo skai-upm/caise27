@@ -30,7 +30,7 @@ With `--fly`, the application SHALL create at startup a new directory `tmp/<yyyy
 - **THEN** it uses a different directory (`tmp/20260826_190315_1/`)
 
 ### Requirement: All persistence redirected
-During a `--fly` execution every repository (users, groups, tickets, group tickets, attractions and any other persistent element) SHALL read and write only files inside the temporary directory, through the same repository implementations as a normal execution; the permanent data files SHALL NOT be read or modified.
+During a `--fly` execution every repository (users, groups, tickets, group tickets, attractions with their type, passes with their price and consumed status, and any other persistent element) SHALL read and write only files inside the temporary directory, through the same repository implementations as a normal execution; the permanent data files SHALL NOT be read or modified.
 
 #### Scenario: Permanent data untouched
 - **GIVEN** permanent data files with existing users
@@ -41,6 +41,11 @@ During a `--fly` execution every repository (users, groups, tickets, group ticke
 - **GIVEN** the permanent data contains user `ana@correo.com`
 - **WHEN** a `--fly` run processes `USER CREATE` for a user with email `ana@correo.com`
 - **THEN** the creation succeeds, because the temporary data starts empty
+
+#### Scenario: F3 data isolated
+- **GIVEN** permanent data files
+- **WHEN** a `--fly` run creates typed attractions, buys and consumes passes and deletes tickets
+- **THEN** the permanent files are unchanged, no permanent `passes.txt` is created, and the temporary directory is removed at the end
 
 ### Requirement: Temporary directory deleted at termination
 When a `--fly` execution terminates — by `EXIT`, end of input, a command-file error or JVM shutdown — the temporary directory and all the files it contains SHALL be deleted, together with the `tmp/` directory if it is left empty.
