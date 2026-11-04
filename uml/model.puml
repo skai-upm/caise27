@@ -1,36 +1,30 @@
 @startuml model
-' Class model of the amusement-park application (package com.parque)
+' Class model of the amusement-park application (package com.parque), derived from the current source code.
+' Notation: no methods; attributes are primitive-like values or enumerations; every object reference is a
+' relationship labelled with the holder's field name. Plain associations mark the holder end with a cross (x)
+' and the referenced end with an arrow; aggregations/compositions mark the holder end with the diamond.
+' Usage (dependency) arrows are drawn only for classes that have no incoming relationship.
 hide empty members
 skinparam classAttributeIconSize 0
 
 package com.parque {
 
-  class App {
-    {static} ~DATA_DIR : Path
-    {static} +main(args : String[]) : void
-    {static} ~run(args : String[], stdin : InputStream, out : PrintStream, err : PrintStream, dataDir : Path) : int
-  }
+  class App
 
   class CommandProcessor {
-    {static} ~COMMAND_SYNTAX : List<String>
     -exitRequested : boolean
     -currentDate : LocalDate
     -ticketPrice : BigDecimal
-    +process(line : String) : String
-    +isExitRequested() : boolean
-    +getCurrentDate() : LocalDate
-    +getTicketPrice() : BigDecimal
   }
 
   class User {
     -name : String
     -surname : String
-    -dni : String {readOnly}
+    -dni : String
     -email : String
     -password : String
     -phone : String
     -card : String
-    +set(field : UserField, value : String) : void
   }
 
   enum UserField {
@@ -42,158 +36,107 @@ package com.parque {
     CARD
   }
 
-  class UserValidator <<utility>> {
-    {static} +isValidDni(dni : String) : boolean
-    {static} +isValidEmail(email : String) : boolean
-    {static} +isValidPassword(password : String) : boolean
-    {static} +isValidCard(card : String) : boolean
-    {static} +isNonBlank(value : String) : boolean
-  }
+  class UserValidator
 
-  class UserService {
-    +create(...) : void
-    +delete(email : String, password : String) : User
-    +update(email : String, password : String, field : UserField, value : String) : void
-    +findByEmail(email : String) : User
-    +findByDni(dni : String) : User
-    +authenticate(email : String, password : String) : User
-  }
+  class UserService
 
   class UserRepository {
     -file : Path
-    +load() : List<User>
-    +save(users : List<User>) : void
   }
 
   class Group {
-    -id : String {readOnly}
+    -id : String
     -name : String
-    +addMember(user : User) : boolean
-    +removeMember(user : User) : boolean
-    +contains(user : User) : boolean
   }
 
-  class GroupService {
-    +create(id : String, name : String) : void
-    +addMember(id : String, email : String) : void
-    +removeMember(id : String, email : String) : void
-    +delete(id : String) : void
-    +removeUserFromAllGroups(user : User) : void
-    +find(id : String) : Group
-  }
+  class GroupService
 
   class GroupRepository {
     -file : Path
-    +load(userByDni : Function<String, User>) : List<Group>
-    +save(groups : List<Group>) : void
   }
 
   abstract class Ticket {
-    -id : String {readOnly}
-    -date : LocalDate {readOnly}
-    +{abstract} getPrice() : BigDecimal
-    +{abstract} getVisitors() : List<User>
-    +getPriceText() : String
-    +isCurrentOrFuture(today : LocalDate) : boolean
-    +isFuture(today : LocalDate) : boolean
+    -id : String
+    -date : LocalDate
   }
 
   class IndividualTicket {
-    -holderDni : String {readOnly}
-    -price : BigDecimal {readOnly}
-    +getPrice() : BigDecimal
-    +getVisitors() : List<User>
+    -holderDni : String
+    -price : BigDecimal
   }
 
   class GroupTicket {
-    -groupId : String {readOnly}
-    -unitPrice : BigDecimal {readOnly}
-    -total : BigDecimal {readOnly}
-    {static} +discountPercent(members : int) : int
-    {static} +totalFor(unitPrice : BigDecimal, members : int) : BigDecimal
-    +getPrice() : BigDecimal
-    +getVisitors() : List<User>
+    -groupId : String
+    -unitPrice : BigDecimal
+    -total : BigDecimal
   }
 
-  class Attraction {
-    -id : String {readOnly}
-    -name : String {readOnly}
-    -capacity : int {readOnly}
-    +enter(ticket : Ticket, today : LocalDate) : void
-    +exit(ticket : Ticket) : int
-    +available() : int
-  }
-
-  class AttractionService {
-    +create(id : String, name : String, capacity : String) : Attraction
-    +find(id : String) : Attraction
-    +existing(id : String) : Attraction
-  }
-
-  class AttractionRepository {
-    -file : Path
-    +load() : List<Attraction>
-    +save(attractions : List<Attraction>) : void
-  }
-
-  class TicketService {
-    +create(id : String, email : String, date : LocalDate, today : LocalDate, price : BigDecimal) : IndividualTicket
-    +delete(id : String, today : LocalDate) : void
-    +createGroupTicket(id : String, groupId : String, date : LocalDate, today : LocalDate, unitPrice : BigDecimal) : GroupTicket
-    +deleteGroupTicket(id : String, today : LocalDate) : void
-    +hasCurrentOrFutureTicket(user : User, today : LocalDate) : boolean
-    +isGroupLocked(group : Group, today : LocalDate) : boolean
-    +findAny(id : String) : Ticket
-  }
+  class TicketService
 
   class TicketRepository {
     -file : Path
-    +load(userByDni : Function<String, User>) : List<IndividualTicket>
-    +save(tickets : List<IndividualTicket>) : void
   }
 
   class GroupTicketRepository {
     -file : Path
-    +load(groupById : Function<String, Group>, ticketById : Function<String, IndividualTicket>) : List<GroupTicket>
-    +save(groupTickets : List<GroupTicket>) : void
+  }
+
+  class Attraction {
+    -id : String
+    -name : String
+    -capacity : int
+  }
+
+  class AttractionService
+
+  class AttractionRepository {
+    -file : Path
   }
 }
 
-App ..> CommandProcessor : creates
-App ..> UserService : creates
-App ..> GroupService : creates
-App ..> TicketService : creates
-App ..> AttractionService : creates
-CommandProcessor "1" --> "1" UserService : users
-CommandProcessor "1" --> "1" GroupService : groups
-CommandProcessor "1" --> "1" TicketService : tickets
-CommandProcessor "1" --> "1" AttractionService : attractions
-UserService "1" --> "1" UserRepository : repository
-UserService "1" o-- "0..*" User : users
-UserService ..> UserValidator : uses
-User ..> UserField : uses
-GroupService "1" --> "1" GroupRepository : repository
-GroupService "1" --> "1" UserService : users
-GroupService "1" o-- "0..*" Group : groups
-Group "0..*" o-- "0..*" User : members
-UserRepository ..> User : reads/writes
-GroupRepository ..> Group : reads/writes
-TicketService "1" --> "1" TicketRepository : repository
-TicketService "1" --> "1" UserService : users
-TicketService "1" --> "1" GroupTicketRepository : groupRepository
-TicketService "1" --> "1" GroupService : groups
-TicketService "1" o-- "0..*" IndividualTicket : tickets
-TicketService "1" o-- "0..*" GroupTicket : groupTickets
+' Inheritance
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
-IndividualTicket "0..*" --> "0..1" User : owner
-GroupTicket "0..*" o-- "0..1" Group : buyer
-GroupTicket "1" *-- "1..*" IndividualTicket : constituents
-TicketRepository ..> IndividualTicket : reads/writes
-GroupTicketRepository ..> GroupTicket : reads/writes
-AttractionService "1" --> "1" AttractionRepository : repository
-AttractionService "1" o-- "0..*" Attraction : attractions
-Attraction "0..*" o-- "0..*" User : present
-Attraction ..> Ticket : admits visitors of
-AttractionRepository ..> Attraction : reads/writes
+
+' Controller
+CommandProcessor "1" x--> "1" UserService : users
+CommandProcessor "1" x--> "1" GroupService : groups
+CommandProcessor "1" x--> "1" TicketService : tickets
+CommandProcessor "1" x--> "1" AttractionService : attractions
+
+' Users
+UserService "1" x--> "1" UserRepository : repository
+UserService "1" o--> "0..*" User : users
+
+' Groups
+GroupService "1" x--> "1" GroupRepository : repository
+GroupService "0..*" x--> "1" UserService : users
+GroupService "1" o--> "0..*" Group : groups
+Group "0..*" o--> "0..*" User : members
+
+' Tickets
+TicketService "1" x--> "1" TicketRepository : repository
+TicketService "1" x--> "1" GroupTicketRepository : groupRepository
+TicketService "0..*" x--> "1" UserService : users
+TicketService "0..*" x--> "1" GroupService : groups
+TicketService "1" o--> "0..*" IndividualTicket : tickets
+TicketService "1" o--> "0..*" GroupTicket : groupTickets
+IndividualTicket "0..*" x--> "0..1" User : user
+GroupTicket "0..*" o--> "0..1" Group : group
+GroupTicket "0..1" *--> "1..*" IndividualTicket : constituents
+
+' Attractions
+AttractionService "1" x--> "1" AttractionRepository : repository
+AttractionService "1" o--> "0..*" Attraction : attractions
+Attraction "0..*" o--> "0..*" User : present
+
+' Usage of classes without incoming relationships
+App ..> CommandProcessor : <<use>>
+User ..> UserField : <<use>>
+UserService ..> UserField : <<use>>
+CommandProcessor ..> UserField : <<use>>
+UserService ..> UserValidator : <<use>>
+GroupService ..> UserValidator : <<use>>
+TicketService ..> UserValidator : <<use>>
+AttractionService ..> UserValidator : <<use>>
 @enduml
