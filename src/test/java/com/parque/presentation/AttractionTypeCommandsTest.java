@@ -73,6 +73,7 @@ class AttractionTypeCommandsTest {
         assertTrue(p.process("ATTRACTION ENTER;A04;TG01").startsWith("ERROR: "));
         ok("ATTRACTION ENTER;A02;TG01");
         ok("ATTRACTION ENTER;A03;T001");
+        ok("SPECIALPASS CREATE;S01;TG01-1");
         ok("ATTRACTION ENTER;A04;TG01-1");
         ok("ATTRACTION ENTER;A01;T001");
         ok("ATTRACTION EXIT;A02;TG01");

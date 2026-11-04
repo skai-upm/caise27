@@ -223,10 +223,41 @@ public class ParkController {
 
     /** Admits the visitors of the ticket; returns how many entered. */
     public int enterAttraction(String attractionId, String ticketId) {
+        return enterAttraction(attractionId, ticketId, false).entered();
+    }
+
+    /**
+     * Admits the visitors of the ticket, optionally using SpeedPasses; SPECIAL attractions require and use the
+     * ticket's Special Pass and reject SPEED. Passes are selected first, the entry is validated and performed,
+     * and only then are the passes consumed — a failed entry consumes nothing.
+     */
+    public EntryResult enterAttraction(String attractionId, String ticketId, boolean speed) {
         Attraction<?> attraction = attractions.existing(attractionId);
         Ticket ticket = existingTicket(ticketId);
+        List<Pass> toConsume = new ArrayList<>();
+        if (attraction.getType() == AttractionType.SPECIAL) {
+            if (speed) {
+                throw new IllegalArgumentException("The SPEED option is not accepted at SPECIAL attraction "
+                        + attractionId);
+            }
+            if (!attraction.accepts(ticket) || !(ticket instanceof IndividualTicket individual)) {
+                throw new IllegalArgumentException("SPECIAL attraction " + attractionId + " does not admit ticket "
+                        + ticketId);
+            }
+            toConsume.add(passes.selectSpecialPass(individual));
+        } else if (speed) {
+            toConsume.addAll(passes.selectSpeedPasses(ticket));
+        }
         attraction.admit(ticket, currentDate);
-        return ticket.getVisitors().size();
+        if (!toConsume.isEmpty()) {
+            try {
+                passes.consume(toConsume);
+            } catch (RuntimeException e) {
+                attraction.exit(ticket);
+                throw e;
+            }
+        }
+        return new EntryResult(ticket.getVisitors().size(), toConsume);
     }
 
     /** Removes the visitors of the ticket that are present; returns how many left. */

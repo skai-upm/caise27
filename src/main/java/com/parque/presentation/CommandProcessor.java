@@ -1,5 +1,6 @@
 package com.parque.presentation;
 
+import com.parque.business.controller.EntryResult;
 import com.parque.business.controller.ParkController;
 import com.parque.business.model.Attraction;
 import com.parque.business.model.AttractionType;
@@ -9,6 +10,7 @@ import com.parque.business.model.Invoice;
 import com.parque.business.model.InvoiceLine;
 import com.parque.business.model.InvoiceSection;
 import com.parque.business.model.Pass;
+import com.parque.business.model.SpecialPass;
 import com.parque.business.service.PassService;
 import com.parque.business.model.User;
 import com.parque.business.model.UserField;
@@ -180,9 +182,15 @@ public class CommandProcessor {
                 return ok("Attraction created");
             }
             case "ATTRACTION ENTER" -> {
-                expectParameters(parts, 2, "ATTRACTION ENTER;Identificador;Ticket");
-                int entered = controller.enterAttraction(parts[1], parts[2]);
-                return ok(entered + " user(s) entered attraction " + parts[1]);
+                boolean speed = parts.length - 1 == 3;
+                if (speed && !parts[3].equals("SPEED")) {
+                    throw new IllegalArgumentException("Unknown entry option: '" + parts[3] + "' (expected SPEED)");
+                }
+                if (!speed) {
+                    expectParameters(parts, 2, "ATTRACTION ENTER;Identificador;Ticket[;SPEED]");
+                }
+                EntryResult result = controller.enterAttraction(parts[1], parts[2], speed);
+                return ok(result.entered() + " user(s) entered attraction " + parts[1] + consumedText(result));
             }
             case "ATTRACTION EXIT" -> {
                 expectParameters(parts, 2, "ATTRACTION EXIT;Identificador;Ticket");
@@ -257,6 +265,18 @@ public class CommandProcessor {
         }
         sb.append(nl).append("  Total: ").append(invoice.getTotal().toPlainString());
         return sb.toString();
+    }
+
+    private static String consumedText(EntryResult result) {
+        List<Pass> consumed = result.consumedPasses();
+        if (consumed.isEmpty()) {
+            return "";
+        }
+        List<String> ids = consumed.stream().map(Pass::getId).toList();
+        if (consumed.get(0) instanceof SpecialPass) {
+            return "; Special Pass consumed: " + String.join(", ", ids);
+        }
+        return "; " + (ids.size() == 1 ? "SpeedPass" : "SpeedPasses") + " consumed: " + String.join(", ", ids);
     }
 
     private static String ok(String message) {

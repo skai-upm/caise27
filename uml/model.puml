@@ -40,6 +40,10 @@ package com.parque.presentation {
 }
 
 package com.parque.business.controller {
+  class EntryResult {
+    -entered : int
+  }
+
   class ParkController <<Singleton>> {
     -currentDate : LocalDate
     -ticketPrice : BigDecimal
@@ -239,7 +243,8 @@ AttractionService "1" x--> "1" AttractionRepository : repository
 AttractionService "1" o--> "0..*" Attraction : attractions
 Attraction "0..*" o--> "0..*" User : present
 
-''' Passes
+'''' Passes
+EntryResult "0..*" o--> "0..*" Pass : consumedPasses
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 Pass "0..*" x--> "1" IndividualTicket : ticket
@@ -261,6 +266,8 @@ GroupInvoiceBuilder "0..*" o--> "0..*" GroupTicket : groupTickets
 App ..> CommandRunner : <<use>>
 App ..> DataDirectory : <<use>>
 App ..> ApplicationContext : <<use>>
+ParkController ..> EntryResult : <<use>>
+CommandProcessor ..> EntryResult : <<use>>
 AttractionService ..> AttractionType : <<use>>
 AttractionType ..> GeneralAttraction : <<use>>
 AttractionType ..> IndividualAttraction : <<use>>

@@ -1,5 +1,7 @@
 package com.parque.business.service;
 
+import com.parque.business.model.Admission;
+import com.parque.business.model.GroupAccess;
 import com.parque.business.model.IndividualTicket;
 import com.parque.business.model.Pass;
 import com.parque.business.model.SpecialPass;
@@ -117,6 +119,65 @@ public class PassService {
         boolean changed = next.removeIf(p -> deleted.contains(p.getTicket()));
         if (changed) {
             commit(next);
+        }
+    }
+
+    /** The individual tickets behind an admission: itself, or the constituents of a group ticket. */
+    public static List<IndividualTicket> individualTicketsOf(Admission ticket) {
+        if (ticket instanceof GroupAccess group) {
+            return group.getConstituents();
+        }
+        if (ticket instanceof IndividualTicket individual) {
+            return List.of(individual);
+        }
+        return List.of();
+    }
+
+    /**
+     * One unused SpeedPass (the earliest purchased) for every individual ticket behind {@code ticket}; rejects if
+     * any of them has none. Does not change any pass.
+     */
+    public List<Pass> selectSpeedPasses(Admission ticket) {
+        List<Pass> selected = new ArrayList<>();
+        for (IndividualTicket t : individualTicketsOf(ticket)) {
+            Pass found = null;
+            for (Pass p : passes) {
+                if (p instanceof SpeedPass && p.getTicket() == t && !p.isConsumed()) {
+                    found = p;
+                    break;
+                }
+            }
+            require(found != null, "Ticket " + t.getId() + " has no unused SpeedPass");
+            selected.add(found);
+        }
+        require(!selected.isEmpty(), "Ticket " + ticket.getId() + " has no individual tickets");
+        return selected;
+    }
+
+    /** The unused Special Pass of the ticket; rejects if it has none or it was consumed. Does not change it. */
+    public Pass selectSpecialPass(IndividualTicket ticket) {
+        for (Pass p : passes) {
+            if (p instanceof SpecialPass && p.getTicket() == ticket) {
+                require(!p.isConsumed(), "Special Pass " + p.getId() + " of ticket " + ticket.getId()
+                        + " has already been used");
+                return p;
+            }
+        }
+        throw new IllegalArgumentException("Ticket " + ticket.getId() + " has no Special Pass");
+    }
+
+    /** Marks the passes as consumed and saves; on a save failure the passes are restored and the error raised. */
+    public void consume(List<Pass> selected) {
+        for (Pass p : selected) {
+            p.consume();
+        }
+        try {
+            repository.save(passes);
+        } catch (IOException e) {
+            for (Pass p : selected) {
+                p.restoreUnconsumed();
+            }
+            throw new IllegalStateException("Could not save passes: " + e.getMessage(), e);
         }
     }
 

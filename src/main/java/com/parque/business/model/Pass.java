@@ -46,6 +46,11 @@ public abstract class Pass {
         consumed = true;
     }
 
+    /** Undoes {@link #consume()} when the consumption could not be recorded. */
+    public void restoreUnconsumed() {
+        consumed = false;
+    }
+
     /** Kind written in persistence and messages: {@code SPEED} or {@code SPECIAL}. */
     public abstract String getKind();
 }

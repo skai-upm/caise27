@@ -51,8 +51,9 @@ public class CommandCatalog {
                         "Refunds an unused Special Pass whose ticket is dated after the system date."),
                 new CommandInfo("ATTRACTION CREATE;Identificador;Nombre;Aforo[;Tipo]",
                         "Creates an attraction with a maximum capacity and type GENERAL (default), INDIVIDUAL, GROUP or SPECIAL."),
-                new CommandInfo("ATTRACTION ENTER;Identificador;Ticket",
-                        "Admits the visitors of a ticket valid today if they all fit in the attraction."),
+                new CommandInfo("ATTRACTION ENTER;Identificador;Ticket[;SPEED]",
+                        "Admits the visitors of a ticket valid today if they all fit; SPEED uses one SpeedPass per "
+                                + "ticket; SPECIAL attractions use the ticket's Special Pass."),
                 new CommandInfo("ATTRACTION EXIT;Identificador;Ticket",
                         "Lets the visitors of a ticket leave the attraction, freeing their places."),
                 new CommandInfo("ATTRACTION STATUS;Identificador",
