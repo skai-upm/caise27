@@ -1,5 +1,5 @@
 @startuml model
-' Class model of the amusement-park application (package es.upm.park),
+' Class model of the amusement-park application (layered packages under es.upm.park),
 ' derived from the current implementation.
 ' Notation: class bodies list attributes only (primitive/value types and enums);
 ' references to modelled classes are drawn as relationships named after the
@@ -10,17 +10,38 @@ hide empty members
 hide circle
 skinparam classAttributeIconSize 0
 
-package es.upm.park {
-
+package es.upm.park.presentation {
   class App
 
   class CommandRunner
 
-  class CommandProcessor {
+  class CommandProcessor
+}
+
+package es.upm.park.business {
+  class ParkController {
     - currentDate : LocalDate
     - currentPrice : BigDecimal
+    - temporaryDirectory : Path
+    - closed : AtomicBoolean
   }
 
+  class UserValidator
+
+  class UserManager
+
+  class GroupManager
+
+  class TicketManager {
+    - historicalLines : List<String>
+    - groupHistoricalLines : List<String>
+    - historicalIds : Set<String>
+  }
+
+  class AttractionManager
+}
+
+package es.upm.park.business.model {
   class Result <<record>> {
     + success : boolean
     + message : String
@@ -47,23 +68,9 @@ package es.upm.park {
     CARD
   }
 
-  class UserValidator
-
-  class UserManager
-
-  class UserFileStore {
-    - file : Path
-  }
-
   class Group {
     - id : String
     - name : String
-  }
-
-  class GroupManager
-
-  class GroupFileStore {
-    - file : Path
   }
 
   abstract class Ticket {
@@ -78,10 +85,22 @@ package es.upm.park {
     - basePrice : BigDecimal
   }
 
-  class TicketManager {
-    - historicalLines : List<String>
-    - groupHistoricalLines : List<String>
-    - historicalIds : Set<String>
+  class Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+  }
+}
+
+package es.upm.park.persistence {
+  class DataDirectory
+
+  class UserFileStore {
+    - file : Path
+  }
+
+  class GroupFileStore {
+    - file : Path
   }
 
   class TicketFileStore {
@@ -100,14 +119,6 @@ package es.upm.park {
     + historicalLines : List<String>
   }
 
-  class Attraction {
-    - id : String
-    - name : String
-    - capacity : int
-  }
-
-  class AttractionManager
-
   class AttractionFileStore {
     - file : Path
   }
@@ -115,10 +126,11 @@ package es.upm.park {
 
 ' ---- Control ----
 CommandRunner "0..1" x--> "1" CommandProcessor : processor
-CommandProcessor "0..1" x--> "1" UserManager : users
-CommandProcessor "0..1" x--> "1" GroupManager : groups
-CommandProcessor "0..1" x--> "1" TicketManager : tickets
-CommandProcessor "0..1" x--> "1" AttractionManager : attractions
+CommandProcessor "0..1" x--> "1" ParkController : controller
+ParkController "0..1" x--> "1" UserManager : users
+ParkController "0..1" x--> "1" GroupManager : groups
+ParkController "0..1" x--> "1" TicketManager : tickets
+ParkController "0..1" x--> "1" AttractionManager : attractions
 
 ' ---- Users ----
 UserManager "0..1" x--> "1" UserFileStore : store
@@ -151,14 +163,17 @@ Attraction "0..*" o--> "0..*" User : present
 
 ' ---- Usage of classes without incoming relationships ----
 App ..> CommandRunner : creates
+ParkController ..> DataDirectory
 UserManager ..> UserValidator
 GroupManager ..> UserValidator
 TicketManager ..> UserValidator
 AttractionManager ..> UserValidator
 UserManager ..> UserField
 CommandProcessor ..> UserField
+ParkController ..> UserField
 CommandProcessor ..> Result
 CommandRunner ..> Result
+ParkController ..> Result
 UserManager ..> Result
 GroupManager ..> Result
 TicketManager ..> Result
