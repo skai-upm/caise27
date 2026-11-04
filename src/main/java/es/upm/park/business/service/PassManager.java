@@ -127,6 +127,41 @@ public class PassManager {
         return pass;
     }
 
+    /** The first unconsumed SpeedPass of {@code ticket} in purchase order, or {@code null}. */
+    public Pass firstUnusedSpeedPass(IndividualTicket ticket) {
+        for (Pass p : passesFor(ticket)) {
+            if (p instanceof SpeedPass && !p.isConsumed()) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    /** The Special Pass of {@code ticket} if it exists and is unconsumed, or {@code null}. */
+    public Pass unusedSpecialPass(IndividualTicket ticket) {
+        for (Pass p : passesFor(ticket)) {
+            if (p instanceof SpecialPass && !p.isConsumed()) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    /** Marks all {@code selected} passes consumed and saves; on failure nothing stays consumed. */
+    public void consume(List<Pass> selected) {
+        for (Pass p : selected) {
+            p.markConsumed();
+        }
+        try {
+            storage.save(passes.values());
+        } catch (RuntimeException e) {
+            for (Pass p : selected) {
+                p.markUnconsumed();
+            }
+            throw e;
+        }
+    }
+
     /** Persists the current state, e.g. after passes were marked consumed. */
     public void save() {
         storage.save(passes.values());

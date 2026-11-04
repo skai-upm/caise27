@@ -2,6 +2,7 @@ package es.upm.park.business.service;
 
 import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.AttractionType;
+import es.upm.park.business.model.GroupAccess;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
@@ -233,11 +234,51 @@ public class ParkController {
         return attractions.create(id, name, capacity, type);
     }
 
-    /** Admits the holders of a ticket valid for the system date; returns the attraction. */
-    public Attraction<?> enterAttraction(String attractionId, String ticketId) {
+    /**
+     * Admits the holders of a ticket valid for the system date. With {@code speed} one unused
+     * SpeedPass per individual ticket involved is consumed; at SPECIAL attractions the ticket's
+     * unused Special Pass is consumed. Either everything happens or nothing does.
+     */
+    public EntryResult enterAttraction(String attractionId, String ticketId, boolean speed) {
         Attraction<?> attraction = findAttraction(attractionId);
-        attraction.enterAny(findTicket(ticketId), currentDate);
-        return attraction;
+        Ticket ticket = findTicket(ticketId);
+        requireValid(attraction.accepts(ticket), "attraction " + attractionId + " (" + attraction.type()
+                + ") does not accept " + (ticket instanceof GroupAccess ? "group" : "individual") + " tickets");
+        List<Pass> selected = selectPasses(attraction, ticket, speed);
+        attraction.enterAny(ticket, currentDate);
+        try {
+            passes.consume(selected);
+        } catch (RuntimeException e) {
+            attraction.exitAny(ticket);
+            throw e;
+        }
+        return new EntryResult(attraction, ticket.getHolders().size(), selected);
+    }
+
+    /** Preflight: the passes an entry will consume, without changing anything. */
+    private List<Pass> selectPasses(Attraction<?> attraction, Ticket ticket, boolean speed) {
+        List<Pass> selected = new ArrayList<>();
+        if (attraction.type() == AttractionType.SPECIAL) {
+            requireValid(!speed, "the SPEED option is not accepted at SPECIAL attraction " + attraction.getId());
+            IndividualTicket individual = (IndividualTicket) ticket;
+            Pass special = passes.unusedSpecialPass(individual);
+            requireValid(special != null, "ticket " + ticket.getId() + " has no unused Special Pass");
+            selected.add(special);
+        } else if (speed) {
+            for (IndividualTicket t : individualTicketsOf(ticket)) {
+                Pass speedPass = passes.firstUnusedSpeedPass(t);
+                requireValid(speedPass != null, "ticket " + t.getId() + " has no unused SpeedPass");
+                selected.add(speedPass);
+            }
+        }
+        return selected;
+    }
+
+    private static List<IndividualTicket> individualTicketsOf(Ticket ticket) {
+        if (ticket instanceof GroupAccess group) {
+            return group.getConstituents();
+        }
+        return List.of((IndividualTicket) ticket);
     }
 
     /** Removes the holders of a ticket from an attraction; returns how many left. */

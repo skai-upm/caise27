@@ -6,6 +6,9 @@ import es.upm.park.business.model.Invoice;
 import es.upm.park.business.model.InvoiceLine;
 import es.upm.park.business.model.InvoiceSection;
 import es.upm.park.business.model.Pass;
+import es.upm.park.business.model.SpecialPass;
+import es.upm.park.business.service.EntryResult;
+import java.util.List;
 import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
 import es.upm.park.business.service.ParkController;
@@ -173,11 +176,24 @@ public class CommandProcessor {
     }
 
     private String attractionEnter(String[] p) {
-        requireParams(p, 2, "ATTRACTION ENTER;IdAtraccion;IdTicket");
-        Attraction<?> attraction = park.enterAttraction(p[1], p[2]);
-        int entered = park.findTicket(p[2]).getHolders().size();
-        return "OK: " + entered + " user(s) entered attraction " + p[1]
-                + " (" + attraction.getAvailablePlaces() + " places available)";
+        if (p.length - 1 != 3) {
+            requireParams(p, 2, "ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]");
+        }
+        boolean speed = p.length - 1 == 3;
+        if (speed && !p[3].trim().equalsIgnoreCase("SPEED")) {
+            throw new IllegalArgumentException("invalid entry option '" + p[3] + "', expected SPEED");
+        }
+        EntryResult result = park.enterAttraction(p[1], p[2], speed);
+        StringBuilder sb = new StringBuilder("OK: ").append(result.admitted()).append(" user(s) entered attraction ")
+                .append(p[1]).append(" (").append(result.attraction().getAvailablePlaces()).append(" places available)");
+        List<Pass> consumed = result.consumed();
+        if (!consumed.isEmpty()) {
+            boolean special = consumed.get(0) instanceof SpecialPass;
+            String label = special ? "Special Pass" : consumed.size() == 1 ? "SpeedPass" : "SpeedPasses";
+            sb.append("; ").append(label).append(" consumed: ")
+                    .append(String.join(", ", consumed.stream().map(Pass::getId).toList()));
+        }
+        return sb.toString();
     }
 
     private String attractionExit(String[] p) {

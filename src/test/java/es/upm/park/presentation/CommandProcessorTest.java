@@ -124,7 +124,7 @@ class CommandProcessorTest {
             "TICKET CREATE;Id;Correo;yyyy-MM-dd", "TICKET DELETE;Id",
             "GROUPTICKET CREATE;IdTicket;IdGrupo;yyyy-MM-dd", "GROUPTICKET DELETE;IdTicket",
             "ATTRACTION CREATE;Id;Nombre;Capacidad", "ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo",
-            "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION ENTER;IdAtraccion;IdTicket", "ATTRACTION ENTER;IdAtraccion;IdTicket;SPEED",
             "ATTRACTION EXIT;IdAtraccion;IdTicket", "ATTRACTION STATUS;IdAtraccion",
             "INVOICE CREATE;USER;Correo", "INVOICE CREATE;GROUP;IdGrupo", "HELP EXTENDED",
             "SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad", "SPEEDPASS DELETE;IdPase",
@@ -612,10 +612,84 @@ class CommandProcessorTest {
         assertTrue(processor.process("ATTRACTION ENTER;A04;TG01").startsWith("ERROR"));
         assertTrue(processor.process("ATTRACTION ENTER;A02;TG01").startsWith("OK"));
         assertTrue(processor.process("ATTRACTION ENTER;A03;T001").startsWith("OK"));
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001").startsWith("ERROR"), "no Special Pass yet");
+        processor.process("SPECIALPASS CREATE;SX1;T001");
         assertTrue(processor.process("ATTRACTION ENTER;A04;T001").startsWith("OK"));
         assertTrue(processor.process("ATTRACTION ENTER;A01;T001").startsWith("OK"));
         assertTrue(processor.process("ATTRACTION STATUS;A01").contains("  type: GENERAL"));
         assertTrue(processor.process("ATTRACTION STATUS;A02").contains("  type: GROUP"));
         assertTrue(processor.process("ATTRACTION EXIT;A03;TG01").startsWith("ERROR"));
+    }
+
+    private void passEntrySetup() {
+        groupOf(2);
+        processor.process("SYSTEM DATE;2026-10-15");
+        processor.process("TICKET CREATE;T001;u0@correo.com;2026-10-15");
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        processor.process("ATTRACTION CREATE;A01;Tornado;20");
+        processor.process("ATTRACTION CREATE;A02;Saltos;20;GROUP");
+        processor.process("ATTRACTION CREATE;A03;Solo;20;INDIVIDUAL");
+        processor.process("ATTRACTION CREATE;A04;Especial;20;SPECIAL");
+    }
+
+    @Test
+    void individualSpeedEntryConsumesExactlyOne() {
+        passEntrySetup();
+        processor.process("SPEEDPASS CREATE;SP1;T001;1");
+        processor.process("SPEEDPASS CREATE;SP2;T001;1");
+        assertEquals("OK: 1 user(s) entered attraction A01 (19 places available); SpeedPass consumed: SP1",
+                processor.process("ATTRACTION ENTER;A01;T001;SPEED"));
+        assertTrue(passes.find("SP1").isConsumed() && !passes.find("SP2").isConsumed());
+        processor.process("ATTRACTION EXIT;A01;T001");
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001").startsWith("OK"), "normal entry keeps passes");
+        assertTrue(!passes.find("SP2").isConsumed());
+        assertTrue(processor.process("ATTRACTION ENTER;A03;T001;speed").contains("SpeedPass consumed: SP2"));
+        assertTrue(processor.process("ATTRACTION ENTER;A01;T001;FAST").startsWith("ERROR"));
+        processor.process("ATTRACTION EXIT;A03;T001");
+        assertTrue(processor.process("ATTRACTION ENTER;A03;T001;SPEED").startsWith("ERROR"), "no unused SpeedPass left");
+    }
+
+    @Test
+    void groupSpeedEntryIsAtomic() {
+        passEntrySetup();
+        processor.process("SPEEDPASS CREATE;PA;TG01-1;1");
+        String r = processor.process("ATTRACTION ENTER;A02;TG01;SPEED");
+        assertTrue(r.startsWith("ERROR") && r.contains("TG01-2"), r);
+        assertTrue(!passes.find("PA").isConsumed());
+        assertTrue(processor.process("ATTRACTION STATUS;A02").contains("present: 0"));
+        processor.process("SPEEDPASS CREATE;PB;TG01-2;10");
+        assertEquals("OK: 2 user(s) entered attraction A02 (18 places available); SpeedPasses consumed: PA, PB-1",
+                processor.process("ATTRACTION ENTER;A02;TG01;SPEED"));
+        assertTrue(passes.find("PA").isConsumed() && passes.find("PB-1").isConsumed() && !passes.find("PB-2").isConsumed());
+    }
+
+    @Test
+    void failedEntryConsumesNothing() {
+        passEntrySetup();
+        processor.process("SPEEDPASS CREATE;PA;TG01-1;1");
+        processor.process("SPEEDPASS CREATE;PB;TG01-2;1");
+        processor.process("ATTRACTION CREATE;A05;Mini;1;GROUP");
+        assertTrue(processor.process("ATTRACTION ENTER;A05;TG01;SPEED").startsWith("ERROR"), "capacity");
+        assertTrue(processor.process("ATTRACTION ENTER;A03;TG01;SPEED").startsWith("ERROR"), "kind");
+        processor.process("TICKET CREATE;T002;u1@correo.com;2026-10-16");
+        processor.process("SPECIALPASS CREATE;SX2;T002");
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T002").startsWith("ERROR"), "date");
+        assertTrue(!passes.find("PA").isConsumed() && !passes.find("PB").isConsumed() && !passes.find("SX2").isConsumed());
+    }
+
+    @Test
+    void specialAttractionConsumesSpecialPassAutomatically() {
+        passEntrySetup();
+        processor.process("SPECIALPASS CREATE;SX1;T001");
+        processor.process("SPEEDPASS CREATE;SP1;T001;1");
+        String r = processor.process("ATTRACTION ENTER;A04;T001;SPEED");
+        assertTrue(r.startsWith("ERROR") && r.contains("SPEED option is not accepted"), r);
+        assertTrue(!passes.find("SX1").isConsumed() && !passes.find("SP1").isConsumed());
+        assertEquals("OK: 1 user(s) entered attraction A04 (19 places available); Special Pass consumed: SX1",
+                processor.process("ATTRACTION ENTER;A04;T001"));
+        processor.process("ATTRACTION EXIT;A04;T001");
+        assertTrue(processor.process("ATTRACTION ENTER;A04;T001").contains("no unused Special Pass"));
+        assertTrue(processor.process("ATTRACTION ENTER;A04;TG01").startsWith("ERROR"), "group ticket at SPECIAL");
+        assertTrue(processor.process("SPECIALPASS CREATE;SX9;T001").startsWith("ERROR"), "still one per lifetime");
     }
 }

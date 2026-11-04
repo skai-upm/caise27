@@ -128,4 +128,15 @@ class PassManagerTest {
         assertThrows(IllegalArgumentException.class, () -> again.refund("SP1", "SPEED", TODAY));
         assertFalse(again.getPasses().isEmpty());
     }
+
+    @Test
+    void selectionAndAtomicConsumption() {
+        passes.buySpeedPasses("PK", t001, 10);
+        passes.buySpecialPass("SX1", t001);
+        assertEquals("PK-1", passes.firstUnusedSpeedPass(t001).getId());
+        passes.consume(List.of(passes.find("PK-1"), passes.find("SX1")));
+        assertEquals("PK-2", passes.firstUnusedSpeedPass(t001).getId());
+        assertNull(passes.unusedSpecialPass(t001));
+        assertTrue(restart().find("PK-1").isConsumed(), "persisted");
+    }
 }

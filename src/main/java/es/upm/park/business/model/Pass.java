@@ -47,6 +47,11 @@ public abstract class Pass {
         consumed = true;
     }
 
+    /** Reverts {@link #markConsumed()}; only for rolling back a failed operation. */
+    public void markUnconsumed() {
+        consumed = false;
+    }
+
     public boolean isFor(IndividualTicket t) {
         return ticket != null && ticket == t;
     }

@@ -55,6 +55,10 @@ package es.upm.park.business.service {
 
   class PassManager
 
+  class EntryResult {
+    -admitted : int
+  }
+
   interface PasswordHasher
 
   class BCryptPasswordHasher {
@@ -225,6 +229,8 @@ PassManager "0..*" x--> "1" PassFileStorage : storage
 PassManager "0..*" x--> "0..*" Pass : passes
 Pass "0..*" x--> "0..1" IndividualTicket : ticket
 UserInvoiceBuilder "0..*" x--> "0..*" Pass : passes
+EntryResult "0..*" x--> "1" Attraction : attraction
+EntryResult "0..*" x--> "0..*" Pass : consumed
 UserManager "0..*" x--> "1" UserFileStorage : storage
 UserManager "0..*" x--> "1" PasswordHasher : hasher
 UserManager "0..*" x--> "0..*" User : users
@@ -300,6 +306,8 @@ UserManager ..> UserField : <<use>>
 ParkController ..> UserField : <<use>>
 CommandProcessor ..> UserField : <<use>>
 CommandProcessor ..> AttractionType : <<use>>
+ParkController ..> EntryResult : <<create>>
+CommandProcessor ..> EntryResult : <<use>>
 AttractionManager ..> AttractionType : <<use>>
 AttractionFileStorage ..> AttractionType : <<use>>
 AttractionType ..> GeneralAttraction : <<create>>

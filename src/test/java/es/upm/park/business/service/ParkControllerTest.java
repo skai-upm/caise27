@@ -99,9 +99,9 @@ class ParkControllerTest {
     void attractionEntryUsesSystemDate() {
         park.createAttraction("A01", "Tornado", 2, AttractionType.GENERAL);
         park.createTicket("T001", "ana@correo.com", LocalDate.of(2026, 10, 15));
-        assertThrows(IllegalArgumentException.class, () -> park.enterAttraction("A01", "T001"));
+        assertThrows(IllegalArgumentException.class, () -> park.enterAttraction("A01", "T001", false));
         park.setCurrentDate(LocalDate.of(2026, 10, 15));
-        Attraction<?> a = park.enterAttraction("A01", "T001");
+        Attraction<?> a = park.enterAttraction("A01", "T001", false).attraction();
         assertEquals(1, a.getPresentCount());
         assertEquals(1, park.exitAttraction("A01", "T001"));
         assertNotNull(park.findAttraction("A01"));

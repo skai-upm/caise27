@@ -284,4 +284,18 @@ class AppTest {
         assertTrue(Files.exists(dir.resolve("users.txt")));
         assertFalse(Files.exists(dir.resolve("tmp")));
     }
+
+    @Test
+    void passConsumptionSurvivesRestart() {
+        Path users = dir.resolve("users.txt");
+        Run first = run(new String[0], users, CommandProcessorTest.CREATE_ANA + "\nSYSTEM DATE;2026-10-15\n"
+                + "TICKET CREATE;T001;ana@correo.com;2026-10-15\nSPEEDPASS CREATE;SP1;T001;1\n"
+                + "ATTRACTION CREATE;A01;Tornado;20\nATTRACTION ENTER;A01;T001;SPEED\n");
+        assertTrue(first.out().contains("SpeedPass consumed: SP1"), first.out());
+        Run second = run(new String[0], users, "SYSTEM DATE;2026-10-15\nATTRACTION ENTER;A01;T001;SPEED\n"
+                + "SYSTEM DATE;2026-10-01\nSPEEDPASS DELETE;SP1\n");
+        String[] lines = second.out().split("\\R");
+        assertTrue(lines[1].startsWith("ERROR") && lines[1].contains("no unused SpeedPass"), lines[1]);
+        assertTrue(lines[3].startsWith("ERROR") && lines[3].contains("consumed"), lines[3]);
+    }
 }
