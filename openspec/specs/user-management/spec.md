@@ -6,7 +6,7 @@ Defines the text-command interface for creating, deleting and updating users, in
 ## Requirements
 
 ### Requirement: Command parsing
-The system SHALL interpret each command line by splitting it with `String.split` on `;`, where the first element names the operation (`USER CREATE`, `USER DELETE` or `USER UPDATE`) and the remaining elements are its parameters. Each command SHALL produce one result message beginning with `OK` on success or `ERROR` on failure.
+The system SHALL interpret each command line by splitting it with `String.split` on `;`, where the first element names the operation (`USER CREATE`, `USER DELETE` or `USER UPDATE`) and the remaining elements are its parameters. Each command SHALL produce one result message beginning with `OK` on success or `ERROR` on failure. Blank lines are not commands and SHALL be skipped by the input loop without a result message.
 
 #### Scenario: Unknown operation
 - **WHEN** `USER RENAME;ana@correo.com` is processed
@@ -17,8 +17,8 @@ The system SHALL interpret each command line by splitting it with `String.split`
 - **THEN** an `ERROR` message is produced and no user is created
 
 #### Scenario: Empty or garbage line
-- **WHEN** an empty line or `hello` is processed
-- **THEN** an `ERROR` message is produced and the application does not terminate
+- **WHEN** `hello` is processed, or an empty line is read
+- **THEN** `hello` produces an `ERROR` message, the empty line produces no message, and the application does not terminate
 
 ### Requirement: User creation
 The system SHALL process `USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta`, validating every value before storing anything; if any value is invalid the user SHALL NOT be stored.
@@ -84,7 +84,7 @@ The system SHALL process `USER UPDATE;Correo;Contraseña;Campo;NuevoValor`, wher
 - **THEN** an `ERROR` message is produced and no data changes
 
 ### Requirement: Terminal interaction
-The application SHALL read commands line by line from standard input, print each command's result message, and continue until the input ends.
+In interactive mode (no launch arguments) the application SHALL read commands line by line from standard input, print each command's result message, and continue until `EXIT` is processed or the input ends.
 
 #### Scenario: Several commands in one session
 - **WHEN** a create command followed by an invalid command and a delete command are entered

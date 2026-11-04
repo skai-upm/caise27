@@ -69,4 +69,30 @@ class CommandProcessorTest {
         processor.process(CREATE_ANA);
         assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;phone;600000000").startsWith("OK"));
     }
+
+    @Test
+    void helpListsAllCommandsAndFields() {
+        String help = processor.process("HELP");
+        assertTrue(help.startsWith("OK"));
+        for (String usage : new String[] {
+            "USER CREATE;Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta",
+            "USER DELETE;Correo;Contraseña", "USER UPDATE;Correo;Contraseña;Campo;NuevoValor", "HELP", "EXIT",
+            "NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD"}) {
+            assertTrue(help.contains(usage), usage);
+        }
+        assertEquals(false, processor.isExitRequested());
+    }
+
+    @Test
+    void helpAndExitRejectParameters() {
+        assertTrue(processor.process("HELP;extra").startsWith("ERROR"));
+        assertTrue(processor.process("EXIT;now").startsWith("ERROR"));
+        assertEquals(false, processor.isExitRequested());
+    }
+
+    @Test
+    void exitSetsFlag() {
+        assertTrue(processor.process("EXIT").startsWith("OK"));
+        assertTrue(processor.isExitRequested());
+    }
 }
