@@ -495,6 +495,65 @@ class CommandProcessorTest {
     }
 
     @Test
+    void userInvoiceDoesNotCountGroupTicketParts() throws Exception {
+        groupOfThree();
+        assertEquals("OK TICKET CREATED -> 40.00", processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15"));
+        assertOk(processor.process("SYSTEM PRICE;60.00"));
+        assertEquals("OK TICKET CREATED -> 60.00", processor.process("TICKET CREATE;T002;ana@correo.com;2026-10-16"));
+        processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        String invoice = processor.process("INVOICE CREATE;USER;ana@correo.com");
+        assertEquals(String.join(System.lineSeparator(),
+                "OK: Invoice for user Ana Garcia Lopez <ana@correo.com> (DNI 12345678Z)",
+                "  Individual tickets:",
+                "    T001 2026-10-15: 40.00",
+                "    T002 2026-10-16: 60.00",
+                "  TOTAL: 100.00"), invoice);
+    }
+
+    @Test
+    void groupInvoiceListsOnlyGroupTickets() {
+        groupOfThree();
+        processor.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        assertEquals("OK GROUP TICKET CREATED -> 108.00", processor.process("GROUPTICKET CREATE;TG01;G01;2026-10-15"));
+        String invoice = processor.process("invoice create;group;G01");
+        assertEquals(String.join(System.lineSeparator(),
+                "OK: Invoice for group G01 (Familia Garcia)",
+                "  Group tickets:",
+                "    TG01 2026-10-15 (3 members, 10% discount): 108.00",
+                "  TOTAL: 108.00"), invoice);
+    }
+
+    @Test
+    void invoiceWithoutPurchasesHasNoSections() throws Exception {
+        groupOfThree();
+        assertEquals(String.join(System.lineSeparator(),
+                "OK: Invoice for user Pedro Lopez Martin <pedro@correo.com> (DNI 87654321X)",
+                "  TOTAL: 0.00"), processor.process("INVOICE CREATE;USER;pedro@correo.com"));
+        assertEquals(String.join(System.lineSeparator(), "OK: Invoice for group G01 (Familia Garcia)", "  TOTAL: 0.00"),
+                processor.process("INVOICE CREATE;GROUP;G01"));
+        assertFalse(Files.exists(dir.resolve("tickets.txt")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INVOICE CREATE;USER;nadie@correo.com", "INVOICE CREATE;GROUP;G99",
+        "INVOICE CREATE;COMPANY;X", "INVOICE CREATE;USER", "INVOICE CREATE;USER;ana@correo.com;extra", "INVOICE CREATE"})
+    void invalidInvoiceCommands(String command) throws Exception {
+        groupOfThree();
+        List<String> before = Files.readAllLines(dir.resolve("users.txt"));
+        String result = processor.process(command);
+        assertError(result);
+        assertFalse(result.contains("TOTAL"));
+        assertEquals(before, Files.readAllLines(dir.resolve("users.txt")));
+    }
+
+    @Test
+    void helpListsInvoiceCommands() {
+        String help = processor.process("HELP");
+        assertTrue(help.contains("INVOICE CREATE;USER;Correo"));
+        assertTrue(help.contains("INVOICE CREATE;GROUP;IdGrupo"));
+    }
+
+    @Test
     void blankLinesAreIgnored() {
         assertNull(processor.process(""));
         assertNull(processor.process("   "));

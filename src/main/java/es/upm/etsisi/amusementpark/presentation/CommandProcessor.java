@@ -1,6 +1,9 @@
 package es.upm.etsisi.amusementpark.presentation;
 
 import es.upm.etsisi.amusementpark.business.controller.ParkController;
+import es.upm.etsisi.amusementpark.business.invoice.Invoice;
+import es.upm.etsisi.amusementpark.business.invoice.InvoiceLine;
+import es.upm.etsisi.amusementpark.business.invoice.InvoiceSection;
 import es.upm.etsisi.amusementpark.business.model.Attraction;
 import es.upm.etsisi.amusementpark.business.model.Group;
 import es.upm.etsisi.amusementpark.business.model.GroupTicket;
@@ -52,6 +55,8 @@ public class CommandProcessor {
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
             "ATTRACTION STATUS;IdAtraccion",
+            "INVOICE CREATE;USER;Correo",
+            "INVOICE CREATE;GROUP;IdGrupo",
             "SYSTEM DATE;yyyy-MM-dd",
             "SYSTEM PRICE;Precio",
             "HELP",
@@ -108,6 +113,7 @@ public class CommandProcessor {
                 case "ATTRACTION ENTER" -> attractionEnter(params);
                 case "ATTRACTION EXIT" -> attractionExit(params);
                 case "ATTRACTION STATUS" -> attractionStatus(params);
+                case "INVOICE CREATE" -> invoiceCreate(params);
                 case "SYSTEM DATE" -> systemDate(params);
                 case "SYSTEM PRICE" -> systemPrice(params);
                 case "HELP" -> help(params);
@@ -229,6 +235,25 @@ public class CommandProcessor {
         requireParams(p, 1, "GROUP DELETE;Id");
         controller.deleteGroup(p[0]);
         return ok("Group " + p[0] + " deleted");
+    }
+
+    private String invoiceCreate(String[] p) throws UserException {
+        requireParams(p, 2, "INVOICE CREATE;USER;Correo | INVOICE CREATE;GROUP;IdGrupo");
+        Invoice invoice = switch (p[0].toUpperCase(Locale.ROOT)) {
+            case "USER" -> controller.createUserInvoice(p[1]);
+            case "GROUP" -> controller.createGroupInvoice(p[1]);
+            default -> throw new UserException("Unknown invoice recipient type: " + p[0] + " (use USER or GROUP)");
+        };
+        StringBuilder sb = new StringBuilder(ok(invoice.getTitle()));
+        for (InvoiceSection section : invoice.getSections()) {
+            sb.append(System.lineSeparator()).append("  ").append(section.getTitle()).append(':');
+            for (InvoiceLine line : section.getLines()) {
+                sb.append(System.lineSeparator()).append("    ").append(line.getDescription()).append(": ")
+                        .append(line.getAmount().toPlainString());
+            }
+        }
+        sb.append(System.lineSeparator()).append("  TOTAL: ").append(invoice.getTotal().toPlainString());
+        return sb.toString();
     }
 
     private String attractionCreate(String[] p) throws UserException {

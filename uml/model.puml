@@ -68,6 +68,27 @@ class Attraction {
 }
 }
 
+package business.invoice {
+abstract class InvoiceBuilder {
+  title : String
+  total : BigDecimal
+}
+class UserInvoiceBuilder
+class GroupInvoiceBuilder
+class InvoiceDirector
+class Invoice {
+  title : String
+  total : BigDecimal
+}
+class InvoiceSection {
+  title : String
+}
+class InvoiceLine {
+  description : String
+  amount : BigDecimal
+}
+}
+
 package business.service {
 class UserManager
 class GroupManager
@@ -99,6 +120,8 @@ class Exception
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 Exception <|-- UserException
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
 
 ' ---------- Control relationships ----------
 CommandRunner "0..1" x--> "1" CommandProcessor : processor
@@ -132,7 +155,20 @@ GroupTicket "1" *--> "1..*" IndividualTicket : parts
 GroupTicket "0..*" o--> "0..1" Group : group
 Attraction "0..*" o--> "0..*" User : present
 
+' ---------- Invoices ----------
+InvoiceBuilder "1" *--> "0..*" InvoiceSection : sections
+Invoice "1" *--> "0..*" InvoiceSection : sections
+InvoiceSection "1" *--> "1..*" InvoiceLine : lines
+UserInvoiceBuilder "0..*" x--> "1" User : user
+UserInvoiceBuilder "0..*" x--> "0..*" IndividualTicket : tickets
+GroupInvoiceBuilder "0..*" x--> "1" Group : group
+GroupInvoiceBuilder "0..*" x--> "0..*" GroupTicket : groupTickets
+
 ' ---------- Usage of classes without incoming relationships ----------
+ParkController ..> InvoiceDirector : <<use>>
+ParkController ..> UserInvoiceBuilder : <<create>>
+ParkController ..> GroupInvoiceBuilder : <<create>>
+InvoiceDirector ..> Invoice : <<create>>
 App ..> CommandRunner : <<use>>
 CommandProcessor ..> UserField : <<use>>
 ParkController ..> UserField : <<use>>
