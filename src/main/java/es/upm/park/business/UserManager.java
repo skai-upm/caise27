@@ -3,7 +3,7 @@ package es.upm.park.business;
 import es.upm.park.business.model.Result;
 import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
-import es.upm.park.persistence.UserFileStore;
+import es.upm.park.persistence.UserRepository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,14 +14,30 @@ import java.util.Optional;
  * Creates, deletes and updates users. Every successful change is persisted before it
  * becomes visible in memory, so a rejected or failed operation never changes state.
  */
-public class UserManager {
+public final class UserManager {
 
-    private final UserFileStore store;
-    private List<User> users;
+    private static final UserManager INSTANCE = new UserManager();
 
-    public UserManager(UserFileStore store) throws IOException {
-        this.store = store;
-        this.users = new ArrayList<>(store.load());
+    private UserRepository store;
+    private List<User> users = new ArrayList<>();
+
+    private UserManager() {
+    }
+
+    /** The single user manager of the execution. */
+    public static UserManager getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the repository into the single instance and loads its users. Called at startup
+     * by {@link ApplicationContext}.
+     */
+    public static UserManager configure(UserRepository store) throws IOException {
+        List<User> loaded = new ArrayList<>(store.load());
+        INSTANCE.store = store;
+        INSTANCE.users = loaded;
+        return INSTANCE;
     }
 
     public List<User> getUsers() {

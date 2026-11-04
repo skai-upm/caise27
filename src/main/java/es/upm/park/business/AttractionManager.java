@@ -2,7 +2,7 @@ package es.upm.park.business;
 
 import es.upm.park.business.model.Result;
 import es.upm.park.business.model.Attraction;
-import es.upm.park.persistence.AttractionFileStore;
+import es.upm.park.persistence.AttractionRepository;
 import es.upm.park.business.model.Ticket;
 import es.upm.park.business.model.User;
 import java.io.IOException;
@@ -16,14 +16,30 @@ import java.util.stream.Collectors;
 /**
  * Creates attractions and handles ticket-based entry, exit and status queries.
  */
-public class AttractionManager {
+public final class AttractionManager {
 
-    private final AttractionFileStore store;
-    private List<Attraction> attractions;
+    private static final AttractionManager INSTANCE = new AttractionManager();
 
-    public AttractionManager(AttractionFileStore store) throws IOException {
-        this.store = store;
-        this.attractions = new ArrayList<>(store.load());
+    private AttractionRepository store;
+    private List<Attraction> attractions = new ArrayList<>();
+
+    private AttractionManager() {
+    }
+
+    /** The single attraction manager of the execution. */
+    public static AttractionManager getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the repository into the single instance and loads the attraction definitions
+     * (all empty). Called at startup by {@link ApplicationContext}.
+     */
+    public static AttractionManager configure(AttractionRepository store) throws IOException {
+        List<Attraction> loaded = new ArrayList<>(store.load());
+        INSTANCE.store = store;
+        INSTANCE.attractions = loaded;
+        return INSTANCE;
     }
 
     public List<Attraction> getAttractions() {

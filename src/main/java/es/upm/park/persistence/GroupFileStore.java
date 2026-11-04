@@ -17,7 +17,7 @@ import java.util.function.Function;
  * Stores groups in a text file, one group per line: {@code Id;Nombre;DNI1;DNI2;...}.
  * Members are referenced by DNI and resolved to the registered users on load.
  */
-public class GroupFileStore {
+public class GroupFileStore implements GroupRepository {
 
     private static final String SEPARATOR = ";";
 
@@ -28,6 +28,7 @@ public class GroupFileStore {
     }
 
     /** Loads groups, linking members through {@code userByDni}; unknown members are skipped. */
+    @Override
     public List<Group> load(Function<String, Optional<User>> userByDni) throws IOException {
         List<Group> groups = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -59,6 +60,7 @@ public class GroupFileStore {
     }
 
     /** Replaces the file content with the given groups. */
+    @Override
     public void save(List<Group> groups) throws IOException {
         List<String> lines = new ArrayList<>();
         for (Group g : groups) {

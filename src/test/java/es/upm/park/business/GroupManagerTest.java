@@ -32,10 +32,10 @@ class GroupManagerTest {
     void setUp() throws IOException {
         usersFile = dir.resolve("users.txt");
         groupsFile = dir.resolve("groups.txt");
-        users = new UserManager(new UserFileStore(usersFile));
+        users = UserManager.configure(new UserFileStore(usersFile));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         users.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
-        groups = new GroupManager(new GroupFileStore(groupsFile), users);
+        groups = GroupManager.configure(new GroupFileStore(groupsFile), users);
     }
 
     private List<String> groupLines() throws IOException {
@@ -155,8 +155,8 @@ class GroupManagerTest {
         groups.addMember("G01", "pedro@correo.com");
         groups.addMember("G02", "ana@correo.com");
 
-        UserManager users2 = new UserManager(new UserFileStore(usersFile));
-        GroupManager groups2 = new GroupManager(new GroupFileStore(groupsFile), users2);
+        UserManager users2 = UserManager.configure(new UserFileStore(usersFile));
+        GroupManager groups2 = GroupManager.configure(new GroupFileStore(groupsFile), users2);
         Group g1 = groups2.find("G01").orElseThrow();
         Group g2 = groups2.find("G02").orElseThrow();
         User ana = users2.findByEmail("ana@correo.com").orElseThrow();

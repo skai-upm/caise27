@@ -19,26 +19,30 @@ package es.upm.park.presentation {
 }
 
 package es.upm.park.business {
-  class ParkController {
-    - currentDate : LocalDate
-    - currentPrice : BigDecimal
+  class ApplicationContext {
+    - dataDirectory : Path
     - temporaryDirectory : Path
     - closed : AtomicBoolean
   }
 
+  class ParkController <<singleton>> {
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+  }
+
   class UserValidator
 
-  class UserManager
+  class UserManager <<singleton>>
 
-  class GroupManager
+  class GroupManager <<singleton>>
 
-  class TicketManager {
+  class TicketManager <<singleton>> {
     - historicalLines : List<String>
     - groupHistoricalLines : List<String>
     - historicalIds : Set<String>
   }
 
-  class AttractionManager
+  class AttractionManager <<singleton>>
 
   abstract class InvoiceBuilder {
     - recipient : String
@@ -120,6 +124,16 @@ package es.upm.park.business.model {
 package es.upm.park.persistence {
   class DataDirectory
 
+  interface UserRepository
+
+  interface GroupRepository
+
+  interface TicketRepository
+
+  interface GroupTicketRepository
+
+  interface AttractionRepository
+
   class UserFileStore {
     - file : Path
   }
@@ -156,13 +170,22 @@ ParkController "0..1" x--> "1" UserManager : users
 ParkController "0..1" x--> "1" GroupManager : groups
 ParkController "0..1" x--> "1" TicketManager : tickets
 ParkController "0..1" x--> "1" AttractionManager : attractions
+ParkController "0..1" x--> "1" InvoiceDirector : invoiceDirector
+ApplicationContext "0..1" x--> "1" ParkController : controller
+
+' ---- Repositories ----
+UserRepository <|.. UserFileStore
+GroupRepository <|.. GroupFileStore
+TicketRepository <|.. TicketFileStore
+GroupTicketRepository <|.. GroupTicketFileStore
+AttractionRepository <|.. AttractionFileStore
 
 ' ---- Users ----
-UserManager "0..1" x--> "1" UserFileStore : store
+UserManager "0..1" x--> "1" UserRepository : store
 UserManager "1" *--> "0..*" User : users
 
 ' ---- Groups ----
-GroupManager "0..1" x--> "1" GroupFileStore : store
+GroupManager "0..1" x--> "1" GroupRepository : store
 GroupManager "0..*" x--> "1" UserManager : users
 GroupManager "1" *--> "0..*" Group : groups
 Group "0..*" o--> "0..*" User : members
@@ -173,8 +196,8 @@ Ticket <|-- GroupTicket
 IndividualTicket "0..*" x--> "1" User : user
 GroupTicket "0..*" o--> "1" Group : group
 GroupTicket "0..1" *--> "1..*" IndividualTicket : tickets
-TicketManager "0..1" x--> "1" TicketFileStore : store
-TicketManager "0..1" x--> "1" GroupTicketFileStore : groupStore
+TicketManager "0..1" x--> "1" TicketRepository : store
+TicketManager "0..1" x--> "1" GroupTicketRepository : groupStore
 TicketManager "0..*" x--> "1" UserManager : users
 TicketManager "1" *--> "0..*" IndividualTicket : tickets
 TicketManager "1" *--> "0..*" GroupTicket : groupTickets
@@ -182,7 +205,7 @@ TicketContents "0..*" x--> "0..*" IndividualTicket : tickets
 GroupTicketContents "0..*" x--> "0..*" GroupTicket : groupTickets
 
 ' ---- Attractions ----
-AttractionManager "0..1" x--> "1" AttractionFileStore : store
+AttractionManager "0..1" x--> "1" AttractionRepository : store
 AttractionManager "1" *--> "0..*" Attraction : attractions
 Attraction "0..*" o--> "0..*" User : present
 
@@ -195,8 +218,13 @@ InvoiceSection "0..*" *--> "1..*" InvoiceLine : lines
 
 ' ---- Usage of classes without incoming relationships ----
 App ..> CommandRunner : creates
-ParkController ..> DataDirectory
-ParkController ..> InvoiceDirector
+App ..> ApplicationContext
+ApplicationContext ..> DataDirectory
+ApplicationContext ..> UserFileStore : creates
+ApplicationContext ..> GroupFileStore : creates
+ApplicationContext ..> TicketFileStore : creates
+ApplicationContext ..> GroupTicketFileStore : creates
+ApplicationContext ..> AttractionFileStore : creates
 InvoiceBuilder ..> Invoice : creates
 ParkController ..> Invoice
 UserManager ..> UserValidator

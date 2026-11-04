@@ -2,7 +2,7 @@ package es.upm.park.business;
 
 import es.upm.park.business.model.Result;
 import es.upm.park.business.model.Group;
-import es.upm.park.persistence.GroupFileStore;
+import es.upm.park.persistence.GroupRepository;
 import es.upm.park.business.model.User;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,16 +14,32 @@ import java.util.Optional;
  * Creates and deletes groups and manages their members. Every successful change is saved
  * before it becomes visible in memory.
  */
-public class GroupManager {
+public final class GroupManager {
 
-    private final GroupFileStore store;
-    private final UserManager users;
-    private List<Group> groups;
+    private static final GroupManager INSTANCE = new GroupManager();
 
-    public GroupManager(GroupFileStore store, UserManager users) throws IOException {
-        this.store = store;
-        this.users = users;
-        this.groups = new ArrayList<>(store.load(users::findByDni));
+    private GroupRepository store;
+    private UserManager users;
+    private List<Group> groups = new ArrayList<>();
+
+    private GroupManager() {
+    }
+
+    /** The single group manager of the execution. */
+    public static GroupManager getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the repository and the user manager into the single instance and loads the
+     * groups. Called at startup by {@link ApplicationContext}.
+     */
+    public static GroupManager configure(GroupRepository store, UserManager users) throws IOException {
+        List<Group> loaded = new ArrayList<>(store.load(users::findByDni));
+        INSTANCE.store = store;
+        INSTANCE.users = users;
+        INSTANCE.groups = loaded;
+        return INSTANCE;
     }
 
     public List<Group> getGroups() {

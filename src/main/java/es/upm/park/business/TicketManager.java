@@ -7,6 +7,8 @@ import es.upm.park.persistence.GroupTicketFileStore;
 import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.model.Ticket;
 import es.upm.park.persistence.TicketFileStore;
+import es.upm.park.persistence.TicketRepository;
+import es.upm.park.persistence.GroupTicketRepository;
 import es.upm.park.business.model.User;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -23,34 +25,51 @@ import java.util.Set;
  * by the controller (the configured system date). Every successful change is saved before
  * it becomes visible in memory.
  */
-public class TicketManager {
+public final class TicketManager {
 
-    private final TicketFileStore store;
-    private final GroupTicketFileStore groupStore;
-    private final UserManager users;
-    private final List<String> historicalLines;
-    private final List<String> groupHistoricalLines;
-    private final Set<String> historicalIds = new HashSet<>();
-    private List<IndividualTicket> tickets;
-    private List<GroupTicket> groupTickets;
+    private static final TicketManager INSTANCE = new TicketManager();
 
-    public TicketManager(TicketFileStore store, GroupTicketFileStore groupStore,
-                         UserManager users, GroupManager groups) throws IOException {
-        this.store = store;
-        this.groupStore = groupStore;
-        this.users = users;
+    private TicketRepository store;
+    private GroupTicketRepository groupStore;
+    private UserManager users;
+    private List<String> historicalLines = new ArrayList<>();
+    private List<String> groupHistoricalLines = new ArrayList<>();
+    private Set<String> historicalIds = new HashSet<>();
+    private List<IndividualTicket> tickets = new ArrayList<>();
+    private List<GroupTicket> groupTickets = new ArrayList<>();
+
+    private TicketManager() {
+    }
+
+    /** The single ticket manager of the execution. */
+    public static TicketManager getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the repositories and the user and group managers into the single instance and
+     * loads the tickets. Called at startup by {@link ApplicationContext}.
+     */
+    public static TicketManager configure(TicketRepository store, GroupTicketRepository groupStore,
+                                          UserManager users, GroupManager groups) throws IOException {
         TicketFileStore.Contents contents = store.load(users::findByDni);
-        this.tickets = new ArrayList<>(contents.tickets());
-        this.historicalLines = new ArrayList<>(contents.historicalLines());
         GroupTicketFileStore.Contents groupContents = groupStore.load(groups::find, users::findByDni);
-        this.groupTickets = new ArrayList<>(groupContents.groupTickets());
-        this.groupHistoricalLines = new ArrayList<>(groupContents.historicalLines());
-        for (String line : historicalLines) {
-            historicalIds.add(line.split(";", -1)[0]);
+        Set<String> reserved = new HashSet<>();
+        for (String line : contents.historicalLines()) {
+            reserved.add(line.split(";", -1)[0]);
         }
-        for (String line : groupHistoricalLines) {
-            historicalIds.addAll(GroupTicketFileStore.idsOf(line));
+        for (String line : groupContents.historicalLines()) {
+            reserved.addAll(GroupTicketFileStore.idsOf(line));
         }
+        INSTANCE.store = store;
+        INSTANCE.groupStore = groupStore;
+        INSTANCE.users = users;
+        INSTANCE.tickets = new ArrayList<>(contents.tickets());
+        INSTANCE.historicalLines = new ArrayList<>(contents.historicalLines());
+        INSTANCE.groupTickets = new ArrayList<>(groupContents.groupTickets());
+        INSTANCE.groupHistoricalLines = new ArrayList<>(groupContents.historicalLines());
+        INSTANCE.historicalIds = reserved;
+        return INSTANCE;
     }
 
     /** Individual tickets bought on their own. */

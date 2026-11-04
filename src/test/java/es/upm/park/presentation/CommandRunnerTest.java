@@ -1,5 +1,6 @@
 package es.upm.park.presentation;
 
+import es.upm.park.business.ApplicationContext;
 import es.upm.park.business.ParkController;
 import es.upm.park.business.UserManager;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,7 +33,7 @@ class CommandRunnerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        ParkController controller = ParkController.open(dir);
+        ParkController controller = ApplicationContext.start(dir).getController();
         manager = controller.users();
         runner = new CommandRunner(new CommandProcessor(controller));
     }

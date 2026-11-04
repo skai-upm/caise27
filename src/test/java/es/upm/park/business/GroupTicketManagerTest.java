@@ -37,10 +37,10 @@ class GroupTicketManagerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        users = new UserManager(new UserFileStore(dir.resolve("users.txt")));
+        users = UserManager.configure(new UserFileStore(dir.resolve("users.txt")));
         users.create("Ana", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
         users.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "6", "9876543210987654");
-        groups = new GroupManager(new GroupFileStore(dir.resolve("groups.txt")), users);
+        groups = GroupManager.configure(new GroupFileStore(dir.resolve("groups.txt")), users);
         groups.create("G01", "Familia Garcia");
         groups.addMember("G01", "ana@correo.com");
         groups.addMember("G01", "pedro@correo.com");
@@ -49,7 +49,7 @@ class GroupTicketManagerTest {
     }
 
     private TicketManager reload() throws IOException {
-        return new TicketManager(new TicketFileStore(dir.resolve("tickets.txt")),
+        return TicketManager.configure(new TicketFileStore(dir.resolve("tickets.txt")),
                 new GroupTicketFileStore(dir.resolve("grouptickets.txt")), users, groups);
     }
 

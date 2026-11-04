@@ -14,7 +14,7 @@ import java.util.List;
  * Stores users in a text file, one user per line with fields separated by {@code ;}:
  * {@code Nombre;Apellidos;DNI;Correo;Contraseña;Telefono;Tarjeta}.
  */
-public class UserFileStore {
+public class UserFileStore implements UserRepository {
 
     private static final String SEPARATOR = ";";
     private static final int FIELD_COUNT = 7;
@@ -26,6 +26,7 @@ public class UserFileStore {
     }
 
     /** Loads every well-formed user record; a missing file means there are no users yet. */
+    @Override
     public List<User> load() throws IOException {
         List<User> users = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -48,6 +49,7 @@ public class UserFileStore {
     }
 
     /** Replaces the file content with the given users. */
+    @Override
     public void save(List<User> users) throws IOException {
         List<String> lines = new ArrayList<>();
         for (User u : users) {

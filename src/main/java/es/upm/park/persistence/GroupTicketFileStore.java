@@ -22,7 +22,7 @@ import java.util.function.Function;
  * Stores group tickets, one per line: {@code Id;yyyy-MM-dd;PrecioTotal;IdGrupo;PrecioIndividual;DNI...}.
  * Lines whose group or any member can no longer be resolved are kept verbatim as history.
  */
-public class GroupTicketFileStore {
+public class GroupTicketFileStore implements GroupTicketRepository {
 
     private static final String SEPARATOR = ";";
     private static final int FIXED_FIELDS = 5;
@@ -37,6 +37,7 @@ public class GroupTicketFileStore {
         this.file = file;
     }
 
+    @Override
     public Contents load(Function<String, Optional<Group>> groupById,
                          Function<String, Optional<User>> userByDni) throws IOException {
         List<GroupTicket> tickets = new ArrayList<>();
@@ -95,6 +96,7 @@ public class GroupTicketFileStore {
         return ids;
     }
 
+    @Override
     public void save(List<GroupTicket> groupTickets, List<String> historicalLines) throws IOException {
         List<String> lines = new ArrayList<>();
         for (GroupTicket t : groupTickets) {

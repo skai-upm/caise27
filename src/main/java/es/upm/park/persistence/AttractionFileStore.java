@@ -14,7 +14,7 @@ import java.util.List;
  * Stores attraction definitions, one per line: {@code Id;Nombre;Capacidad}. Occupancy is
  * never stored, so loaded attractions are empty.
  */
-public class AttractionFileStore {
+public class AttractionFileStore implements AttractionRepository {
 
     private static final String SEPARATOR = ";";
     private static final int FIELD_COUNT = 3;
@@ -25,6 +25,7 @@ public class AttractionFileStore {
         this.file = file;
     }
 
+    @Override
     public List<Attraction> load() throws IOException {
         List<Attraction> attractions = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -47,6 +48,7 @@ public class AttractionFileStore {
         return attractions;
     }
 
+    @Override
     public void save(List<Attraction> attractions) throws IOException {
         List<String> lines = new ArrayList<>();
         for (Attraction a : attractions) {

@@ -40,14 +40,14 @@ class TicketManagerTest {
     void setUp() throws IOException {
         usersFile = dir.resolve("users.txt");
         ticketsFile = dir.resolve("tickets.txt");
-        users = new UserManager(new UserFileStore(usersFile));
+        users = UserManager.configure(new UserFileStore(usersFile));
         users.create("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         tickets = newTickets(users);
     }
 
     private TicketManager newTickets(UserManager u) throws IOException {
-        GroupManager g = new GroupManager(new GroupFileStore(dir.resolve("groups.txt")), u);
-        return new TicketManager(new TicketFileStore(ticketsFile),
+        GroupManager g = GroupManager.configure(new GroupFileStore(dir.resolve("groups.txt")), u);
+        return TicketManager.configure(new TicketFileStore(ticketsFile),
                 new GroupTicketFileStore(dir.resolve("grouptickets.txt")), u, g);
     }
 
@@ -115,7 +115,7 @@ class TicketManagerTest {
         tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
         assertTrue(users.delete("ana@correo.com", "Clave1!").success());
 
-        UserManager users2 = new UserManager(new UserFileStore(usersFile));
+        UserManager users2 = UserManager.configure(new UserFileStore(usersFile));
         TicketManager tickets2 = newTickets(users2);
         assertTrue(tickets2.getTickets().isEmpty());
         users2.create("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
@@ -127,7 +127,7 @@ class TicketManagerTest {
     @Test
     void restartRestoresLinkedTickets() throws IOException {
         tickets.create("T001", "ana@correo.com", OCT_15, OCT_1, P40);
-        UserManager users2 = new UserManager(new UserFileStore(usersFile));
+        UserManager users2 = UserManager.configure(new UserFileStore(usersFile));
         TicketManager tickets2 = newTickets(users2);
         IndividualTicket t = tickets2.find("T001").orElseThrow();
         assertSame(users2.findByEmail("ana@correo.com").orElseThrow(), t.getUser());

@@ -5,95 +5,54 @@ import es.upm.park.business.model.Group;
 import es.upm.park.business.model.Invoice;
 import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
-import es.upm.park.persistence.AttractionFileStore;
-import es.upm.park.persistence.DataDirectory;
-import es.upm.park.persistence.GroupFileStore;
-import es.upm.park.persistence.GroupTicketFileStore;
-import es.upm.park.persistence.TicketFileStore;
-import es.upm.park.persistence.UserFileStore;
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Main controller of the application. Owns the execution-wide settings (current system date
- * and ticket price), coordinates the managers for rules that span several entities, and
- * assembles managers and stores for a data directory.
+ * Main controller of the application (one instance per execution). Owns the execution-wide
+ * settings (current system date and ticket price) and coordinates the managers for rules that
+ * span several entities. Its collaborators are injected at startup by {@link ApplicationContext}.
  */
-public class ParkController implements AutoCloseable {
+public final class ParkController {
 
     /** Ticket price at the start of every execution. */
     public static final BigDecimal DEFAULT_PRICE = new BigDecimal("40.00");
 
-    private final UserManager users;
-    private final GroupManager groups;
-    private final TicketManager tickets;
-    private final AttractionManager attractions;
-    private final Path temporaryDirectory;
-    private final AtomicBoolean closed = new AtomicBoolean();
+    private static final ParkController INSTANCE = new ParkController();
+
+    private UserManager users;
+    private GroupManager groups;
+    private TicketManager tickets;
+    private AttractionManager attractions;
+    private InvoiceDirector invoiceDirector;
     private LocalDate currentDate;
     private BigDecimal currentPrice = DEFAULT_PRICE;
 
-    public ParkController(UserManager users, GroupManager groups, TicketManager tickets,
-                          AttractionManager attractions, LocalDate initialDate) {
-        this(users, groups, tickets, attractions, initialDate, null);
+    private ParkController() {
     }
 
-    private ParkController(UserManager users, GroupManager groups, TicketManager tickets,
-                           AttractionManager attractions, LocalDate initialDate, Path temporaryDirectory) {
-        this.users = users;
-        this.groups = groups;
-        this.tickets = tickets;
-        this.attractions = attractions;
-        this.currentDate = initialDate;
-        this.temporaryDirectory = temporaryDirectory;
+    /** The single main controller of the execution. */
+    public static ParkController getInstance() {
+        return INSTANCE;
     }
 
-    /** Controller over the data files in {@code dataDir}, starting at the operating system's date. */
-    public static ParkController open(Path dataDir) throws IOException {
-        return open(dataDir, LocalDate.now());
-    }
-
-    public static ParkController open(Path dataDir, LocalDate initialDate) throws IOException {
-        return assemble(dataDir, initialDate, null);
-    }
-
-    /** Controller over a new, empty run directory under {@code tmpRoot}; {@link #close()} deletes it. */
-    public static ParkController openTemporary(Path tmpRoot) throws IOException {
-        Path runDir = DataDirectory.createRunDirectory(tmpRoot);
-        try {
-            return assemble(runDir, LocalDate.now(), runDir);
-        } catch (IOException | RuntimeException e) {
-            DataDirectory.deleteQuietly(runDir);
-            throw e;
-        }
-    }
-
-    private static ParkController assemble(Path dataDir, LocalDate date, Path temporary) throws IOException {
-        UserManager users = new UserManager(new UserFileStore(dataDir.resolve(DataDirectory.USERS_FILE)));
-        GroupManager groups = new GroupManager(new GroupFileStore(dataDir.resolve(DataDirectory.GROUPS_FILE)), users);
-        TicketManager tickets = new TicketManager(new TicketFileStore(dataDir.resolve(DataDirectory.TICKETS_FILE)),
-                new GroupTicketFileStore(dataDir.resolve(DataDirectory.GROUP_TICKETS_FILE)), users, groups);
-        AttractionManager attractions = new AttractionManager(
-                new AttractionFileStore(dataDir.resolve(DataDirectory.ATTRACTIONS_FILE)));
-        return new ParkController(users, groups, tickets, attractions, date, temporary);
-    }
-
-    /** The temporary data directory of this controller, if it was opened with {@link #openTemporary}. */
-    public Optional<Path> getTemporaryDirectory() {
-        return Optional.ofNullable(temporaryDirectory);
-    }
-
-    /** Deletes the temporary data directory, if any. Safe to call more than once. */
-    @Override
-    public void close() {
-        if (temporaryDirectory != null && closed.compareAndSet(false, true)) {
-            DataDirectory.deleteQuietly(temporaryDirectory);
-        }
+    /**
+     * Injects the collaborating managers and services into the single instance and resets the
+     * execution settings (date, default price). Called at startup by {@link ApplicationContext}.
+     */
+    public static ParkController configure(UserManager users, GroupManager groups, TicketManager tickets,
+                                           AttractionManager attractions, InvoiceDirector invoiceDirector,
+                                           LocalDate initialDate) {
+        INSTANCE.users = users;
+        INSTANCE.groups = groups;
+        INSTANCE.tickets = tickets;
+        INSTANCE.attractions = attractions;
+        INSTANCE.invoiceDirector = invoiceDirector;
+        INSTANCE.currentDate = initialDate;
+        INSTANCE.currentPrice = DEFAULT_PRICE;
+        return INSTANCE;
     }
 
     public UserManager users() {
@@ -224,7 +183,7 @@ public class ParkController implements AutoCloseable {
             return Result.error("No registered user with email " + email + ".");
         }
         User u = user.get();
-        Invoice invoice = new InvoiceDirector().construct(new UserInvoiceBuilder(),
+        Invoice invoice = invoiceDirector.construct(new UserInvoiceBuilder(),
                 "USER " + u.getEmail() + " - " + u.getFirstName() + " " + u.getSurnames(), currentDate,
                 tickets.getTickets().stream().filter(t -> t.getUser() == u).toList(), List.of());
         return Result.ok(invoice.format());
@@ -237,7 +196,7 @@ public class ParkController implements AutoCloseable {
             return Result.error("Group " + groupId + " does not exist.");
         }
         Group g = group.get();
-        Invoice invoice = new InvoiceDirector().construct(new GroupInvoiceBuilder(),
+        Invoice invoice = invoiceDirector.construct(new GroupInvoiceBuilder(),
                 "GROUP " + g.getId() + " - " + g.getName(), currentDate,
                 List.of(), tickets.getGroupTickets().stream().filter(t -> t.getGroup() == g).toList());
         return Result.ok(invoice.format());

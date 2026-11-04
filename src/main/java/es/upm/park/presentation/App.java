@@ -1,6 +1,6 @@
 package es.upm.park.presentation;
 
-import es.upm.park.business.ParkController;
+import es.upm.park.business.ApplicationContext;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,14 +28,14 @@ public class App {
     static final Path TMP_ROOT = Path.of("tmp");
     static final String FLY_FLAG = "--fly";
 
-    /** Controller of the current run, closed on abnormal termination. */
-    private static final AtomicReference<ParkController> ACTIVE = new AtomicReference<>();
+    /** Application context of the current run, closed on abnormal termination. */
+    private static final AtomicReference<ApplicationContext> ACTIVE = new AtomicReference<>();
 
     public static void main(String[] args) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            ParkController controller = ACTIVE.getAndSet(null);
-            if (controller != null) {
-                controller.close();
+            ApplicationContext context = ACTIVE.getAndSet(null);
+            if (context != null) {
+                context.close();
             }
         }));
         int status = run(args, System.in, System.out, System.err);
@@ -58,22 +58,22 @@ public class App {
         List<String> commandArgs = new ArrayList<>(List.of(args));
         boolean fly = commandArgs.removeIf(FLY_FLAG::equals);
         String[] rest = commandArgs.toArray(String[]::new);
-        ParkController controller;
+        ApplicationContext context;
         try {
-            controller = fly ? ParkController.openTemporary(tmpRoot) : ParkController.open(dataDir);
+            context = fly ? ApplicationContext.startTemporary(tmpRoot) : ApplicationContext.start(dataDir);
         } catch (IOException e) {
             err.println(fly
                     ? "ERROR: Cannot create temporary directory under '" + tmpRoot + "': " + describe(e)
                     : "ERROR: Cannot load data files: " + describe(e));
             return 1;
         }
-        ACTIVE.set(controller);
-        controller.getTemporaryDirectory()
+        ACTIVE.set(context);
+        context.getTemporaryDirectory()
                 .ifPresent(dir -> err.println("INFO: --fly mode, temporary data in " + dir));
-        try (controller) {
-            return execute(rest, stdin, out, err, new CommandRunner(new CommandProcessor(controller)));
+        try (context) {
+            return execute(rest, stdin, out, err, new CommandRunner(new CommandProcessor(context.getController())));
         } finally {
-            ACTIVE.compareAndSet(controller, null);
+            ACTIVE.compareAndSet(context, null);
         }
     }
 

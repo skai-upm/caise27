@@ -20,7 +20,7 @@ import java.util.function.Function;
  * Stores tickets in a text file, one per line: {@code Id;yyyy-MM-dd;Precio;DNI}. Lines whose
  * DNI matches no registered user are historical records of deleted users and are kept verbatim.
  */
-public class TicketFileStore {
+public class TicketFileStore implements TicketRepository {
 
     private static final String SEPARATOR = ";";
     private static final int FIELD_COUNT = 4;
@@ -35,6 +35,7 @@ public class TicketFileStore {
         this.file = file;
     }
 
+    @Override
     public Contents load(Function<String, Optional<User>> userByDni) throws IOException {
         List<IndividualTicket> tickets = new ArrayList<>();
         List<String> history = new ArrayList<>();
@@ -73,6 +74,7 @@ public class TicketFileStore {
     }
 
     /** Replaces the file content with the tickets followed by the historical lines. */
+    @Override
     public void save(List<IndividualTicket> tickets, List<String> historicalLines) throws IOException {
         List<String> lines = new ArrayList<>();
         for (IndividualTicket t : tickets) {

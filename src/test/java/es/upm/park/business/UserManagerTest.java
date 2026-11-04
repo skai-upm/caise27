@@ -28,7 +28,7 @@ class UserManagerTest {
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("users.txt");
-        manager = new UserManager(new UserFileStore(file));
+        manager = UserManager.configure(new UserFileStore(file));
     }
 
     private Result createAna() {
@@ -42,7 +42,7 @@ class UserManagerTest {
     }
 
     private UserManager restart() throws IOException {
-        return new UserManager(new UserFileStore(file));
+        return UserManager.configure(new UserFileStore(file));
     }
 
     private List<String> fileLines() throws IOException {

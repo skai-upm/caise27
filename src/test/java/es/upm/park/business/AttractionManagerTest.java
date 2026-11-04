@@ -38,7 +38,7 @@ class AttractionManagerTest {
     @BeforeEach
     void setUp() throws IOException {
         file = dir.resolve("attractions.txt");
-        manager = new AttractionManager(new AttractionFileStore(file));
+        manager = AttractionManager.configure(new AttractionFileStore(file));
     }
 
     @Test
@@ -61,7 +61,7 @@ class AttractionManagerTest {
     void restartRestoresEmptyAttractions() throws IOException {
         manager.create("A01", "Tornado", "20");
         manager.enter("A01", Optional.of(t001), "T001", DAY);
-        AttractionManager again = new AttractionManager(new AttractionFileStore(file));
+        AttractionManager again = AttractionManager.configure(new AttractionFileStore(file));
         Attraction a = again.find("A01").orElseThrow();
         assertEquals(20, a.getCapacity());
         assertTrue(a.getPresent().isEmpty());
@@ -103,6 +103,6 @@ class AttractionManagerTest {
     @Test
     void malformedFileLinesSkipped() throws IOException {
         Files.write(file, List.of("A01;Tornado;20", "A02;Loop;0", "bad", "", "A03;Rio;x"));
-        assertEquals(1, new AttractionManager(new AttractionFileStore(file)).getAttractions().size());
+        assertEquals(1, AttractionManager.configure(new AttractionFileStore(file)).getAttractions().size());
     }
 }

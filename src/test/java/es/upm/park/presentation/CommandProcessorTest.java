@@ -1,6 +1,8 @@
 package es.upm.park.presentation;
 
 import es.upm.park.business.AttractionManager;
+import es.upm.park.business.ApplicationContext;
+import es.upm.park.business.InvoiceDirector;
 import es.upm.park.business.ParkController;
 import es.upm.park.business.GroupManager;
 import es.upm.park.business.model.Result;
@@ -37,7 +39,7 @@ class CommandProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        ParkController controller = ParkController.open(dir);
+        ParkController controller = ApplicationContext.start(dir).getController();
         manager = controller.users();
         groups = controller.groups();
         tickets = controller.tickets();
@@ -173,7 +175,7 @@ class CommandProcessorTest {
     private static final LocalDate START = LocalDate.of(2026, 9, 15);
 
     private CommandProcessor processorAt(LocalDate date) {
-        return new CommandProcessor(new ParkController(manager, groups, tickets, attractions, date));
+        return new CommandProcessor(ParkController.configure(manager, groups, tickets, attractions, new InvoiceDirector(), date));
     }
 
     @Test
