@@ -22,7 +22,7 @@ public class InteractiveSession {
     }
 
     /**
-     * Processes input lines until end of input.
+     * Processes input lines until end of input or until EXIT is processed.
      *
      * @return number of lines read
      */
@@ -30,7 +30,7 @@ public class InteractiveSession {
         int lines = 0;
         try {
             String line;
-            while ((line = input.readLine()) != null) {
+            while (!processor.isExitRequested() && (line = input.readLine()) != null) {
                 lines++;
                 String response = processor.process(line);
                 if (!response.isEmpty()) {

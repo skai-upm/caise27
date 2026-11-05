@@ -16,11 +16,27 @@ public class CommandProcessor {
     private static final int USER_DELETE_ELEMENTS = 3;
     private static final String USER_UPDATE = "USER UPDATE";
     private static final int USER_UPDATE_ELEMENTS = 5;
+    private static final String HELP = "HELP";
+    private static final String EXIT = "EXIT";
+    static final String HELP_TEXT = String.join(System.lineSeparator(),
+            "Available commands:",
+            "  USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
+            "  USER DELETE;<email>;<password>",
+            "  USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "  HELP",
+            "  EXIT");
+
+    private boolean exitRequested;
 
     private final UserService userService;
 
     public CommandProcessor(UserService userService) {
         this.userService = userService;
+    }
+
+    /** Whether an EXIT command has been processed; no further commands must run. */
+    public boolean isExitRequested() {
+        return exitRequested;
     }
 
     /**
@@ -37,6 +53,16 @@ public class CommandProcessor {
             parts[i] = parts[i].trim();
         }
         try {
+            if (HELP.equals(parts[0])) {
+                return parts.length == 1 ? HELP_TEXT : "ERROR: wrong number of arguments. Usage: HELP";
+            }
+            if (EXIT.equals(parts[0])) {
+                if (parts.length != 1) {
+                    return "ERROR: wrong number of arguments. Usage: EXIT";
+                }
+                exitRequested = true;
+                return "GOODBYE";
+            }
             if (USER_CREATE.equals(parts[0])) {
                 return userCreate(parts);
             }
