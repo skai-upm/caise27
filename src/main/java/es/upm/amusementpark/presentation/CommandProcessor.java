@@ -10,6 +10,7 @@ import es.upm.amusementpark.business.control.Park;
 import es.upm.amusementpark.persistence.repository.AttractionRepository;
 import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
+import es.upm.amusementpark.business.service.InvoiceService;
 import es.upm.amusementpark.business.service.TicketService;
 import es.upm.amusementpark.business.service.UserService;
 import java.math.BigDecimal;
@@ -109,6 +110,9 @@ public class CommandProcessor {
         });
         register("ATTRACTION LIST", 2, "ATTRACTION LIST;<attraction>", "", p -> attractionService.list(p[1]));
         register("ATTRACTION STATUS", 2, "ATTRACTION STATUS;<attractionIdentifier>", "", p -> attractionService.status(p[1]));
+        InvoiceService invoiceService = new InvoiceService(userService.users(), userService.groups(), userService.tickets());
+        register("INVOICE CREATE", 3, "INVOICE CREATE;USER;<email>", "| INVOICE CREATE;GROUP;<groupIdentifier>",
+                p -> invoiceService.create(p[1], p[2]).render());
         register("HELP", 1, "HELP", "", p -> helpText());
         register("EXIT", 1, "EXIT", "", p -> {
             exitRequested = true;
