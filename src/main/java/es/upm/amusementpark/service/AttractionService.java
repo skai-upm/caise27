@@ -73,6 +73,27 @@ public class AttractionService {
                 .orElseThrow(() -> new OperationException("attraction '" + identifier + "' not found"));
     }
 
+    public void exit(String attractionId, String email) {
+        Attraction attraction = findAttraction(attractionId);
+        User user = attraction.getOccupants().stream().filter(u -> u.getEmail().equals(email)).findFirst()
+                .orElseThrow(() -> new OperationException("user '" + email + "' is not inside " + attractionId));
+        attraction.remove(user);
+        attractions.update(attraction);
+    }
+
+    /** Read-only status of an attraction, from its own state. */
+    public String status(String identifier) {
+        Attraction a = findAttraction(identifier);
+        String users = a.getOccupants().isEmpty() ? "none"
+                : String.join(", ", a.getOccupants().stream().map(User::getEmail).toList());
+        return String.join(System.lineSeparator(),
+                "ATTRACTION " + a.getIdentifier() + " - " + a.getName(),
+                "Capacity: " + a.getCapacity(),
+                "Inside: " + a.getOccupants().size(),
+                "Available: " + a.availableCapacity(),
+                "Users: " + users);
+    }
+
     /** Read-only listing of the users currently inside an attraction. */
     public String list(String identifier) {
         Attraction a = findAttraction(identifier);

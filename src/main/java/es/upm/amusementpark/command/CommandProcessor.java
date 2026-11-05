@@ -97,6 +97,11 @@ public class CommandProcessor {
         });
         register("ATTRACTION ENTER", 3, "ATTRACTION ENTER;<attraction>;<ticket>", "", p ->
                 "ENTRY GRANTED: " + attractionService.enter(p[1], p[2]) + " user(s) entered " + p[1]);
+        register("ATTRACTION EXIT", 3, "ATTRACTION EXIT;<attraction>;<email>", "", p -> {
+            attractionService.exit(p[1], p[2]);
+            return "USER LEFT ATTRACTION";
+        });
+        register("ATTRACTION STATUS", 2, "ATTRACTION STATUS;<attraction>", "", p -> attractionService.status(p[1]));
         register("ATTRACTION LIST", 2, "ATTRACTION LIST;<identifier>", "", p -> attractionService.list(p[1]));
         register("SYSTEM DATE", 2, "SYSTEM DATE;<yyyy-MM-dd>", "", this::systemDate);
         register("SYSTEM PRICE", 2, "SYSTEM PRICE;<Price>", "", this::systemPrice);
