@@ -1,8 +1,13 @@
 package es.upm.parque.command;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 import es.upm.parque.model.User;
 import es.upm.parque.model.UserField;
 import es.upm.parque.model.UserValidator;
+import es.upm.parque.park.ParkController;
+import es.upm.parque.park.SystemValues;
 import es.upm.parque.repository.UserRepository;
 
 /**
@@ -25,19 +30,34 @@ public class CommandProcessor {
 
     private static final String HELP = "HELP";
     private static final String EXIT = "EXIT";
+    private static final String SYSTEM_DATE = "SYSTEM DATE";
+    private static final String SYSTEM_PRICE = "SYSTEM PRICE";
     private static final String HELP_TEXT = String.join(System.lineSeparator(),
             "Available commands:",
             "  USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
             "  USER DELETE;<email>;<password>",
             "  USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "  SYSTEM DATE;<yyyy-MM-dd>",
+            "  SYSTEM PRICE;<price>",
             "  HELP",
             "  EXIT");
 
-    private final UserRepository users;
+    private final ParkController park;
     private boolean exitRequested;
 
+    /** Processes commands against the current central park management state. */
+    public CommandProcessor() {
+        this.park = ParkController.getInstance();
+    }
+
+    /** Starts a new execution of the central park management with the given users. */
     public CommandProcessor(UserRepository users) {
-        this.users = users;
+        this();
+        park.startExecution(users);
+    }
+
+    private UserRepository users() {
+        return park.getUsers();
     }
 
     /**
@@ -61,6 +81,8 @@ public class CommandProcessor {
                 case USER_UPDATE -> updateUser(elements);
                 case HELP -> help(elements);
                 case EXIT -> exit(elements);
+                case SYSTEM_DATE -> systemDate(elements);
+                case SYSTEM_PRICE -> systemPrice(elements);
                 default -> error("unknown command '" + command + "'");
             };
         } catch (RuntimeException e) {
@@ -75,6 +97,24 @@ public class CommandProcessor {
 
     private static String help(String[] e) {
         return e.length == 1 ? HELP_TEXT : error("HELP takes no fields");
+    }
+
+    private String systemDate(String[] e) {
+        LocalDate date = e.length == 2 ? SystemValues.parseDate(e[1]) : null;
+        if (date == null) {
+            return error("SYSTEM DATE expects a valid date: SYSTEM DATE;<yyyy-MM-dd>");
+        }
+        park.setCurrentDate(date);
+        return "OK: system date set to " + date;
+    }
+
+    private String systemPrice(String[] e) {
+        BigDecimal price = e.length == 2 ? SystemValues.parsePrice(e[1]) : null;
+        if (price == null) {
+            return error("SYSTEM PRICE expects a positive amount with at most 2 decimals: SYSTEM PRICE;<price>");
+        }
+        park.setBasePrice(price);
+        return "OK: system price set to " + price.toPlainString();
     }
 
     private String exit(String[] e) {
@@ -106,7 +146,7 @@ public class CommandProcessor {
         if (problem != null) {
             return error(problem);
         }
-        users.add(user);
+        users().add(user);
         return ok(user, "created");
     }
 
@@ -124,10 +164,10 @@ public class CommandProcessor {
         if (!UserValidator.isValidCardNumber(user.getCardNumber())) {
             return INVALID_CARD;
         }
-        if (users.existsByDni(user.getDni())) {
+        if (users().existsByDni(user.getDni())) {
             return duplicate("DNI", user.getDni());
         }
-        if (users.existsByEmail(user.getEmail())) {
+        if (users().existsByEmail(user.getEmail())) {
             return duplicate("email", user.getEmail());
         }
         return null;
@@ -145,12 +185,12 @@ public class CommandProcessor {
         if (e.length != USER_DELETE_ELEMENTS) {
             return error("USER DELETE expects 2 fields: USER DELETE;Email;Password");
         }
-        User user = users.findByEmail(e[1]);
+        User user = users().findByEmail(e[1]);
         String problem = authenticationProblem(user, e[1], e[2]);
         if (problem != null) {
             return error(problem);
         }
-        users.remove(user.getDni());
+        users().remove(user.getDni());
         return ok(user, "deleted");
     }
 
@@ -158,7 +198,7 @@ public class CommandProcessor {
         if (e.length != USER_UPDATE_ELEMENTS) {
             return error("USER UPDATE expects 4 fields: USER UPDATE;Email;Password;Field;NewValue");
         }
-        User user = users.findByEmail(e[1]);
+        User user = users().findByEmail(e[1]);
         String problem = authenticationProblem(user, e[1], e[2]);
         if (problem != null) {
             return error(problem);
@@ -173,7 +213,7 @@ public class CommandProcessor {
             return error(problem);
         }
         applyField(user, field, newValue);
-        users.update(user);
+        users().update(user);
         return ok(user, "updated");
     }
 
@@ -184,7 +224,7 @@ public class CommandProcessor {
                 if (!UserValidator.isValidEmail(value)) {
                     return "invalid email '" + value + "'";
                 }
-                User owner = users.findByEmail(value);
+                User owner = users().findByEmail(value);
                 return owner != null && owner != user ? duplicate("email", value) : null;
             case PASSWORD:
                 return UserValidator.isValidPassword(value) ? null : INVALID_PASSWORD;
