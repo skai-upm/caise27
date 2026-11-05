@@ -6,7 +6,10 @@ import java.time.ZoneId;
 import java.util.Objects;
 
 import es.upm.parque.model.Group;
+import es.upm.parque.model.Ticket;
+import es.upm.parque.model.User;
 import es.upm.parque.repository.GroupRepository;
+import es.upm.parque.repository.TicketRepository;
 import es.upm.parque.repository.UserRepository;
 
 /**
@@ -20,6 +23,7 @@ public final class ParkController {
 
     private UserRepository users = new UserRepository();
     private GroupRepository groups = new GroupRepository();
+    private TicketRepository tickets = new TicketRepository();
     private LocalDate currentDate = LocalDate.now(ZoneId.systemDefault());
     private BigDecimal basePrice = INITIAL_PRICE;
 
@@ -39,6 +43,7 @@ public final class ParkController {
     public void startExecution(UserRepository users) {
         this.users = users;
         this.groups = new GroupRepository();
+        this.tickets = new TicketRepository();
         this.currentDate = LocalDate.now(ZoneId.systemDefault());
         this.basePrice = INITIAL_PRICE;
     }
@@ -57,6 +62,26 @@ public final class ParkController {
      */
     public boolean hasActiveGroupTicket(Group group) {
         Objects.requireNonNull(group, "group");
+        return false;
+    }
+
+    public TicketRepository getTickets() {
+        return tickets;
+    }
+
+    /** Whether the user has an active ticket, derived by traversing the tickets managed by the system. */
+    public boolean hasActiveTicket(User user) {
+        return tickets.individualTicketsOf(user).stream().anyMatch(t -> t.isActiveOn(currentDate));
+    }
+
+    /** Whether the user belongs to a group that currently has an active group ticket. */
+    public boolean belongsToLockedGroup(User user) {
+        return groups.findAll().stream().anyMatch(g -> g.contains(user) && hasActiveGroupTicket(g));
+    }
+
+    /** Whether the ticket is part of the composition of a group ticket. No group tickets exist yet. */
+    public boolean isPartOfGroupTicket(Ticket ticket) {
+        Objects.requireNonNull(ticket, "ticket");
         return false;
     }
 

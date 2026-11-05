@@ -43,17 +43,21 @@ public class CommandProcessor {
             "  GROUP ADD;<id>;<email>",
             "  GROUP REMOVE;<id>;<email>",
             "  GROUP DELETE;<id>",
+            "  TICKET CREATE;<id>;<email>;<yyyy-MM-dd>",
+            "  TICKET DELETE;<id>",
             "  HELP",
             "  EXIT");
 
     private final ParkController park;
     private final GroupCommands groups;
+    private final TicketCommands tickets;
     private boolean exitRequested;
 
     /** Processes commands against the current central park management state. */
     public CommandProcessor() {
         this.park = ParkController.getInstance();
         this.groups = new GroupCommands(park);
+        this.tickets = new TicketCommands(park);
     }
 
     /** Starts a new execution of the central park management with the given users. */
@@ -93,6 +97,8 @@ public class CommandProcessor {
                 case GroupCommands.GROUP_ADD -> groups.add(elements);
                 case GroupCommands.GROUP_REMOVE -> groups.remove(elements);
                 case GroupCommands.GROUP_DELETE -> groups.delete(elements);
+                case TicketCommands.TICKET_CREATE -> tickets.create(elements);
+                case TicketCommands.TICKET_DELETE -> tickets.delete(elements);
                 default -> error("unknown command '" + command + "'");
             };
         } catch (RuntimeException e) {
@@ -199,6 +205,12 @@ public class CommandProcessor {
         String problem = authenticationProblem(user, e[1], e[2]);
         if (problem != null) {
             return error(problem);
+        }
+        if (park.hasActiveTicket(user)) {
+            return error("user " + user.getEmail() + " has a ticket for today or a later date and cannot be deleted");
+        }
+        if (park.belongsToLockedGroup(user)) {
+            return error("user " + user.getEmail() + " belongs to a group with an active group ticket");
         }
         park.getGroups().removeUserEverywhere(user);
         users().remove(user.getDni());
