@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0001-botl-0001-f1-amusement-park",
+  "change": "botl-0001-f1-amusement-park",
+  "runId": "0001-propose-20261103T063531Z",
+  "sequence": 1,
+  "phase": "propose",
+  "startedAt": "2026-11-03T06:35:31.750918+00:00",
+  "finishedAt": "2026-11-03T06:38:10.918210+00:00",
+  "durationSeconds": 159.167292,
+  "environment": {
+    "agent": "claude-code",
+    "agentAdapter": "claude-code",
+    "aiUsageSource": "claude",
+    "analysisAdapterConfigured": "auto",
+    "analysisAdapterBefore": "unknown",
+    "analysisAdapterAfter": "unknown"
+  },
+  "projectProfileBefore": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "projectProfileAfter": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "profileTransition": {
+    "changed": false,
+    "before": "unknown",
+    "after": "unknown"
+  },
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "efeb793c-38e2-4fbf-b206-3dd8389b0b4f",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 16,
+    "outputTokens": 16522,
+    "cacheCreationTokens": 25042,
+    "cacheReadTokens": 930649,
+    "totalTokens": 972229,
+    "totalCost": 0.7169698,
+    "newTokens": 41580,
+    "cachedTokens": 930649,
+    "totalProcessedTokens": 972229
+  },
+  "before": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_5_proposals_gpractices_single_gpt",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .DS_Store",
+        "?? .botl/",
+        "?? experiments/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 0,
+      "lines": 0,
+      "words": 0,
+      "requirements": 0,
+      "scenarios": 0,
+      "tasks": 0,
+      "shallStatements": 0
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "unknown",
+          "modules": []
+        },
+        "modules": []
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "unknown",
+      "modules": []
+    }
+  },
+  "after": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_5_proposals_gpractices_single_gpt",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .DS_Store",
+        "?? .botl/",
+        "?? experiments/",
+        "?? openspec/changes/botl-0001-f1-amusement-park/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 15,
+      "lines": 547,
+      "words": 4515,
+      "requirements": 34,
+      "scenarios": 54,
+      "tasks": 12,
+      "shallStatements": 44
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "unknown",
+          "modules": []
+        },
+        "modules": []
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "unknown",
+      "modules": []
+    }
+  },
+  "delta": {
+    "git": {
+      "available": true,
+      "filesModified": 0,
+      "untrackedFiles": 20,
+      "locAdded": 0,
+      "locRemoved": 0,
+      "netLoc": 0
+    },
+    "artifacts": {
+      "words": 4515,
+      "shallStatements": 44,
+      "requirements": 34,
+      "lines": 547,
+      "files": 15,
+      "tasks": 12,
+      "scenarios": 54
+    },
+    "radon": {},
+    "sonar": {
+      "allMeasures": {}
+    }
+  }
+}
