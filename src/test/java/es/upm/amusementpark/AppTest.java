@@ -19,9 +19,10 @@ class AppTest {
     @TempDir
     Path tmp;
 
-    private static String run(String[] args, String stdin) {
+    private String run(String[] args, String stdin) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        App.run(args, new BufferedReader(new StringReader(stdin)), new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        App.run(args, new BufferedReader(new StringReader(stdin)), new PrintStream(buffer, true, StandardCharsets.UTF_8),
+                tmp.resolve("base"));
         return buffer.toString(StandardCharsets.UTF_8);
     }
 

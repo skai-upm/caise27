@@ -17,9 +17,14 @@ public class GroupTicket extends Ticket {
     private final List<IndividualTicket> components;
 
     GroupTicket(String id, Group group, LocalDate date, List<IndividualTicket> components) {
+        this(id, Objects.requireNonNull(group, "group").getId(), group, date, components);
+    }
+
+    /** Rebuilds a group ticket whose purchasing group may no longer exist ({@code group} may be null). */
+    GroupTicket(String id, String groupId, Group group, LocalDate date, List<IndividualTicket> components) {
         super(id, date);
-        this.group = Objects.requireNonNull(group, "group");
-        this.groupId = group.getId();
+        this.group = group;
+        this.groupId = Objects.requireNonNull(groupId, "groupId");
         this.components = List.copyOf(components);
         for (IndividualTicket component : this.components) {
             component.setContainingGroupTicket(this);

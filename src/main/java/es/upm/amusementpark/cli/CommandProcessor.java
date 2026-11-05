@@ -37,6 +37,7 @@ public class CommandProcessor {
 
     private final PrintStream out;
     private final Map<String, CommandHandler> handlers = new LinkedHashMap<>();
+    private Runnable afterCommand = () -> { };
 
     public CommandProcessor(PrintStream out) {
         this.out = out;
@@ -61,6 +62,15 @@ public class CommandProcessor {
     }
 
     /**
+     * Sets an action run after every processed (non-blank) line, for example to persist state.
+     *
+     * @param action the action
+     */
+    public void setAfterCommand(Runnable action) {
+        afterCommand = action;
+    }
+
+    /**
      * Executes one input line.
      *
      * @param rawLine the line as read from the input source
@@ -71,6 +81,13 @@ public class CommandProcessor {
         if (line.isEmpty()) {
             return true;
         }
+        boolean keepGoing = dispatch(line);
+        afterCommand.run();
+        return keepGoing;
+    }
+
+
+    private boolean dispatch(String line) {
         int separator = line.indexOf(';');
         String keyword = (separator < 0 ? line : line.substring(0, separator)).trim();
         CommandHandler handler = handlers.get(keyword);

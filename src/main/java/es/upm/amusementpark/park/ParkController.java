@@ -430,4 +430,56 @@ public final class ParkController {
             throw new ParkException("User " + email + " is not inside attraction " + attractionId);
         }
     }
+
+    // ----- restoring persisted state (used only by the persistence layer) -----
+
+    /**
+     * Rebuilds a persisted group with its members, without business-rule checks on members.
+     *
+     * @throws ParkException if the identifier is already used
+     */
+    public synchronized Group restoreGroup(String id, String name, List<String> members) {
+        Group group = createGroup(id, name);
+        for (String email : members) {
+            group.addMember(email);
+        }
+        return group;
+    }
+
+    /**
+     * Rebuilds a persisted standalone individual ticket (past dates and unknown users are valid history).
+     *
+     * @throws ParkException if the identifier is already used
+     */
+    public synchronized IndividualTicket restoreIndividualTicket(String id, String email, LocalDate date,
+            BigDecimal price) {
+        IndividualTicket ticket = new IndividualTicket(id, email, date, price);
+        registerTicket(ticket);
+        return ticket;
+    }
+
+    /**
+     * Rebuilds a persisted group ticket and its components. The group link is restored only when
+     * {@code linked} is true and the group exists.
+     *
+     * @throws ParkException if any identifier is already used
+     */
+    public synchronized GroupTicket restoreGroupTicket(String id, String groupId, boolean linked, LocalDate date,
+            List<IndividualTicket> components) {
+        ensureTicketIdAvailable(id);
+        Set<String> ids = new HashSet<>();
+        for (IndividualTicket component : components) {
+            ensureTicketIdAvailable(component.getId());
+            if (!ids.add(component.getId()) || component.getId().equals(id)) {
+                throw new ParkException("Duplicate ticket identifier " + component.getId());
+            }
+        }
+        Group group = linked ? groups.get(groupId) : null;
+        GroupTicket ticket = new GroupTicket(id, groupId, group, date, components);
+        tickets.put(id, ticket);
+        for (IndividualTicket component : components) {
+            tickets.put(component.getId(), component);
+        }
+        return ticket;
+    }
 }
