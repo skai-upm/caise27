@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0016-botl-0015-f3-password-protection-using-maven-dependency",
+  "change": "botl-0015-f3-password-protection-using-maven-dependency",
+  "status": "archived",
+  "createdAt": "2026-10-26T15:16:26.558298+00:00",
+  "updatedAt": "2026-10-26T15:17:21.110634+00:00",
+  "runs": [
+    {
+      "runId": "0001-archive-20261026T151626Z",
+      "sequence": 1,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0001-archive-20261026T151626Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 436310,
+        "totalCost": 0.12145040000000051
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-26T15:17:21.044606+00:00"
+}
