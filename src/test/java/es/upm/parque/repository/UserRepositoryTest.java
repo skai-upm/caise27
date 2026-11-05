@@ -6,9 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.parque.model.User;
+import es.upm.parque.persistence.UserFileStore;
 
 class UserRepositoryTest {
 
@@ -34,6 +39,22 @@ class UserRepositoryTest {
         assertFalse(repo.existsByDni("87654321X"));
         assertTrue(repo.existsByEmail("ana@correo.com"));
         assertFalse(repo.existsByEmail("luis@correo.com"));
+    }
+
+    @Test
+    void fileBackedRepositoryLoadsAtConstructionAndSavesAfterAdd(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("users.txt");
+        UserRepository first = new UserRepository(new UserFileStore(file));
+        first.add(user("12345678Z", "ana@correo.com"));
+        assertEquals(1, Files.readAllLines(file).size());
+
+        UserRepository second = new UserRepository(new UserFileStore(file));
+        assertEquals(1, second.size());
+        assertTrue(second.existsByDni("12345678Z"));
+        assertTrue(second.existsByEmail("ana@correo.com"));
+
+        second.add(user("87654321X", "luis@correo.com"));
+        assertEquals(2, Files.readAllLines(file).size());
     }
 
     @Test

@@ -8,8 +8,10 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 
 import es.upm.parque.command.CommandProcessor;
+import es.upm.parque.persistence.UserFileStore;
 import es.upm.parque.repository.UserRepository;
 
 /**
@@ -17,8 +19,11 @@ import es.upm.parque.repository.UserRepository;
  */
 public class App {
 
+    static final String USERS_FILE = "users.txt";
+
     public static void main(String[] args) throws IOException {
-        CommandProcessor processor = new CommandProcessor(new UserRepository());
+        CommandProcessor processor = new CommandProcessor(
+                new UserRepository(new UserFileStore(Path.of(USERS_FILE))));
         PrintStream console = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
         run(processor, new InputStreamReader(System.in, StandardCharsets.UTF_8), console);
     }

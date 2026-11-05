@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import es.upm.parque.model.User;
+import es.upm.parque.persistence.UserFileStore;
 
 /**
  * Stores and retrieves users. Users are kept in insertion order and indexed by DNI.
@@ -13,9 +14,30 @@ import es.upm.parque.model.User;
 public class UserRepository {
 
     private final Map<String, User> usersByDni = new LinkedHashMap<>();
+    private final UserFileStore store;
+
+    /** Creates a purely in-memory repository. */
+    public UserRepository() {
+        this.store = null;
+    }
+
+    /** Creates a repository backed by a file: users are loaded now and saved after each change. */
+    public UserRepository(UserFileStore store) {
+        this.store = store;
+        for (User user : store.load()) {
+            usersByDni.put(user.getDni(), user);
+        }
+    }
 
     public void add(User user) {
         usersByDni.put(user.getDni(), user);
+        persist();
+    }
+
+    private void persist() {
+        if (store != null) {
+            store.save(findAll());
+        }
     }
 
     public User findByDni(String dni) {
