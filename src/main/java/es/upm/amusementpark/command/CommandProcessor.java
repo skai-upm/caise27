@@ -1,5 +1,6 @@
 package es.upm.amusementpark.command;
 
+import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.service.UserOperationException;
 import es.upm.amusementpark.service.UserService;
 
@@ -13,6 +14,8 @@ public class CommandProcessor {
     private static final int USER_CREATE_ELEMENTS = 8;
     private static final String USER_DELETE = "USER DELETE";
     private static final int USER_DELETE_ELEMENTS = 3;
+    private static final String USER_UPDATE = "USER UPDATE";
+    private static final int USER_UPDATE_ELEMENTS = 5;
 
     private final UserService userService;
 
@@ -40,6 +43,9 @@ public class CommandProcessor {
             if (USER_DELETE.equals(parts[0])) {
                 return userDelete(parts);
             }
+            if (USER_UPDATE.equals(parts[0])) {
+                return userUpdate(parts);
+            }
             return "ERROR: unknown command '" + parts[0] + "'";
         } catch (UserOperationException e) {
             return "ERROR: " + e.getMessage();
@@ -60,5 +66,20 @@ public class CommandProcessor {
         }
         userService.deleteUser(p[1], p[2]);
         return "USER DELETED";
+    }
+
+    private String userUpdate(String[] p) {
+        if (p.length != USER_UPDATE_ELEMENTS) {
+            return "ERROR: wrong number of arguments. Usage: USER UPDATE;Email;Password;Field;NewValue";
+        }
+        if ("DNI".equals(p[3])) {
+            return "ERROR: the DNI cannot be modified";
+        }
+        UserField field = UserField.fromName(p[3]).orElse(null);
+        if (field == null) {
+            return "ERROR: unknown field '" + p[3] + "'. Modifiable fields: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD";
+        }
+        userService.updateUser(p[1], p[2], field, p[4]);
+        return "USER UPDATED";
     }
 }

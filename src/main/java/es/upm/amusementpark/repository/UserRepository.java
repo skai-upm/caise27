@@ -34,6 +34,13 @@ public class UserRepository {
         storage.save(users);
     }
 
+    /** Persists changes made to a user already stored in this repository. */
+    public void update(User user) {
+        if (users.contains(user)) {
+            storage.save(users);
+        }
+    }
+
     public Optional<User> findByDni(String dni) {
         return users.stream().filter(u -> u.getDni().equals(dni)).findFirst();
     }
