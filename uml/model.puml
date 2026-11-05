@@ -150,6 +150,10 @@ package es.upm.amusementpark.business {
   }
   class SpecialAttraction {
   }
+  class Admission <<record>> {
+    - holders : List<String>
+    - toConsume : List<Pass>
+  }
 }
 
 package es.upm.amusementpark.persistence {
@@ -188,6 +192,8 @@ Attraction <|-- IndividualAttraction : <<bind>> T::IndividualAccess
 Attraction <|-- GroupAttraction : <<bind>> T::GroupAccess
 Attraction <|-- SpecialAttraction : <<bind>> T::IndividualAccess
 Attraction ..> PassLookup : checks passes via
+Attraction ..> Admission : produces
+Admission --> "0..*" Pass : toConsume
 AttractionType ..> Attraction : creates
 ParkController ..> PassLookup : provides passesOfTicket
 

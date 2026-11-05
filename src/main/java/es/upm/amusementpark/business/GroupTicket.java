@@ -89,6 +89,11 @@ public class GroupTicket extends Ticket implements GroupAccess {
         return components.stream().map(IndividualTicket::getUserEmail).toList();
     }
 
+    @Override
+    public List<String> individualTicketIds() {
+        return components.stream().map(IndividualTicket::getId).toList();
+    }
+
     /** Users are associated through the component tickets, which are registered on their own. */
     @Override
     public boolean concernsUser(String email) {

@@ -45,6 +45,11 @@ public class IndividualTicket extends Ticket implements IndividualAccess {
     }
 
     @Override
+    public List<String> individualTicketIds() {
+        return List.of(getId());
+    }
+
+    @Override
     public boolean concernsUser(String email) {
         return userEmail.equals(email);
     }

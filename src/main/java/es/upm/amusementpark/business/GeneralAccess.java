@@ -14,4 +14,7 @@ public interface GeneralAccess {
 
     /** @return e-mails of the users admitted together with this ticket */
     List<String> holders();
+
+    /** @return identifiers of the individual tickets involved (itself, or the components of a group ticket) */
+    List<String> individualTicketIds();
 }

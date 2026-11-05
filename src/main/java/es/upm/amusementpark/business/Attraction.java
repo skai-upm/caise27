@@ -1,7 +1,9 @@
 package es.upm.amusementpark.business;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -54,24 +56,63 @@ public abstract class Attraction<T extends GeneralAccess> {
     }
 
     /**
-     * Checks the type-specific admission conditions for a ticket and returns it typed by this attraction's
-     * capability.
+     * Result of a successful admission check: the users to admit and the passes to consume on entry.
      *
-     * @throws ParkException if the ticket kind is not accepted or the conditions are not met
+     * @param holders e-mails of the users entering together
+     * @param toConsume passes that must be marked as consumed when the entry is completed
      */
-    public T admissionFor(GeneralAccess ticket, PassLookup passes) {
+    public record Admission(List<String> holders, List<Pass> toConsume) {
+    }
+
+    /**
+     * Checks, without changing any state, whether a ticket may enter this attraction and which passes the entry
+     * consumes.
+     *
+     * @param ticket ticket used for entry
+     * @param passes lookup of the passes of individual tickets
+     * @param speed whether SpeedPasses are requested
+     * @throws ParkException if the ticket kind, pass use or type-specific conditions are not satisfied
+     */
+    public Admission admit(GeneralAccess ticket, PassLookup passes, boolean speed) {
         if (!accepts(ticket)) {
             throw new ParkException("Attraction " + id + " (" + getType() + ") does not accept "
                     + (ticket instanceof GroupAccess ? "group" : "individual") + " tickets");
         }
         T typed = accessType.cast(ticket);
-        checkAdmission(typed, passes);
-        return typed;
+        List<Pass> toConsume = new ArrayList<>();
+        if (speed) {
+            if (!acceptsSpeedPasses()) {
+                throw new ParkException("Attraction " + id + " (" + getType() + ") does not accept SpeedPasses");
+            }
+            for (String ticketId : typed.individualTicketIds()) {
+                toConsume.add(availableSpeedPass(ticketId, passes));
+            }
+        }
+        toConsume.addAll(requiredPasses(typed, passes));
+        return new Admission(typed.holders(), List.copyOf(toConsume));
     }
 
-    /** Additional, type-specific admission conditions; none by default. */
-    protected void checkAdmission(T ticket, PassLookup passes) {
-        // no extra conditions
+    private static SpeedPass availableSpeedPass(String ticketId, PassLookup passes) {
+        for (Pass pass : passes.passesOfTicket(ticketId)) {
+            if (pass instanceof SpeedPass speedPass && !speedPass.isConsumed()) {
+                return speedPass;
+            }
+        }
+        throw new ParkException("Ticket " + ticketId + " has no unconsumed SpeedPass");
+    }
+
+    /** @return whether entry with SpeedPasses is allowed at this attraction */
+    protected boolean acceptsSpeedPasses() {
+        return true;
+    }
+
+    /**
+     * Passes this attraction type requires and consumes for an admitted ticket; none by default.
+     *
+     * @throws ParkException if a required pass is missing
+     */
+    protected List<Pass> requiredPasses(T ticket, PassLookup passes) {
+        return List.of();
     }
 
     /** @return unmodifiable view of the e-mails of the users currently inside, in order of entry */

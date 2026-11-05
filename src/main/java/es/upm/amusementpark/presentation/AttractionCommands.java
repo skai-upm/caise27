@@ -4,6 +4,7 @@ import es.upm.amusementpark.business.Attraction;
 import es.upm.amusementpark.business.AttractionType;
 import es.upm.amusementpark.business.ParkController;
 import es.upm.amusementpark.business.ParkException;
+import es.upm.amusementpark.business.Pass;
 import java.io.PrintStream;
 
 /**
@@ -67,8 +68,16 @@ public final class AttractionCommands {
     }
 
     private boolean enter(String line) {
-        String[] f = CommandSupport.fields(line, 3, "ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>");
-        out.println("ENTERED ATTRACTION " + f[1] + ": " + String.join(", ", park.enterAttraction(f[1], f[2])));
+        String usage = "ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>[;SPEED]";
+        String[] f = CommandSupport.fields(line, line.split(";", -1).length == 4 ? 4 : 3, usage);
+        if (f.length == 4 && !"SPEED".equals(f[3])) {
+            throw new InvalidCommandException("Invalid syntax. Usage: " + usage);
+        }
+        Attraction.Admission admission = park.enterAttraction(f[1], f[2], f.length == 4);
+        out.println("ENTERED ATTRACTION " + f[1] + ": " + String.join(", ", admission.holders()));
+        for (Pass pass : admission.toConsume()) {
+            out.println("CONSUMED PASS: " + pass.getTypeName() + " " + pass.getId());
+        }
         return true;
     }
 

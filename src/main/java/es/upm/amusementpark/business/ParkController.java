@@ -447,13 +447,24 @@ public final class ParkController {
     }
 
     /**
-     * Admits every user of a ticket valid on the current system date into an attraction, all or none.
+     * Admits every user of a ticket valid on the current system date into an attraction, all or none, without
+     * SpeedPasses.
      *
      * @return e-mails of the admitted users
-     * @throws ParkException if the attraction or ticket is unknown, the ticket is not valid today, a user is
-     *         already inside or capacity is insufficient for all of them
      */
     public synchronized List<String> enterAttraction(String attractionId, String ticketId) {
+        return enterAttraction(attractionId, ticketId, false).holders();
+    }
+
+    /**
+     * Two-phase entry: every condition (attraction and ticket existence, validity today, ticket kind, pass use,
+     * users not inside, capacity) is checked first; only then are users admitted and passes consumed.
+     *
+     * @param speed whether SpeedPasses are used
+     * @return the admitted users and the consumed passes
+     * @throws ParkException if any condition fails (no state changes)
+     */
+    public synchronized Attraction.Admission enterAttraction(String attractionId, String ticketId, boolean speed) {
         Attraction<?> attraction = attractions.get(attractionId);
         if (attraction == null) {
             throw new ParkException("Attraction " + attractionId + " does not exist");
@@ -465,20 +476,23 @@ public final class ParkController {
         if (!ticket.getDate().equals(currentDate)) {
             throw new ParkException("Ticket " + ticketId + " is not valid on " + currentDate);
         }
-        List<String> holders = attraction.admissionFor(ticket, this::passesOfTicket).holders();
-        for (String email : holders) {
+        Attraction.Admission admission = attraction.admit(ticket, this::passesOfTicket, speed);
+        for (String email : admission.holders()) {
             if (attraction.contains(email)) {
                 throw new ParkException("User " + email + " is already inside attraction " + attractionId);
             }
         }
-        if (attraction.getCapacity() - attraction.getOccupants().size() < holders.size()) {
+        if (attraction.getAvailablePlaces() < admission.holders().size()) {
             throw new ParkException("Attraction " + attractionId + " does not have capacity for "
-                    + holders.size() + " user(s)");
+                    + admission.holders().size() + " user(s)");
         }
-        for (String email : holders) {
+        for (String email : admission.holders()) {
             attraction.enter(email);
         }
-        return holders;
+        for (Pass pass : admission.toConsume()) {
+            pass.markConsumed();
+        }
+        return admission;
     }
 
     /**
