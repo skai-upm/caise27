@@ -19,7 +19,7 @@ class GroupServiceTest {
     void setUp() {
         park = Park.getInstance();
         park.start(new UserRepository());
-        p = new CommandProcessor(new UserService(park.users(), park.groups()), new GroupService(park.users(), park.groups()));
+        p = new CommandProcessor(new UserService(park.users(), park.groups(), park.tickets()), new GroupService(park.users(), park.groups()), new es.upm.amusementpark.service.TicketService(park.users(), park.tickets()));
         p.process("USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456");
         p.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
     }

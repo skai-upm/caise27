@@ -4,6 +4,7 @@ import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.park.Park;
 import es.upm.amusementpark.service.GroupService;
 import es.upm.amusementpark.service.OperationException;
+import es.upm.amusementpark.service.TicketService;
 import es.upm.amusementpark.service.UserService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -36,10 +37,11 @@ public class CommandProcessor {
     private boolean exitRequested;
 
     public CommandProcessor(UserService userService) {
-        this(userService, new GroupService(userService.users(), userService.groups()));
+        this(userService, new GroupService(userService.users(), userService.groups()),
+                new TicketService(userService.users(), userService.tickets()));
     }
 
-    public CommandProcessor(UserService userService, GroupService groupService) {
+    public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService) {
         this.userService = userService;
         register("USER CREATE", 8, "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>", "",
                 p -> {
@@ -63,6 +65,12 @@ public class CommandProcessor {
         register("GROUP REMOVE", 3, "GROUP REMOVE;<identifier>;<email>", "", p -> {
             groupService.removeMember(p[1], p[2]);
             return "USER REMOVED FROM GROUP";
+        });
+        register("TICKET CREATE", 4, "TICKET CREATE;<identifier>;<email>;<yyyy-MM-dd>", "", p ->
+                "TICKET CREATED. Price: " + ticketService.createTicket(p[1], p[2], parseDate(p[3])).formattedPrice());
+        register("TICKET DELETE", 2, "TICKET DELETE;<identifier>", "", p -> {
+            ticketService.deleteTicket(p[1]);
+            return "TICKET DELETED";
         });
         register("SYSTEM DATE", 2, "SYSTEM DATE;<yyyy-MM-dd>", "", this::systemDate);
         register("SYSTEM PRICE", 2, "SYSTEM PRICE;<Price>", "", this::systemPrice);

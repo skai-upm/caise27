@@ -1,6 +1,7 @@
 package es.upm.amusementpark.park;
 
 import es.upm.amusementpark.repository.GroupRepository;
+import es.upm.amusementpark.repository.TicketRepository;
 import es.upm.amusementpark.repository.UserRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -18,6 +19,7 @@ public final class Park {
     private BigDecimal currentPrice;
     private UserRepository users;
     private GroupRepository groups;
+    private TicketRepository tickets;
 
     private Park() {
         start(new UserRepository());
@@ -39,6 +41,11 @@ public final class Park {
         this.currentPrice = INITIAL_PRICE;
         this.users = userRepository;
         this.groups = new GroupRepository();
+        this.tickets = new TicketRepository();
+    }
+
+    public TicketRepository tickets() {
+        return tickets;
     }
 
     public GroupRepository groups() {

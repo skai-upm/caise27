@@ -3,7 +3,9 @@ package es.upm.amusementpark.service;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.model.UserValidator;
+import es.upm.amusementpark.park.Park;
 import es.upm.amusementpark.repository.GroupRepository;
+import es.upm.amusementpark.repository.TicketRepository;
 import es.upm.amusementpark.repository.UserRepository;
 
 /**
@@ -13,14 +15,24 @@ public class UserService {
 
     private final UserRepository repository;
     private final GroupRepository groups;
+    private final TicketRepository tickets;
 
     public UserService(UserRepository repository) {
         this(repository, new GroupRepository());
     }
 
     public UserService(UserRepository repository, GroupRepository groups) {
+        this(repository, groups, new TicketRepository());
+    }
+
+    public UserService(UserRepository repository, GroupRepository groups, TicketRepository tickets) {
         this.repository = repository;
         this.groups = groups;
+        this.tickets = tickets;
+    }
+
+    public TicketRepository tickets() {
+        return tickets;
     }
 
     public UserRepository users() {
@@ -58,6 +70,10 @@ public class UserService {
 
     public void deleteUser(String email, String password) {
         User user = authenticate(email, password);
+        var today = Park.getInstance().getCurrentDate();
+        if (tickets.individualTicketsOf(user).stream().anyMatch(t -> t.isActiveOn(today))) {
+            throw new UserOperationException("the user has active tickets (dated " + today + " or later)");
+        }
         for (var group : groups.findAll()) {
             if (group.remove(user)) {
                 groups.update(group);
