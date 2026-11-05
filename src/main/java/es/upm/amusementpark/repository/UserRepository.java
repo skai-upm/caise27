@@ -1,20 +1,32 @@
 package es.upm.amusementpark.repository;
 
 import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.persistence.UserStorage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Stores and retrieves users.
+ * Stores and retrieves users, keeping the configured storage up to date.
  */
 public class UserRepository {
 
-    private final List<User> users = new ArrayList<>();
+    private final List<User> users;
+    private final UserStorage storage;
+
+    public UserRepository() {
+        this(UserStorage.none());
+    }
+
+    public UserRepository(UserStorage storage) {
+        this.storage = storage;
+        this.users = new ArrayList<>(storage.load());
+    }
 
     public void add(User user) {
         users.add(user);
+        storage.save(users);
     }
 
     public Optional<User> findByDni(String dni) {
