@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0001-botl-0001-f1-amusement-park",
+  "change": "botl-0001-f1-amusement-park",
+  "status": "archived",
+  "createdAt": "2026-10-25T13:04:24.944735+00:00",
+  "updatedAt": "2026-10-25T13:12:11.915999+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261025T130424Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261025T130424Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 649082,
+        "totalCost": 0.5373548000000001
+      }
+    },
+    {
+      "runId": "0002-apply-20261025T130627Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261025T130627Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1373378,
+        "totalCost": 0.8492986000000002
+      }
+    },
+    {
+      "runId": "0003-archive-20261025T131115Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261025T131115Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 531188,
+        "totalCost": 0.1819099999999998
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-25T13:12:11.868908+00:00"
+}
