@@ -16,12 +16,11 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import es.upm.parque.command.CommandProcessor;
-import es.upm.parque.model.Attraction;
-import es.upm.parque.model.GroupTicket;
-import es.upm.parque.model.IndividualTicket;
-import es.upm.parque.park.ParkController;
-import es.upm.parque.repository.UserRepository;
+import es.upm.parque.presentation.CommandProcessor;
+import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.GroupTicket;
+import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.ParkController;
 
 class ParkPersistenceTest {
 

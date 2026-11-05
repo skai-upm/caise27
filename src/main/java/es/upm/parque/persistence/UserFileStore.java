@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import es.upm.parque.model.User;
+import es.upm.parque.business.model.User;
 
 /**
  * Reads and writes users in a text file: one user per line, attributes separated by ';'

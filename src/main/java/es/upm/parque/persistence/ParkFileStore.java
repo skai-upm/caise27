@@ -13,16 +13,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import es.upm.parque.model.Attraction;
-import es.upm.parque.model.Group;
-import es.upm.parque.model.GroupTicket;
-import es.upm.parque.model.IndividualTicket;
-import es.upm.parque.model.Ticket;
-import es.upm.parque.model.User;
-import es.upm.parque.repository.AttractionRepository;
-import es.upm.parque.repository.GroupRepository;
-import es.upm.parque.repository.TicketRepository;
-import es.upm.parque.repository.UserRepository;
+import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.Group;
+import es.upm.parque.business.model.GroupTicket;
+import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Ticket;
+import es.upm.parque.business.model.User;
 
 /**
  * Reads and writes groups, tickets and attractions as ';'-separated text files in a data directory.

@@ -22,7 +22,7 @@ class UmlModelConsistencyTest {
 
     private static final Path MODEL = Path.of("uml", "model.puml");
     private static final Path SOURCES = Path.of("src", "main", "java", "es", "upm", "parque");
-    private static final String[] PACKAGES = {"model", "repository", "park", "persistence"};
+    private static final String[] PACKAGES = {"business/model", "business", "persistence"};
     private static final String[] KINDS = {"abstract class ", "class ", "enum ", "interface "};
 
     private static List<String> lines() throws IOException {

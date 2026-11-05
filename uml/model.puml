@@ -1,12 +1,12 @@
 @startuml model
-' Amusement Park - Phase 2 class model.
+' Amusement Park - class model (layered: presentation, business, persistence).
 ' Only relevant attributes are shown; methods and constructors are omitted.
 ' Association directions follow the fields that hold the references in the code.
 
 skinparam classAttributeIconSize 0
 hide empty members
 
-package es.upm.parque.model {
+package es.upm.parque.business.model {
 
   class User {
     - firstName : String
@@ -54,7 +54,38 @@ package es.upm.parque.model {
   }
 }
 
-package es.upm.parque.repository {
+package es.upm.parque.business {
+  class ParkController <<singleton>> {
+    - currentDate : LocalDate
+    - basePrice : BigDecimal
+  }
+  class SystemValues <<utility>> {
+  }
+  class ParkSession {
+    - ignoredUserLines : int
+    - ignoredParkLines : int
+  }
+  class UserManager {
+  }
+  class SystemManager {
+  }
+  class GroupManager {
+  }
+  class TicketManager {
+  }
+  class AttractionManager {
+  }
+  class ParkException {
+  }
+  class NotFoundException {
+  }
+  class InvalidDataException {
+  }
+  class RuleViolationException {
+  }
+}
+
+package es.upm.parque.persistence {
   class UserRepository {
     - ignoredOnLoad : int
   }
@@ -64,18 +95,6 @@ package es.upm.parque.repository {
   }
   class AttractionRepository {
   }
-}
-
-package es.upm.parque.park {
-  class ParkController <<singleton>> {
-    - currentDate : LocalDate
-    - basePrice : BigDecimal
-  }
-  class SystemValues <<utility>> {
-  }
-}
-
-package es.upm.parque.persistence {
   class UserFileStore {
     - file : Path
   }
@@ -112,6 +131,19 @@ UserRepository "1" o--> "*" User : usersByDni
 GroupRepository "1" o--> "*" Group : groupsById
 TicketRepository "1" o--> "*" Ticket : ticketsById
 AttractionRepository "1" o--> "*" Attraction : attractionsById
+
+' --- Business operations and exceptions ---
+UserManager --> "1" ParkController : park
+SystemManager --> "1" ParkController : park
+GroupManager --> "1" ParkController : park
+TicketManager --> "1" ParkController : park
+AttractionManager --> "1" ParkController : park
+AttractionManager --> "1" TicketManager : tickets
+Exception <|-- ParkException
+ParkException <|-- NotFoundException
+ParkException <|-- InvalidDataException
+ParkException <|-- RuleViolationException
+ParkSession --> "1" StorageLocation : location
 
 ' --- Persistence ---
 UserRepository "1" --> "0..1" UserFileStore : store

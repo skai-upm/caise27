@@ -11,7 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import es.upm.parque.model.User;
+import es.upm.parque.business.model.User;
 
 class UserFileStoreTest {
 
