@@ -11,6 +11,7 @@ import es.upm.parque.model.Group;
 import es.upm.parque.model.GroupTicket;
 import es.upm.parque.model.Ticket;
 import es.upm.parque.model.User;
+import es.upm.parque.persistence.ParkFileStore;
 import es.upm.parque.repository.AttractionRepository;
 import es.upm.parque.repository.GroupRepository;
 import es.upm.parque.repository.TicketRepository;
@@ -29,6 +30,7 @@ public final class ParkController {
     private GroupRepository groups = new GroupRepository();
     private TicketRepository tickets = new TicketRepository();
     private AttractionRepository attractions = new AttractionRepository();
+    private ParkFileStore store;
     private LocalDate currentDate = LocalDate.now(ZoneId.systemDefault());
     private BigDecimal basePrice = INITIAL_PRICE;
 
@@ -50,8 +52,23 @@ public final class ParkController {
         this.groups = new GroupRepository();
         this.tickets = new TicketRepository();
         this.attractions = new AttractionRepository();
+        this.store = null;
         this.currentDate = LocalDate.now(ZoneId.systemDefault());
         this.basePrice = INITIAL_PRICE;
+    }
+
+    /** Starts a new execution backed by files: groups, tickets and attractions are loaded from the store. */
+    public void startExecution(UserRepository users, ParkFileStore store) {
+        startExecution(users);
+        store.load(users, groups, tickets, attractions);
+        this.store = store;
+    }
+
+    /** Saves groups, tickets and attractions when the execution is backed by files. */
+    public void persist() {
+        if (store != null) {
+            store.save(groups, tickets, attractions);
+        }
     }
 
     public UserRepository getUsers() {

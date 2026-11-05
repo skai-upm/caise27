@@ -93,33 +93,41 @@ public class CommandProcessor {
             for (int i = 0; i < elements.length; i++) {
                 elements[i] = elements[i].trim();
             }
-            String command = elements[0];
-            return switch (command) {
-                case USER_CREATE -> createUser(elements);
-                case USER_DELETE -> deleteUser(elements);
-                case USER_UPDATE -> updateUser(elements);
-                case HELP -> help(elements);
-                case EXIT -> exit(elements);
-                case SYSTEM_DATE -> systemDate(elements);
-                case SYSTEM_PRICE -> systemPrice(elements);
-                case GroupCommands.GROUP_CREATE -> groups.create(elements);
-                case GroupCommands.GROUP_ADD -> groups.add(elements);
-                case GroupCommands.GROUP_REMOVE -> groups.remove(elements);
-                case GroupCommands.GROUP_DELETE -> groups.delete(elements);
-                case TicketCommands.TICKET_CREATE -> tickets.create(elements);
-                case TicketCommands.TICKET_DELETE -> tickets.delete(elements);
-                case TicketCommands.GROUPTICKET_CREATE -> tickets.createGroupTicket(elements);
-                case TicketCommands.GROUPTICKET_DELETE -> tickets.deleteGroupTicket(elements);
-                case AttractionCommands.ATTRACTION_CREATE -> attractions.create(elements);
-                case AttractionCommands.ATTRACTION_LIST -> attractions.list(elements);
-                case AttractionCommands.ATTRACTION_ENTER -> attractions.enter(elements);
-                case AttractionCommands.ATTRACTION_EXIT -> attractions.exit(elements);
-                case AttractionCommands.ATTRACTION_STATUS -> attractions.status(elements);
-                default -> error("unknown command '" + command + "'");
-            };
+            String response = dispatch(elements);
+            if (response.startsWith("OK")) {
+                park.persist();
+            }
+            return response;
         } catch (RuntimeException e) {
             return error("the command could not be processed");
         }
+    }
+
+    private String dispatch(String[] elements) {
+        String command = elements[0];
+        return switch (command) {
+            case USER_CREATE -> createUser(elements);
+            case USER_DELETE -> deleteUser(elements);
+            case USER_UPDATE -> updateUser(elements);
+            case HELP -> help(elements);
+            case EXIT -> exit(elements);
+            case SYSTEM_DATE -> systemDate(elements);
+            case SYSTEM_PRICE -> systemPrice(elements);
+            case GroupCommands.GROUP_CREATE -> groups.create(elements);
+            case GroupCommands.GROUP_ADD -> groups.add(elements);
+            case GroupCommands.GROUP_REMOVE -> groups.remove(elements);
+            case GroupCommands.GROUP_DELETE -> groups.delete(elements);
+            case TicketCommands.TICKET_CREATE -> tickets.create(elements);
+            case TicketCommands.TICKET_DELETE -> tickets.delete(elements);
+            case TicketCommands.GROUPTICKET_CREATE -> tickets.createGroupTicket(elements);
+            case TicketCommands.GROUPTICKET_DELETE -> tickets.deleteGroupTicket(elements);
+            case AttractionCommands.ATTRACTION_CREATE -> attractions.create(elements);
+            case AttractionCommands.ATTRACTION_LIST -> attractions.list(elements);
+            case AttractionCommands.ATTRACTION_ENTER -> attractions.enter(elements);
+            case AttractionCommands.ATTRACTION_EXIT -> attractions.exit(elements);
+            case AttractionCommands.ATTRACTION_STATUS -> attractions.status(elements);
+            default -> error("unknown command '" + command + "'");
+        };
     }
 
     /** Whether an EXIT command has been processed; no further commands should then be read. */

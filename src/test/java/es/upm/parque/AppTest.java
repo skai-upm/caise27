@@ -95,6 +95,57 @@ public class AppTest {
         assertTrue(fromFile.existsByDni("12345678Z"));
     }
 
+    private static String execute(String[] args, Path workDir, String stdin) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        App.execute(args, workDir, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
+                new PrintStream(out, true, StandardCharsets.UTF_8));
+        return out.toString(StandardCharsets.UTF_8);
+    }
+
+    private static long tmpEntries(Path workDir) throws Exception {
+        Path tmp = workDir.resolve("tmp");
+        if (!Files.exists(tmp)) {
+            return 0;
+        }
+        try (java.util.stream.Stream<Path> s = Files.list(tmp)) {
+            return s.count();
+        }
+    }
+
+    @Test
+    public void flyModeWithFileLeavesNormalDataUntouchedAndCleansUp(@TempDir Path work) throws Exception {
+        execute(new String[0], work, ANA);
+        String before = Files.readString(work.resolve("users.txt"));
+        Path input = work.resolve("input.txt");
+        Files.write(input, java.util.List.of(PEDRO, "GROUP CREATE;G01;Familia", "ATTRACTION CREATE;A01;Dragon;20"));
+        String out = execute(new String[] {"--fly", input.toString()}, work, "");
+        assertTrue(out.contains("OK: user 87654321X created"), out);
+        assertEquals(before, Files.readString(work.resolve("users.txt")));
+        assertTrue(!Files.exists(work.resolve("groups.txt")) || Files.readString(work.resolve("groups.txt")).isEmpty());
+        assertTrue(!Files.exists(work.resolve("attractions.txt"))
+                || Files.readString(work.resolve("attractions.txt")).isEmpty());
+        assertEquals(0, tmpEntries(work));
+        String again = execute(new String[] {"--fly", input.toString()}, work, "");
+        assertTrue(again.contains("OK: user 87654321X created"), again);
+    }
+
+    @Test
+    public void flyModeInteractiveWithExit(@TempDir Path work) throws Exception {
+        String out = execute(new String[] {"--fly"}, work, String.join("\n", ANA, "EXIT", PEDRO));
+        assertTrue(out.contains("OK: user 12345678Z created") && out.contains("OK: exiting application"), out);
+        assertTrue(!Files.exists(work.resolve("users.txt")));
+        assertEquals(0, tmpEntries(work));
+    }
+
+    @Test
+    public void normalModeStillPersistsInWorkingDirectory(@TempDir Path work) throws Exception {
+        execute(new String[0], work, String.join("\n", ANA, "GROUP CREATE;G01;Familia"));
+        assertTrue(Files.readString(work.resolve("users.txt")).contains("12345678Z"));
+        assertTrue(Files.readString(work.resolve("groups.txt")).startsWith("G01;Familia;"));
+        String second = execute(new String[0], work, "GROUP CREATE;G01;Otro");
+        assertTrue(second.contains("ERROR"), second);
+    }
+
     @Test
     public void missingOrUnreadableFileIsReportedWithoutChanges(@TempDir Path dir) throws Exception {
         UserRepository repo = new UserRepository();

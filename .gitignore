@@ -22,3 +22,7 @@ buildNumber.properties
 
 # Runtime data
 users.txt
+tmp/
+groups.txt
+tickets.txt
+attractions.txt

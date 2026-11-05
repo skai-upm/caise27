@@ -14,12 +14,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import es.upm.parque.command.CommandProcessor;
+import es.upm.parque.park.ParkController;
+import es.upm.parque.persistence.ParkFileStore;
+import es.upm.parque.persistence.StorageLocation;
 import es.upm.parque.persistence.UserFileStore;
 import es.upm.parque.repository.UserRepository;
 
 /**
  * Application entry point. Commands are read from the file given as first argument or,
  * without arguments, from standard input; both sources share the same processing.
+ * A leading {@code --fly} argument selects temporary persistence in a directory deleted at the end.
  */
 public class App {
 
@@ -30,25 +34,45 @@ public class App {
             new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
 
     public static void main(String[] args) throws IOException {
-        UserRepository users = loadUsers(CONSOLE);
-        if (users != null) {
-            start(args, new CommandProcessor(users), System.in, CONSOLE);
+        execute(args, Path.of(""), System.in, CONSOLE);
+    }
+
+    /**
+     * Runs the application with the given arguments, resolving data files relative to {@code workDir}.
+     * With {@code --fly} as first argument, a temporary data directory is used and deleted at the end.
+     */
+    static void execute(String[] args, Path workDir, InputStream stdin, PrintStream console) throws IOException {
+        StorageLocation location = StorageLocation.fromArgs(args, workDir);
+        try {
+            if (startPark(location.getDirectory(), console)) {
+                start(location.getCommandArgs(), new CommandProcessor(), stdin, console);
+            }
+        } finally {
+            location.cleanUp();
         }
     }
 
-    /** Loads the stored users, reporting ignored lines; returns {@code null} if the users file cannot be read. */
-    private static UserRepository loadUsers(PrintStream console) {
+    /** Loads users and the rest of the park, reporting ignored lines; returns false if data cannot be read. */
+    private static boolean startPark(Path dataDir, PrintStream console) {
         UserRepository users;
+        ParkFileStore store = new ParkFileStore(dataDir);
         try {
-            users = new UserRepository(new UserFileStore(Path.of(USERS_FILE)));
+            users = new UserRepository(new UserFileStore(dataDir.resolve(USERS_FILE)));
+            ParkController.getInstance().startExecution(users, store);
         } catch (UncheckedIOException e) {
-            console.println("ERROR: cannot read users file '" + USERS_FILE + "'");
-            return null;
+            console.println("ERROR: cannot read the park data files in '" + dataDir.toAbsolutePath() + "' ("
+                    + USERS_FILE + ", " + ParkFileStore.GROUPS_FILE + ", " + ParkFileStore.TICKETS_FILE + ", "
+                    + ParkFileStore.ATTRACTIONS_FILE + ")");
+            return false;
         }
         if (users.getIgnoredOnLoad() > 0) {
             console.println("WARNING: " + users.getIgnoredOnLoad() + " invalid line(s) in " + USERS_FILE + " were ignored");
         }
-        return users;
+        if (store.getMalformedLineCount() > 0) {
+            console.println("WARNING: " + store.getMalformedLineCount()
+                    + " invalid line(s) in the park data files were ignored");
+        }
+        return true;
     }
 
     /** Selects the command source from the arguments and processes every command from it. */

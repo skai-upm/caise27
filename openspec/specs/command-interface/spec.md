@@ -40,7 +40,7 @@ An unrecognized, incomplete or otherwise incorrect command SHALL produce an erro
 - **THEN** an error response starting with `ERROR` is printed and the application keeps running
 
 ### Requirement: Command file input
-When started with at least one argument, the application SHALL treat the first argument as the path of a text file containing one command per line, process its commands in the order in which they appear, ignore blank lines, print each command's response to standard output, and terminate normally when the end of the file is reached. Standard input is not read in this mode.
+When started with at least one argument other than a leading `--fly` option, the application SHALL treat the first such argument as the path of a text file containing one command per line, process its commands in the order in which they appear, ignore blank lines, print each command's response to standard output, and terminate normally when the end of the file is reached. Standard input is not read in this mode. With only `--fly`, commands are read from standard input.
 
 #### Scenario: Commands from file processed in order
 - **WHEN** the application is started with `input.txt` containing `USER CREATE` for Ana, a blank line, `USER CREATE` for Pedro and `USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999`
@@ -51,6 +51,10 @@ When started with at least one argument, the application SHALL treat the first a
 #### Scenario: Errors in the file do not stop processing
 - **WHEN** a command file contains an invalid command followed by a valid `USER CREATE`
 - **THEN** an `ERROR` response is printed for the invalid command and the following command is still processed
+
+#### Scenario: Command file after --fly
+- **WHEN** the application is started with `--fly input.txt`
+- **THEN** the commands of `input.txt` are processed in order
 
 ### Requirement: Same behavior for every command source
 Commands read from a file and commands read from standard input SHALL be processed by the same command-processing logic and SHALL produce identical responses and state changes for identical input lines.
