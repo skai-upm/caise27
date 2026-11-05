@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0009-botl-0009-generate-uml-model",
+  "change": "botl-0009-generate-uml-model",
+  "status": "archived",
+  "createdAt": "2026-11-04T00:24:25.263219+00:00",
+  "updatedAt": "2026-11-04T00:28:48.438018+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261104T002425Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261104T002425Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 334166,
+        "totalCost": 0.17555240000000083
+      }
+    },
+    {
+      "runId": "0002-apply-20261104T002528Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261104T002528Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1021198,
+        "totalCost": 0.4117657999999995
+      }
+    },
+    {
+      "runId": "0003-archive-20261104T002814Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261104T002814Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-04T00:28:48.384666+00:00"
+}

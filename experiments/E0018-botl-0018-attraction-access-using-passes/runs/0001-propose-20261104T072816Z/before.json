@@ -1,0 +1,183 @@
+{
+  "capturedAt": "2026-11-04T07:29:10.863799+00:00",
+  "agent": "claude-code",
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "699f1821-2699-4f48-b44b-7285c209742c",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 370,
+    "outputTokens": 380674,
+    "cacheCreationTokens": 928486,
+    "cacheReadTokens": 55171839,
+    "totalTokens": 56481369,
+    "totalCost": 26.07721579999999
+  },
+  "git": {
+    "available": true,
+    "repo": "/Users/andreacimmino/Desktop/opendev/opus_2_proposals_gpractices_multiple_human",
+    "head": "486d3fdd933cbc3aeea3b78afcc0386b31461638",
+    "dirty": true,
+    "statusPorcelain": [
+      "?? .DS_Store",
+      "?? .botl/proposals/opus_2_proposals_gpractices_multiple_human/0018-18.F3---Attraction-access-using-passes.md/",
+      "?? .scannerwork/",
+      "?? experiments/",
+      "?? sonar_metric_catalog.json"
+    ]
+  },
+  "artifacts": {
+    "available": true,
+    "files": 135,
+    "lines": 4690,
+    "words": 43617,
+    "requirements": 247,
+    "scenarios": 504,
+    "tasks": 79,
+    "shallStatements": 412
+  },
+  "projectProfile": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "codeQuality": {
+    "common": {
+      "sonar": {
+        "available": false,
+        "skipped": true
+      }
+    },
+    "languageSpecific": {
+      "profile": {
+        "kind": "java-maven",
+        "modules": [
+          {
+            "path": ".",
+            "adapter": "java-maven",
+            "marker": "pom.xml"
+          }
+        ]
+      },
+      "modules": [
+        {
+          "adapter": "java-maven",
+          "path": ".",
+          "preflight": {
+            "pomExists": true,
+            "mavenAvailable": true,
+            "javaAvailable": true,
+            "mavenVersion": {
+              "returnCode": 0,
+              "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+              "stderr": ""
+            },
+            "javaVersion": {
+              "returnCode": 0,
+              "stdout": "",
+              "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+            },
+            "projectEvaluation": {
+              "returnCode": 0,
+              "stdout": "parque",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "ok": true
+          },
+          "build": {
+            "returnCode": 0,
+            "stdout": "dreacimmino/Desktop/opendev/opus_2_proposals_gpractices_multiple_human/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ parque ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_2_proposals_gpractices_multiple_human/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.3.0:test (default-test) @ parque ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running com.parque.AppTest\n[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.819 s -- in com.parque.AppTest\n[INFO] Running com.parque.ComponentWiringTest\n[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.173 s -- in com.parque.ComponentWiringTest\n[INFO] Running com.parque.FlyModeTest\n[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.441 s -- in com.parque.FlyModeTest\n[INFO] Running com.parque.LayeringTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.060 s -- in com.parque.LayeringTest\n[INFO] Running com.parque.business.controller.InvoiceControllerTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.094 s -- in com.parque.business.controller.InvoiceControllerTest\n[INFO] Running com.parque.business.model.InvoiceTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.parque.business.model.InvoiceTest\n[INFO] Running com.parque.business.model.GroupTicketTest\n[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.194 s -- in com.parque.business.model.GroupTicketTest\n[INFO] Running com.parque.business.model.AttractionTypesTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in com.parque.business.model.AttractionTypesTest\n[INFO] Running com.parque.business.model.UserTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.parque.business.model.UserTest\n[INFO] Running com.parque.business.model.IndividualTicketTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.parque.business.model.IndividualTicketTest\n[INFO] Running com.parque.business.model.GroupTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.parque.business.model.GroupTest\n[INFO] Running com.parque.business.model.AttractionTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in com.parque.business.model.AttractionTest\n[INFO] Running com.parque.business.service.GroupTicketServiceTest\n[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.843 s -- in com.parque.business.service.GroupTicketServiceTest\n[INFO] Running com.parque.business.service.UserServiceTest\n[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.56 s -- in com.parque.business.service.UserServiceTest\n[INFO] Running com.parque.business.service.TicketServiceTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.458 s -- in com.parque.business.service.TicketServiceTest\n[INFO] Running com.parque.business.service.PasswordProtectionTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.109 s -- in com.parque.business.service.PasswordProtectionTest\n[INFO] Running com.parque.business.service.GroupServiceTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.849 s -- in com.parque.business.service.GroupServiceTest\n[INFO] Running com.parque.business.service.UserValidatorTest\n[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.164 s -- in com.parque.business.service.UserValidatorTest\n[INFO] Running com.parque.business.service.PassServiceTest\n[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.133 s -- in com.parque.business.service.PassServiceTest\n[INFO] Running com.parque.business.service.InvoiceBuilderTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.parque.business.service.InvoiceBuilderTest\n[INFO] Running com.parque.business.service.AttractionServiceTest\n[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in com.parque.business.service.AttractionServiceTest\n[INFO] Running com.parque.persistence.TicketRepositoryTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in com.parque.persistence.TicketRepositoryTest\n[INFO] Running com.parque.persistence.GroupRepositoryTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.parque.persistence.GroupRepositoryTest\n[INFO] Running com.parque.persistence.UserRepositoryTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.parque.persistence.UserRepositoryTest\n[INFO] Running com.parque.UmlModelTest\n[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.115 s -- in com.parque.UmlModelTest\n[INFO] Running com.parque.presentation.CommandProcessorTest\n[INFO] Tests run: 29, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.952 s -- in com.parque.presentation.CommandProcessorTest\n[INFO] Running com.parque.presentation.InvoiceCommandsTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.344 s -- in com.parque.presentation.InvoiceCommandsTest\n[INFO] Running com.parque.presentation.AttractionTypeCommandsTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.181 s -- in com.parque.presentation.AttractionTypeCommandsTest\n[INFO] Running com.parque.presentation.PassCommandsTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.327 s -- in com.parque.presentation.PassCommandsTest\n[INFO] Running com.parque.presentation.AttractionCommandsTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.735 s -- in com.parque.presentation.AttractionCommandsTest\n[INFO] Running com.parque.presentation.HelpGeneratorTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.parque.presentation.HelpGeneratorTest\n[INFO] Running com.parque.presentation.HelpCommandsTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.parque.presentation.HelpCommandsTest\n[INFO] Running com.parque.presentation.GroupTicketCommandsTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.905 s -- in com.parque.presentation.GroupTicketCommandsTest\n[INFO] Running com.parque.presentation.SystemDateTest\n[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.040 s -- in com.parque.presentation.SystemDateTest\n[INFO] Running com.parque.presentation.TicketCommandsTest\n[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.657 s -- in com.parque.presentation.TicketCommandsTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 279, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ parque ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_2_proposals_gpractices_multiple_human/target/jacoco.exec\n[INFO] Analyzed bundle 'parque' with 46 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  44.925 s\n[INFO] Finished at: 2026-11-04T08:29:10+01:00\n[INFO] ------------------------------------------------------------------------\n",
+            "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\nSkipping malformed ticket line 2 in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-12518001048489247412/tickets.txt\nSkipping malformed ticket line 3 in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-12518001048489247412/tickets.txt\nSkipping malformed ticket line 4 in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-12518001048489247412/tickets.txt\nIgnoring unknown member 00000000T of group G01\nSkipping malformed group line 2 in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-6880082435781109142/groups.txt\nSkipping malformed user line 1 in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-14382683514230977236/users.txt\n"
+          },
+          "surefire": {
+            "reportFiles": 35,
+            "tests": 279,
+            "passed": 279,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "timeSeconds": 39.41600000000001
+          },
+          "failsafe": {
+            "reportFiles": 0,
+            "tests": 0,
+            "passed": 0,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "timeSeconds": 0.0
+          },
+          "jacoco": [
+            {
+              "available": true,
+              "path": "/Users/andreacimmino/Desktop/opendev/opus_2_proposals_gpractices_multiple_human/target/site/jacoco/jacoco.xml",
+              "counters": {
+                "instruction": {
+                  "missed": 238,
+                  "covered": 6217,
+                  "total": 6455,
+                  "coverage": 96.3129357087529
+                },
+                "branch": {
+                  "missed": 46,
+                  "covered": 522,
+                  "total": 568,
+                  "coverage": 91.90140845070422
+                },
+                "line": {
+                  "missed": 62,
+                  "covered": 1264,
+                  "total": 1326,
+                  "coverage": 95.32428355957768
+                },
+                "complexity": {
+                  "missed": 47,
+                  "covered": 547,
+                  "total": 594,
+                  "coverage": 92.08754208754209
+                },
+                "method": {
+                  "missed": 4,
+                  "covered": 287,
+                  "total": 291,
+                  "coverage": 98.62542955326461
+                },
+                "class": {
+                  "missed": 0,
+                  "covered": 46,
+                  "total": 46,
+                  "coverage": 100.0
+                }
+              }
+            }
+          ],
+          "jacocoXmlPaths": [
+            "/Users/andreacimmino/Desktop/opendev/opus_2_proposals_gpractices_multiple_human/target/site/jacoco/jacoco.xml"
+          ],
+          "compiledClasses": true
+        }
+      ]
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "radon": {
+      "available": false
+    }
+  },
+  "sonar": {
+    "available": false,
+    "skipped": true
+  },
+  "radon": {
+    "available": false
+  }
+}

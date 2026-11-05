@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0015-botl-0015-password-protection-bcrypt",
+  "change": "botl-0015-password-protection-bcrypt",
+  "status": "archived",
+  "createdAt": "2026-11-04T06:52:00.217524+00:00",
+  "updatedAt": "2026-11-04T07:00:37.681544+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261104T065200Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261104T065200Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 945033,
+        "totalCost": 0.34217900000000157
+      }
+    },
+    {
+      "runId": "0002-apply-20261104T065322Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261104T065322Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 3360870,
+        "totalCost": 0.959151999999996
+      }
+    },
+    {
+      "runId": "0003-archive-20261104T065852Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261104T065852Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-04T07:00:37.622044+00:00"
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0012-botl-0012-invoice-generation-builder",
+  "change": "botl-0012-invoice-generation-builder",
+  "status": "archived",
+  "createdAt": "2026-11-04T00:43:09.218711+00:00",
+  "updatedAt": "2026-11-04T00:48:52.295508+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261104T004309Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261104T004309Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 816902,
+        "totalCost": 0.31187519999999935
+      }
+    },
+    {
+      "runId": "0002-apply-20261104T004424Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261104T004424Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1675571,
+        "totalCost": 0.6789938000000006
+      }
+    },
+    {
+      "runId": "0003-archive-20261104T004817Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261104T004817Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-04T00:48:52.243784+00:00"
+}

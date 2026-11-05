@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0007-botl-0007-group-tickets-and-discounts",
+  "change": "botl-0007-group-tickets-and-discounts",
+  "status": "archived",
+  "createdAt": "2026-11-04T00:10:45.220772+00:00",
+  "updatedAt": "2026-11-04T00:17:34.297553+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261104T001045Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261104T001045Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 272467,
+        "totalCost": 0.2638506000000005
+      }
+    },
+    {
+      "runId": "0002-apply-20261104T001233Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261104T001233Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1159043,
+        "totalCost": 0.7904857999999999
+      }
+    },
+    {
+      "runId": "0003-archive-20261104T001701Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261104T001701Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-04T00:17:34.243294+00:00"
+}
