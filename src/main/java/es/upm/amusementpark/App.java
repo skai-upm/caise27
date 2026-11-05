@@ -9,6 +9,11 @@ import es.upm.amusementpark.presentation.GroupCommands;
 import es.upm.amusementpark.presentation.InvoiceCommands;
 import es.upm.amusementpark.presentation.SystemCommands;
 import es.upm.amusementpark.presentation.TicketCommands;
+import es.upm.amusementpark.presentation.help.CommandCatalog;
+import es.upm.amusementpark.presentation.help.ExtendedHelpFormatter;
+import es.upm.amusementpark.presentation.help.HelpCommands;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
+import es.upm.amusementpark.presentation.help.SyntaxHelpFormatter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -104,7 +109,7 @@ public final class App {
      * Registers every application command in the processor. Single wiring point shared by the application and its
      * integration tests.
      *
-     * @param processor shared command processor (already providing HELP and EXIT)
+     * @param processor shared command processor (already providing EXIT)
      * @param park central park management
      * @param out output stream
      */
@@ -114,6 +119,9 @@ public final class App {
         TicketCommands.register(processor, park, out);
         AttractionCommands.register(processor, park, out);
         InvoiceCommands.register(processor, park, out);
+        CommandCatalog catalog = CommandCatalog.standard();
+        HelpCommands.register(processor, new HelpGenerator(new SyntaxHelpFormatter(), catalog),
+                new HelpGenerator(new ExtendedHelpFormatter(), catalog), out);
     }
 
     private static Path createFlyDirectory(Path baseDir) throws IOException {

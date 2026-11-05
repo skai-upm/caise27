@@ -1,5 +1,6 @@
 package es.upm.amusementpark.presentation;
 
+import es.upm.amusementpark.presentation.help.HelpCommands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,6 +23,7 @@ class CommandProcessorTest {
     void setUp() {
         buffer = new ByteArrayOutputStream();
         processor = new CommandProcessor(new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        HelpCommands.registerDefault(processor, new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 
     private String run(String... lines) throws IOException {

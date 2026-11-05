@@ -1,5 +1,6 @@
 package es.upm.amusementpark.business;
 
+import es.upm.amusementpark.presentation.help.HelpCommands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -191,6 +192,7 @@ class GroupTicketTest {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(buffer, true, StandardCharsets.UTF_8);
         CommandProcessor processor = new CommandProcessor(out);
+        HelpCommands.registerDefault(processor, out);
         TicketCommands.register(processor, park, out);
         processor.execute("GROUPTICKET CREATE;TG01;G01;2027-04-20");
         processor.execute("GROUPTICKET CREATE;TG02;G99;2027-04-20");

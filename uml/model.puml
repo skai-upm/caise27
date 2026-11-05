@@ -14,7 +14,6 @@ package es.upm.amusementpark.presentation {
   interface CommandHandler {
   }
   class CommandProcessor {
-    {static} HELP_TEXT : String
     - out : PrintStream
     - afterCommand : Runnable
   }
@@ -53,6 +52,25 @@ package es.upm.amusementpark.business.invoice {
   class UserInvoiceBuilder {
   }
   class GroupInvoiceBuilder {
+  }
+}
+
+package es.upm.amusementpark.presentation.help {
+  class CommandDescription <<record>> {
+    - syntax : String
+    - purpose : String
+  }
+  class CommandCatalog {
+  }
+  interface HelpFormatter {
+  }
+  class SyntaxHelpFormatter {
+  }
+  class ExtendedHelpFormatter {
+  }
+  class HelpGenerator {
+  }
+  class HelpCommands {
   }
 }
 
@@ -150,6 +168,16 @@ SystemCommands ..> CommandSupport : parses with
 GroupCommands ..> CommandSupport : parses with
 TicketCommands ..> CommandSupport : parses with
 AttractionCommands ..> CommandSupport : parses with
+
+' ---- help (injected formatting strategy) ----
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+HelpGenerator --> "1" HelpFormatter : formatter (injected)
+HelpGenerator --> "1" CommandCatalog : catalog
+CommandCatalog *-- "0..*" CommandDescription : commands
+HelpCommands ..> HelpGenerator : uses
+HelpCommands ..> CommandProcessor : registers
+App ..> HelpGenerator : configures
 
 ' ---- invoices (Builder) ----
 InvoiceBuilder <|-- UserInvoiceBuilder

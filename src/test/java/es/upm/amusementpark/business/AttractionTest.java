@@ -1,5 +1,6 @@
 package es.upm.amusementpark.business;
 
+import es.upm.amusementpark.presentation.help.HelpCommands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -30,6 +31,7 @@ class AttractionTest {
         buffer = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(buffer, true, StandardCharsets.UTF_8);
         processor = new CommandProcessor(out);
+        HelpCommands.registerDefault(processor, out);
         AttractionCommands.register(processor, park, out);
     }
 

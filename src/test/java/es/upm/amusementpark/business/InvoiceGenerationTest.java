@@ -1,5 +1,6 @@
 package es.upm.amusementpark.business;
 
+import es.upm.amusementpark.presentation.help.HelpCommands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -102,6 +103,7 @@ class InvoiceGenerationTest {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(buffer, true, StandardCharsets.UTF_8);
         CommandProcessor processor = new CommandProcessor(out);
+        HelpCommands.registerDefault(processor, out);
         InvoiceCommands.register(processor, park, out);
         processor.execute("INVOICE CREATE;GROUP;G01");
         processor.execute("INVOICE CREATE;USER;eva@correo.com");

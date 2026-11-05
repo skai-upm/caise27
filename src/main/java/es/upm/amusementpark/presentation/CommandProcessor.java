@@ -12,31 +12,6 @@ import java.util.Map;
  */
 public class CommandProcessor {
 
-    /** Basic syntax of the available commands (Delivery 2 list), displayed by {@code HELP}. */
-    public static final String HELP_TEXT = String.join(System.lineSeparator(),
-            "Available commands:",
-            "  USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
-            "  USER DELETE;<Email>;<Password>",
-            "  USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
-            "  SYSTEM DATE;<yyyy-MM-dd>",
-            "  SYSTEM PRICE;<Price>",
-            "  GROUP CREATE;<Identifier>;<Name>",
-            "  GROUP ADD;<Identifier>;<Email>",
-            "  GROUP REMOVE;<Identifier>;<Email>",
-            "  GROUP DELETE;<Identifier>",
-            "  TICKET CREATE;<identifier>;<email>;<date>",
-            "  TICKET DELETE;<identifier>",
-            "  GROUPTICKET CREATE;<identifier>;<group>;<date>",
-            "  GROUPTICKET DELETE;<identifier>",
-            "  ATTRACTION CREATE;<identifier>;<name>;<capacity>",
-            "  ATTRACTION ENTER;<attraction>;<ticket>",
-            "  ATTRACTION EXIT;<attraction>;<email>",
-            "  ATTRACTION LIST;<attraction>",
-            "  ATTRACTION STATUS;<attractionIdentifier>",
-            "  INVOICE CREATE;USER;<email>",
-            "  INVOICE CREATE;GROUP;<groupIdentifier>",
-            "  HELP",
-            "  EXIT");
 
     private final PrintStream out;
     private final Map<String, CommandHandler> handlers = new LinkedHashMap<>();
@@ -44,10 +19,6 @@ public class CommandProcessor {
 
     public CommandProcessor(PrintStream out) {
         this.out = out;
-        register("HELP", line -> {
-            out.println(HELP_TEXT);
-            return true;
-        });
         register("EXIT", line -> {
             out.println("Exiting application.");
             return false;

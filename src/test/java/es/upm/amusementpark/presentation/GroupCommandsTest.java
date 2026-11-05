@@ -1,5 +1,6 @@
 package es.upm.amusementpark.presentation;
 
+import es.upm.amusementpark.presentation.help.HelpCommands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +28,7 @@ class GroupCommandsTest {
         buffer = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(buffer, true, StandardCharsets.UTF_8);
         processor = new CommandProcessor(out);
+        HelpCommands.registerDefault(processor, out);
         GroupCommands.register(processor, park, out);
     }
 
