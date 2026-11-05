@@ -1,8 +1,13 @@
 package es.upm.amusementpark.service;
 
 import es.upm.amusementpark.model.Attraction;
+import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.park.Park;
 import es.upm.amusementpark.repository.AttractionRepository;
+import es.upm.amusementpark.repository.TicketRepository;
+import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Attraction management operations.
@@ -10,9 +15,41 @@ import es.upm.amusementpark.repository.AttractionRepository;
 public class AttractionService {
 
     private final AttractionRepository attractions;
+    private final TicketRepository tickets;
 
     public AttractionService(AttractionRepository attractions) {
+        this(attractions, new TicketRepository());
+    }
+
+    public AttractionService(AttractionRepository attractions, TicketRepository tickets) {
         this.attractions = attractions;
+        this.tickets = tickets;
+    }
+
+    /**
+     * Admits the users of a ticket valid today into an attraction, all or none.
+     *
+     * @return number of users admitted
+     */
+    public int enter(String attractionId, String ticketId) {
+        Attraction attraction = findAttraction(attractionId);
+        Ticket ticket = tickets.findById(ticketId)
+                .orElseThrow(() -> new OperationException("ticket '" + ticketId + "' not found"));
+        LocalDate today = Park.getInstance().getCurrentDate();
+        if (!ticket.isValidOn(today)) {
+            throw new OperationException("ticket '" + ticketId + "' is valid on " + ticket.getDate()
+                    + ", not on the current date " + today);
+        }
+        List<User> users = ticket.admittedUsers();
+        if (users.stream().anyMatch(attraction::contains)) {
+            throw new OperationException("a user of ticket '" + ticketId + "' is already inside " + attractionId);
+        }
+        if (!attraction.admitAll(users)) {
+            throw new OperationException("not enough capacity in " + attractionId + " (" + attraction.availableCapacity()
+                    + " available, " + users.size() + " needed)");
+        }
+        attractions.update(attraction);
+        return users.size();
     }
 
     public AttractionRepository attractions() {

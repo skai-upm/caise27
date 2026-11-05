@@ -46,7 +46,7 @@ public class App {
             processor = new CommandProcessor(new UserService(park.users(), park.groups(), park.tickets()),
                     new GroupService(park.users(), park.groups(), park.tickets()),
                     new TicketService(park.users(), park.tickets(), park.groups()),
-                    new AttractionService(park.attractions()));
+                    new AttractionService(park.attractions(), park.tickets()));
         } catch (UncheckedIOException e) {
             err.println("ERROR: cannot read users file '" + usersFile + "'");
             return 1;

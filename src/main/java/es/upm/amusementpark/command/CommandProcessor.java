@@ -44,7 +44,8 @@ public class CommandProcessor {
     }
 
     public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService) {
-        this(userService, groupService, ticketService, new AttractionService(new AttractionRepository()));
+        this(userService, groupService, ticketService,
+                new AttractionService(new AttractionRepository(), userService.tickets()));
     }
 
     public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService,
@@ -94,6 +95,8 @@ public class CommandProcessor {
             attractionService.createAttraction(p[1], p[2], p[3]);
             return "ATTRACTION CREATED";
         });
+        register("ATTRACTION ENTER", 3, "ATTRACTION ENTER;<attraction>;<ticket>", "", p ->
+                "ENTRY GRANTED: " + attractionService.enter(p[1], p[2]) + " user(s) entered " + p[1]);
         register("ATTRACTION LIST", 2, "ATTRACTION LIST;<identifier>", "", p -> attractionService.list(p[1]));
         register("SYSTEM DATE", 2, "SYSTEM DATE;<yyyy-MM-dd>", "", this::systemDate);
         register("SYSTEM PRICE", 2, "SYSTEM PRICE;<Price>", "", this::systemPrice);

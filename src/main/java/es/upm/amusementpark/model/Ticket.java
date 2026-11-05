@@ -2,6 +2,7 @@ package es.upm.amusementpark.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Common abstraction of every park ticket: identifier, date of use and price.
@@ -23,6 +24,9 @@ public abstract class Ticket {
     public LocalDate getDate() {
         return date;
     }
+
+    /** Users this ticket admits into an attraction. */
+    public abstract List<User> admittedUsers();
 
     /** Price charged for this ticket. */
     public abstract BigDecimal getPrice();

@@ -47,6 +47,12 @@ public class GroupTicket extends Ticket {
         return composition.contains(ticket);
     }
 
+    /** All users of the composition enter together. */
+    @Override
+    public List<User> admittedUsers() {
+        return composition.stream().map(IndividualTicket::getUser).toList();
+    }
+
     /** Total price: sum of the composition tickets' prices. */
     @Override
     public BigDecimal getPrice() {
