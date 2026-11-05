@@ -37,18 +37,35 @@ public abstract class Attraction<T extends TicketAccess> {
         return accessType.isInstance(ticket);
     }
 
-    /**
-     * Entry gate: only tickets of capability {@code T} reach the typed entry operations.
-     *
-     * @return the users who entered
-     */
+    /** Entry without passes. */
     public final List<User> enter(TicketAccess ticket) {
+        return enter(ticket, false, NO_PASSES).users();
+    }
+
+    /**
+     * Entry gate: only tickets of capability {@code T} reach the typed entry operations. Every condition
+     * is checked before anybody enters; passes are consumed only when the entry succeeds.
+     *
+     * @param speed whether one SpeedPass per individual ticket must be used
+     */
+    public final EntryResult enter(TicketAccess ticket, boolean speed, PassLookup passes) {
         if (!accepts(ticket)) {
             throw new RuleViolationException(getType() + " attraction " + identifier + " does not accept ticket '"
                     + ticket.getIdentifier() + "'");
         }
+        if (speed && !acceptsSpeedPasses()) {
+            throw new RuleViolationException(getType() + " attraction " + identifier + " does not accept SpeedPasses");
+        }
         T access = accessType.cast(ticket);
         checkEntry(access);
+        List<Pass> toConsume = new ArrayList<>();
+        if (speed) {
+            for (IndividualTicket t : access.individualTickets()) {
+                toConsume.add(passes.availableSpeedPass(t).orElseThrow(() -> new RuleViolationException(
+                        "ticket '" + t.getIdentifier() + "' has no unconsumed SpeedPass")));
+            }
+        }
+        toConsume.addAll(requiredPasses(access, passes));
         List<User> users = admittedUsers(access);
         if (users.stream().anyMatch(this::contains)) {
             throw new RuleViolationException("a user of ticket '" + ticket.getIdentifier() + "' is already inside " + identifier);
@@ -57,8 +74,31 @@ public abstract class Attraction<T extends TicketAccess> {
             throw new RuleViolationException("not enough capacity in " + identifier + " (" + availableCapacity()
                     + " available, " + users.size() + " needed)");
         }
-        return users;
+        toConsume.forEach(Pass::consume);
+        return new EntryResult(users, toConsume);
     }
+
+    /** Whether the SPEED entry variant is allowed. */
+    protected boolean acceptsSpeedPasses() {
+        return true;
+    }
+
+    /** Passes that this attraction type requires for entry (consumed on success). */
+    protected List<Pass> requiredPasses(T access, PassLookup passes) {
+        return List.of();
+    }
+
+    private static final PassLookup NO_PASSES = new PassLookup() {
+        @Override
+        public java.util.Optional<Pass> availableSpeedPass(IndividualTicket ticket) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public java.util.Optional<Pass> specialPass(IndividualTicket ticket) {
+            return java.util.Optional.empty();
+        }
+    };
 
     /** Type-specific entry conditions, checked before anybody enters. */
     protected void checkEntry(T access) {

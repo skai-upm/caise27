@@ -16,4 +16,7 @@ public interface TicketAccess {
 
     /** Users admitted when this ticket is used. */
     List<User> admittedUsers();
+
+    /** Individual tickets this access is made of (itself, or the composition of a group ticket). */
+    List<IndividualTicket> individualTickets();
 }

@@ -82,6 +82,9 @@ package business.model {
     - accessType : Class<T> {readOnly}
   }
 
+  interface PassLookup
+  class EntryResult <<record>>
+
   class GeneralAttraction
   class IndividualAttraction
   class GroupAttraction
@@ -131,6 +134,10 @@ Attraction <|-- IndividualAttraction : <T = IndividualAccess>
 Attraction <|-- GroupAttraction : <T = GroupAccess>
 Attraction <|-- SpecialAttraction : <T = IndividualAccess>
 Attraction ..> AttractionType : type
+Attraction ..> PassLookup : uses on entry
+Attraction ..> EntryResult : creates
+EntryResult --> "0..*" Pass : consumedPasses
+EntryResult --> "1..*" User : users
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 Pass --> "1" IndividualTicket : ticket

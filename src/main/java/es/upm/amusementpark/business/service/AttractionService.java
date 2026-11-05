@@ -7,10 +7,18 @@ import es.upm.amusementpark.business.exception.RuleViolationException;
 
 import es.upm.amusementpark.business.model.Attraction;
 import es.upm.amusementpark.business.model.AttractionType;
+import es.upm.amusementpark.business.model.EntryResult;
+import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.PassLookup;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.control.Park;
 import es.upm.amusementpark.persistence.repository.AttractionRepository;
+import es.upm.amusementpark.persistence.repository.PassRepository;
+import java.util.Optional;
 import es.upm.amusementpark.persistence.repository.TicketRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +30,7 @@ public class AttractionService {
 
     private AttractionRepository attractions;
     private TicketRepository tickets;
+    private PassRepository passes = new PassRepository();
 
     private AttractionService() {
     }
@@ -33,6 +42,26 @@ public class AttractionService {
     /** The single instance of this controller. */
     public static AttractionService getInstance() {
         return Holder.INSTANCE;
+    }
+
+    /** Injects the pass repository used for SpeedPass and Special Pass entries. */
+    public AttractionService injectPasses(PassRepository passes) {
+        this.passes = passes;
+        return this;
+    }
+
+    private PassLookup lookup() {
+        return new PassLookup() {
+            @Override
+            public Optional<Pass> availableSpeedPass(IndividualTicket ticket) {
+                return passes.passesOf(ticket).stream().filter(p -> p instanceof SpeedPass && !p.isConsumed()).findFirst();
+            }
+
+            @Override
+            public Optional<Pass> specialPass(IndividualTicket ticket) {
+                return passes.passesOf(ticket).stream().filter(SpecialPass.class::isInstance).findFirst();
+            }
+        };
     }
 
     /** Injects the repositories this controller works with (done during application initialization). */
@@ -50,6 +79,11 @@ public class AttractionService {
      * @return number of users admitted
      */
     public int enter(String attractionId, String ticketId) {
+        return enter(attractionId, ticketId, false).users().size();
+    }
+
+    /** Entry with optional SpeedPass use; Special Pass use is automatic at special attractions. */
+    public EntryResult enter(String attractionId, String ticketId, boolean speed) {
         Attraction<?> attraction = findAttraction(attractionId);
         Ticket ticket = tickets.findById(ticketId)
                 .orElseThrow(() -> new NotFoundException("ticket '" + ticketId + "' not found"));
@@ -58,9 +92,12 @@ public class AttractionService {
             throw new RuleViolationException("ticket '" + ticketId + "' is valid on " + ticket.getDate()
                     + ", not on the current date " + today);
         }
-        List<User> users = attraction.enter(ticket);
+        EntryResult result = attraction.enter(ticket, speed, lookup());
         attractions.update(attraction);
-        return users.size();
+        if (!result.consumedPasses().isEmpty()) {
+            passes.update();
+        }
+        return result;
     }
 
     public AttractionRepository attractions() {

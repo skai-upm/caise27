@@ -53,6 +53,11 @@ public class GroupTicket extends Ticket implements GroupAccess {
         return composition.contains(ticket);
     }
 
+    @Override
+    public List<IndividualTicket> individualTickets() {
+        return composition;
+    }
+
     /** All users of the composition enter together. */
     @Override
     public List<User> admittedUsers() {

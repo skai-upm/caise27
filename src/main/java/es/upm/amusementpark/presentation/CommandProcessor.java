@@ -11,6 +11,8 @@ import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
 import es.upm.amusementpark.business.service.InvoiceService;
 import es.upm.amusementpark.business.service.PassService;
+import es.upm.amusementpark.business.model.EntryResult;
+import es.upm.amusementpark.business.model.Pass;
 import es.upm.amusementpark.business.model.SpecialPass;
 import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.service.TicketService;
@@ -75,12 +77,14 @@ public class CommandProcessor {
 
     private final Map<String, Command> commands = new LinkedHashMap<>();
     private final UserService userService;
+    private final AttractionService attractionService;
     private boolean exitRequested;
 
     public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService,
                             AttractionService attractionService, InvoiceService invoiceService, PassService passService,
                             HelpGenerator help, HelpGenerator extendedHelp) {
         this.userService = userService;
+        this.attractionService = attractionService;
         register("USER CREATE", 8, "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>", "",
                 p -> {
                     userService.createUser(p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
@@ -145,8 +149,8 @@ public class CommandProcessor {
             attractionService.createAttraction(p[1], p[2], p[3], p.length == 5 ? p[4] : "GENERAL");
             return "ATTRACTION CREATED";
         });
-        register("ATTRACTION ENTER", 3, "ATTRACTION ENTER;<attraction>;<ticket>", "", p ->
-                "ENTRY GRANTED: " + attractionService.enter(p[1], p[2]) + " user(s) entered " + p[1]);
+        register("ATTRACTION ENTER", 3, 4, "ATTRACTION ENTER;<attraction>;<ticket>", "| ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
+                this::attractionEnter);
         register("ATTRACTION EXIT", 3, "ATTRACTION EXIT;<attraction>;<email>", "", p -> {
             attractionService.exit(p[1], p[2]);
             return "USER LEFT ATTRACTION";
@@ -222,6 +226,22 @@ public class CommandProcessor {
         }
         userService.updateUser(p[1], p[2], field, p[4]);
         return "USER UPDATED";
+    }
+
+    private String attractionEnter(String[] p) {
+        if (p.length == 4 && !"SPEED".equals(p[3])) {
+            return "ERROR: invalid entry option '" + p[3] + "', expected SPEED";
+        }
+        EntryResult result = attractionService.enter(p[1], p[2], p.length == 4);
+        StringBuilder sb = new StringBuilder("ENTRY GRANTED: " + result.users().size() + " user(s) entered " + p[1]);
+        List<String> speed = result.consumedPasses().stream().filter(SpeedPass.class::isInstance)
+                .map(Pass::getIdentifier).toList();
+        if (!speed.isEmpty()) {
+            sb.append(". SpeedPass consumed: ").append(String.join(", ", speed));
+        }
+        result.consumedPasses().stream().filter(SpecialPass.class::isInstance)
+                .forEach(sp -> sb.append(". Special Pass consumed: ").append(sp.getIdentifier()));
+        return sb.toString();
     }
 
     private String systemDate(String[] p) {

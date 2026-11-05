@@ -29,7 +29,8 @@ public final class ApplicationInitializer {
         GroupService groups = GroupService.getInstance().inject(r.users(), r.groups(), r.tickets());
         TicketService tickets = TicketService.getInstance().inject(r.users(), r.tickets(), r.groups())
                 .injectPasses(r.passes());
-        AttractionService attractions = AttractionService.getInstance().inject(r.attractions(), r.tickets());
+        AttractionService attractions = AttractionService.getInstance().inject(r.attractions(), r.tickets())
+                .injectPasses(r.passes());
         InvoiceService invoices = InvoiceService.getInstance().inject(r.users(), r.groups(), r.tickets())
                 .injectPasses(r.passes());
         PassService passes = PassService.getInstance().inject(r.tickets(), r.passes());
