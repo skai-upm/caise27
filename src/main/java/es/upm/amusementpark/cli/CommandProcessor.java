@@ -19,6 +19,10 @@ public class CommandProcessor {
             "  USER UPDATE;<email>;<password>;<field>;<value>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<Price>",
+            "  GROUP CREATE;<Identifier>;<Name>",
+            "  GROUP ADD;<Identifier>;<Email>",
+            "  GROUP REMOVE;<Identifier>;<Email>",
+            "  GROUP DELETE;<Identifier>",
             "  HELP",
             "  EXIT");
 
