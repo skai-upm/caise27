@@ -39,15 +39,21 @@ public class CommandProcessor {
             "  USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<price>",
+            "  GROUP CREATE;<id>;<name>",
+            "  GROUP ADD;<id>;<email>",
+            "  GROUP REMOVE;<id>;<email>",
+            "  GROUP DELETE;<id>",
             "  HELP",
             "  EXIT");
 
     private final ParkController park;
+    private final GroupCommands groups;
     private boolean exitRequested;
 
     /** Processes commands against the current central park management state. */
     public CommandProcessor() {
         this.park = ParkController.getInstance();
+        this.groups = new GroupCommands(park);
     }
 
     /** Starts a new execution of the central park management with the given users. */
@@ -83,6 +89,10 @@ public class CommandProcessor {
                 case EXIT -> exit(elements);
                 case SYSTEM_DATE -> systemDate(elements);
                 case SYSTEM_PRICE -> systemPrice(elements);
+                case GroupCommands.GROUP_CREATE -> groups.create(elements);
+                case GroupCommands.GROUP_ADD -> groups.add(elements);
+                case GroupCommands.GROUP_REMOVE -> groups.remove(elements);
+                case GroupCommands.GROUP_DELETE -> groups.delete(elements);
                 default -> error("unknown command '" + command + "'");
             };
         } catch (RuntimeException e) {
@@ -190,6 +200,7 @@ public class CommandProcessor {
         if (problem != null) {
             return error(problem);
         }
+        park.getGroups().removeUserEverywhere(user);
         users().remove(user.getDni());
         return ok(user, "deleted");
     }
