@@ -78,10 +78,7 @@ public final class App {
             out.println("ERROR: Cannot read persisted data from " + storage.getDirectory());
         }
         CommandProcessor processor = new CommandProcessor(out);
-        SystemCommands.register(processor, park, out);
-        GroupCommands.register(processor, park, out);
-        TicketCommands.register(processor, park, out);
-        AttractionCommands.register(processor, park, out);
+        registerCommands(processor, park, out);
         processor.setAfterCommand(() -> {
             try {
                 storage.save(park);
@@ -98,6 +95,21 @@ public final class App {
         } catch (IOException | RuntimeException e) {
             out.println("ERROR: Cannot read command file: " + commandFile);
         }
+    }
+
+    /**
+     * Registers every application command in the processor. Single wiring point shared by the application and its
+     * integration tests.
+     *
+     * @param processor shared command processor (already providing HELP and EXIT)
+     * @param park central park management
+     * @param out output stream
+     */
+    public static void registerCommands(CommandProcessor processor, ParkController park, PrintStream out) {
+        SystemCommands.register(processor, park, out);
+        GroupCommands.register(processor, park, out);
+        TicketCommands.register(processor, park, out);
+        AttractionCommands.register(processor, park, out);
     }
 
     private static Path createFlyDirectory(Path baseDir) throws IOException {

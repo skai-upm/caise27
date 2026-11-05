@@ -95,6 +95,6 @@ class AttractionAccessTest {
         assertTrue(text.contains("ENTERED ATTRACTION A01: ana@correo.com"));
         assertTrue(text.contains("ERROR: Ticket T002 is not valid on 2027-04-15"));
         assertTrue(text.contains("ERROR: Invalid syntax"));
-        assertTrue(text.contains("ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>"));
+        assertTrue(text.contains("ATTRACTION ENTER;<attraction>;<ticket>"));
     }
 }

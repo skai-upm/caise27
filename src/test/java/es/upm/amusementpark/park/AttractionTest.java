@@ -103,7 +103,7 @@ class AttractionTest {
     @Test
     void helpListsAttractionCommands() {
         processor.execute("HELP");
-        assertTrue(output().contains("ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>"));
-        assertTrue(output().contains("ATTRACTION LIST;<AttractionIdentifier>"));
+        assertTrue(output().contains("ATTRACTION CREATE;<identifier>;<name>;<capacity>"));
+        assertTrue(output().contains("ATTRACTION LIST;<attraction>"));
     }
 }

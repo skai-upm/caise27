@@ -11,12 +11,12 @@ import java.util.Map;
  */
 public class CommandProcessor {
 
-    /** Basic syntax of the available commands, displayed by {@code HELP}. */
+    /** Basic syntax of the available commands (Delivery 2 list), displayed by {@code HELP}. */
     public static final String HELP_TEXT = String.join(System.lineSeparator(),
             "Available commands:",
-            "  USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-            "  USER DELETE;<email>;<password>",
-            "  USER UPDATE;<email>;<password>;<field>;<value>",
+            "  USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+            "  USER DELETE;<Email>;<Password>",
+            "  USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<Price>",
             "  GROUP CREATE;<Identifier>;<Name>",
@@ -27,11 +27,11 @@ public class CommandProcessor {
             "  TICKET DELETE;<identifier>",
             "  GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "  GROUPTICKET DELETE;<identifier>",
-            "  ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>",
-            "  ATTRACTION LIST;<AttractionIdentifier>",
-            "  ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>",
-            "  ATTRACTION EXIT;<AttractionIdentifier>;<Email>",
-            "  ATTRACTION STATUS;<AttractionIdentifier>",
+            "  ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "  ATTRACTION ENTER;<attraction>;<ticket>",
+            "  ATTRACTION EXIT;<attraction>;<email>",
+            "  ATTRACTION LIST;<attraction>",
+            "  ATTRACTION STATUS;<attractionIdentifier>",
             "  HELP",
             "  EXIT");
 
