@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0001-botl-0001-1-f1-amusement-park-improved-openspec",
+  "change": "botl-0001-1-f1-amusement-park-improved-openspec",
+  "runId": "0001-propose-20261101T143611Z",
+  "sequence": 1,
+  "phase": "propose",
+  "startedAt": "2026-11-01T14:36:11.660337+00:00",
+  "finishedAt": "2026-11-01T14:38:19.167378+00:00",
+  "durationSeconds": 127.507041,
+  "environment": {
+    "agent": "claude-code",
+    "agentAdapter": "claude-code",
+    "aiUsageSource": "claude",
+    "analysisAdapterConfigured": "auto",
+    "analysisAdapterBefore": "unknown",
+    "analysisAdapterAfter": "unknown"
+  },
+  "projectProfileBefore": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "projectProfileAfter": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "profileTransition": {
+    "changed": false,
+    "before": "unknown",
+    "after": "unknown"
+  },
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "3075a766-6052-4801-a13d-2e8c72367961",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 14,
+    "outputTokens": 12648,
+    "cacheCreationTokens": 21568,
+    "cacheReadTokens": 701484,
+    "totalTokens": 735714,
+    "totalCost": 0.5658567999999997,
+    "newTokens": 34230,
+    "cachedTokens": 701484,
+    "totalProcessedTokens": 735714
+  },
+  "before": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_4_setup_gpractices_single_human",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .DS_Store",
+        "?? .botl/",
+        "?? experiments/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 0,
+      "lines": 0,
+      "words": 0,
+      "requirements": 0,
+      "scenarios": 0,
+      "tasks": 0,
+      "shallStatements": 0
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "unknown",
+          "modules": []
+        },
+        "modules": []
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "unknown",
+      "modules": []
+    }
+  },
+  "after": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_4_setup_gpractices_single_human",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .DS_Store",
+        "?? .botl/",
+        "?? experiments/",
+        "?? openspec/changes/botl-0001-1-f1-amusement-park-improved-openspec/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 8,
+      "lines": 409,
+      "words": 4014,
+      "requirements": 27,
+      "scenarios": 40,
+      "tasks": 13,
+      "shallStatements": 48
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "unknown",
+          "modules": []
+        },
+        "modules": []
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "unknown",
+      "modules": []
+    }
+  },
+  "delta": {
+    "git": {
+      "available": true,
+      "filesModified": 0,
+      "untrackedFiles": 13,
+      "locAdded": 0,
+      "locRemoved": 0,
+      "netLoc": 0
+    },
+    "artifacts": {
+      "lines": 409,
+      "shallStatements": 48,
+      "words": 4014,
+      "tasks": 13,
+      "requirements": 27,
+      "scenarios": 40,
+      "files": 8
+    },
+    "radon": {},
+    "sonar": {
+      "allMeasures": {}
+    }
+  }
+}
