@@ -75,6 +75,12 @@ public class UserService {
             throw new UserOperationException("the user has active tickets (dated " + today + " or later)");
         }
         for (var group : groups.findAll()) {
+            if (group.contains(user) && tickets.isLocked(group, today)) {
+                throw new UserOperationException("the user belongs to group '" + group.getIdentifier()
+                        + "', which has an active group ticket");
+            }
+        }
+        for (var group : groups.findAll()) {
             if (group.remove(user)) {
                 groups.update(group);
             }

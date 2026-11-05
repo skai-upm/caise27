@@ -2,7 +2,9 @@ package es.upm.amusementpark.service;
 
 import es.upm.amusementpark.model.Group;
 import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.park.Park;
 import es.upm.amusementpark.repository.GroupRepository;
+import es.upm.amusementpark.repository.TicketRepository;
 import es.upm.amusementpark.repository.UserRepository;
 
 /**
@@ -12,10 +14,29 @@ public class GroupService {
 
     private final UserRepository users;
     private final GroupRepository groups;
+    private final TicketRepository tickets;
 
     public GroupService(UserRepository users, GroupRepository groups) {
+        this(users, groups, new TicketRepository());
+    }
+
+    public GroupService(UserRepository users, GroupRepository groups, TicketRepository tickets) {
         this.users = users;
         this.groups = groups;
+        this.tickets = tickets;
+    }
+
+    public void deleteGroup(String identifier) {
+        Group group = findGroup(identifier);
+        requireUnlocked(group);
+        tickets.groupTicketsOf(group).forEach(t -> t.detachGroup());
+        groups.remove(group);
+    }
+
+    private void requireUnlocked(Group group) {
+        if (tickets.isLocked(group, Park.getInstance().getCurrentDate())) {
+            throw new OperationException("group '" + group.getIdentifier() + "' has an active group ticket");
+        }
     }
 
     public Group createGroup(String identifier, String name) {
@@ -33,6 +54,7 @@ public class GroupService {
     public void addMember(String identifier, String email) {
         Group group = findGroup(identifier);
         User user = findUser(email);
+        requireUnlocked(group);
         if (!group.add(user)) {
             throw new OperationException("the user already belongs to group '" + identifier + "'");
         }
@@ -42,6 +64,7 @@ public class GroupService {
     public void removeMember(String identifier, String email) {
         Group group = findGroup(identifier);
         User user = findUser(email);
+        requireUnlocked(group);
         if (!group.remove(user)) {
             throw new OperationException("the user does not belong to group '" + identifier + "'");
         }

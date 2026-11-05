@@ -1,9 +1,12 @@
 package es.upm.amusementpark.repository;
 
+import es.upm.amusementpark.model.Group;
+import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.IndividualTicket;
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.service.OperationException;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,5 +59,24 @@ public class TicketRepository {
                 .map(IndividualTicket.class::cast)
                 .filter(t -> t.getUser() == user)
                 .toList();
+    }
+
+    /** Group tickets purchased by a group, found by traversal. */
+    public List<GroupTicket> groupTicketsOf(Group group) {
+        return groupTickets().stream().filter(t -> t.getGroup() == group).toList();
+    }
+
+    /** A group is locked while it has an active group ticket. */
+    public boolean isLocked(Group group, LocalDate today) {
+        return groupTicketsOf(group).stream().anyMatch(t -> t.isActiveOn(today));
+    }
+
+    /** The group ticket whose composition contains the given ticket, if any. */
+    public Optional<GroupTicket> containerOf(IndividualTicket ticket) {
+        return groupTickets().stream().filter(g -> g.contains(ticket)).findFirst();
+    }
+
+    public List<GroupTicket> groupTickets() {
+        return tickets.values().stream().filter(GroupTicket.class::isInstance).map(GroupTicket.class::cast).toList();
     }
 }

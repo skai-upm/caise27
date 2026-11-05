@@ -1,0 +1,55 @@
+package es.upm.amusementpark.model;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Ticket purchased by a group, composed of one individual ticket per member at purchase time.
+ * The composition never changes. The group reference becomes null if the group is deleted.
+ */
+public class GroupTicket extends Ticket {
+
+    private final List<IndividualTicket> composition;
+    private final String groupIdentifier;
+    private Group group;
+
+    public GroupTicket(String identifier, LocalDate date, Group group, List<IndividualTicket> composition) {
+        super(identifier, date);
+        this.group = group;
+        this.groupIdentifier = group.getIdentifier();
+        this.composition = List.copyOf(composition);
+    }
+
+    /** Builds the identifier of the composition ticket of a member. */
+    public static String compositionIdentifier(String groupTicketIdentifier, String dni) {
+        return groupTicketIdentifier + ":" + dni;
+    }
+
+    public List<IndividualTicket> getComposition() {
+        return composition;
+    }
+
+    /** Purchasing group, or null when it no longer exists. */
+    public Group getGroup() {
+        return group;
+    }
+
+    public String getGroupIdentifier() {
+        return groupIdentifier;
+    }
+
+    public void detachGroup() {
+        this.group = null;
+    }
+
+    public boolean contains(IndividualTicket ticket) {
+        return composition.contains(ticket);
+    }
+
+    /** Total price: sum of the composition tickets' prices. */
+    @Override
+    public BigDecimal getPrice() {
+        return composition.stream().map(Ticket::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+}
