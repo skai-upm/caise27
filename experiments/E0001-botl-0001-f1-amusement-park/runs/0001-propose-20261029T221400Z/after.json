@@ -1,0 +1,73 @@
+{
+  "capturedAt": "2026-10-29T22:16:42.558825+00:00",
+  "agent": "claude-code",
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "a6159e7e-78df-4ab4-8796-d14e5a90f5a2",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 32,
+    "outputTokens": 20375,
+    "cacheCreationTokens": 95505,
+    "cacheReadTokens": 1270744,
+    "totalTokens": 1386656,
+    "totalCost": 1.4258168
+  },
+  "git": {
+    "available": true,
+    "repo": "/Users/andreacimmino/Desktop/opendev/opus_3_setup_single_gpt",
+    "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+    "dirty": true,
+    "statusPorcelain": [
+      "?? .DS_Store",
+      "?? .botl/",
+      "?? experiments/",
+      "?? openspec/changes/botl-0001-f1-amusement-park/"
+    ]
+  },
+  "artifacts": {
+    "available": true,
+    "files": 10,
+    "lines": 457,
+    "words": 4508,
+    "requirements": 26,
+    "scenarios": 46,
+    "tasks": 18,
+    "shallStatements": 40
+  },
+  "projectProfile": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "codeQuality": {
+    "common": {
+      "sonar": {
+        "available": false,
+        "skipped": true
+      }
+    },
+    "languageSpecific": {
+      "profile": {
+        "kind": "unknown",
+        "modules": []
+      },
+      "modules": []
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "radon": {
+      "available": false
+    }
+  },
+  "sonar": {
+    "available": false,
+    "skipped": true
+  },
+  "radon": {
+    "available": false
+  }
+}
