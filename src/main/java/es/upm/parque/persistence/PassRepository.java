@@ -38,6 +38,7 @@ public class PassRepository implements PassLookup {
     }
 
     /** Passes associated with the ticket, found by traversing the stored passes. */
+    @Override
     public List<Pass> passesOf(IndividualTicket ticket) {
         return passesById.values().stream().filter(p -> p.getTicket() == ticket).toList();
     }

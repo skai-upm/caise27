@@ -45,8 +45,10 @@ public final class CommandCatalog {
                     "Creates an attraction with a maximum number of simultaneous users and a type: GENERAL (default,"
                             + " any ticket), INDIVIDUAL (individual tickets), GROUP (group tickets) or SPECIAL"
                             + " (individual tickets with a Special Pass)."),
-            new CommandDescriptor("ATTRACTION ENTER;<attraction>;<ticket>",
-                    "Lets the holders of a ticket valid today into an attraction, all or none, within its capacity."),
+            new CommandDescriptor("ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]",
+                    "Lets the holders of a ticket valid today into an attraction of a type that accepts the ticket, all"
+                            + " or none, within its capacity; SPEED uses one SpeedPass per entering ticket, and"
+                            + " SPECIAL attractions consume the ticket's Special Pass."),
             new CommandDescriptor("ATTRACTION EXIT;<attraction>;<email>",
                     "Registers that a user leaves an attraction."),
             new CommandDescriptor("ATTRACTION LIST;<attraction>", "Lists the users currently inside an attraction."),

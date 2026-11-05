@@ -56,7 +56,7 @@ SPECIALPASS CREATE;<identifier>;<individualTicket>
 SPEEDPASS DELETE;<speedPassIdentifier>
 SPECIALPASS DELETE;<specialPassIdentifier>
 ATTRACTION CREATE;<identifier>;<name>;<capacity>[;<type>]     type: GENERAL (default), INDIVIDUAL, GROUP, SPECIAL
-ATTRACTION ENTER;<attraction>;<ticket>
+ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]
 ATTRACTION EXIT;<attraction>;<email>
 ATTRACTION LIST;<attraction>
 ATTRACTION STATUS;<attractionIdentifier>
@@ -79,7 +79,8 @@ Park rules in short:
   - `GENERAL`: individual and group tickets.
   - `INDIVIDUAL`: individual tickets only.
   - `GROUP`: group tickets only.
-  - `SPECIAL`: individual tickets that have an unconsumed Special Pass.
+  - `SPECIAL`: individual tickets that have an unconsumed Special Pass. The pass is consumed automatically on entry, and `SPEED` is not allowed.
+- `ATTRACTION ENTER;<attraction>;<ticket>;SPEED` uses SpeedPasses at `GENERAL`, `INDIVIDUAL` and `GROUP` attractions. Each entering ticket needs an unconsumed SpeedPass, and exactly one is consumed per ticket. A group enters all-or-nothing: if any check fails, nobody enters and no pass is consumed. The response names the consumed passes.
 - Passes belong to an individual ticket, including the tickets inside a group ticket, and can be bought for tickets dated today or later.
   - A SpeedPass costs 20% of the ticket's stored price. It is bought 1 or 10 at a time, and the passes are numbered `<purchase>:1` to `<purchase>:10`.
   - A Special Pass costs the ticket's price. A ticket can have only one, even after it has been consumed.

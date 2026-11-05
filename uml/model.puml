@@ -56,6 +56,10 @@ package es.upm.parque.business.model {
   interface PassLookup {
   }
 
+  class PassSelection <<record>> {
+    - refusal : String {readOnly}
+  }
+
   abstract class Attraction<T extends GeneralAccess> {
     - id : String {readOnly}
     - name : String {readOnly}
@@ -151,6 +155,8 @@ package es.upm.parque.business {
   }
   class PassManager <<singleton>> {
   }
+  class Entry <<record>> {
+  }
   class InvoiceManager <<singleton, director>> {
   }
 }
@@ -200,7 +206,9 @@ GeneralAttraction ..> GeneralAccess : accepts
 IndividualAttraction ..> IndividualAccess : accepts
 GroupAttraction ..> GroupAccess : accepts
 SpecialAttraction ..> IndividualAccess : accepts
-SpecialAttraction ..> PassLookup : requires Special Pass
+SpecialAttraction ..> PassLookup : selects Special Pass
+Attraction ..> PassSelection : passesToConsume
+PassSelection "1" o--> "*" Pass : passes
 
 ' --- Composition: a group ticket owns its individual tickets ---
 GroupTicket "0..1" *-- "1..*" IndividualTicket : composition
@@ -257,6 +265,9 @@ GroupManager --> "1" ParkController : park
 TicketManager --> "1" ParkController : park
 AttractionManager --> "1" ParkController : park
 AttractionManager --> "1" TicketManager : tickets
+AttractionManager ..> Entry : returns
+Entry "1" o--> "*" Pass : consumed
+Entry "1" o--> "*" User : entrants
 Exception <|-- ParkException
 ParkException <|-- NotFoundException
 ParkException <|-- InvalidDataException

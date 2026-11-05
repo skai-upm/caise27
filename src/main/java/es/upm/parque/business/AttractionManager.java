@@ -6,6 +6,9 @@ import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.GeneralAccess;
 import es.upm.parque.business.model.GroupTicket;
+import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.PassSelection;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 
@@ -71,17 +74,23 @@ public class AttractionManager {
         return attraction;
     }
 
-    /**
-     * Admits the holders of the ticket who are not inside yet, all or none, when the attraction type accepts the
-     * ticket, the ticket is for today, the type's entry condition holds and there is room for all of them.
-     * Returns the users who entered.
-     */
+    /** Normal entry (without SpeedPasses); returns the users who entered. */
     public List<User> enter(String attractionId, String ticketId) throws ParkException {
-        return admit(find(attractionId), tickets().find(ticketId));
+        return enter(attractionId, ticketId, false).entrants();
+    }
+
+    /**
+     * Admits the holders of the ticket who are not inside yet, all or none, optionally using SpeedPasses. Every
+     * condition (type, date, capacity, passes) is checked before anything changes; only then are the selected
+     * passes consumed and the users admitted.
+     */
+    public Entry enter(String attractionId, String ticketId, boolean speed) throws ParkException {
+        return admit(find(attractionId), tickets().find(ticketId), speed);
     }
 
     /** Entry through the attraction's bound capability: only tickets it accepts are typed and checked as {@code T}. */
-    private <T extends GeneralAccess> List<User> admit(Attraction<T> attraction, Ticket ticket) throws ParkException {
+    private <T extends GeneralAccess> Entry admit(Attraction<T> attraction, Ticket ticket, boolean speed)
+            throws ParkException {
         T accepted = attraction.accept(ticket);
         if (accepted == null) {
             throw new RuleViolationException("attraction " + attraction.getId() + " (" + attraction.getType()
@@ -90,10 +99,6 @@ public class AttractionManager {
         if (!accepted.getDate().equals(park().getCurrentDate())) {
             throw new RuleViolationException("ticket " + accepted.getId() + " is valid on " + accepted.getDate()
                     + ", not on " + park().getCurrentDate());
-        }
-        String refusal = attraction.entryRefusal(accepted, park().getPasses());
-        if (refusal != null) {
-            throw new RuleViolationException(refusal);
         }
         List<User> entrants = accepted.getHolders().stream().filter(u -> !attraction.isInside(u)).toList();
         if (entrants.isEmpty()) {
@@ -105,8 +110,18 @@ public class AttractionManager {
             throw new RuleViolationException("attraction " + attraction.getId() + " has room for " + free
                     + " user(s) but " + entrants.size() + " need to enter; nobody entered");
         }
+        List<IndividualTicket> entering = accepted.individualTickets().stream()
+                .filter(t -> entrants.contains(t.getUser())).toList();
+        PassSelection selection = attraction.passesToConsume(accepted, speed, entering, park().getPasses());
+        if (selection.isRefused()) {
+            throw new RuleViolationException(selection.refusal());
+        }
+        selection.passes().forEach(Pass::consume);
         entrants.forEach(attraction::addOccupant);
-        return entrants;
+        if (!selection.passes().isEmpty()) {
+            park().persist();
+        }
+        return new Entry(entrants, selection.passes());
     }
 
     /** Removes the occupant with the given email from the attraction. */

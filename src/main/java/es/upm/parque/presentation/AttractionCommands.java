@@ -3,8 +3,10 @@ package es.upm.parque.presentation;
 import java.util.List;
 
 import es.upm.parque.business.AttractionManager;
+import es.upm.parque.business.Entry;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.Pass;
 import es.upm.parque.business.model.User;
 
 /**
@@ -17,6 +19,7 @@ class AttractionCommands {
     static final String ATTRACTION_ENTER = "ATTRACTION ENTER";
     static final String ATTRACTION_EXIT = "ATTRACTION EXIT";
     static final String ATTRACTION_STATUS = "ATTRACTION STATUS";
+    private static final String SPEED = "SPEED";
 
     private final AttractionManager attractions;
 
@@ -45,11 +48,24 @@ class AttractionCommands {
     }
 
     String enter(String[] e) throws InvalidCommandException, ParkException {
-        CommandProcessor.expect(e, 3, "ATTRACTION ENTER expects: ATTRACTION ENTER;<attraction>;<ticket>");
-        List<User> entrants = attractions.enter(e[1], e[2]);
+        if ((e.length != 3 && e.length != 4) || (e.length == 4 && !SPEED.equals(e[3]))) {
+            throw new InvalidCommandException(
+                    "ATTRACTION ENTER expects: ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]");
+        }
+        Entry entry = attractions.enter(e[1], e[2], e.length == 4);
         Attraction<?> a = attractions.find(e[1]);
-        return "OK: " + entrants.size() + " user(s) entered attraction " + a.getId() + " (" + a.getName() + "): "
-                + String.join(", ", entrants.stream().map(User::getEmail).toList());
+        return "OK: " + entry.entrants().size() + " user(s) entered attraction " + a.getId() + " (" + a.getName()
+                + "): " + String.join(", ", entry.entrants().stream().map(User::getEmail).toList())
+                + consumed(entry.consumed());
+    }
+
+    /** Response suffix naming the passes consumed by the entry; empty when none was used. */
+    private static String consumed(List<Pass> passes) {
+        if (passes.isEmpty()) {
+            return "";
+        }
+        String type = passes.get(0).typeName() + (passes.size() == 1 ? "" : "es");
+        return "; " + type + " consumed: " + String.join(", ", passes.stream().map(Pass::getId).toList());
     }
 
     String exit(String[] e) throws InvalidCommandException, ParkException {
