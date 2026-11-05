@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0013-botl-0013-13-f3-singleton-and-dependency-injection",
+  "change": "botl-0013-13-f3-singleton-and-dependency-injection",
+  "status": "archived",
+  "createdAt": "2026-11-04T23:10:39.884739+00:00",
+  "updatedAt": "2026-11-04T23:17:40.729582+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261104T231039Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261104T231039Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 493555,
+        "totalCost": 0.21404220000000151
+      }
+    },
+    {
+      "runId": "0002-apply-20261104T231148Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261104T231148Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 4554976,
+        "totalCost": 1.455864199999997
+      }
+    },
+    {
+      "runId": "0003-archive-20261104T231707Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261104T231707Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-04T23:17:40.676889+00:00"
+}

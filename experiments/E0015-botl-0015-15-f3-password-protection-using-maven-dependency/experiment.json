@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0015-botl-0015-15-f3-password-protection-using-maven-dependency",
+  "change": "botl-0015-15-f3-password-protection-using-maven-dependency",
+  "status": "archived",
+  "createdAt": "2026-11-04T23:23:52.086328+00:00",
+  "updatedAt": "2026-11-04T23:31:14.119993+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261104T232352Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261104T232352Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 544056,
+        "totalCost": 0.20678320000000028
+      }
+    },
+    {
+      "runId": "0002-apply-20261104T232504Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261104T232504Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 5522477,
+        "totalCost": 1.4598517999999956
+      }
+    },
+    {
+      "runId": "0003-archive-20261104T233010Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261104T233010Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-04T23:31:14.066211+00:00"
+}
