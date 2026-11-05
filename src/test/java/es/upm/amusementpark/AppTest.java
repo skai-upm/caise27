@@ -1,19 +1,44 @@
 package es.upm.amusementpark;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-/**
- * Unit test for simple App.
- */
-public class AppTest {
+class AppTest {
 
-    /**
-     * Rigorous Test :-)
-     */
+    @TempDir
+    Path tmp;
+
+    private static String run(String[] args, String stdin) {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        App.run(args, new BufferedReader(new StringReader(stdin)), new PrintStream(buffer, true, StandardCharsets.UTF_8));
+        return buffer.toString(StandardCharsets.UTF_8);
+    }
+
     @Test
-    public void shouldAnswerWithTrue() {
-        assertTrue(true);
+    void stdinAndFileProduceIdenticalOutput() throws IOException {
+        String commands = "HELP\nEXIT\nHELP\n";
+        Path file = tmp.resolve("input.txt");
+        Files.writeString(file, commands);
+        String fromStdin = run(new String[0], commands);
+        String fromFile = run(new String[] {file.toString()}, "");
+        assertEquals(fromStdin, fromFile);
+        assertEquals(fromStdin.indexOf("Available commands:"), fromStdin.lastIndexOf("Available commands:"));
+    }
+
+    @Test
+    void unreadableFileIsReportedInControlledManner() {
+        String out = run(new String[] {tmp.resolve("missing.txt").toString()}, "");
+        assertTrue(out.startsWith("ERROR: Cannot read command file:"));
     }
 }
