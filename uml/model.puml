@@ -30,6 +30,30 @@ package es.upm.amusementpark.presentation {
   }
   class AttractionCommands {
   }
+  class InvoiceCommands {
+  }
+}
+
+package es.upm.amusementpark.business.invoice {
+  class Invoice <<record>> {
+    - type : String
+    - recipient : Map<String, String>
+    - total : BigDecimal
+  }
+  class Section <<record>> {
+    - title : String
+  }
+  class Line <<record>> {
+    - text : String
+    - amount : BigDecimal
+  }
+  abstract class InvoiceBuilder {
+    - type : String
+  }
+  class UserInvoiceBuilder {
+  }
+  class GroupInvoiceBuilder {
+  }
 }
 
 package es.upm.amusementpark.business {
@@ -119,6 +143,20 @@ SystemCommands ..> CommandSupport : parses with
 GroupCommands ..> CommandSupport : parses with
 TicketCommands ..> CommandSupport : parses with
 AttractionCommands ..> CommandSupport : parses with
+
+' ---- invoices (Builder) ----
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder ..> Invoice : builds
+Invoice *-- "0..*" Section : sections
+Section *-- "1..*" Line : lines
+ParkController ..> UserInvoiceBuilder : directs
+ParkController ..> GroupInvoiceBuilder : directs
+GroupInvoiceBuilder ..> GroupTicket : reads
+UserInvoiceBuilder ..> IndividualTicket : reads
+InvoiceCommands ..> Invoice : formats
+InvoiceCommands ..> CommandSupport : parses with
+InvoiceCommands ..> ParkController : uses
 
 ' ---- persistence ----
 ParkStorage *-- "1" GroupRepository : groups

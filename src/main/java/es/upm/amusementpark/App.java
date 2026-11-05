@@ -5,6 +5,7 @@ import es.upm.amusementpark.persistence.ParkStorage;
 import es.upm.amusementpark.presentation.AttractionCommands;
 import es.upm.amusementpark.presentation.CommandProcessor;
 import es.upm.amusementpark.presentation.GroupCommands;
+import es.upm.amusementpark.presentation.InvoiceCommands;
 import es.upm.amusementpark.presentation.SystemCommands;
 import es.upm.amusementpark.presentation.TicketCommands;
 import java.io.BufferedReader;
@@ -110,6 +111,7 @@ public final class App {
         GroupCommands.register(processor, park, out);
         TicketCommands.register(processor, park, out);
         AttractionCommands.register(processor, park, out);
+        InvoiceCommands.register(processor, park, out);
     }
 
     private static Path createFlyDirectory(Path baseDir) throws IOException {

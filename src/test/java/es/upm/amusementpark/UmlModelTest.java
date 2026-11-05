@@ -32,10 +32,12 @@ class UmlModelTest {
 
     /** @return the declaration kind written in the diagram for the given source, e.g. "abstract class" */
     static String kindOf(String source, String name) {
-        for (String kind : List.of("abstract class", "interface", "enum", "class")) {
+        for (String kind : List.of("abstract class", "interface", "enum", "class", "record")) {
             for (String prefix : List.of("public ", "public final ", "final ", "")) {
-                if (source.contains("\n" + prefix + kind + " " + name + " ")) {
-                    return kind;
+                for (String next : List.of(" ", "(", "<")) {
+                    if (source.contains("\n" + prefix + kind + " " + name + next)) {
+                        return kind;
+                    }
                 }
             }
         }
@@ -49,8 +51,9 @@ class UmlModelTest {
             for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
                 String name = file.getFileName().toString().replace(".java", "");
                 String kind = kindOf(Files.readString(file), name);
-                if (kind == null || !(model.contains(kind + " " + name + " {")
-                        || model.contains(kind + " " + name + " <<"))) {
+                String drawn = "record".equals(kind) ? "class" : kind;
+                if (kind == null || !(model.contains(drawn + " " + name + " {")
+                        || model.contains(drawn + " " + name + " <<"))) {
                     missing.add(kind + " " + name);
                 }
             }

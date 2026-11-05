@@ -33,6 +33,8 @@ public class CommandProcessor {
             "  ATTRACTION EXIT;<attraction>;<email>",
             "  ATTRACTION LIST;<attraction>",
             "  ATTRACTION STATUS;<attractionIdentifier>",
+            "  INVOICE CREATE;USER;<email>",
+            "  INVOICE CREATE;GROUP;<groupIdentifier>",
             "  HELP",
             "  EXIT");
 

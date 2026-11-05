@@ -1,5 +1,8 @@
 package es.upm.amusementpark.business;
 
+import es.upm.amusementpark.business.invoice.GroupInvoiceBuilder;
+import es.upm.amusementpark.business.invoice.Invoice;
+import es.upm.amusementpark.business.invoice.UserInvoiceBuilder;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -481,5 +484,45 @@ public final class ParkController {
             tickets.put(component.getId(), component);
         }
         return ticket;
+    }
+
+    // ----- invoices (director of the invoice builders) -----
+
+    /**
+     * Builds the invoice of an existing user from the tickets bought directly for them.
+     *
+     * @throws ParkException if the user does not exist
+     */
+    public synchronized Invoice createUserInvoice(String email) {
+        if (!userDirectory.exists(email)) {
+            throw new ParkException("User " + email + " does not exist");
+        }
+        UserInvoiceBuilder builder = new UserInvoiceBuilder().forUser(email, userDirectory.dniOf(email));
+        for (Ticket ticket : tickets.values()) {
+            if (ticket instanceof IndividualTicket single && single.getContainingGroupTicket() == null
+                    && single.getUserEmail().equals(email)) {
+                builder.addIndividualTicket(single);
+            }
+        }
+        return builder.build();
+    }
+
+    /**
+     * Builds the invoice of an existing group from the group tickets it bought.
+     *
+     * @throws ParkException if the group does not exist
+     */
+    public synchronized Invoice createGroupInvoice(String groupId) {
+        Group group = groups.get(groupId);
+        if (group == null) {
+            throw new ParkException("Group " + groupId + " does not exist");
+        }
+        GroupInvoiceBuilder builder = new GroupInvoiceBuilder().forGroup(group);
+        for (Ticket ticket : tickets.values()) {
+            if (ticket instanceof GroupTicket groupTicket && groupTicket.getGroup() == group) {
+                builder.addGroupTicket(groupTicket);
+            }
+        }
+        return builder.build();
     }
 }
