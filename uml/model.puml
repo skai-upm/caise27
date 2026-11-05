@@ -1,0 +1,118 @@
+@startuml model
+' Amusement Park - Delivery 2 model (es.upm.amusementpark)
+hide methods
+skinparam classAttributeIconSize 0
+
+package park {
+  class Park <<singleton>> {
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+    {static} + INITIAL_PRICE : BigDecimal = 40.00
+  }
+}
+
+package model {
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - telephone : String
+    - cardNumber : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class UserValidator <<utility>>
+
+  class Group {
+    - identifier : String {readOnly}
+    - name : String
+  }
+
+  abstract class Ticket {
+    - identifier : String {readOnly}
+    - date : LocalDate {readOnly}
+  }
+
+  class IndividualTicket {
+    - price : BigDecimal {readOnly}
+  }
+
+  class GroupTicket {
+    - groupIdentifier : String {readOnly}
+  }
+
+  enum GroupDiscount {
+    NONE (0..2 : 0%)
+    SMALL (3..5 : 10%)
+    MEDIUM (6..10 : 20%)
+    LARGE (11.. : 50%)
+    - percent : int
+  }
+
+  class Attraction {
+    - identifier : String {readOnly}
+    - name : String
+    - capacity : int {readOnly}
+  }
+}
+
+package repository {
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class AttractionRepository
+}
+
+package persistence {
+  interface UserStorage
+  interface GroupStorage
+  interface TicketStorage
+  interface AttractionStorage
+  class UserFileStorage
+  class GroupFileStorage
+  class TicketFileStorage
+  class AttractionFileStorage
+}
+
+' --- inheritance and implementations
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+UserStorage <|.. UserFileStorage
+GroupStorage <|.. GroupFileStorage
+TicketStorage <|.. TicketFileStorage
+AttractionStorage <|.. AttractionFileStorage
+
+' --- model relationships (all unidirectional; User references nothing)
+IndividualTicket --> "1" User : user
+GroupTicket *-- "1..*" IndividualTicket : composition
+GroupTicket --> "0..1" Group : group
+Group --> "0..*" User : members
+Attraction --> "0..*" User : occupants
+GroupTicket ..> GroupDiscount : price rule
+UserValidator ..> User : validates
+UserField ..> User : modifiable field of
+
+' --- central management and storage
+Park --> "1" UserRepository : users
+Park --> "1" GroupRepository : groups
+Park --> "1" TicketRepository : tickets
+Park --> "1" AttractionRepository : attractions
+UserRepository o-- "0..*" User
+GroupRepository o-- "0..*" Group
+TicketRepository o-- "0..*" Ticket
+AttractionRepository o-- "0..*" Attraction
+UserRepository --> "1" UserStorage
+GroupRepository --> "1" GroupStorage
+TicketRepository --> "1" TicketStorage
+AttractionRepository --> "1" AttractionStorage
+@enduml
