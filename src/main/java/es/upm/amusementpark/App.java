@@ -1,6 +1,7 @@
 package es.upm.amusementpark;
 
 import es.upm.amusementpark.command.CommandProcessor;
+import es.upm.amusementpark.park.Park;
 import es.upm.amusementpark.persistence.UserFileStorage;
 import es.upm.amusementpark.repository.UserRepository;
 import es.upm.amusementpark.service.UserService;
@@ -37,7 +38,9 @@ public class App {
     static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path usersFile) {
         CommandProcessor processor;
         try {
-            processor = new CommandProcessor(new UserService(new UserRepository(new UserFileStorage(usersFile))));
+            Park park = Park.getInstance();
+            park.start(new UserRepository(new UserFileStorage(usersFile)));
+            processor = new CommandProcessor(new UserService(park.users()));
         } catch (UncheckedIOException e) {
             err.println("ERROR: cannot read users file '" + usersFile + "'");
             return 1;

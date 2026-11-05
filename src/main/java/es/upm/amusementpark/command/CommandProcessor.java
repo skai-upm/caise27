@@ -1,8 +1,16 @@
 package es.upm.amusementpark.command;
 
 import es.upm.amusementpark.model.UserField;
-import es.upm.amusementpark.service.UserOperationException;
+import es.upm.amusementpark.park.Park;
+import es.upm.amusementpark.service.OperationException;
 import es.upm.amusementpark.service.UserService;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Interprets text commands whose elements are separated by ';'.
@@ -10,33 +18,63 @@ import es.upm.amusementpark.service.UserService;
 public class CommandProcessor {
 
     private static final String SEPARATOR = ";";
-    private static final String USER_CREATE = "USER CREATE";
-    private static final int USER_CREATE_ELEMENTS = 8;
-    private static final String USER_DELETE = "USER DELETE";
-    private static final int USER_DELETE_ELEMENTS = 3;
-    private static final String USER_UPDATE = "USER UPDATE";
-    private static final int USER_UPDATE_ELEMENTS = 5;
-    private static final String HELP = "HELP";
-    private static final String EXIT = "EXIT";
-    static final String HELP_TEXT = String.join(System.lineSeparator(),
-            "Available commands:",
-            "  USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-            "  USER DELETE;<email>;<password>",
-            "  USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
-            "  HELP",
-            "  EXIT");
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 
-    private boolean exitRequested;
+    /** Handler of a command, receiving all elements (element 0 is the command name). */
+    @FunctionalInterface
+    private interface Handler {
+        String handle(String[] elements);
+    }
 
+    private record Command(int elements, String usage, String note, Handler handler) {
+    }
+
+    private final Map<String, Command> commands = new LinkedHashMap<>();
     private final UserService userService;
+    private boolean exitRequested;
 
     public CommandProcessor(UserService userService) {
         this.userService = userService;
+        register("USER CREATE", 8, "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>", "",
+                p -> {
+                    userService.createUser(p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+                    return "USER CREATED";
+                });
+        register("USER DELETE", 3, "USER DELETE;<email>;<password>", "", p -> {
+            userService.deleteUser(p[1], p[2]);
+            return "USER DELETED";
+        });
+        register("USER UPDATE", 5, "USER UPDATE;<email>;<password>;<field>;<value>",
+                "(field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)", this::userUpdate);
+        register("SYSTEM DATE", 2, "SYSTEM DATE;<yyyy-MM-dd>", "", this::systemDate);
+        register("SYSTEM PRICE", 2, "SYSTEM PRICE;<Price>", "", this::systemPrice);
+        register("HELP", 1, "HELP", "", p -> helpText());
+        register("EXIT", 1, "EXIT", "", p -> {
+            exitRequested = true;
+            return "GOODBYE";
+        });
+    }
+
+    private void register(String name, int elements, String usage, String note, Handler handler) {
+        commands.put(name, new Command(elements, usage, note, handler));
     }
 
     /** Whether an EXIT command has been processed; no further commands must run. */
     public boolean isExitRequested() {
         return exitRequested;
+    }
+
+    /** Text listing every available command and its syntax. */
+    public String helpText() {
+        StringBuilder sb = new StringBuilder("Available commands:");
+        for (Command c : commands.values()) {
+            sb.append(System.lineSeparator()).append("  ").append(c.usage());
+            if (!c.note().isEmpty()) {
+                sb.append("   ").append(c.note());
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -52,54 +90,23 @@ public class CommandProcessor {
         for (int i = 0; i < parts.length; i++) {
             parts[i] = parts[i].trim();
         }
-        try {
-            if (HELP.equals(parts[0])) {
-                return parts.length == 1 ? HELP_TEXT : "ERROR: wrong number of arguments. Usage: HELP";
-            }
-            if (EXIT.equals(parts[0])) {
-                if (parts.length != 1) {
-                    return "ERROR: wrong number of arguments. Usage: EXIT";
-                }
-                exitRequested = true;
-                return "GOODBYE";
-            }
-            if (USER_CREATE.equals(parts[0])) {
-                return userCreate(parts);
-            }
-            if (USER_DELETE.equals(parts[0])) {
-                return userDelete(parts);
-            }
-            if (USER_UPDATE.equals(parts[0])) {
-                return userUpdate(parts);
-            }
+        Command command = commands.get(parts[0]);
+        if (command == null) {
             return "ERROR: unknown command '" + parts[0] + "'";
-        } catch (UserOperationException e) {
+        }
+        if (parts.length != command.elements()) {
+            return "ERROR: wrong number of arguments. Usage: " + command.usage();
+        }
+        try {
+            return command.handler().handle(parts);
+        } catch (OperationException e) {
             return "ERROR: " + e.getMessage();
         } catch (RuntimeException e) {
             return "ERROR: the command could not be processed (" + e.getMessage() + ")";
         }
     }
 
-    private String userCreate(String[] p) {
-        if (p.length != USER_CREATE_ELEMENTS) {
-            return "ERROR: wrong number of arguments. Usage: USER CREATE;FirstName;Surnames;DNI;Email;Password;Phone;Card";
-        }
-        userService.createUser(p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-        return "USER CREATED";
-    }
-
-    private String userDelete(String[] p) {
-        if (p.length != USER_DELETE_ELEMENTS) {
-            return "ERROR: wrong number of arguments. Usage: USER DELETE;Email;Password";
-        }
-        userService.deleteUser(p[1], p[2]);
-        return "USER DELETED";
-    }
-
     private String userUpdate(String[] p) {
-        if (p.length != USER_UPDATE_ELEMENTS) {
-            return "ERROR: wrong number of arguments. Usage: USER UPDATE;Email;Password;Field;NewValue";
-        }
         if ("DNI".equals(p[3])) {
             return "ERROR: the DNI cannot be modified";
         }
@@ -109,5 +116,38 @@ public class CommandProcessor {
         }
         userService.updateUser(p[1], p[2], field, p[4]);
         return "USER UPDATED";
+    }
+
+    private String systemDate(String[] p) {
+        Park.getInstance().setCurrentDate(parseDate(p[1]));
+        return "SYSTEM DATE UPDATED";
+    }
+
+    private String systemPrice(String[] p) {
+        Park.getInstance().setCurrentPrice(parsePrice(p[1]));
+        return "SYSTEM PRICE UPDATED";
+    }
+
+    /** Parses a date in yyyy-MM-dd format, rejecting non-existent dates. */
+    static LocalDate parseDate(String text) {
+        try {
+            return LocalDate.parse(text, DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new OperationException("invalid date '" + text + "', expected yyyy-MM-dd");
+        }
+    }
+
+    /** Parses a positive monetary amount with at most two decimals. */
+    static BigDecimal parsePrice(String text) {
+        int dot = text.indexOf('.');
+        boolean wellFormed = !text.isEmpty() && dot == text.lastIndexOf('.') && dot != 0 && dot != text.length() - 1
+                && (dot < 0 || text.length() - dot - 1 <= 2);
+        for (char c : text.toCharArray()) {
+            wellFormed &= (c >= '0' && c <= '9') || c == '.';
+        }
+        if (!wellFormed || new BigDecimal(text).signum() <= 0) {
+            throw new OperationException("invalid price '" + text + "', expected a positive amount with up to two decimals");
+        }
+        return new BigDecimal(text);
     }
 }
