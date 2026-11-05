@@ -1,0 +1,72 @@
+{
+  "capturedAt": "2026-10-26T20:27:16.834720+00:00",
+  "agent": "claude-code",
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "7ec67505-6181-4f06-9496-031201040517",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 28,
+    "outputTokens": 7856,
+    "cacheCreationTokens": 84319,
+    "cacheReadTokens": 1025953,
+    "totalTokens": 1118156,
+    "totalCost": 1.0369746
+  },
+  "git": {
+    "available": true,
+    "repo": "/Users/andreacimmino/Desktop/opendev/opus_5_setup_multiple_human",
+    "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+    "dirty": true,
+    "statusPorcelain": [
+      "?? .botl/",
+      "?? experiments/",
+      "?? openspec/changes/botl-0001-f1-create-the-project/"
+    ]
+  },
+  "artifacts": {
+    "available": true,
+    "files": 5,
+    "lines": 107,
+    "words": 834,
+    "requirements": 4,
+    "scenarios": 5,
+    "tasks": 5,
+    "shallStatements": 5
+  },
+  "projectProfile": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "codeQuality": {
+    "common": {
+      "sonar": {
+        "available": false,
+        "skipped": true
+      }
+    },
+    "languageSpecific": {
+      "profile": {
+        "kind": "unknown",
+        "modules": []
+      },
+      "modules": []
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "radon": {
+      "available": false
+    }
+  },
+  "sonar": {
+    "available": false,
+    "skipped": true
+  },
+  "radon": {
+    "available": false
+  }
+}
