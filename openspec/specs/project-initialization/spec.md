@@ -46,11 +46,11 @@ The project SHALL compile and run its tests successfully with Maven using a JDK 
 - **THEN** the build fails, so the baseline is only satisfied when all sources compile
 
 ### Requirement: Delivery 1 technical restrictions
-The application SHALL use only the Java standard library at runtime (no databases, frameworks or external libraries; test-only dependencies excluded), SHALL persist data only in text files, SHALL NOT use regular expressions or encryption mechanisms in its production code, and SHALL interpret commands with basic String operations and `split`.
+The application SHALL use only the Java standard library at runtime (no databases, frameworks or external libraries; test-only dependencies excluded), except for the BCrypt library (`org.mindrot:jbcrypt`) mandated by Delivery 3 for password protection, SHALL persist data only in text files, SHALL NOT use regular expressions or encryption mechanisms in its production code other than BCrypt password hashing through that library, and SHALL interpret commands with basic String operations and `split`.
 
 #### Scenario: No runtime dependencies
 - **WHEN** the Maven dependencies are listed
-- **THEN** every declared dependency has `test` scope
+- **THEN** every declared dependency has `test` scope, except `org.mindrot:jbcrypt`
 
 #### Scenario: No regular expressions or encryption in production code
 - **WHEN** the production sources are inspected

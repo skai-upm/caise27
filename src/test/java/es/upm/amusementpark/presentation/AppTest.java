@@ -58,7 +58,7 @@ class AppTest {
         out.reset();
         run(new String[0], ANA + "\n" + UPDATE + "\n", b.resolve("users.txt"));
         assertEquals(fileOut, out.toString(StandardCharsets.UTF_8));
-        assertEquals(Files.readAllLines(a.resolve("users.txt")), Files.readAllLines(b.resolve("users.txt")));
+        assertEquals(masked(Files.readAllLines(a.resolve("users.txt"))), masked(Files.readAllLines(b.resolve("users.txt"))));
     }
 
     @Test
@@ -68,5 +68,16 @@ class AppTest {
         assertTrue(err.toString(StandardCharsets.UTF_8).contains("missing.txt"));
         assertEquals(1, run(new String[] {dir.toString()}, "", dir.resolve("users.txt")));
         assertEquals("", out.toString(StandardCharsets.UTF_8));
+    }
+
+    /** Replaces the (salted BCrypt) password field of user file lines so they can be compared. */
+    static java.util.List<String> masked(java.util.List<String> lines) {
+        return lines.stream().map(l -> {
+            String[] f = l.split(";", -1);
+            if (f.length == 7) {
+                f[4] = f[4].startsWith("$2a$") ? "<bcrypt>" : f[4];
+            }
+            return String.join(";", f);
+        }).toList();
     }
 }

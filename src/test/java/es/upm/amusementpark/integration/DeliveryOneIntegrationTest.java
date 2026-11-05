@@ -68,9 +68,9 @@ class DeliveryOneIntegrationTest {
         assertEquals(List.of("USER CREATED", "USER CREATED", "USER UPDATED", "USER UPDATED", "USER DELETED"), lines.subList(0, 5));
         assertTrue(out.contains("USER UPDATE;<Email>;<Password>;<Field>;<NewValue>"));
         assertEquals("GOODBYE", lines.get(lines.size() - 1));
-        List<String> expected = List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456");
-        assertEquals(expected, Files.readAllLines(a.resolve("users.txt")));
-        assertEquals(expected, Files.readAllLines(b.resolve("users.txt")));
+        List<String> expected = List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;<bcrypt>;699999999;1234567890123456");
+        assertEquals(expected, masked(Files.readAllLines(a.resolve("users.txt"))));
+        assertEquals(expected, masked(Files.readAllLines(b.resolve("users.txt"))));
     }
 
     @Test
@@ -110,7 +110,7 @@ class DeliveryOneIntegrationTest {
 
     @Test
     void productionCodeRespectsRestrictions() throws IOException {
-        List<String> forbidden = List.of("java.util.regex", ".matches(", "replaceAll(", "replaceFirst(",
+        List<String> forbidden = List.of("java.util.regex", ".matches(\"", "replaceAll(", "replaceFirst(",
                 "split(\"\\\\", "javax.crypto", "MessageDigest", "Serializable", "ObjectOutputStream", "ObjectInputStream");
         try (Stream<Path> files = Files.walk(Path.of("src/main/java"))) {
             for (Path f : files.filter(p -> p.toString().endsWith(".java")).toList()) {
@@ -122,6 +122,19 @@ class DeliveryOneIntegrationTest {
         }
         String pom = Files.readString(Path.of("pom.xml"));
         String deps = pom.substring(pom.indexOf("<dependencies>"), pom.indexOf("</dependencies>"));
-        assertEquals(deps.split("<dependency>", -1).length - 1, deps.split("<scope>test</scope>", -1).length - 1);
+        // every dependency is test-scoped except the mandated BCrypt library
+        assertEquals(deps.split("<dependency>", -1).length - 2, deps.split("<scope>test</scope>", -1).length - 1);
+        assertTrue(deps.contains("<artifactId>jbcrypt</artifactId>"));
+    }
+
+    /** Replaces the (salted BCrypt) password field of user file lines so they can be compared. */
+    static java.util.List<String> masked(java.util.List<String> lines) {
+        return lines.stream().map(l -> {
+            String[] f = l.split(";", -1);
+            if (f.length == 7) {
+                f[4] = f[4].startsWith("$2a$") ? "<bcrypt>" : f[4];
+            }
+            return String.join(";", f);
+        }).toList();
     }
 }

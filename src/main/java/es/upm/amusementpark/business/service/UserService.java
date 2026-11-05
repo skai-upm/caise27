@@ -6,6 +6,8 @@ import es.upm.amusementpark.business.exception.RuleViolationException;
 
 
 import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.business.security.BCryptPasswordEncoder;
+import es.upm.amusementpark.business.security.PasswordEncoder;
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.model.UserValidator;
 import es.upm.amusementpark.business.control.Park;
@@ -21,6 +23,7 @@ public class UserService {
     private UserRepository repository;
     private GroupRepository groups;
     private TicketRepository tickets;
+    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     private UserService() {
     }
@@ -32,6 +35,12 @@ public class UserService {
     /** The single instance of this controller. */
     public static UserService getInstance() {
         return Holder.INSTANCE;
+    }
+
+    /** Injects the password protection behavior (done during application initialization). */
+    public UserService injectPasswordEncoder(PasswordEncoder encoder) {
+        this.passwordEncoder = encoder;
+        return this;
     }
 
     /** Injects the repositories this controller works with (done during application initialization). */
@@ -65,7 +74,7 @@ public class UserService {
         if (repository.findByEmail(email).isPresent()) {
             throw new RuleViolationException("a user with this email already exists");
         }
-        User user = new User(firstName, surnames, dni, email, password, phone, card);
+        User user = new User(firstName, surnames, dni, email, passwordEncoder.encode(password), phone, card);
         repository.add(user);
         return user;
     }
@@ -110,7 +119,7 @@ public class UserService {
                 if (!UserValidator.isValidPassword(newValue)) {
                     throw new InvalidDataException("invalid password");
                 }
-                user.setPassword(newValue);
+                user.setPassword(passwordEncoder.encode(newValue));
             }
             case CARD -> {
                 if (!UserValidator.isValidCardNumber(newValue)) {
@@ -126,7 +135,7 @@ public class UserService {
     private User authenticate(String email, String password) {
         User user = repository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("user not found"));
-        if (!user.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuleViolationException("incorrect password");
         }
         return user;

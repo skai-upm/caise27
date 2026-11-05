@@ -1,6 +1,7 @@
 package es.upm.amusementpark.presentation;
 
 import es.upm.amusementpark.business.control.Park;
+import es.upm.amusementpark.business.security.BCryptPasswordEncoder;
 import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
 import es.upm.amusementpark.business.service.InvoiceService;
@@ -22,7 +23,8 @@ public final class ApplicationInitializer {
 
     public static CommandProcessor initialize(Repositories r) {
         Park.getInstance().start(r);
-        UserService users = UserService.getInstance().inject(r.users(), r.groups(), r.tickets());
+        UserService users = UserService.getInstance().inject(r.users(), r.groups(), r.tickets())
+                .injectPasswordEncoder(new BCryptPasswordEncoder());
         GroupService groups = GroupService.getInstance().inject(r.users(), r.groups(), r.tickets());
         TicketService tickets = TicketService.getInstance().inject(r.users(), r.tickets(), r.groups());
         AttractionService attractions = AttractionService.getInstance().inject(r.attractions(), r.tickets());

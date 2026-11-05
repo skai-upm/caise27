@@ -55,7 +55,7 @@ class UserModificationTest {
         assertEquals("Garcia", a.getSurnames());
         assertEquals("699999999", a.getTelephone());
         assertEquals("9999888877776666", a.getCardNumber());
-        assertEquals("Nueva2#", a.getPassword());
+        assertTrue(new es.upm.amusementpark.business.security.BCryptPasswordEncoder().matches("Nueva2#", a.getPassword()));
         assertEquals("ana.nueva@correo.com", a.getEmail());
     }
 
@@ -83,7 +83,7 @@ class UserModificationTest {
         assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;EMAIL;pedro@correo.com").startsWith("ERROR"));
         User a = ana();
         assertEquals("ana@correo.com", a.getEmail());
-        assertEquals("Clave1!", a.getPassword());
+        assertTrue(new es.upm.amusementpark.business.security.BCryptPasswordEncoder().matches("Clave1!", a.getPassword()));
         assertEquals("1234567890123456", a.getCardNumber());
     }
 

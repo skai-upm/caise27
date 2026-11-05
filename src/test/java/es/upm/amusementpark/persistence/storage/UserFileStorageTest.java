@@ -59,13 +59,24 @@ class UserFileStorageTest {
         UserService first = UserService.getInstance().inject(new UserRepository(new UserFileStorage(f)), new GroupRepository(), new TicketRepository());
         first.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         first.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
-        assertEquals(List.of(ANA, PEDRO), Files.readAllLines(f, StandardCharsets.UTF_8));
+        assertEquals(masked(List.of(ANA, PEDRO)).stream().map(l -> l.replace("Clave1!", "<bcrypt>").replace("Otra2#", "<bcrypt>")).toList(), masked(Files.readAllLines(f, StandardCharsets.UTF_8)));
 
         UserRepository restarted = new UserRepository(new UserFileStorage(f));
         assertEquals(2, restarted.count());
         UserService second = UserService.getInstance().inject(restarted, new GroupRepository(), new TicketRepository());
         Assertions.assertThrows(OperationException.class, () ->
                 second.createUser("Luis", "M", "12345678Z", "luis@correo.com", "Clave1!", "6", "1111222233334444"));
-        assertEquals(List.of(ANA, PEDRO), Files.readAllLines(f, StandardCharsets.UTF_8));
+        assertEquals(masked(List.of(ANA, PEDRO)).stream().map(l -> l.replace("Clave1!", "<bcrypt>").replace("Otra2#", "<bcrypt>")).toList(), masked(Files.readAllLines(f, StandardCharsets.UTF_8)));
+    }
+
+    /** Replaces the (salted BCrypt) password field of user file lines so they can be compared. */
+    static java.util.List<String> masked(java.util.List<String> lines) {
+        return lines.stream().map(l -> {
+            String[] f = l.split(";", -1);
+            if (f.length == 7) {
+                f[4] = f[4].startsWith("$2a$") ? "<bcrypt>" : f[4];
+            }
+            return String.join(";", f);
+        }).toList();
     }
 }
