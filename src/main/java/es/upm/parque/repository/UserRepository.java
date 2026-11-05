@@ -34,6 +34,13 @@ public class UserRepository {
         persist();
     }
 
+    /** Persists the current users after an in-place modification of a stored user. */
+    public void update(User user) {
+        if (usersByDni.containsKey(user.getDni())) {
+            persist();
+        }
+    }
+
     /** Removes the user with the given DNI, if present, and persists the change. */
     public void remove(String dni) {
         if (usersByDni.remove(dni) != null) {

@@ -38,8 +38,74 @@ class CommandProcessorTest {
     @Test
     void unknownCommandIsAnErrorAndKeepsState() {
         assertTrue(processor.process("FOO;bar").startsWith("ERROR"));
-        assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!").startsWith("ERROR"));
+        assertTrue(processor.process("USER PROMOTE;ana@correo.com").startsWith("ERROR"));
         assertEquals(0, repo.size());
+    }
+
+    private static final String LUIS =
+            "USER CREATE;Luis;Perez;87654321X;luis@correo.com;Clave1!;600000000;1234567890123457";
+
+    private String update(String field, String value) {
+        return processor.process("USER UPDATE;ana@correo.com;Clave1!;" + field + ";" + value);
+    }
+
+    @Test
+    void eachModifiableFieldIsUpdated() {
+        processor.process(ANA);
+        assertTrue(update("NAME", "Ana Maria").startsWith("OK"));
+        assertTrue(update("SURNAME", "Garcia Ruiz").startsWith("OK"));
+        assertTrue(update("PHONE", "+34 699 000 111").startsWith("OK"));
+        assertTrue(update("CARD", "9999888877776666").startsWith("OK"));
+        User u = repo.findByDni("12345678Z");
+        assertEquals("Ana Maria", u.getFirstName());
+        assertEquals("Garcia Ruiz", u.getSurnames());
+        assertEquals("+34 699 000 111", u.getTelephone());
+        assertEquals("9999888877776666", u.getCardNumber());
+
+        assertTrue(update("PASSWORD", "Nueva2#").startsWith("OK"));
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME;X").startsWith("ERROR"));
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Nueva2#;EMAIL;ana.nueva@correo.com").startsWith("OK"));
+        assertEquals("12345678Z", repo.findByEmail("ana.nueva@correo.com").getDni());
+    }
+
+    @Test
+    void updateRequiresAuthentication() {
+        processor.process(ANA);
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Mala1!;NAME;Ana Maria").startsWith("ERROR"));
+        assertTrue(processor.process("USER UPDATE;nadie@correo.com;Clave1!;NAME;X").startsWith("ERROR"));
+        assertEquals("Ana", repo.findByDni("12345678Z").getFirstName());
+    }
+
+    @Test
+    void dniAndUnknownFieldsCannotBeUpdated() {
+        processor.process(ANA);
+        assertTrue(update("DNI", "87654321X").startsWith("ERROR"));
+        assertTrue(update("AGE", "30").startsWith("ERROR"));
+        assertTrue(update("name", "x").startsWith("ERROR"));
+        assertEquals("12345678Z", repo.findByEmail("ana@correo.com").getDni());
+        assertEquals(1, repo.size());
+    }
+
+    @Test
+    void invalidNewValuesAreRejected() {
+        processor.process(ANA);
+        processor.process(LUIS);
+        assertTrue(update("EMAIL", "ana@correo.es").startsWith("ERROR"));
+        assertTrue(update("EMAIL", "luis@correo.com").startsWith("ERROR"));
+        assertTrue(update("PASSWORD", "Clave12").startsWith("ERROR"));
+        assertTrue(update("CARD", "999988887777666").startsWith("ERROR"));
+        User u = repo.findByDni("12345678Z");
+        assertEquals("ana@correo.com", u.getEmail());
+        assertEquals("Clave1!", u.getPassword());
+        assertEquals("1234567890123456", u.getCardNumber());
+    }
+
+    @Test
+    void ownEmailIsAcceptedAndWrongCountRejected() {
+        processor.process(ANA);
+        assertTrue(update("EMAIL", "ana@correo.com").startsWith("OK"));
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME").startsWith("ERROR"));
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME;a;b").startsWith("ERROR"));
     }
 
     @Test

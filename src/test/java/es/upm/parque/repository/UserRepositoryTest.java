@@ -75,6 +75,18 @@ class UserRepositoryTest {
     }
 
     @Test
+    void updatePersistsInPlaceChanges(@TempDir Path dir) {
+        Path file = dir.resolve("users.txt");
+        UserRepository repo = new UserRepository(new UserFileStore(file));
+        User u = user("12345678Z", "ana@correo.com");
+        repo.add(u);
+        u.setCardNumber("9999888877776666");
+        repo.update(u);
+        assertEquals("9999888877776666",
+                new UserRepository(new UserFileStore(file)).findByDni("12345678Z").getCardNumber());
+    }
+
+    @Test
     void findAllKeepsInsertionOrder() {
         UserRepository repo = new UserRepository();
         repo.add(user("87654321X", "b@correo.com"));
