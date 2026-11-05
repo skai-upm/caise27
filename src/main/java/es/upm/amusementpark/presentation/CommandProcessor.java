@@ -76,6 +76,7 @@ public class CommandProcessor {
             Map.entry("EXIT", "Ends the application; no further command is executed."));
 
     private final Map<String, Command> commands = new LinkedHashMap<>();
+    private final Map<String, List<String>> alternatives = new LinkedHashMap<>();
     private final UserService userService;
     private final AttractionService attractionService;
     private boolean exitRequested;
@@ -127,6 +128,19 @@ public class CommandProcessor {
             ticketService.deleteGroupTicket(p[1]);
             return "GROUP TICKET DELETED";
         });
+        register("ATTRACTION CREATE", 4, 5, "ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
+                "(type: GENERAL, INDIVIDUAL, GROUP, SPECIAL; optional, default GENERAL)", p -> {
+            attractionService.createAttraction(p[1], p[2], p[3], p.length == 5 ? p[4] : "GENERAL");
+            return "ATTRACTION CREATED";
+        });
+        register("ATTRACTION ENTER", 3, 4, "ATTRACTION ENTER;<attraction>;<ticket>", "",
+                this::attractionEnter);
+        register("ATTRACTION EXIT", 3, "ATTRACTION EXIT;<attraction>;<email>", "", p -> {
+            attractionService.exit(p[1], p[2]);
+            return "USER LEFT ATTRACTION";
+        });
+        register("ATTRACTION LIST", 2, "ATTRACTION LIST;<attraction>", "", p -> attractionService.list(p[1]));
+        register("ATTRACTION STATUS", 2, "ATTRACTION STATUS;<attractionIdentifier>", "", p -> attractionService.status(p[1]));
         register("SPEEDPASS CREATE", 4, "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>", "(quantity: 1 or 10)",
                 p -> {
                     var created = passService.createSpeedPasses(p[1], p[2], p[3]);
@@ -144,21 +158,10 @@ public class CommandProcessor {
             passService.refund(p[1], SpecialPass.class);
             return "SPECIALPASS DELETED";
         });
-        register("ATTRACTION CREATE", 4, 5, "ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
-                "(type: GENERAL, INDIVIDUAL, GROUP, SPECIAL; optional, default GENERAL)", p -> {
-            attractionService.createAttraction(p[1], p[2], p[3], p.length == 5 ? p[4] : "GENERAL");
-            return "ATTRACTION CREATED";
-        });
-        register("ATTRACTION ENTER", 3, 4, "ATTRACTION ENTER;<attraction>;<ticket>", "| ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
-                this::attractionEnter);
-        register("ATTRACTION EXIT", 3, "ATTRACTION EXIT;<attraction>;<email>", "", p -> {
-            attractionService.exit(p[1], p[2]);
-            return "USER LEFT ATTRACTION";
-        });
-        register("ATTRACTION LIST", 2, "ATTRACTION LIST;<attraction>", "", p -> attractionService.list(p[1]));
-        register("ATTRACTION STATUS", 2, "ATTRACTION STATUS;<attractionIdentifier>", "", p -> attractionService.status(p[1]));
-        register("INVOICE CREATE", 3, "INVOICE CREATE;USER;<email>", "| INVOICE CREATE;GROUP;<groupIdentifier>",
+        register("INVOICE CREATE", 3, "INVOICE CREATE;USER;<email>", "",
                 p -> invoiceService.create(p[1], p[2]).render());
+        alternative("ATTRACTION ENTER", "ATTRACTION ENTER;<attraction>;<ticket>;SPEED");
+        alternative("INVOICE CREATE", "INVOICE CREATE;GROUP;<groupIdentifier>");
         register("HELP", 1, "HELP", "", p -> help.generate(catalogue()));
         register("HELP EXTENDED", 1, "HELP EXTENDED", "", p -> extendedHelp.generate(catalogue()));
         register("EXIT", 1, "EXIT", "", p -> {
@@ -175,6 +178,11 @@ public class CommandProcessor {
         commands.put(name, new Command(minElements, maxElements, usage, note, PURPOSES.getOrDefault(name, ""), handler));
     }
 
+    /** Registers an additional syntax form of an already registered command (shown on its own help line). */
+    private void alternative(String name, String syntax) {
+        alternatives.computeIfAbsent(name, k -> new java.util.ArrayList<>()).add(syntax);
+    }
+
     /** Whether an EXIT command has been processed; no further commands must run. */
     public boolean isExitRequested() {
         return exitRequested;
@@ -182,7 +190,12 @@ public class CommandProcessor {
 
     /** Descriptions of every available command, in registration order. */
     public List<CommandInfo> catalogue() {
-        return commands.values().stream().map(c -> new CommandInfo(c.usage(), c.note(), c.purpose())).toList();
+        List<CommandInfo> infos = new java.util.ArrayList<>();
+        commands.forEach((name, c) -> {
+            infos.add(new CommandInfo(c.usage(), c.note(), c.purpose()));
+            alternatives.getOrDefault(name, List.of()).forEach(alt -> infos.add(new CommandInfo(alt, "", c.purpose())));
+        });
+        return infos;
     }
 
     /**
