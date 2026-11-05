@@ -1,0 +1,419 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0029-botl-0029-7-f1-user-deletion",
+  "change": "botl-0029-7-f1-user-deletion",
+  "runId": "0001-propose-20261028T202737Z",
+  "sequence": 1,
+  "phase": "propose",
+  "startedAt": "2026-10-28T20:27:37.070744+00:00",
+  "finishedAt": "2026-10-28T20:28:33.763117+00:00",
+  "durationSeconds": 56.692373,
+  "environment": {
+    "agent": "claude-code",
+    "agentAdapter": "claude-code",
+    "aiUsageSource": "claude",
+    "analysisAdapterConfigured": "auto",
+    "analysisAdapterBefore": "java-maven",
+    "analysisAdapterAfter": "java-maven"
+  },
+  "projectProfileBefore": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "projectProfileAfter": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "profileTransition": {
+    "changed": false,
+    "before": "java-maven",
+    "after": "java-maven"
+  },
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "021d9b0d-2e64-4968-a24d-449ae3c46127",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 2,
+    "outputTokens": 2242,
+    "cacheCreationTokens": 929,
+    "cacheReadTokens": 578012,
+    "totalTokens": 581185,
+    "totalCost": 0.16788239999999988,
+    "newTokens": 3173,
+    "cachedTokens": 578012,
+    "totalProcessedTokens": 581185
+  },
+  "before": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_3_setup_multiple_gpt",
+      "head": "9e317e8a77107eba583f4868c9b942b72c1e6a52",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .DS_Store",
+        "?? .botl/proposals/opus_3_setup_multiple_gpt/0029-7.F1_-_user-deletion.md",
+        "?? .scannerwork/",
+        "?? experiments/",
+        "?? sonar_metric_catalog.json"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 179,
+      "lines": 4403,
+      "words": 44557,
+      "requirements": 218,
+      "scenarios": 418,
+      "tasks": 150,
+      "shallStatements": 440
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "amusement-park",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "s: 0, Skipped: 0, Time elapsed: 0.020 s -- in es.upm.etsisi.amusementpark.business.controller.ParkControllerEntryTest\n[INFO] Running es.upm.etsisi.amusementpark.business.controller.ParkControllerTicketTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in es.upm.etsisi.amusementpark.business.controller.ParkControllerTicketTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.GroupTicketTest\n[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.102 s -- in es.upm.etsisi.amusementpark.business.model.GroupTicketTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.PassConsumptionTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in es.upm.etsisi.amusementpark.business.model.PassConsumptionTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.TicketTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in es.upm.etsisi.amusementpark.business.model.TicketTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.PassTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in es.upm.etsisi.amusementpark.business.model.PassTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.AttractionTypesTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in es.upm.etsisi.amusementpark.business.model.AttractionTypesTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.UserTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in es.upm.etsisi.amusementpark.business.model.UserTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.GroupTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in es.upm.etsisi.amusementpark.business.model.GroupTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.UserValidatorTest\n[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.133 s -- in es.upm.etsisi.amusementpark.business.model.UserValidatorTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.AttractionTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in es.upm.etsisi.amusementpark.business.model.AttractionTest\n[INFO] Running es.upm.etsisi.amusementpark.business.invoice.InvoiceBuilderTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in es.upm.etsisi.amusementpark.business.invoice.InvoiceBuilderTest\n[INFO] Running es.upm.etsisi.amusementpark.ArchitectureTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.064 s -- in es.upm.etsisi.amusementpark.ArchitectureTest\n[INFO] Running es.upm.etsisi.amusementpark.Delivery3RestrictionsTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in es.upm.etsisi.amusementpark.Delivery3RestrictionsTest\n[INFO] Running es.upm.etsisi.amusementpark.ApplicationIntegrationTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in es.upm.etsisi.amusementpark.ApplicationIntegrationTest\n[INFO] Running es.upm.etsisi.amusementpark.persistence.PasswordStorageTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.180 s -- in es.upm.etsisi.amusementpark.persistence.PasswordStorageTest\n[INFO] Running es.upm.etsisi.amusementpark.persistence.TextRepositoriesTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.230 s -- in es.upm.etsisi.amusementpark.persistence.TextRepositoriesTest\n[INFO] Running es.upm.etsisi.amusementpark.persistence.UserFileFormatTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.100 s -- in es.upm.etsisi.amusementpark.persistence.UserFileFormatTest\n[INFO] Running es.upm.etsisi.amusementpark.UmlModelTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in es.upm.etsisi.amusementpark.UmlModelTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.GroupCommandsTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in es.upm.etsisi.amusementpark.presentation.GroupCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.CommandProcessorTest\n[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in es.upm.etsisi.amusementpark.presentation.CommandProcessorTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.SystemCommandsTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in es.upm.etsisi.amusementpark.presentation.SystemCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionEntryCommandTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in es.upm.etsisi.amusementpark.presentation.AttractionEntryCommandTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionTypeCommandsTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in es.upm.etsisi.amusementpark.presentation.AttractionTypeCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.Delivery3HelpTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in es.upm.etsisi.amusementpark.presentation.Delivery3HelpTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.InvoiceCommandTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in es.upm.etsisi.amusementpark.presentation.InvoiceCommandTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.PassCommandsTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in es.upm.etsisi.amusementpark.presentation.PassCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionCommandsTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in es.upm.etsisi.amusementpark.presentation.AttractionCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionStatusCommandTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in es.upm.etsisi.amusementpark.presentation.AttractionStatusCommandTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.HelpGenerationTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in es.upm.etsisi.amusementpark.presentation.HelpGenerationTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionEnterCommandTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in es.upm.etsisi.amusementpark.presentation.AttractionEnterCommandTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.GroupTicketCommandsTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in es.upm.etsisi.amusementpark.presentation.GroupTicketCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.TicketCommandsTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in es.upm.etsisi.amusementpark.presentation.TicketCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.EntryPointTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in es.upm.etsisi.amusementpark.EntryPointTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 246, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ amusement-park ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_3_setup_multiple_gpt/target/jacoco.exec\n[INFO] Analyzed bundle 'amusement-park' with 74 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  9.188 s\n[INFO] Finished at: 2026-10-28T21:27:54+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "surefire": {
+              "reportFiles": 55,
+              "tests": 246,
+              "passed": 246,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 3.841999999999999
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_3_setup_multiple_gpt/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 203,
+                    "covered": 5995,
+                    "total": 6198,
+                    "coverage": 96.72474991932881
+                  },
+                  "branch": {
+                    "missed": 50,
+                    "covered": 435,
+                    "total": 485,
+                    "coverage": 89.69072164948454
+                  },
+                  "line": {
+                    "missed": 54,
+                    "covered": 1130,
+                    "total": 1184,
+                    "coverage": 95.4391891891892
+                  },
+                  "complexity": {
+                    "missed": 59,
+                    "covered": 532,
+                    "total": 591,
+                    "coverage": 90.01692047377327
+                  },
+                  "method": {
+                    "missed": 9,
+                    "covered": 338,
+                    "total": 347,
+                    "coverage": 97.40634005763688
+                  },
+                  "class": {
+                    "missed": 1,
+                    "covered": 73,
+                    "total": 74,
+                    "coverage": 98.64864864864865
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_3_setup_multiple_gpt/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "after": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_3_setup_multiple_gpt",
+      "head": "9e317e8a77107eba583f4868c9b942b72c1e6a52",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .DS_Store",
+        "?? .botl/proposals/opus_3_setup_multiple_gpt/0029-7.F1_-_user-deletion.md",
+        "?? .scannerwork/",
+        "?? experiments/",
+        "?? openspec/changes/botl-0029-7-f1-user-deletion/",
+        "?? sonar_metric_catalog.json"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 184,
+      "lines": 4470,
+      "words": 45086,
+      "requirements": 219,
+      "scenarios": 422,
+      "tasks": 154,
+      "shallStatements": 443
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "amusement-park",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "s: 0, Skipped: 0, Time elapsed: 0.022 s -- in es.upm.etsisi.amusementpark.business.controller.ParkControllerEntryTest\n[INFO] Running es.upm.etsisi.amusementpark.business.controller.ParkControllerTicketTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in es.upm.etsisi.amusementpark.business.controller.ParkControllerTicketTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.GroupTicketTest\n[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.111 s -- in es.upm.etsisi.amusementpark.business.model.GroupTicketTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.PassConsumptionTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in es.upm.etsisi.amusementpark.business.model.PassConsumptionTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.TicketTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in es.upm.etsisi.amusementpark.business.model.TicketTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.PassTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in es.upm.etsisi.amusementpark.business.model.PassTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.AttractionTypesTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in es.upm.etsisi.amusementpark.business.model.AttractionTypesTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.UserTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in es.upm.etsisi.amusementpark.business.model.UserTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.GroupTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in es.upm.etsisi.amusementpark.business.model.GroupTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.UserValidatorTest\n[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.052 s -- in es.upm.etsisi.amusementpark.business.model.UserValidatorTest\n[INFO] Running es.upm.etsisi.amusementpark.business.model.AttractionTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.049 s -- in es.upm.etsisi.amusementpark.business.model.AttractionTest\n[INFO] Running es.upm.etsisi.amusementpark.business.invoice.InvoiceBuilderTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in es.upm.etsisi.amusementpark.business.invoice.InvoiceBuilderTest\n[INFO] Running es.upm.etsisi.amusementpark.ArchitectureTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.064 s -- in es.upm.etsisi.amusementpark.ArchitectureTest\n[INFO] Running es.upm.etsisi.amusementpark.Delivery3RestrictionsTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in es.upm.etsisi.amusementpark.Delivery3RestrictionsTest\n[INFO] Running es.upm.etsisi.amusementpark.ApplicationIntegrationTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in es.upm.etsisi.amusementpark.ApplicationIntegrationTest\n[INFO] Running es.upm.etsisi.amusementpark.persistence.PasswordStorageTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.175 s -- in es.upm.etsisi.amusementpark.persistence.PasswordStorageTest\n[INFO] Running es.upm.etsisi.amusementpark.persistence.TextRepositoriesTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.228 s -- in es.upm.etsisi.amusementpark.persistence.TextRepositoriesTest\n[INFO] Running es.upm.etsisi.amusementpark.persistence.UserFileFormatTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.100 s -- in es.upm.etsisi.amusementpark.persistence.UserFileFormatTest\n[INFO] Running es.upm.etsisi.amusementpark.UmlModelTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in es.upm.etsisi.amusementpark.UmlModelTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.GroupCommandsTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in es.upm.etsisi.amusementpark.presentation.GroupCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.CommandProcessorTest\n[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in es.upm.etsisi.amusementpark.presentation.CommandProcessorTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.SystemCommandsTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in es.upm.etsisi.amusementpark.presentation.SystemCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionEntryCommandTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in es.upm.etsisi.amusementpark.presentation.AttractionEntryCommandTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionTypeCommandsTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in es.upm.etsisi.amusementpark.presentation.AttractionTypeCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.Delivery3HelpTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in es.upm.etsisi.amusementpark.presentation.Delivery3HelpTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.InvoiceCommandTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in es.upm.etsisi.amusementpark.presentation.InvoiceCommandTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.PassCommandsTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in es.upm.etsisi.amusementpark.presentation.PassCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionCommandsTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in es.upm.etsisi.amusementpark.presentation.AttractionCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionStatusCommandTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in es.upm.etsisi.amusementpark.presentation.AttractionStatusCommandTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.HelpGenerationTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in es.upm.etsisi.amusementpark.presentation.HelpGenerationTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.AttractionEnterCommandTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in es.upm.etsisi.amusementpark.presentation.AttractionEnterCommandTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.GroupTicketCommandsTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in es.upm.etsisi.amusementpark.presentation.GroupTicketCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.presentation.TicketCommandsTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in es.upm.etsisi.amusementpark.presentation.TicketCommandsTest\n[INFO] Running es.upm.etsisi.amusementpark.EntryPointTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in es.upm.etsisi.amusementpark.EntryPointTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 246, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ amusement-park ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_3_setup_multiple_gpt/target/jacoco.exec\n[INFO] Analyzed bundle 'amusement-park' with 74 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  9.263 s\n[INFO] Finished at: 2026-10-28T21:28:33+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "surefire": {
+              "reportFiles": 55,
+              "tests": 246,
+              "passed": 246,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 3.7759999999999994
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_3_setup_multiple_gpt/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 203,
+                    "covered": 5995,
+                    "total": 6198,
+                    "coverage": 96.72474991932881
+                  },
+                  "branch": {
+                    "missed": 50,
+                    "covered": 435,
+                    "total": 485,
+                    "coverage": 89.69072164948454
+                  },
+                  "line": {
+                    "missed": 54,
+                    "covered": 1130,
+                    "total": 1184,
+                    "coverage": 95.4391891891892
+                  },
+                  "complexity": {
+                    "missed": 59,
+                    "covered": 532,
+                    "total": 591,
+                    "coverage": 90.01692047377327
+                  },
+                  "method": {
+                    "missed": 9,
+                    "covered": 338,
+                    "total": 347,
+                    "coverage": 97.40634005763688
+                  },
+                  "class": {
+                    "missed": 1,
+                    "covered": 73,
+                    "total": 74,
+                    "coverage": 98.64864864864865
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_3_setup_multiple_gpt/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "delta": {
+    "git": {
+      "available": true,
+      "filesModified": 0,
+      "untrackedFiles": 293,
+      "locAdded": 0,
+      "locRemoved": 0,
+      "netLoc": 0
+    },
+    "artifacts": {
+      "requirements": 1,
+      "words": 529,
+      "files": 5,
+      "lines": 67,
+      "scenarios": 4,
+      "shallStatements": 3,
+      "tasks": 4
+    },
+    "radon": {},
+    "sonar": {
+      "allMeasures": {}
+    }
+  }
+}

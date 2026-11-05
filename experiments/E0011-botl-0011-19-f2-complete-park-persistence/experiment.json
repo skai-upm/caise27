@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0011-botl-0011-19-f2-complete-park-persistence",
+  "change": "botl-0011-19-f2-complete-park-persistence",
+  "status": "archived",
+  "createdAt": "2026-10-28T18:41:32.898167+00:00",
+  "updatedAt": "2026-10-28T18:49:58.170686+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261028T184132Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261028T184132Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 262556,
+        "totalCost": 0.21120859999999997
+      }
+    },
+    {
+      "runId": "0002-apply-20261028T184430Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261028T184430Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1684229,
+        "totalCost": 0.8190490000000006
+      }
+    },
+    {
+      "runId": "0003-archive-20261028T184920Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261028T184920Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-28T18:49:58.109326+00:00"
+}

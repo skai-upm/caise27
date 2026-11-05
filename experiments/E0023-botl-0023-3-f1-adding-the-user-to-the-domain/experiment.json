@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0023-botl-0023-3-f1-adding-the-user-to-the-domain",
+  "change": "botl-0023-3-f1-adding-the-user-to-the-domain",
+  "status": "archived",
+  "createdAt": "2026-10-28T19:56:09.129873+00:00",
+  "updatedAt": "2026-10-28T20:00:51.323726+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261028T195609Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261028T195609Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 509919,
+        "totalCost": 0.17347360000000123
+      }
+    },
+    {
+      "runId": "0002-apply-20261028T195715Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261028T195715Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1027921,
+        "totalCost": 0.3394978000000002
+      }
+    },
+    {
+      "runId": "0003-archive-20261028T200012Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261028T200012Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-28T20:00:51.271243+00:00"
+}
