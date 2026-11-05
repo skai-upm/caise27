@@ -78,6 +78,9 @@ public class CommandProcessor {
         if (words.size() == 2 && words.get(0).equals("GROUPTICKET")) {
             return groupTicket(words.get(1), params, parts[0].trim());
         }
+        if (words.size() == 2 && (words.get(0).equals("SPEEDPASS") || words.get(0).equals("SPECIALPASS"))) {
+            return pass(words.get(0), words.get(1), params, parts[0].trim());
+        }
         if (words.size() == 2 && words.get(0).equals("ATTRACTION")) {
             return attraction(words.get(1), params, parts[0].trim());
         }
@@ -177,6 +180,25 @@ public class CommandProcessor {
                     : Result.error("Usage: ATTRACTION STATUS;IdAtraccion");
             default -> Result.error("Unknown command: " + command);
         };
+    }
+
+    private Result pass(String kind, String operation, String[] p, String command) {
+        boolean speed = kind.equals("SPEEDPASS");
+        if (operation.equals("CREATE")) {
+            if (speed) {
+                return hasParams(p, 3) ? controller.buySpeedPasses(p[0], p[1], p[2])
+                        : Result.error("Usage: SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad");
+            }
+            return hasParams(p, 2) ? controller.buySpecialPass(p[0], p[1])
+                    : Result.error("Usage: SPECIALPASS CREATE;Id;IdTicket");
+        }
+        if (operation.equals("DELETE")) {
+            if (!hasParams(p, 1)) {
+                return Result.error("Usage: " + kind + " DELETE;IdPase");
+            }
+            return speed ? controller.refundSpeedPass(p[0]) : controller.refundSpecialPass(p[0]);
+        }
+        return Result.error("Unknown command: " + command);
     }
 
     private Result invoice(String[] p) {

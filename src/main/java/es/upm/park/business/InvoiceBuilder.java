@@ -3,6 +3,7 @@ package es.upm.park.business;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.model.Invoice;
+import es.upm.park.business.model.Pass;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,11 @@ public abstract class InvoiceBuilder {
 
     /** Step: group-ticket purchases of the recipient. */
     public void buildGroupTickets(List<GroupTicket> groupTickets) {
+        // not applicable by default
+    }
+
+    /** Step: personal passes of the recipient. */
+    public void buildPasses(List<Pass> passes) {
         // not applicable by default
     }
 

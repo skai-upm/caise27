@@ -92,6 +92,16 @@ public final class TicketManager {
         return tickets.stream().filter(t -> t.getId().equals(id)).findFirst();
     }
 
+    /** Individual ticket with this id: bought on its own or a constituent of a group ticket. */
+    public Optional<IndividualTicket> findIndividualTicket(String id) {
+        Optional<IndividualTicket> direct = find(id);
+        if (direct.isPresent()) {
+            return direct;
+        }
+        return groupTickets.stream().flatMap(g -> g.getTickets().stream())
+                .filter(t -> t.getId().equals(id)).findFirst();
+    }
+
     /** Ticket usable for attraction access: a standalone individual ticket or a group ticket. */
     public Optional<Ticket> findForAccess(String id) {
         Optional<Ticket> individual = find(id).map(Ticket.class::cast);

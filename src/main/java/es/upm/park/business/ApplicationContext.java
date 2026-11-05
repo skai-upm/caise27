@@ -4,6 +4,7 @@ import es.upm.park.persistence.AttractionFileStore;
 import es.upm.park.persistence.DataDirectory;
 import es.upm.park.persistence.GroupFileStore;
 import es.upm.park.persistence.GroupTicketFileStore;
+import es.upm.park.persistence.PassFileStore;
 import es.upm.park.persistence.TicketFileStore;
 import es.upm.park.persistence.UserFileStore;
 import java.io.IOException;
@@ -61,7 +62,9 @@ public final class ApplicationContext implements AutoCloseable {
                 new GroupTicketFileStore(dataDir.resolve(DataDirectory.GROUP_TICKETS_FILE)), users, groups);
         AttractionManager attractions = AttractionManager.configure(
                 new AttractionFileStore(dataDir.resolve(DataDirectory.ATTRACTIONS_FILE)));
-        return ParkController.configure(users, groups, tickets, attractions, new InvoiceDirector(), date);
+        PassManager passes = PassManager.configure(
+                new PassFileStore(dataDir.resolve(DataDirectory.PASSES_FILE)), tickets);
+        return ParkController.configure(users, groups, tickets, attractions, passes, new InvoiceDirector(), date);
     }
 
     public ParkController getController() {

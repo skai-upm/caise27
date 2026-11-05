@@ -65,6 +65,11 @@ package es.upm.park.business {
 
   class AttractionManager <<singleton>>
 
+  class PassManager <<singleton>> {
+    - historicalLines : List<String>
+    - historicalIds : Set<String>
+  }
+
   abstract class InvoiceBuilder {
     - recipient : String
     - date : LocalDate
@@ -127,6 +132,16 @@ package es.upm.park.business.model {
     - capacity : int
   }
 
+  abstract class Pass {
+    - id : String
+    - price : BigDecimal
+    - consumed : boolean
+  }
+
+  class SpeedPass
+
+  class SpecialPass
+
   class Invoice {
     - recipient : String
     - date : LocalDate
@@ -155,6 +170,8 @@ package es.upm.park.persistence {
 
   interface AttractionRepository
 
+  interface PassRepository
+
   class UserFileStore {
     - file : Path
   }
@@ -182,6 +199,14 @@ package es.upm.park.persistence {
   class AttractionFileStore {
     - file : Path
   }
+
+  class PassFileStore {
+    - file : Path
+  }
+
+  class "PassFileStore.Contents" as PassContents <<record>> {
+    + historicalLines : List<String>
+  }
 }
 
 ' ---- Control ----
@@ -198,6 +223,15 @@ ParkController "0..1" x--> "1" UserManager : users
 ParkController "0..1" x--> "1" GroupManager : groups
 ParkController "0..1" x--> "1" TicketManager : tickets
 ParkController "0..1" x--> "1" AttractionManager : attractions
+ParkController "0..1" x--> "1" PassManager : passes
+PassManager "0..1" x--> "1" PassRepository : store
+PassManager "0..1" x--> "1" TicketManager : tickets
+PassManager "1" *--> "0..*" Pass : passes
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Pass "0..*" x--> "1" IndividualTicket : ticket
+PassRepository <|.. PassFileStore
+PassContents "0..*" x--> "0..*" Pass : passes
 ParkController "0..1" x--> "1" InvoiceDirector : invoiceDirector
 ApplicationContext "0..1" x--> "1" ParkController : controller
 
@@ -258,6 +292,10 @@ ApplicationContext ..> GroupFileStore : creates
 ApplicationContext ..> TicketFileStore : creates
 ApplicationContext ..> GroupTicketFileStore : creates
 ApplicationContext ..> AttractionFileStore : creates
+ApplicationContext ..> PassFileStore : creates
+PassFileStore ..> PassContents
+PassManager ..> PassContents
+PassManager ..> Result
 InvoiceBuilder ..> Invoice : creates
 ParkController ..> Invoice
 UserManager ..> UserValidator

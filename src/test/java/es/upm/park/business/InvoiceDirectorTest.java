@@ -53,20 +53,25 @@ class InvoiceDirectorTest {
         public void buildGroupTickets(List<GroupTicket> groupTickets) {
             steps.add("group");
         }
+
+        @Override
+        public void buildPasses(List<es.upm.park.business.model.Pass> passes) {
+            steps.add("passes");
+        }
     }
 
     @Test
     void directorAlwaysRunsTheSameSteps() {
         RecordingBuilder b = new RecordingBuilder();
-        director.construct(b, "X", DAY, List.of(), List.of());
-        assertEquals(List.of("reset", "individual", "group"), b.steps);
+        director.construct(b, "X", DAY, List.of(), List.of(), List.of());
+        assertEquals(List.of("reset", "individual", "group", "passes"), b.steps);
     }
 
     @Test
     void userBuilderChargesOnlyDirectTickets() {
         IndividualTicket t001 = new IndividualTicket("T001", DAY, P40, ana);
         Invoice inv = director.construct(new UserInvoiceBuilder(), "USER ana@correo.com - Ana Garcia", DAY,
-                List.of(t001), List.of(tg01()));
+                List.of(t001), List.of(tg01()), List.of());
         assertEquals(1, inv.getSections().size());
         assertEquals("Individual tickets", inv.getSections().get(0).title());
         assertEquals(new BigDecimal("40.00"), inv.getTotal());
@@ -77,7 +82,7 @@ class InvoiceDirectorTest {
     void groupBuilderChargesGroupTicketAmountOnly() {
         IndividualTicket t005 = new IndividualTicket("T005", DAY, P40, ana);
         Invoice inv = director.construct(new GroupInvoiceBuilder(), "GROUP G01 - Familia", DAY,
-                List.of(t005), List.of(tg01()));
+                List.of(t005), List.of(tg01()), List.of());
         assertEquals(1, inv.getSections().size());
         assertEquals(new BigDecimal("108.00"), inv.getTotal());
         String text = inv.format();
@@ -88,7 +93,7 @@ class InvoiceDirectorTest {
     @Test
     void emptySectionsAreOmittedAndTotalIsZero() {
         Invoice inv = director.construct(new UserInvoiceBuilder(), "USER pedro@correo.com - Pedro Lopez", DAY,
-                List.of(), List.of());
+                List.of(), List.of(), List.of());
         assertTrue(inv.getSections().isEmpty());
         assertEquals(new BigDecimal("0.00"), inv.getTotal());
         assertEquals("INVOICE USER pedro@correo.com - Pedro Lopez" + System.lineSeparator()
@@ -98,8 +103,8 @@ class InvoiceDirectorTest {
     @Test
     void builderCanBeReusedAndProductIsImmutable() {
         UserInvoiceBuilder b = new UserInvoiceBuilder();
-        Invoice first = director.construct(b, "A", DAY, List.of(new IndividualTicket("T1", DAY, P40, ana)), List.of());
-        Invoice second = director.construct(b, "B", DAY, List.of(), List.of());
+        Invoice first = director.construct(b, "A", DAY, List.of(new IndividualTicket("T1", DAY, P40, ana)), List.of(), List.of());
+        Invoice second = director.construct(b, "B", DAY, List.of(), List.of(), List.of());
         assertEquals(1, first.getSections().size());
         assertTrue(second.getSections().isEmpty());
         assertThrows(UnsupportedOperationException.class, () -> first.getSections().clear());

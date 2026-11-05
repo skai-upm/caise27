@@ -19,6 +19,7 @@ public final class DataDirectory {
     public static final String TICKETS_FILE = "tickets.txt";
     public static final String GROUP_TICKETS_FILE = "grouptickets.txt";
     public static final String ATTRACTIONS_FILE = "attractions.txt";
+    public static final String PASSES_FILE = "passes.txt";
 
     private static final DateTimeFormatter RUN_NAME = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 

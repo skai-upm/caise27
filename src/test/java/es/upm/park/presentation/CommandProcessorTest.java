@@ -4,6 +4,7 @@ import es.upm.park.business.AttractionManager;
 import es.upm.park.business.ApplicationContext;
 import es.upm.park.business.InvoiceDirector;
 import es.upm.park.business.ParkController;
+import es.upm.park.business.PassManager;
 import es.upm.park.business.GroupManager;
 import es.upm.park.business.model.Result;
 import es.upm.park.business.TicketManager;
@@ -134,6 +135,10 @@ class CommandProcessorTest {
             "TICKET DELETE;Id",
             "GROUPTICKET CREATE;Id;IdGrupo;yyyy-MM-dd",
             "GROUPTICKET DELETE;Id",
+            "SPEEDPASS CREATE;IdCompra;IdTicket;Cantidad",
+            "SPEEDPASS DELETE;IdPase",
+            "SPECIALPASS CREATE;Id;IdTicket",
+            "SPECIALPASS DELETE;IdPase",
             "ATTRACTION CREATE;Id;Nombre;Capacidad",
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
@@ -176,7 +181,7 @@ class CommandProcessorTest {
     private static final LocalDate START = LocalDate.of(2026, 9, 15);
 
     private CommandProcessor processorAt(LocalDate date) {
-        return App.createProcessor(ParkController.configure(manager, groups, tickets, attractions, new InvoiceDirector(), date));
+        return App.createProcessor(ParkController.configure(manager, groups, tickets, attractions, PassManager.getInstance(), new InvoiceDirector(), date));
     }
 
     @Test
@@ -556,5 +561,40 @@ class CommandProcessorTest {
                 new HelpGenerator(catalog, upper), new HelpGenerator(catalog, new ExtendedHelpFormatter()));
         assertEquals("OK: COMMANDS: " + catalog.commands().size(), custom.process("HELP").toString());
         assertTrue(custom.process(CREATE_ANA).success());
+    }
+
+    // ---- passes ----
+
+    @Test
+    void passCommandsAndUserInvoiceWithPasses() {
+        CommandProcessor p = groupOf(2);
+        p.process(CREATE_ANA);
+        p.process("GROUP ADD;G01;ana@correo.com");
+        p.process("TICKET CREATE;T001;ana@correo.com;2026-10-15");
+        p.process("GROUPTICKET CREATE;TG01;G01;2026-10-15");
+        assertEquals("OK: SpeedPasses SP01-1..SP01-10 purchased for ticket T001. Total: 80.00",
+                p.process("SPEEDPASS CREATE;SP01;T001;10").toString());
+        assertTrue(p.process("SPEEDPASS CREATE;SP02;TG01-12345678Z;1").success());
+        assertEquals("OK: Special Pass SPC1 purchased for ticket T001. Total: 40.00",
+                p.process("SPECIALPASS CREATE;SPC1;T001").toString());
+        assertEquals("OK: Pass SP01-10 refunded: 8.00", p.process("SPEEDPASS DELETE;SP01-10").toString());
+        assertFalse(p.process("SPECIALPASS DELETE;SP01-9").success(), "wrong kind");
+        String invoice = p.process("INVOICE CREATE;USER;ana@correo.com").toString();
+        assertTrue(invoice.contains("Personal passes:"), invoice);
+        assertTrue(invoice.contains("SP02-1 SPEED (ticket TG01-12345678Z) 8.00"));
+        assertTrue(invoice.contains("SPC1 SPECIAL (ticket T001) 40.00"));
+        assertTrue(invoice.endsWith("Total: 160.00"), invoice);
+        assertFalse(p.process("INVOICE CREATE;GROUP;G01").toString().contains("SP02"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SPEEDPASS CREATE;SP01;T001;5", "SPEEDPASS CREATE;SP01;T001", "SPEEDPASS CREATE;SP01;T999;1",
+        "SPECIALPASS CREATE;SPC1", "SPECIALPASS CREATE;SPC1;T999", "SPEEDPASS DELETE", "SPEEDPASS DELETE;NOPE",
+        "SPECIALPASS DELETE;NOPE;x", "SPEEDPASS LIST;x", "SPECIALPASS"})
+    void invalidPassCommands(String command) {
+        CommandProcessor p = groupOf(1);
+        p.process("TICKET CREATE;T001;u0@correo.com;2026-10-15");
+        assertFalse(p.process(command).success());
+        assertTrue(p.getController().passes().getPasses().isEmpty());
     }
 }

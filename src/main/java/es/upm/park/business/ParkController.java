@@ -3,6 +3,8 @@ package es.upm.park.business;
 import es.upm.park.business.model.Result;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.Invoice;
+import es.upm.park.business.model.SpecialPass;
+import es.upm.park.business.model.SpeedPass;
 import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
 import java.math.BigDecimal;
@@ -26,6 +28,7 @@ public final class ParkController {
     private GroupManager groups;
     private TicketManager tickets;
     private AttractionManager attractions;
+    private PassManager passes;
     private InvoiceDirector invoiceDirector;
     private LocalDate currentDate;
     private BigDecimal currentPrice = DEFAULT_PRICE;
@@ -43,12 +46,13 @@ public final class ParkController {
      * execution settings (date, default price). Called at startup by {@link ApplicationContext}.
      */
     public static ParkController configure(UserManager users, GroupManager groups, TicketManager tickets,
-                                           AttractionManager attractions, InvoiceDirector invoiceDirector,
-                                           LocalDate initialDate) {
+                                           AttractionManager attractions, PassManager passes,
+                                           InvoiceDirector invoiceDirector, LocalDate initialDate) {
         INSTANCE.users = users;
         INSTANCE.groups = groups;
         INSTANCE.tickets = tickets;
         INSTANCE.attractions = attractions;
+        INSTANCE.passes = passes;
         INSTANCE.invoiceDirector = invoiceDirector;
         INSTANCE.currentDate = initialDate;
         INSTANCE.currentPrice = DEFAULT_PRICE;
@@ -69,6 +73,10 @@ public final class ParkController {
 
     public AttractionManager attractions() {
         return attractions;
+    }
+
+    public PassManager passes() {
+        return passes;
     }
 
     // ---- system settings ----
@@ -174,6 +182,24 @@ public final class ParkController {
         return tickets.deleteGroupTicket(id, currentDate);
     }
 
+    // ---- passes ----
+
+    public Result buySpeedPasses(String purchaseId, String ticketId, String quantity) {
+        return passes.buySpeedPasses(purchaseId, ticketId, quantity, currentDate);
+    }
+
+    public Result buySpecialPass(String id, String ticketId) {
+        return passes.buySpecialPass(id, ticketId, currentDate);
+    }
+
+    public Result refundSpeedPass(String id) {
+        return passes.refund(id, SpeedPass.TYPE_KEY, currentDate);
+    }
+
+    public Result refundSpecialPass(String id) {
+        return passes.refund(id, SpecialPass.TYPE_KEY, currentDate);
+    }
+
     // ---- invoices ----
 
     /** Invoice of the individual tickets bought directly by the user with this email. */
@@ -185,7 +211,8 @@ public final class ParkController {
         User u = user.get();
         Invoice invoice = invoiceDirector.construct(new UserInvoiceBuilder(),
                 "USER " + u.getEmail() + " - " + u.getFirstName() + " " + u.getSurnames(), currentDate,
-                tickets.getTickets().stream().filter(t -> t.getUser() == u).toList(), List.of());
+                tickets.getTickets().stream().filter(t -> t.getUser() == u).toList(), List.of(),
+                passes.passesOf(u));
         return Result.ok(invoice.format());
     }
 
@@ -198,7 +225,7 @@ public final class ParkController {
         Group g = group.get();
         Invoice invoice = invoiceDirector.construct(new GroupInvoiceBuilder(),
                 "GROUP " + g.getId() + " - " + g.getName(), currentDate,
-                List.of(), tickets.getGroupTickets().stream().filter(t -> t.getGroup() == g).toList());
+                List.of(), tickets.getGroupTickets().stream().filter(t -> t.getGroup() == g).toList(), List.of());
         return Result.ok(invoice.format());
     }
 

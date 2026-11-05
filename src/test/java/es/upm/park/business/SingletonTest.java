@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class SingletonTest {
 
     private static final List<Class<?>> CONTROLLERS = List.of(ParkController.class, UserManager.class,
-            GroupManager.class, TicketManager.class, AttractionManager.class);
+            GroupManager.class, TicketManager.class, AttractionManager.class, PassManager.class);
 
     @Test
     void controllersCannotBeInstantiatedFromOutside() {
