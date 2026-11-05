@@ -1,9 +1,9 @@
 @startuml model
-' Amusement Park - Delivery 2 model (es.upm.amusementpark)
+' Amusement Park model (es.upm.amusementpark) - layered packages
 hide methods
 skinparam classAttributeIconSize 0
 
-package park {
+package business.control {
   class Park <<singleton>> {
     - currentDate : LocalDate
     - currentPrice : BigDecimal
@@ -11,7 +11,7 @@ package park {
   }
 }
 
-package model {
+package business.model {
   class User {
     - firstName : String
     - surnames : String
@@ -66,14 +66,14 @@ package model {
   }
 }
 
-package repository {
+package persistence.repository {
   class UserRepository
   class GroupRepository
   class TicketRepository
   class AttractionRepository
 }
 
-package persistence {
+package persistence.storage {
   interface UserStorage
   interface GroupStorage
   interface TicketStorage

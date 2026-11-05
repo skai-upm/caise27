@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.amusementpark.model.Attraction;
-import es.upm.amusementpark.model.Group;
-import es.upm.amusementpark.model.Ticket;
-import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.Group;
+import es.upm.amusementpark.business.model.Ticket;
+import es.upm.amusementpark.business.model.User;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;

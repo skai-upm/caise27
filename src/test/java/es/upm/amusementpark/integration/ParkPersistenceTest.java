@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.amusementpark.model.GroupTicket;
-import es.upm.amusementpark.model.IndividualTicket;
+import es.upm.amusementpark.business.model.GroupTicket;
+import es.upm.amusementpark.business.model.IndividualTicket;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -17,7 +17,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Stream;
-import es.upm.amusementpark.park.Park;
+import es.upm.amusementpark.business.control.Park;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

@@ -30,7 +30,7 @@ class UmlModelTest {
 
     @Test
     void everyModelClassAndParkIsDeclared() throws IOException {
-        try (Stream<Path> files = Files.list(Path.of("src/main/java/es/upm/amusementpark/model"))) {
+        try (Stream<Path> files = Files.list(Path.of("src/main/java/es/upm/amusementpark/business/model"))) {
             for (Path f : files.toList()) {
                 String name = f.getFileName().toString().replace(".java", "");
                 assertTrue(declares(name), name + " missing from uml/model.puml");

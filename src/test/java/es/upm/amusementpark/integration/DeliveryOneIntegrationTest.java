@@ -3,11 +3,11 @@ package es.upm.amusementpark.integration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.amusementpark.command.CommandProcessor;
-import es.upm.amusementpark.model.User;
-import es.upm.amusementpark.persistence.UserStorage;
-import es.upm.amusementpark.repository.UserRepository;
-import es.upm.amusementpark.service.UserService;
+import es.upm.amusementpark.presentation.CommandProcessor;
+import es.upm.amusementpark.business.model.User;
+import es.upm.amusementpark.persistence.storage.UserStorage;
+import es.upm.amusementpark.persistence.repository.UserRepository;
+import es.upm.amusementpark.business.service.UserService;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,7 +38,7 @@ class DeliveryOneIntegrationTest {
 
     static int runApp(String[] args, String stdin, ByteArrayOutputStream out, ByteArrayOutputStream err, Path users) {
         try {
-            Method run = Class.forName("es.upm.amusementpark.App")
+            Method run = Class.forName("es.upm.amusementpark.presentation.App")
                     .getDeclaredMethod("run", String[].class, java.io.InputStream.class, PrintStream.class, PrintStream.class, Path.class);
             run.setAccessible(true);
             return (int) run.invoke(null, args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
@@ -80,11 +80,11 @@ class DeliveryOneIntegrationTest {
 
             @Override
             public void save(List<User> users) {
-                throw new UncheckedIOException(new IOException("disk full"));
+                throw new es.upm.amusementpark.persistence.storage.PersistenceException("disk full", new IOException("disk full"));
             }
         };
         CommandProcessor p = new CommandProcessor(new UserService(new UserRepository(broken)));
-        assertTrue(p.process(EXAMPLE.get(0)).startsWith("ERROR"));
+        assertTrue(p.process(EXAMPLE.get(0)).startsWith("ERROR: data could not be saved"));
         assertTrue(p.process("HELP").contains("USER CREATE"));
     }
 

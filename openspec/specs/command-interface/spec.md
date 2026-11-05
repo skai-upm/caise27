@@ -30,7 +30,7 @@ A line whose first element is not a recognised command SHALL produce an error me
 - **THEN** an error message starting with `ERROR` is printed, no user is created and the application keeps running
 
 ### Requirement: Controlled handling of processing failures
-If processing a command fails for any reason other than a normal rejection (for example an internal or input/output error), the application SHALL print an error message starting with `ERROR`, SHALL NOT terminate unexpectedly, and SHALL continue with the next command.
+If processing a command fails for any reason other than a normal rejection (for example an internal or input/output error), the application SHALL print an error message starting with `ERROR`, SHALL NOT terminate unexpectedly, and SHALL continue with the next command. A failure to store data SHALL be reported as a data storage error, distinct from a rejected operation.
 
 #### Scenario: Failure while saving does not stop the application
 - **GIVEN** the users file cannot be written
@@ -40,3 +40,8 @@ If processing a command fails for any reason other than a normal rejection (for 
 #### Scenario: Assorted malformed input
 - **WHEN** the lines `;;;`, `USER`, `user create;a`, `USER UPDATE;;;;` and `EXIT;x` are processed
 - **THEN** each prints an error message starting with `ERROR` and the application keeps running
+
+#### Scenario: Storage failure identified as such
+- **GIVEN** the data files cannot be written
+- **WHEN** a command that changes data is processed
+- **THEN** the error message states that the data could not be saved
