@@ -50,6 +50,8 @@ public class CommandProcessor {
             "  ATTRACTION CREATE;<id>;<name>;<capacity>",
             "  ATTRACTION LIST;<id>",
             "  ATTRACTION ENTER;<attraction>;<ticket>",
+            "  ATTRACTION EXIT;<attraction>;<email>",
+            "  ATTRACTION STATUS;<id>",
             "  HELP",
             "  EXIT");
 
@@ -111,6 +113,8 @@ public class CommandProcessor {
                 case AttractionCommands.ATTRACTION_CREATE -> attractions.create(elements);
                 case AttractionCommands.ATTRACTION_LIST -> attractions.list(elements);
                 case AttractionCommands.ATTRACTION_ENTER -> attractions.enter(elements);
+                case AttractionCommands.ATTRACTION_EXIT -> attractions.exit(elements);
+                case AttractionCommands.ATTRACTION_STATUS -> attractions.status(elements);
                 default -> error("unknown command '" + command + "'");
             };
         } catch (RuntimeException e) {

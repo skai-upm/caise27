@@ -3,7 +3,6 @@ package es.upm.parque.command;
 import java.util.List;
 
 import es.upm.parque.model.Attraction;
-import es.upm.parque.model.GroupTicket;
 import es.upm.parque.model.Ticket;
 import es.upm.parque.model.User;
 import es.upm.parque.park.ParkController;
@@ -16,6 +15,10 @@ class AttractionCommands {
     static final String ATTRACTION_CREATE = "ATTRACTION CREATE";
     static final String ATTRACTION_LIST = "ATTRACTION LIST";
     static final String ATTRACTION_ENTER = "ATTRACTION ENTER";
+    static final String ATTRACTION_EXIT = "ATTRACTION EXIT";
+    static final String ATTRACTION_STATUS = "ATTRACTION STATUS";
+
+    private static final String NO_ATTRACTION = "no attraction with identifier ";
 
     private final ParkController park;
 
@@ -44,7 +47,7 @@ class AttractionCommands {
         }
         Attraction attraction = park.getAttractions().findById(e[1]);
         if (attraction == null) {
-            return error("no attraction with identifier " + e[1]);
+            return error(NO_ATTRACTION + e[1]);
         }
         String header = "OK: attraction " + attraction.getId() + " (" + attraction.getName() + ") has ";
         if (attraction.getOccupants().isEmpty()) {
@@ -64,14 +67,11 @@ class AttractionCommands {
         }
         Attraction attraction = park.getAttractions().findById(e[1]);
         if (attraction == null) {
-            return error("no attraction with identifier " + e[1]);
+            return error(NO_ATTRACTION + e[1]);
         }
         Ticket ticket = park.getTickets().findById(e[2]);
         if (ticket == null) {
             return error("no ticket with identifier " + e[2]);
-        }
-        if (ticket instanceof GroupTicket) {
-            return error("access with group tickets is not available yet");
         }
         if (!ticket.getDate().equals(park.getCurrentDate())) {
             return error("ticket " + e[2] + " is valid on " + ticket.getDate() + ", not on " + park.getCurrentDate());
@@ -89,6 +89,42 @@ class AttractionCommands {
         return "OK: " + entrants.size() + " user(s) entered attraction " + attraction.getId() + " ("
                 + attraction.getName() + "): "
                 + String.join(", ", entrants.stream().map(User::getEmail).toList());
+    }
+
+    String exit(String[] e) {
+        if (e.length != 3) {
+            return error("ATTRACTION EXIT expects: ATTRACTION EXIT;<attraction>;<email>");
+        }
+        Attraction attraction = park.getAttractions().findById(e[1]);
+        if (attraction == null) {
+            return error(NO_ATTRACTION + e[1]);
+        }
+        User occupant = attraction.getOccupants().stream()
+                .filter(u -> u.getEmail().equals(e[2])).findFirst().orElse(null);
+        if (occupant == null) {
+            return error("no user with email " + e[2] + " is inside attraction " + e[1]);
+        }
+        attraction.removeOccupant(occupant);
+        return "OK: " + e[2] + " left attraction " + attraction.getId() + " (" + attraction.getName() + ")";
+    }
+
+    String status(String[] e) {
+        if (e.length != 2) {
+            return error("ATTRACTION STATUS expects: ATTRACTION STATUS;<id>");
+        }
+        Attraction attraction = park.getAttractions().findById(e[1]);
+        if (attraction == null) {
+            return error(NO_ATTRACTION + e[1]);
+        }
+        int inside = attraction.getOccupants().size();
+        StringBuilder text = new StringBuilder("OK: attraction ").append(attraction.getId())
+                .append(" (").append(attraction.getName()).append(") - capacity ").append(attraction.getCapacity())
+                .append(", inside ").append(inside)
+                .append(", available ").append(attraction.getCapacity() - inside);
+        for (User user : attraction.getOccupants()) {
+            text.append(System.lineSeparator()).append("  ").append(user.getEmail());
+        }
+        return text.toString();
     }
 
     /** Parses a whole number made only of digits; returns -1 when it is not one or does not fit an int. */
