@@ -138,6 +138,36 @@ public final class PassManager {
         return commit(candidate, "Pass " + id + " refunded: " + pass.get().getPrice().toPlainString());
     }
 
+    /** First unused SpeedPass of the ticket, if any. */
+    public Optional<Pass> findAvailableSpeedPass(IndividualTicket ticket) {
+        return passes.stream().filter(p -> p instanceof SpeedPass && p.getTicket() == ticket && !p.isConsumed())
+                .findFirst();
+    }
+
+    /** The ticket's Special Pass if it is still unused. */
+    public Optional<Pass> findAvailableSpecialPass(IndividualTicket ticket) {
+        return passes.stream().filter(p -> p instanceof SpecialPass && p.getTicket() == ticket && !p.isConsumed())
+                .findFirst();
+    }
+
+    /** Marks the passes as consumed and saves; on a save failure no pass stays marked. */
+    public Result consume(List<Pass> toConsume) {
+        List<Pass> marked = new ArrayList<>();
+        for (Pass p : toConsume) {
+            if (!p.isConsumed()) {
+                p.consume();
+                marked.add(p);
+            }
+        }
+        try {
+            store.save(passes, historicalLines);
+        } catch (IOException e) {
+            marked.forEach(Pass::restoreUnused);
+            return Result.error("Could not save passes: " + e.getMessage());
+        }
+        return Result.ok(marked.size() + " pass(es) consumed.");
+    }
+
     private Result checkTicket(String ticketId, LocalDate today) {
         Optional<IndividualTicket> ticket = tickets.findIndividualTicket(ticketId);
         if (ticket.isEmpty()) {

@@ -142,6 +142,7 @@ class CommandProcessorTest {
             "ATTRACTION CREATE;Id;Nombre;Capacidad",
             "ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo",
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION ENTER;IdAtraccion;IdTicket;SPEED",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
             "ATTRACTION STATUS;IdAtraccion",
             "INVOICE CREATE;USER;Correo",
@@ -620,6 +621,8 @@ class CommandProcessorTest {
         assertFalse(p.process("ATTRACTION ENTER;A04;TG01").success());
         assertTrue(p.process("ATTRACTION ENTER;A02;TG01").success());
         assertTrue(p.process("ATTRACTION ENTER;A03;T001").success());
+        assertFalse(p.process("ATTRACTION ENTER;A04;T001").success(), "SPECIAL needs a Special Pass");
+        p.process("SPECIALPASS CREATE;SPC1;T001");
         assertTrue(p.process("ATTRACTION ENTER;A04;T001").success());
         assertTrue(p.process("ATTRACTION ENTER;A01;T001").success());
         assertTrue(p.process("ATTRACTION ENTER;A01;TG01").success());
@@ -632,5 +635,98 @@ class CommandProcessorTest {
         CommandProcessor p = groupOf(1);
         assertFalse(p.process(command).success());
         assertTrue(attractions.find("A05").isEmpty());
+    }
+
+    // ---- pass consumption at entry ----
+
+    private CommandProcessor parkWithPasses() {
+        CommandProcessor p = groupOf(2);
+        p.process(CREATE_ANA);
+        p.process("TICKET CREATE;T001;ana@correo.com;2026-10-01");
+        p.process("TICKET CREATE;T002;u0@correo.com;2026-10-01");
+        p.process("GROUPTICKET CREATE;TG01;G01;2026-10-01");
+        p.process("ATTRACTION CREATE;A01;Tornado;20");
+        p.process("ATTRACTION CREATE;A04;Vip;20;SPECIAL");
+        p.process("SPEEDPASS CREATE;SP01;T001;10");
+        return p;
+    }
+
+    private long consumed() {
+        return processor.getController().passes().getPasses().stream()
+                .filter(es.upm.park.business.model.Pass::isConsumed).count();
+    }
+
+    @Test
+    void individualSpeedEntryConsumesExactlyOne() {
+        CommandProcessor p = parkWithPasses();
+        Result r = p.process("ATTRACTION ENTER;A01;T001;SPEED");
+        assertTrue(r.success(), r.message());
+        assertTrue(r.message().endsWith("SpeedPasses consumed: SP01-1."), r.message());
+        assertEquals(1, consumed());
+        p.process("ATTRACTION EXIT;A01;T001");
+        assertTrue(p.process("ATTRACTION ENTER;A01;T001;SPEED").message().endsWith("SP01-2."));
+    }
+
+    @Test
+    void normalEntryConsumesNothingAndMissingSpeedPassRejected() {
+        CommandProcessor p = parkWithPasses();
+        assertTrue(p.process("ATTRACTION ENTER;A01;T001").success());
+        assertEquals(0, consumed());
+        assertFalse(p.process("ATTRACTION ENTER;A01;T002;SPEED").success());
+        assertFalse(attractions.find("A01").orElseThrow().getPresent().stream().anyMatch(u -> u.getEmail().equals("u0@correo.com")));
+    }
+
+    @Test
+    void groupSpeedEntryIsAtomic() {
+        CommandProcessor p = parkWithPasses();
+        p.process("SPEEDPASS CREATE;SP02;TG01-00000000T;1");
+        Result r = p.process("ATTRACTION ENTER;A01;TG01;SPEED");
+        assertFalse(r.success());
+        assertTrue(attractions.find("A01").orElseThrow().getPresent().isEmpty());
+        assertEquals(0, consumed());
+        p.process("SPEEDPASS CREATE;SP03;TG01-00000001R;1");
+        r = p.process("ATTRACTION ENTER;A01;TG01;SPEED");
+        assertTrue(r.success(), r.message());
+        assertTrue(r.message().endsWith("SpeedPasses consumed: SP02-1, SP03-1."), r.message());
+        assertEquals(2, consumed());
+    }
+
+    @Test
+    void capacityFailureConsumesNothing() {
+        CommandProcessor p = parkWithPasses();
+        p.process("ATTRACTION CREATE;A09;Mini;1");
+        p.process("SPEEDPASS CREATE;SP02;TG01-00000000T;1");
+        p.process("SPEEDPASS CREATE;SP03;TG01-00000001R;1");
+        assertFalse(p.process("ATTRACTION ENTER;A09;TG01;SPEED").success());
+        assertEquals(0, consumed());
+        p.process("SYSTEM DATE;2026-10-02");
+        assertFalse(p.process("ATTRACTION ENTER;A01;T001;SPEED").success(), "date mismatch");
+        assertEquals(0, consumed());
+    }
+
+    @Test
+    void specialEntryConsumesSpecialPassAutomatically() {
+        CommandProcessor p = parkWithPasses();
+        assertFalse(p.process("ATTRACTION ENTER;A04;T001").success(), "no special pass yet");
+        p.process("SPECIALPASS CREATE;SPC1;T001");
+        assertEquals("ERROR: Attraction A04 (SPECIAL) does not accept the SPEED option.",
+                p.process("ATTRACTION ENTER;A04;T001;SPEED").toString());
+        assertEquals(0, consumed());
+        Result r = p.process("ATTRACTION ENTER;A04;T001");
+        assertTrue(r.success(), r.message());
+        assertTrue(r.message().endsWith("Special Pass consumed: SPC1."));
+        assertEquals(1, consumed());
+        p.process("ATTRACTION EXIT;A04;T001");
+        assertFalse(p.process("ATTRACTION ENTER;A04;T001").success(), "special pass already consumed");
+        assertFalse(p.process("ATTRACTION ENTER;A04;TG01").success(), "group not admitted");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ATTRACTION ENTER;A01;T001;FAST", "ATTRACTION ENTER;A01;T001;speed",
+        "ATTRACTION ENTER;A01;T001;SPEED;x"})
+    void invalidSpeedOption(String command) {
+        CommandProcessor p = parkWithPasses();
+        assertFalse(p.process(command).success());
+        assertEquals(0, consumed());
     }
 }

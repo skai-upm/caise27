@@ -40,6 +40,11 @@ public abstract class Pass {
         consumed = true;
     }
 
+    /** Undoes a consumption that could not be recorded. */
+    public void restoreUnused() {
+        consumed = false;
+    }
+
     /** Persistence/type keyword of the pass kind. */
     public abstract String kind();
 }

@@ -74,6 +74,16 @@ public abstract class Attraction<T extends AccessCredential> {
         return present.stream().anyMatch(u -> u == user);
     }
 
+    /** Whether entries may request SpeedPass use (the SPEED option). */
+    public boolean allowsSpeed() {
+        return true;
+    }
+
+    /** Whether every entry needs, and consumes, the ticket's Special Pass. */
+    public boolean requiresSpecialPass() {
+        return false;
+    }
+
     /** Whether this attraction admits this kind of credential. */
     public boolean accepts(AccessCredential credential) {
         return admitted.isInstance(credential);

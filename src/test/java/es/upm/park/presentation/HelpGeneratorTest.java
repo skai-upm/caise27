@@ -30,6 +30,7 @@ class HelpGeneratorTest {
             "ATTRACTION CREATE;Id;Nombre;Capacidad",
             "ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo",
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
+            "ATTRACTION ENTER;IdAtraccion;IdTicket;SPEED",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
             "ATTRACTION STATUS;IdAtraccion",
             "INVOICE CREATE;USER;Correo",

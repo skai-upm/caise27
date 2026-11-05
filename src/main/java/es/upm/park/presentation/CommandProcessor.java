@@ -170,9 +170,7 @@ public class CommandProcessor {
     private Result attraction(String operation, String[] p, String command) {
         return switch (operation) {
             case "CREATE" -> attractionCreate(p);
-            case "ENTER" -> hasParams(p, 2)
-                    ? controller.enterAttraction(p[0], p[1])
-                    : Result.error("Usage: ATTRACTION ENTER;IdAtraccion;IdTicket");
+            case "ENTER" -> attractionEnter(p);
             case "EXIT" -> hasParams(p, 2)
                     ? controller.exitAttraction(p[0], p[1])
                     : Result.error("Usage: ATTRACTION EXIT;IdAtraccion;IdTicket");
@@ -180,6 +178,16 @@ public class CommandProcessor {
                     : Result.error("Usage: ATTRACTION STATUS;IdAtraccion");
             default -> Result.error("Unknown command: " + command);
         };
+    }
+
+    private Result attractionEnter(String[] p) {
+        if (hasParams(p, 2)) {
+            return controller.enterAttraction(p[0], p[1]);
+        }
+        if (hasParams(p, 3) && p[2].equals("SPEED")) {
+            return controller.enterAttraction(p[0], p[1], true);
+        }
+        return Result.error("Usage: ATTRACTION ENTER;IdAtraccion;IdTicket[;SPEED]");
     }
 
     private Result attractionCreate(String[] p) {

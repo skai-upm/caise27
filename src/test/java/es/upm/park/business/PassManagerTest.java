@@ -157,4 +157,20 @@ class PassManagerTest {
         User ana = users.findByEmail("ana@correo.com").orElseThrow();
         assertEquals(List.of("SP09-1"), passes.passesOf(ana).stream().map(Pass::getId).toList());
     }
+
+    @Test
+    void availabilityAndPersistedConsumption() throws IOException {
+        passes.buySpeedPasses("SP11", "T001", "10", OCT_1);
+        passes.buySpecialPass("SPC1", "T001", OCT_1);
+        var t001 = tickets.findIndividualTicket("T001").orElseThrow();
+        Pass first = passes.findAvailableSpeedPass(t001).orElseThrow();
+        assertEquals("SP11-1", first.getId());
+        assertTrue(passes.consume(List.of(first, passes.findAvailableSpecialPass(t001).orElseThrow())).success());
+        assertEquals("SP11-2", passes.findAvailableSpeedPass(t001).orElseThrow().getId());
+        assertTrue(passes.findAvailableSpecialPass(t001).isEmpty());
+        PassManager again = reload();
+        assertTrue(again.find("SP11-1").orElseThrow().isConsumed());
+        assertTrue(again.find("SPC1").orElseThrow().isConsumed());
+        assertTrue(again.findAvailableSpeedPass(tickets.findIndividualTicket("T002").orElseThrow()).isEmpty());
+    }
 }

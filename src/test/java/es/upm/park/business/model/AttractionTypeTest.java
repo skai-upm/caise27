@@ -84,4 +84,13 @@ class AttractionTypeTest {
         assertTrue(AttractionType.parse("group").isEmpty());
         assertTrue(AttractionType.parse("VIP").isEmpty());
     }
+
+    @Test
+    void onlySpecialRequiresSpecialPassAndForbidsSpeed() {
+        for (AttractionType type : AttractionType.values()) {
+            Attraction<?> a = type.create("A", "X", 1);
+            assertEquals(type == AttractionType.SPECIAL, a.requiresSpecialPass(), type.name());
+            assertEquals(type != AttractionType.SPECIAL, a.allowsSpeed(), type.name());
+        }
+    }
 }

@@ -1,7 +1,12 @@
 package es.upm.park.business;
 
 import es.upm.park.business.model.Result;
+import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.AttractionType;
+import es.upm.park.business.model.GroupTicket;
+import es.upm.park.business.model.IndividualTicket;
+import es.upm.park.business.model.Pass;
+import es.upm.park.business.model.Ticket;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.Invoice;
 import es.upm.park.business.model.SpecialPass;
@@ -10,6 +15,7 @@ import es.upm.park.business.model.User;
 import es.upm.park.business.model.UserField;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -241,7 +247,60 @@ public final class ParkController {
     }
 
     public Result enterAttraction(String attractionId, String ticketId) {
-        return attractions.enter(attractionId, tickets.findForAccess(ticketId), ticketId, currentDate);
+        return enterAttraction(attractionId, ticketId, false);
+    }
+
+    /**
+     * Entry with optional SpeedPass use. Required passes are looked up first, the entry is then
+     * performed atomically by the attraction, and only after it succeeded are the passes consumed.
+     */
+    public Result enterAttraction(String attractionId, String ticketId, boolean speed) {
+        Optional<Attraction<?>> attraction = attractions.find(attractionId);
+        Optional<Ticket> ticket = tickets.findForAccess(ticketId);
+        if (attraction.isEmpty() || ticket.isEmpty()) {
+            return attractions.enter(attractionId, ticket, ticketId, currentDate);
+        }
+        Attraction<?> a = attraction.get();
+        if (speed && !a.allowsSpeed()) {
+            return Result.error("Attraction " + attractionId + " (" + a.getType() + ") does not accept the SPEED option.");
+        }
+        List<IndividualTicket> individual = individualTicketsOf(ticket.get());
+        List<Pass> required = new ArrayList<>();
+        if (speed) {
+            for (IndividualTicket t : individual) {
+                Optional<Pass> pass = passes.findAvailableSpeedPass(t);
+                if (pass.isEmpty()) {
+                    return Result.error("Ticket " + t.getId() + " has no unused SpeedPass; nobody entered.");
+                }
+                required.add(pass.get());
+            }
+        }
+        if (a.requiresSpecialPass() && a.accepts(ticket.get())) {
+            Optional<Pass> pass = passes.findAvailableSpecialPass(individual.get(0));
+            if (pass.isEmpty()) {
+                return Result.error("Ticket " + ticketId + " has no unused Special Pass for attraction " + attractionId + ".");
+            }
+            required.add(pass.get());
+        }
+        Result entry = a.enter(ticket.get(), currentDate);
+        if (!entry.success() || required.isEmpty()) {
+            return entry;
+        }
+        Result consumed = passes.consume(required);
+        if (!consumed.success()) {
+            a.exit(ticket.get());
+            return consumed;
+        }
+        String ids = String.join(", ", required.stream().map(Pass::getId).toList());
+        String kind = a.requiresSpecialPass() ? "Special Pass consumed: " : "SpeedPasses consumed: ";
+        return Result.ok(entry.message() + " " + kind + ids + ".");
+    }
+
+    private static List<IndividualTicket> individualTicketsOf(Ticket ticket) {
+        if (ticket instanceof GroupTicket group) {
+            return group.getTickets();
+        }
+        return ticket instanceof IndividualTicket single ? List.of(single) : List.of();
     }
 
     public Result exitAttraction(String attractionId, String ticketId) {
