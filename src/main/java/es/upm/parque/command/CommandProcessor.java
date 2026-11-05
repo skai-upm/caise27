@@ -47,12 +47,15 @@ public class CommandProcessor {
             "  TICKET DELETE;<id>",
             "  GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>",
             "  GROUPTICKET DELETE;<id>",
+            "  ATTRACTION CREATE;<id>;<name>;<capacity>",
+            "  ATTRACTION LIST;<id>",
             "  HELP",
             "  EXIT");
 
     private final ParkController park;
     private final GroupCommands groups;
     private final TicketCommands tickets;
+    private final AttractionCommands attractions;
     private boolean exitRequested;
 
     /** Processes commands against the current central park management state. */
@@ -60,6 +63,7 @@ public class CommandProcessor {
         this.park = ParkController.getInstance();
         this.groups = new GroupCommands(park);
         this.tickets = new TicketCommands(park);
+        this.attractions = new AttractionCommands(park);
     }
 
     /** Starts a new execution of the central park management with the given users. */
@@ -103,6 +107,8 @@ public class CommandProcessor {
                 case TicketCommands.TICKET_DELETE -> tickets.delete(elements);
                 case TicketCommands.GROUPTICKET_CREATE -> tickets.createGroupTicket(elements);
                 case TicketCommands.GROUPTICKET_DELETE -> tickets.deleteGroupTicket(elements);
+                case AttractionCommands.ATTRACTION_CREATE -> attractions.create(elements);
+                case AttractionCommands.ATTRACTION_LIST -> attractions.list(elements);
                 default -> error("unknown command '" + command + "'");
             };
         } catch (RuntimeException e) {

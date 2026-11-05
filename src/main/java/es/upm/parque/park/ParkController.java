@@ -11,6 +11,7 @@ import es.upm.parque.model.Group;
 import es.upm.parque.model.GroupTicket;
 import es.upm.parque.model.Ticket;
 import es.upm.parque.model.User;
+import es.upm.parque.repository.AttractionRepository;
 import es.upm.parque.repository.GroupRepository;
 import es.upm.parque.repository.TicketRepository;
 import es.upm.parque.repository.UserRepository;
@@ -27,6 +28,7 @@ public final class ParkController {
     private UserRepository users = new UserRepository();
     private GroupRepository groups = new GroupRepository();
     private TicketRepository tickets = new TicketRepository();
+    private AttractionRepository attractions = new AttractionRepository();
     private LocalDate currentDate = LocalDate.now(ZoneId.systemDefault());
     private BigDecimal basePrice = INITIAL_PRICE;
 
@@ -47,6 +49,7 @@ public final class ParkController {
         this.users = users;
         this.groups = new GroupRepository();
         this.tickets = new TicketRepository();
+        this.attractions = new AttractionRepository();
         this.currentDate = LocalDate.now(ZoneId.systemDefault());
         this.basePrice = INITIAL_PRICE;
     }
@@ -81,6 +84,10 @@ public final class ParkController {
             }
         }
         return result;
+    }
+
+    public AttractionRepository getAttractions() {
+        return attractions;
     }
 
     public TicketRepository getTickets() {
