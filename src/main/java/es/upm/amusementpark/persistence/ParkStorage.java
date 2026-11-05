@@ -1,50 +1,71 @@
 package es.upm.amusementpark.persistence;
 
 import es.upm.amusementpark.business.ParkController;
+import es.upm.amusementpark.business.ParkRepository;
+import es.upm.amusementpark.business.RepositoryException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * Configures every repository with a file inside one data directory. Normal and temporary ({@code --fly})
- * persistence differ only in that directory.
+ * Text-file implementation of {@link ParkRepository}. Its element repositories are injected; normal and temporary
+ * ({@code --fly}) persistence differ only in the directory they are configured with.
  */
-public class ParkStorage {
+public class ParkStorage implements ParkRepository {
 
     private final Path directory;
     private final AttractionRepository attractions;
     private final GroupRepository groups;
     private final TicketRepository tickets;
 
-    public ParkStorage(Path directory) {
-        this.directory = directory;
-        this.attractions = new AttractionRepository(directory.resolve("attractions.txt"));
-        this.groups = new GroupRepository(directory.resolve("groups.txt"));
-        this.tickets = new TicketRepository(directory.resolve("tickets.txt"));
+    public ParkStorage(Path directory, AttractionRepository attractions, GroupRepository groups,
+            TicketRepository tickets) {
+        this.directory = Objects.requireNonNull(directory, "directory");
+        this.attractions = Objects.requireNonNull(attractions, "attractions");
+        this.groups = Objects.requireNonNull(groups, "groups");
+        this.tickets = Objects.requireNonNull(tickets, "tickets");
+    }
+
+    /**
+     * Configuration used at application initialization: repositories with their files inside {@code directory}.
+     *
+     * @param directory data directory
+     * @return a new, independent storage
+     */
+    public static ParkStorage inDirectory(Path directory) {
+        return new ParkStorage(directory, new AttractionRepository(directory.resolve("attractions.txt")),
+                new GroupRepository(directory.resolve("groups.txt")),
+                new TicketRepository(directory.resolve("tickets.txt")));
     }
 
     public Path getDirectory() {
         return directory;
     }
 
-    /**
-     * Rebuilds the persisted state into {@code park} (attractions, groups, then tickets).
-     *
-     * @return warnings about records that could not be interpreted
-     */
-    public List<String> load(ParkController park) throws IOException {
+    /** Rebuilds attractions, groups, then tickets. */
+    @Override
+    public List<String> load(ParkController park) {
         List<String> warnings = new ArrayList<>();
-        attractions.load(park, warnings);
-        groups.load(park, warnings);
-        tickets.load(park, warnings);
+        try {
+            attractions.load(park, warnings);
+            groups.load(park, warnings);
+            tickets.load(park, warnings);
+        } catch (IOException e) {
+            throw new RepositoryException("Cannot read persisted data from " + directory, e);
+        }
         return warnings;
     }
 
-    /** Stores the current state of {@code park}. */
-    public void save(ParkController park) throws IOException {
-        attractions.save(park);
-        groups.save(park);
-        tickets.save(park);
+    @Override
+    public void save(ParkController park) {
+        try {
+            attractions.save(park);
+            groups.save(park);
+            tickets.save(park);
+        } catch (IOException e) {
+            throw new RepositoryException("Cannot save data to " + directory, e);
+        }
     }
 }

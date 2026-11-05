@@ -1,6 +1,7 @@
 package es.upm.amusementpark;
 
 import es.upm.amusementpark.business.ParkController;
+import es.upm.amusementpark.business.RepositoryException;
 import es.upm.amusementpark.persistence.ParkStorage;
 import es.upm.amusementpark.presentation.AttractionCommands;
 import es.upm.amusementpark.presentation.CommandProcessor;
@@ -59,7 +60,7 @@ public final class App {
             return;
         }
         try {
-            runWithStorage(new ParkStorage(dataDir), commandFile, stdin, out);
+            runWithStorage(ParkStorage.inDirectory(dataDir), commandFile, stdin, out);
         } finally {
             if (fly) {
                 deleteRecursively(dataDir, out);
@@ -71,20 +72,21 @@ public final class App {
             PrintStream out) {
         ParkController park = ParkController.getInstance();
         park.reset();
+        park.setRepository(storage);
         try {
-            for (String warning : storage.load(park)) {
+            for (String warning : park.loadState()) {
                 out.println("WARNING: Ignoring persisted record (" + warning + ")");
             }
-        } catch (IOException e) {
-            out.println("ERROR: Cannot read persisted data from " + storage.getDirectory());
+        } catch (RepositoryException e) {
+            out.println("ERROR: " + e.getMessage());
         }
         CommandProcessor processor = new CommandProcessor(out);
         registerCommands(processor, park, out);
         processor.setAfterCommand(() -> {
             try {
-                storage.save(park);
-            } catch (IOException e) {
-                out.println("ERROR: Cannot save data to " + storage.getDirectory());
+                park.saveState();
+            } catch (RepositoryException e) {
+                out.println("ERROR: " + e.getMessage());
             }
         });
         if (commandFile == null) {

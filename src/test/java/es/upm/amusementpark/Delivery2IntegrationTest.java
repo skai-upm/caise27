@@ -76,19 +76,14 @@ class Delivery2IntegrationTest {
     void fullFlowThenRestart() throws IOException {
         ParkController park = ParkController.getInstance();
         park.reset();
-        ParkStorage storage = new ParkStorage(dir.resolve("data"));
+        ParkStorage storage = ParkStorage.inDirectory(dir.resolve("data"));
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(buffer, true, StandardCharsets.UTF_8);
         CommandProcessor processor = new CommandProcessor(out);
         App.registerCommands(processor, park, out);
         park.setUserDirectory(DIRECTORY);
-        processor.setAfterCommand(() -> {
-            try {
-                storage.save(park);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-        });
+        park.setRepository(storage);
+        processor.setAfterCommand(park::saveState);
         processor.run(new BufferedReader(new StringReader(FLOW)));
         String text = buffer.toString(StandardCharsets.UTF_8);
 
@@ -108,7 +103,8 @@ class Delivery2IntegrationTest {
         assertNull(park.findGroup("G99"));
 
         park.reset();
-        assertEquals(java.util.List.of(), storage.load(park));
+        park.setRepository(storage);
+        assertEquals(java.util.List.of(), park.loadState());
         GroupTicket tg01 = (GroupTicket) park.findTicket("TG01");
         assertEquals(new BigDecimal("135.00"), tg01.getPrice());
         assertEquals(3, tg01.getComponents().size());

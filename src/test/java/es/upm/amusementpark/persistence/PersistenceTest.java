@@ -63,7 +63,7 @@ class PersistenceTest {
 
     @Test
     void groupsTicketsAndAttractionsRoundTrip() throws IOException {
-        ParkStorage storage = new ParkStorage(dir);
+        ParkStorage storage = ParkStorage.inDirectory(dir);
         park.createAttraction("A01", "Dragon Rojo", 20);
         park.createGroup("G01", "Familia Garcia");
         park.addUserToGroup("G01", "ana@correo.com");
@@ -94,7 +94,7 @@ class PersistenceTest {
 
     @Test
     void deletedGroupIsNotRelinkedEvenIfIdReused() throws IOException {
-        ParkStorage storage = new ParkStorage(dir);
+        ParkStorage storage = ParkStorage.inDirectory(dir);
         park.createGroup("G01", "Familia");
         park.addUserToGroup("G01", "ana@correo.com");
         park.createGroupTicket("TG01", "G01", TODAY);
@@ -113,7 +113,7 @@ class PersistenceTest {
 
     @Test
     void missingFilesMeanEmptyState() throws IOException {
-        assertEquals(List.of(), new ParkStorage(dir.resolve("none")).load(park));
+        assertEquals(List.of(), ParkStorage.inDirectory(dir.resolve("none")).load(park));
         assertTrue(park.getTickets().isEmpty());
         assertTrue(park.getGroups().isEmpty());
         assertTrue(park.getAttractions().isEmpty());
@@ -123,7 +123,7 @@ class PersistenceTest {
     void corruptedLinesAreReportedAndSkipped() throws IOException {
         Files.writeString(dir.resolve("attractions.txt"), "broken line\nA02;Torre del Cielo;12\nA03;Noria;x\n");
         Files.writeString(dir.resolve("tickets.txt"), "GROUP;TG9;2027-04-15;G9;true;3\nCOMPONENT;a\n");
-        List<String> warnings = new ParkStorage(dir).load(park);
+        List<String> warnings = ParkStorage.inDirectory(dir).load(park);
         assertEquals(4, warnings.size(), warnings.toString());
         assertEquals(12, park.findAttraction("A02").getCapacity());
         assertNull(park.findAttraction("A03"));

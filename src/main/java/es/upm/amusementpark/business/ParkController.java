@@ -34,6 +34,7 @@ public final class ParkController {
     private UserDirectory userDirectory = UserDirectory.EMPTY;
     private final GroupTicketDates registeredGroupTicketDates = this::registeredGroupTicketDates;
     private GroupTicketDates groupTicketDates = registeredGroupTicketDates;
+    private ParkRepository repository = ParkRepository.NONE;
 
     private ParkController() {
         reset();
@@ -57,6 +58,31 @@ public final class ParkController {
         attractions.clear();
         userDirectory = UserDirectory.EMPTY;
         groupTicketDates = registeredGroupTicketDates;
+        repository = ParkRepository.NONE;
+    }
+
+    /** Injects the persistence dependency configured at application initialization. */
+    public synchronized void setRepository(ParkRepository repository) {
+        this.repository = Objects.requireNonNull(repository, "repository");
+    }
+
+    /**
+     * Rebuilds the persisted state through the injected repository.
+     *
+     * @return warnings about records that could not be interpreted
+     * @throws RepositoryException if the state cannot be read
+     */
+    public synchronized List<String> loadState() {
+        return repository.load(this);
+    }
+
+    /**
+     * Stores the current state through the injected repository.
+     *
+     * @throws RepositoryException if the state cannot be written
+     */
+    public synchronized void saveState() {
+        repository.save(this);
     }
 
     public synchronized void setUserDirectory(UserDirectory directory) {
