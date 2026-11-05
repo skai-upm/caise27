@@ -57,7 +57,7 @@ public class TicketManager {
         return ticket;
     }
 
-    /** Deletes a stand-alone individual ticket dated strictly after the current date. */
+    /** Deletes a stand-alone individual ticket dated strictly after the current date, together with its passes. */
     public IndividualTicket deleteIndividual(String id) throws ParkException {
         if (!(park().getTickets().findById(id) instanceof IndividualTicket ticket)) {
             throw new NotFoundException("no individual ticket with identifier " + id);
@@ -68,6 +68,7 @@ public class TicketManager {
         if (!ticket.isDeletableOn(park().getCurrentDate())) {
             throw new RuleViolationException("ticket " + id + HISTORICAL);
         }
+        removePassesOf(ticket);
         park().getTickets().remove(id);
         park().persist();
         return ticket;
@@ -104,7 +105,10 @@ public class TicketManager {
         return groupTicket;
     }
 
-    /** Deletes a group ticket dated strictly after the current date, together with its composition. */
+    /**
+     * Deletes a group ticket dated strictly after the current date: first the passes of its composition, then the
+     * composition, then the group ticket. Every check is made before anything is removed.
+     */
     public GroupTicket deleteGroupTicket(String id) throws ParkException {
         if (!(park().getTickets().findById(id) instanceof GroupTicket groupTicket)) {
             throw new NotFoundException("no group ticket with identifier " + id);
@@ -112,10 +116,27 @@ public class TicketManager {
         if (!groupTicket.isDeletableOn(park().getCurrentDate())) {
             throw new RuleViolationException("group ticket " + id + HISTORICAL);
         }
+        groupTicket.getComposition().forEach(this::removePassesOf);
         groupTicket.getComposition().forEach(t -> park().getTickets().remove(t.getId()));
         park().getTickets().remove(id);
         park().persist();
         return groupTicket;
+    }
+
+    /**
+     * Number of passes associated with the ticket: those of an individual ticket, or those of every ticket in the
+     * composition of a group ticket; 0 for an unknown identifier.
+     */
+    public int passCount(String id) {
+        Ticket ticket = park().getTickets().findById(id);
+        if (ticket instanceof GroupTicket groupTicket) {
+            return groupTicket.getComposition().stream().mapToInt(t -> park().getPasses().passesOf(t).size()).sum();
+        }
+        return ticket instanceof IndividualTicket individual ? park().getPasses().passesOf(individual).size() : 0;
+    }
+
+    private void removePassesOf(IndividualTicket ticket) {
+        park().getPasses().passesOf(ticket).forEach(p -> park().getPasses().remove(p.getId()));
     }
 
     public Ticket find(String id) throws NotFoundException {

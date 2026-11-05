@@ -71,7 +71,7 @@ class HelpTest {
         Pattern constant = Pattern.compile("static final String \\w+ = \"([A-Z]+(?: [A-Z]+)?)\";");
         List<String> syntaxes = CommandCatalog.syntaxes();
         for (String file : List.of("UserCommands.java", "GroupCommands.java", "TicketCommands.java",
-                "AttractionCommands.java", "InvoiceCommands.java", "CommandProcessor.java")) {
+                "AttractionCommands.java", "InvoiceCommands.java", "PassCommands.java", "CommandProcessor.java")) {
             Matcher m = constant.matcher(Files.readString(sources.resolve(file), StandardCharsets.UTF_8));
             while (m.find()) {
                 String name = m.group(1);

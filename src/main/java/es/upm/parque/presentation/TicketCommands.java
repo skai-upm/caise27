@@ -32,7 +32,8 @@ class TicketCommands {
 
     String delete(String[] e) throws InvalidCommandException, ParkException {
         CommandProcessor.expect(e, 2, "TICKET DELETE expects: TICKET DELETE;<id>");
-        return "OK: ticket " + tickets.deleteIndividual(e[1]).getId() + " deleted";
+        int passes = tickets.passCount(e[1]);
+        return "OK: ticket " + tickets.deleteIndividual(e[1]).getId() + " deleted" + withPasses(passes);
     }
 
     String createGroupTicket(String[] e) throws InvalidCommandException, ParkException {
@@ -48,7 +49,17 @@ class TicketCommands {
 
     String deleteGroupTicket(String[] e) throws InvalidCommandException, ParkException {
         CommandProcessor.expect(e, 2, "GROUPTICKET DELETE expects: GROUPTICKET DELETE;<id>");
+        int passes = tickets.passCount(e[1]);
         GroupTicket ticket = tickets.deleteGroupTicket(e[1]);
-        return "OK: group ticket " + ticket.getId() + " deleted with its " + ticket.getComposition().size() + " tickets";
+        return "OK: group ticket " + ticket.getId() + " deleted with its " + ticket.getComposition().size() + " tickets"
+                + withPasses(passes);
+    }
+
+    /** Response suffix naming the passes refunded together with a ticket; empty when there were none. */
+    private static String withPasses(int passes) {
+        if (passes == 0) {
+            return "";
+        }
+        return " and " + passes + (passes == 1 ? " pass" : " passes");
     }
 }

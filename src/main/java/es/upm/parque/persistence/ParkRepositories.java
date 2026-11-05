@@ -13,6 +13,7 @@ public final class ParkRepositories {
     private final GroupRepository groups;
     private final TicketRepository tickets;
     private final AttractionRepository attractions;
+    private final PassRepository passes;
     private final ParkFileStore store;
 
     private ParkRepositories(UserRepository users, ParkFileStore store) {
@@ -20,6 +21,7 @@ public final class ParkRepositories {
         this.groups = new GroupRepository();
         this.tickets = new TicketRepository();
         this.attractions = new AttractionRepository();
+        this.passes = new PassRepository();
         this.store = store;
     }
 
@@ -54,6 +56,11 @@ public final class ParkRepositories {
 
     public AttractionRepository getAttractions() {
         return attractions;
+    }
+
+    /** Passes of the execution; they are kept in memory (file persistence of passes arrives with F3-C09). */
+    public PassRepository getPasses() {
+        return passes;
     }
 
     /** Saves groups, tickets and attractions when the configuration is backed by files. */

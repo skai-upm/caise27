@@ -29,12 +29,14 @@ import es.upm.parque.business.InvoiceManager;
 import es.upm.parque.business.ParkConfiguration;
 import es.upm.parque.business.ParkController;
 import es.upm.parque.business.ParkException;
+import es.upm.parque.business.PassManager;
 import es.upm.parque.business.SystemManager;
 import es.upm.parque.business.TicketManager;
 import es.upm.parque.business.UserManager;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.ParkRepositories;
+import es.upm.parque.persistence.PassRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 
@@ -46,9 +48,9 @@ class ControllerConfigurationTest {
 
     private static final List<Class<?>> CONTROLLERS = List.of(ParkController.class, UserManager.class,
             GroupManager.class, TicketManager.class, AttractionManager.class, SystemManager.class,
-            InvoiceManager.class);
+            InvoiceManager.class, PassManager.class);
     private static final List<Class<?>> REPOSITORIES = List.of(UserRepository.class, GroupRepository.class,
-            TicketRepository.class, AttractionRepository.class);
+            TicketRepository.class, AttractionRepository.class, PassRepository.class);
     private static final Path SOURCES = Path.of("src", "main", "java", "es", "upm", "parque");
 
     @AfterEach

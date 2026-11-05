@@ -29,6 +29,7 @@ public final class ParkConfiguration {
         GroupManager.getInstance().inject(park);
         SystemManager.getInstance().inject(park);
         InvoiceManager.getInstance().inject(park);
+        PassManager.getInstance().inject(park);
         AttractionManager.getInstance().inject(park, tickets);
         return park;
     }

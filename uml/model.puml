@@ -53,6 +53,18 @@ package es.upm.parque.business.model {
     - capacity : int {readOnly}
   }
 
+  abstract class Pass {
+    - id : String {readOnly}
+    - price : BigDecimal {readOnly}
+    - consumed : boolean
+  }
+
+  class SpeedPass {
+  }
+
+  class SpecialPass {
+  }
+
   class Invoice {
     - title : String {readOnly}
     - recipient : List<String> {readOnly}
@@ -111,6 +123,8 @@ package es.upm.parque.business {
   }
   class GroupInvoiceBuilder {
   }
+  class PassManager <<singleton>> {
+  }
   class InvoiceManager <<singleton, director>> {
   }
 }
@@ -124,6 +138,8 @@ package es.upm.parque.persistence {
   class TicketRepository {
   }
   class AttractionRepository {
+  }
+  class PassRepository {
   }
   class UserFileStore {
     - file : Path
@@ -146,6 +162,12 @@ Ticket <|-- GroupTicket
 ' --- Composition: a group ticket owns its individual tickets ---
 GroupTicket "0..1" *-- "1..*" IndividualTicket : composition
 
+'' --- Passes: personal purchases of an individual ticket (tickets hold no references to their passes) ---
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+SpeedPass "*" --> "1" IndividualTicket : ticket
+SpecialPass "0..1" --> "1" IndividualTicket : ticket
+
 ' --- Directed associations (users hold no references back) ---
 IndividualTicket "*" --> "1" User : user
 GroupTicket "*" --> "0..1" Group : group
@@ -158,12 +180,14 @@ ParkRepositories "1" *--> "1" UserRepository : users
 ParkRepositories "1" *--> "1" GroupRepository : groups
 ParkRepositories "1" *--> "1" TicketRepository : tickets
 ParkRepositories "1" *--> "1" AttractionRepository : attractions
+ParkRepositories "1" *--> "1" PassRepository : passes
 ParkRepositories "1" --> "0..1" ParkFileStore : store
 
 UserRepository "1" o--> "*" User : usersByDni
 GroupRepository "1" o--> "*" Group : groupsById
 TicketRepository "1" o--> "*" Ticket : ticketsById
 AttractionRepository "1" o--> "*" Attraction : attractionsById
+PassRepository "1" o--> "*" Pass : passesById
 
 ' --- Initialization: the composition root injects repositories and collaborators ---
 ParkSession ..> ParkRepositories : creates for the storage location
@@ -175,6 +199,7 @@ ParkConfiguration ..> TicketManager : injects
 ParkConfiguration ..> AttractionManager : injects
 ParkConfiguration ..> SystemManager : injects
 ParkConfiguration ..> InvoiceManager : injects
+ParkConfiguration ..> PassManager : injects
 ParkConfiguration ..> PasswordProtector : configures
 
 ' --- Password protection (BCrypt through jBCrypt), injected into user management ---
@@ -199,6 +224,7 @@ InvoiceBuilder <|-- UserInvoiceBuilder
 InvoiceBuilder <|-- GroupInvoiceBuilder
 InvoiceManager ..> InvoiceBuilder : directs
 InvoiceManager --> "1" ParkController : park
+PassManager --> "1" ParkController : park
 InvoiceBuilder ..> Invoice : builds
 Invoice "1" *--> "*" InvoiceSection : sections
 InvoiceSection "1" *--> "1..*" InvoiceItem : items

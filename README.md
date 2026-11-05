@@ -51,6 +51,10 @@ TICKET CREATE;<identifier>;<email>;<date>
 TICKET DELETE;<identifier>
 GROUPTICKET CREATE;<identifier>;<group>;<date>
 GROUPTICKET DELETE;<identifier>
+SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>
+SPECIALPASS CREATE;<identifier>;<individualTicket>
+SPEEDPASS DELETE;<speedPassIdentifier>
+SPECIALPASS DELETE;<specialPassIdentifier>
 ATTRACTION CREATE;<identifier>;<name>;<capacity>
 ATTRACTION ENTER;<attraction>;<ticket>
 ATTRACTION EXIT;<attraction>;<email>
@@ -71,6 +75,12 @@ Park rules in short:
 - An active group ticket (dated today or later) locks the group against `GROUP ADD`, `GROUP REMOVE` and `GROUP DELETE`.
 - A user with an active ticket, or in a locked group, cannot be deleted.
 - Group entry to an attraction is all-or-nothing within its capacity.
+- Passes belong to an individual ticket, including the tickets inside a group ticket, and can be bought for tickets dated today or later.
+  - A SpeedPass costs 20% of the ticket's stored price. It is bought 1 or 10 at a time, and the passes are numbered `<purchase>:1` to `<purchase>:10`.
+  - A Special Pass costs the ticket's price. A ticket can have only one, even after it has been consumed.
+  - Unconsumed passes of tickets dated after the current date can be refunded.
+  - Deleting a ticket or group ticket also deletes its passes.
+  - Passes are kept in memory and are not saved to files yet; that comes with the Delivery 3 persistence milestone.
 - Invoices are generated on demand and never stored. A user invoice lists the user's own individual tickets; tickets that are part of a group ticket are excluded because the group ticket already includes them. A group invoice lists the group's tickets once, at their total price, and shows each ticket's composition as detail. Empty sections are left out.
 
 Successful commands answer with a line starting with `OK`. Rejected or unrecognised commands answer with a line starting with `ERROR` and do not change any data.

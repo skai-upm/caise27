@@ -14,6 +14,7 @@ import es.upm.parque.business.model.User;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
 import es.upm.parque.persistence.ParkRepositories;
+import es.upm.parque.persistence.PassRepository;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 
@@ -103,6 +104,10 @@ public final class ParkController {
 
     public TicketRepository getTickets() {
         return repositories().getTickets();
+    }
+
+    public PassRepository getPasses() {
+        return repositories().getPasses();
     }
 
     /** Whether the user has an active ticket, derived by traversing the tickets managed by the system. */

@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import es.upm.parque.business.AttractionManager;
 import es.upm.parque.business.GroupManager;
 import es.upm.parque.business.InvoiceManager;
+import es.upm.parque.business.PassManager;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.SystemManager;
 import es.upm.parque.business.TicketManager;
@@ -32,6 +33,7 @@ public class CommandProcessor {
     private final TicketCommands tickets;
     private final AttractionCommands attractions;
     private final InvoiceCommands invoices;
+    private final PassCommands passes;
     private boolean exitRequested;
 
     /** Processes commands with the standard help variants and the configured singleton controllers. */
@@ -51,6 +53,7 @@ public class CommandProcessor {
         this.tickets = new TicketCommands(TicketManager.getInstance());
         this.attractions = new AttractionCommands(AttractionManager.getInstance());
         this.invoices = new InvoiceCommands(InvoiceManager.getInstance());
+        this.passes = new PassCommands(PassManager.getInstance());
     }
 
     /**
@@ -95,6 +98,10 @@ public class CommandProcessor {
             case TicketCommands.TICKET_DELETE -> tickets.delete(elements);
             case TicketCommands.GROUPTICKET_CREATE -> tickets.createGroupTicket(elements);
             case TicketCommands.GROUPTICKET_DELETE -> tickets.deleteGroupTicket(elements);
+            case PassCommands.SPEEDPASS_CREATE -> passes.createSpeedPasses(elements);
+            case PassCommands.SPECIALPASS_CREATE -> passes.createSpecialPass(elements);
+            case PassCommands.SPEEDPASS_DELETE -> passes.refundSpeedPass(elements);
+            case PassCommands.SPECIALPASS_DELETE -> passes.refundSpecialPass(elements);
             case AttractionCommands.ATTRACTION_CREATE -> attractions.create(elements);
             case AttractionCommands.ATTRACTION_LIST -> attractions.list(elements);
             case AttractionCommands.ATTRACTION_ENTER -> attractions.enter(elements);
