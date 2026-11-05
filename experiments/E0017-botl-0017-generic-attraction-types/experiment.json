@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0017-botl-0017-generic-attraction-types",
+  "change": "botl-0017-generic-attraction-types",
+  "status": "archived",
+  "createdAt": "2026-11-04T15:27:23.499585+00:00",
+  "updatedAt": "2026-11-04T16:55:16.185469+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261104T152723Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261104T152723Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 687807,
+        "totalCost": 5.374927999999997
+      }
+    },
+    {
+      "runId": "0002-apply-20261104T164620Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261104T164620Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 7679174,
+        "totalCost": 2.020042800000006
+      }
+    },
+    {
+      "runId": "0003-archive-20261104T165413Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261104T165413Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-04T16:55:16.123716+00:00"
+}

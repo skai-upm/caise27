@@ -1,0 +1,73 @@
+{
+  "capturedAt": "2026-11-04T13:17:39.966028+00:00",
+  "agent": "claude-code",
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "24215391-438c-454a-bc77-069e17a83d12",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 38,
+    "outputTokens": 11176,
+    "cacheCreationTokens": 85958,
+    "cacheReadTokens": 1531468,
+    "totalTokens": 1628640,
+    "totalCost": 1.2176295999999998
+  },
+  "git": {
+    "available": true,
+    "repo": "/Users/andreacimmino/Desktop/opendev/opus_4_proposals_gpractices_multiple_human",
+    "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+    "dirty": true,
+    "statusPorcelain": [
+      "?? .DS_Store",
+      "?? .botl/",
+      "?? experiments/",
+      "?? openspec/changes/botl-0001-create-the-project/"
+    ]
+  },
+  "artifacts": {
+    "available": true,
+    "files": 5,
+    "lines": 117,
+    "words": 929,
+    "requirements": 5,
+    "scenarios": 6,
+    "tasks": 4,
+    "shallStatements": 6
+  },
+  "projectProfile": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "codeQuality": {
+    "common": {
+      "sonar": {
+        "available": false,
+        "skipped": true
+      }
+    },
+    "languageSpecific": {
+      "profile": {
+        "kind": "unknown",
+        "modules": []
+      },
+      "modules": []
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "radon": {
+      "available": false
+    }
+  },
+  "sonar": {
+    "available": false,
+    "skipped": true
+  },
+  "radon": {
+    "available": false
+  }
+}

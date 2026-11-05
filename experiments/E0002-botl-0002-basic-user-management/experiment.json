@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0002-botl-0002-basic-user-management",
+  "change": "botl-0002-basic-user-management",
+  "status": "archived",
+  "createdAt": "2026-11-04T13:21:17.896337+00:00",
+  "updatedAt": "2026-11-04T13:31:27.263407+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261104T132117Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261104T132117Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 287125,
+        "totalCost": 0.3366850000000001
+      }
+    },
+    {
+      "runId": "0002-apply-20261104T132317Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261104T132317Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1445715,
+        "totalCost": 0.8569457999999996
+      }
+    },
+    {
+      "runId": "0003-apply-20261104T132832Z",
+      "sequence": 3,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0003-apply-20261104T132832Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 172795,
+        "totalCost": 0.06327719999999992
+      }
+    },
+    {
+      "runId": "0004-archive-20261104T133045Z",
+      "sequence": 4,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0004-archive-20261104T133045Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 355494,
+        "totalCost": 0.1031629999999999
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-04T13:31:27.218381+00:00"
+}
