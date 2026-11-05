@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0001-botl-0001-f1-amusement-park",
+  "change": "botl-0001-f1-amusement-park",
+  "status": "archived",
+  "createdAt": "2026-10-31T12:51:33.422469+00:00",
+  "updatedAt": "2026-10-31T13:03:29.139066+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261031T125133Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261031T125133Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 632379,
+        "totalCost": 0.5775798000000002
+      }
+    },
+    {
+      "runId": "0002-apply-20261031T125401Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261031T125401Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1713355,
+        "totalCost": 1.120359
+      }
+    },
+    {
+      "runId": "0003-apply-20261031T130046Z",
+      "sequence": 3,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0003-apply-20261031T130046Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 159810,
+        "totalCost": 0.04572339999999997
+      }
+    },
+    {
+      "runId": "0004-archive-20261031T130229Z",
+      "sequence": 4,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0004-archive-20261031T130229Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 490664,
+        "totalCost": 0.17894799999999966
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-31T13:03:29.090891+00:00"
+}
