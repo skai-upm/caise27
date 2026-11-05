@@ -3,9 +3,12 @@ package es.upm.parque.park;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import es.upm.parque.model.Group;
+import es.upm.parque.model.GroupTicket;
 import es.upm.parque.model.Ticket;
 import es.upm.parque.model.User;
 import es.upm.parque.repository.GroupRepository;
@@ -58,11 +61,26 @@ public final class ParkController {
 
     /**
      * Whether the group has an active group ticket, i.e. an associated group ticket dated on or after
-     * the current system date. Derived on every call, never stored. No group tickets exist yet.
+     * the current system date. Derived on every call, never stored.
      */
     public boolean hasActiveGroupTicket(Group group) {
         Objects.requireNonNull(group, "group");
-        return false;
+        return groupTicketsOf(group).stream().anyMatch(t -> t.isActiveOn(currentDate));
+    }
+
+    /** Group tickets purchased by the group, found by traversing the tickets managed by the system. */
+    public List<GroupTicket> groupTicketsOf(Group group) {
+        return groupTickets().stream().filter(t -> t.isFor(group)).toList();
+    }
+
+    private List<GroupTicket> groupTickets() {
+        List<GroupTicket> result = new ArrayList<>();
+        for (Ticket ticket : tickets.findAll()) {
+            if (ticket instanceof GroupTicket groupTicket) {
+                result.add(groupTicket);
+            }
+        }
+        return result;
     }
 
     public TicketRepository getTickets() {
@@ -79,10 +97,10 @@ public final class ParkController {
         return groups.findAll().stream().anyMatch(g -> g.contains(user) && hasActiveGroupTicket(g));
     }
 
-    /** Whether the ticket is part of the composition of a group ticket. No group tickets exist yet. */
+    /** Whether the ticket is part of the composition of a group ticket, found by traversal. */
     public boolean isPartOfGroupTicket(Ticket ticket) {
         Objects.requireNonNull(ticket, "ticket");
-        return false;
+        return groupTickets().stream().anyMatch(t -> t.includes(ticket));
     }
 
     public LocalDate getCurrentDate() {

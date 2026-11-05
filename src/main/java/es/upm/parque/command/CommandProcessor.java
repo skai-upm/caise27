@@ -45,6 +45,8 @@ public class CommandProcessor {
             "  GROUP DELETE;<id>",
             "  TICKET CREATE;<id>;<email>;<yyyy-MM-dd>",
             "  TICKET DELETE;<id>",
+            "  GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>",
+            "  GROUPTICKET DELETE;<id>",
             "  HELP",
             "  EXIT");
 
@@ -99,6 +101,8 @@ public class CommandProcessor {
                 case GroupCommands.GROUP_DELETE -> groups.delete(elements);
                 case TicketCommands.TICKET_CREATE -> tickets.create(elements);
                 case TicketCommands.TICKET_DELETE -> tickets.delete(elements);
+                case TicketCommands.GROUPTICKET_CREATE -> tickets.createGroupTicket(elements);
+                case TicketCommands.GROUPTICKET_DELETE -> tickets.deleteGroupTicket(elements);
                 default -> error("unknown command '" + command + "'");
             };
         } catch (RuntimeException e) {

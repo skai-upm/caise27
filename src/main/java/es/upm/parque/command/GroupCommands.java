@@ -1,6 +1,7 @@
 package es.upm.parque.command;
 
 import es.upm.parque.model.Group;
+import es.upm.parque.model.GroupTicket;
 import es.upm.parque.model.User;
 import es.upm.parque.park.ParkController;
 
@@ -80,6 +81,7 @@ class GroupCommands {
         if (park.hasActiveGroupTicket(group)) {
             return error("group " + e[1] + " has a group ticket for today or a later date and cannot be deleted");
         }
+        park.groupTicketsOf(group).forEach(GroupTicket::detachGroup);
         park.getGroups().remove(e[1]);
         return ok(e[1], "deleted");
     }
