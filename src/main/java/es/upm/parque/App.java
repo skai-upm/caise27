@@ -49,7 +49,7 @@ public class App {
     static void run(CommandProcessor processor, Reader input, PrintStream output) throws IOException {
         BufferedReader reader = new BufferedReader(input);
         String line;
-        while ((line = reader.readLine()) != null) {
+        while (!processor.isExitRequested() && (line = reader.readLine()) != null) {
             String response = processor.process(line);
             if (response != null) {
                 output.println(response);

@@ -1,6 +1,7 @@
 package es.upm.parque.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,6 +27,28 @@ class CommandProcessorTest {
 
     private static String create(String dni, String email, String password, String card) {
         return "USER CREATE;Ana;Garcia Lopez;" + dni + ";" + email + ";" + password + ";612345678;" + card;
+    }
+
+    @Test
+    void helpListsAllCommandSyntaxes() {
+        String help = processor.process("HELP");
+        for (String syntax : new String[] {
+                "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
+                "USER DELETE;<email>;<password>",
+                "USER UPDATE;<email>;<password>;<field>;<value>",
+                "HELP", "EXIT"}) {
+            assertTrue(help.contains(syntax), syntax);
+        }
+        assertTrue(processor.process("HELP;x").startsWith("ERROR"));
+        assertFalse(processor.isExitRequested());
+    }
+
+    @Test
+    void exitSetsTheExitFlag() {
+        assertTrue(processor.process("EXIT;x").startsWith("ERROR"));
+        assertFalse(processor.isExitRequested());
+        assertTrue(processor.process("EXIT").startsWith("OK"));
+        assertTrue(processor.isExitRequested());
     }
 
     @Test

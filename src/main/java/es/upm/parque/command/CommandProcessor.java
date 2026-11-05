@@ -23,7 +23,18 @@ public class CommandProcessor {
     private static final String INVALID_PASSWORD = "invalid password (requires uppercase, lowercase, digit and symbol)";
     private static final String INVALID_CARD = "invalid card number (requires exactly 16 digits)";
 
+    private static final String HELP = "HELP";
+    private static final String EXIT = "EXIT";
+    private static final String HELP_TEXT = String.join(System.lineSeparator(),
+            "Available commands:",
+            "  USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
+            "  USER DELETE;<email>;<password>",
+            "  USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
+            "  HELP",
+            "  EXIT");
+
     private final UserRepository users;
+    private boolean exitRequested;
 
     public CommandProcessor(UserRepository users) {
         this.users = users;
@@ -44,19 +55,34 @@ public class CommandProcessor {
                 elements[i] = elements[i].trim();
             }
             String command = elements[0];
-            if (USER_CREATE.equals(command)) {
-                return createUser(elements);
-            }
-            if (USER_DELETE.equals(command)) {
-                return deleteUser(elements);
-            }
-            if (USER_UPDATE.equals(command)) {
-                return updateUser(elements);
-            }
-            return error("unknown command '" + command + "'");
+            return switch (command) {
+                case USER_CREATE -> createUser(elements);
+                case USER_DELETE -> deleteUser(elements);
+                case USER_UPDATE -> updateUser(elements);
+                case HELP -> help(elements);
+                case EXIT -> exit(elements);
+                default -> error("unknown command '" + command + "'");
+            };
         } catch (RuntimeException e) {
             return error("the command could not be processed");
         }
+    }
+
+    /** Whether an EXIT command has been processed; no further commands should then be read. */
+    public boolean isExitRequested() {
+        return exitRequested;
+    }
+
+    private static String help(String[] e) {
+        return e.length == 1 ? HELP_TEXT : error("HELP takes no fields");
+    }
+
+    private String exit(String[] e) {
+        if (e.length != 1) {
+            return error("EXIT takes no fields");
+        }
+        exitRequested = true;
+        return "OK: exiting application";
     }
 
     private static String error(String message) {

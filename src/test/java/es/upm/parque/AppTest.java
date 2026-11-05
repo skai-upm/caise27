@@ -79,6 +79,23 @@ public class AppTest {
     }
 
     @Test
+    public void noCommandRunsAfterExitForEitherSource(@TempDir Path dir) throws Exception {
+        String commands = String.join("\n", ANA, "EXIT", PEDRO);
+        Path input = dir.resolve("input.txt");
+        Files.writeString(input, commands);
+        UserRepository fromFile = new UserRepository();
+        UserRepository fromStdin = new UserRepository();
+        String[] fileLines = startWith(new String[] {input.toString()}, fromFile, "");
+        String[] stdinLines = startWith(new String[0], fromStdin, commands);
+        assertArrayEquals(stdinLines, fileLines);
+        assertEquals(2, fileLines.length);
+        assertTrue(fileLines[1].startsWith("OK"), fileLines[1]);
+        assertEquals(1, fromFile.size());
+        assertEquals(1, fromStdin.size());
+        assertTrue(fromFile.existsByDni("12345678Z"));
+    }
+
+    @Test
     public void missingOrUnreadableFileIsReportedWithoutChanges(@TempDir Path dir) throws Exception {
         UserRepository repo = new UserRepository();
         String missing = dir.resolve("missing.txt").toString();
