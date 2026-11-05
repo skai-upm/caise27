@@ -52,6 +52,21 @@ package es.upm.parque.business.model {
     - name : String {readOnly}
     - capacity : int {readOnly}
   }
+
+  class Invoice {
+    - title : String {readOnly}
+    - recipient : List<String> {readOnly}
+  }
+
+  class InvoiceSection {
+    - heading : String {readOnly}
+  }
+
+  class InvoiceItem {
+    - description : String {readOnly}
+    - amount : BigDecimal {readOnly}
+    - details : List<String> {readOnly}
+  }
 }
 
 package es.upm.parque.business {
@@ -82,6 +97,14 @@ package es.upm.parque.business {
   class InvalidDataException {
   }
   class RuleViolationException {
+  }
+  abstract class InvoiceBuilder <<builder>> {
+  }
+  class UserInvoiceBuilder {
+  }
+  class GroupInvoiceBuilder {
+  }
+  class InvoiceManager <<director>> {
   }
 }
 
@@ -144,6 +167,19 @@ ParkException <|-- NotFoundException
 ParkException <|-- InvalidDataException
 ParkException <|-- RuleViolationException
 ParkSession --> "1" StorageLocation : location
+
+' --- Invoices: Builder pattern (director, abstract builder, concrete builders, product) ---
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceManager ..> InvoiceBuilder : directs
+InvoiceManager --> "1" ParkController : park
+InvoiceBuilder ..> Invoice : builds
+Invoice "1" *--> "*" InvoiceSection : sections
+InvoiceSection "1" *--> "1..*" InvoiceItem : items
+UserInvoiceBuilder --> "1" User : user
+GroupInvoiceBuilder --> "1" Group : group
+UserInvoiceBuilder --> "1" ParkController : park
+GroupInvoiceBuilder --> "1" ParkController : park
 
 ' --- Persistence ---
 UserRepository "1" --> "0..1" UserFileStore : store

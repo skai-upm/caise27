@@ -43,6 +43,8 @@ public class CommandProcessor {
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
             "ATTRACTION STATUS;<attractionIdentifier>",
+            "INVOICE CREATE;USER;<email>",
+            "INVOICE CREATE;GROUP;<groupIdentifier>",
             "HELP",
             "EXIT");
     private static final String HELP_TEXT = "Available commands:" + System.lineSeparator() + "  "
@@ -54,6 +56,7 @@ public class CommandProcessor {
     private final GroupCommands groups;
     private final TicketCommands tickets;
     private final AttractionCommands attractions;
+    private final InvoiceCommands invoices;
     private boolean exitRequested;
 
     /** Processes commands against the current central park management state. */
@@ -64,6 +67,7 @@ public class CommandProcessor {
         this.groups = new GroupCommands(park);
         this.tickets = new TicketCommands(park);
         this.attractions = new AttractionCommands(park);
+        this.invoices = new InvoiceCommands(park);
     }
 
     /**
@@ -111,6 +115,7 @@ public class CommandProcessor {
             case AttractionCommands.ATTRACTION_ENTER -> attractions.enter(elements);
             case AttractionCommands.ATTRACTION_EXIT -> attractions.exit(elements);
             case AttractionCommands.ATTRACTION_STATUS -> attractions.status(elements);
+            case InvoiceCommands.INVOICE_CREATE -> invoices.create(elements);
             default -> throw new InvalidCommandException("unknown command '" + command + "'");
         };
     }

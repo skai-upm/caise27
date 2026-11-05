@@ -53,7 +53,7 @@ class CommandProcessorTest {
             assertTrue(at >= from, "missing or out of order: " + syntax);
             from = at + syntax.length();
         }
-        assertEquals(20, CommandProcessor.HELP_SYNTAX.size());
+        assertEquals(22, CommandProcessor.HELP_SYNTAX.size());
     }
 
     @Test

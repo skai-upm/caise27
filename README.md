@@ -56,6 +56,8 @@ ATTRACTION ENTER;<attraction>;<ticket>
 ATTRACTION EXIT;<attraction>;<email>
 ATTRACTION LIST;<attraction>
 ATTRACTION STATUS;<attractionIdentifier>
+INVOICE CREATE;USER;<email>
+INVOICE CREATE;GROUP;<groupIdentifier>
 HELP
 EXIT
 ```
@@ -68,6 +70,7 @@ Park rules in short:
 - An active group ticket (dated today or later) locks the group against `GROUP ADD`, `GROUP REMOVE` and `GROUP DELETE`.
 - A user with an active ticket, or in a locked group, cannot be deleted.
 - Group entry to an attraction is all-or-nothing within its capacity.
+- Invoices are generated on demand and never stored. A user invoice lists the user's own individual tickets; tickets that are part of a group ticket are excluded because the group ticket already includes them. A group invoice lists the group's tickets once, at their total price, and shows each ticket's composition as detail. Empty sections are left out.
 
 Successful commands answer with a line starting with `OK`. Rejected or unrecognised commands answer with a line starting with `ERROR` and do not change any data.
 
