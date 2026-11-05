@@ -17,7 +17,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import es.upm.amusementpark.presentation.help.CommandInfo;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,15 +38,41 @@ public class CommandProcessor {
         String handle(String[] elements);
     }
 
-    private record Command(int elements, String usage, String note, Handler handler) {
+    private record Command(int elements, String usage, String note, String purpose, Handler handler) {
     }
+
+    /** Brief purpose of each command, shown by HELP EXTENDED. */
+    private static final Map<String, String> PURPOSES = Map.ofEntries(
+            Map.entry("USER CREATE", "Registers a new user after validating its data and checking DNI/email uniqueness."),
+            Map.entry("USER DELETE", "Deletes a user after checking the password, if no active ticket or locked group prevents it."),
+            Map.entry("USER UPDATE", "Changes one modifiable field of a user after checking the password; the DNI cannot change."),
+            Map.entry("SYSTEM DATE", "Sets the current system date used by all date-dependent operations."),
+            Map.entry("SYSTEM PRICE", "Sets the base ticket price used for tickets created from now on (this execution only)."),
+            Map.entry("GROUP CREATE", "Creates an empty group with a unique identifier and a name."),
+            Map.entry("GROUP ADD", "Adds a registered user to a group that is not locked by an active group ticket."),
+            Map.entry("GROUP REMOVE", "Removes a member from a group that is not locked by an active group ticket."),
+            Map.entry("GROUP DELETE", "Deletes a group without active group tickets; historical tickets are kept."),
+            Map.entry("TICKET CREATE", "Buys an individual ticket for a user and date at the current price and shows the price."),
+            Map.entry("TICKET DELETE", "Deletes a future individual ticket that is not part of a group ticket."),
+            Map.entry("GROUPTICKET CREATE", "Buys a discounted group ticket for all current members of a group and shows the total."),
+            Map.entry("GROUPTICKET DELETE", "Deletes a future group ticket together with its individual tickets."),
+            Map.entry("ATTRACTION CREATE", "Creates an attraction with a unique identifier, a name and a maximum capacity."),
+            Map.entry("ATTRACTION ENTER", "Lets the users of a ticket valid today into an attraction, all together or none."),
+            Map.entry("ATTRACTION EXIT", "Takes a user out of an attraction, freeing one place."),
+            Map.entry("ATTRACTION LIST", "Lists the emails of the users currently inside an attraction."),
+            Map.entry("ATTRACTION STATUS", "Shows capacity, occupancy, free places and users of an attraction."),
+            Map.entry("INVOICE CREATE", "Generates the invoice of a user or a group from the purchases in the system."),
+            Map.entry("HELP", "Shows the syntax of the available commands."),
+            Map.entry("HELP EXTENDED", "Shows the syntax and purpose of the available commands."),
+            Map.entry("EXIT", "Ends the application; no further command is executed."));
 
     private final Map<String, Command> commands = new LinkedHashMap<>();
     private final UserService userService;
     private boolean exitRequested;
 
     public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService,
-                            AttractionService attractionService, InvoiceService invoiceService) {
+                            AttractionService attractionService, InvoiceService invoiceService,
+                            HelpGenerator help, HelpGenerator extendedHelp) {
         this.userService = userService;
         register("USER CREATE", 8, "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>", "",
                 p -> {
@@ -101,7 +130,8 @@ public class CommandProcessor {
         register("ATTRACTION STATUS", 2, "ATTRACTION STATUS;<attractionIdentifier>", "", p -> attractionService.status(p[1]));
         register("INVOICE CREATE", 3, "INVOICE CREATE;USER;<email>", "| INVOICE CREATE;GROUP;<groupIdentifier>",
                 p -> invoiceService.create(p[1], p[2]).render());
-        register("HELP", 1, "HELP", "", p -> helpText());
+        register("HELP", 1, "HELP", "", p -> help.generate(catalogue()));
+        register("HELP EXTENDED", 1, "HELP EXTENDED", "", p -> extendedHelp.generate(catalogue()));
         register("EXIT", 1, "EXIT", "", p -> {
             exitRequested = true;
             return "GOODBYE";
@@ -109,7 +139,7 @@ public class CommandProcessor {
     }
 
     private void register(String name, int elements, String usage, String note, Handler handler) {
-        commands.put(name, new Command(elements, usage, note, handler));
+        commands.put(name, new Command(elements, usage, note, PURPOSES.getOrDefault(name, ""), handler));
     }
 
     /** Whether an EXIT command has been processed; no further commands must run. */
@@ -117,16 +147,9 @@ public class CommandProcessor {
         return exitRequested;
     }
 
-    /** Text listing every available command and its syntax. */
-    public String helpText() {
-        StringBuilder sb = new StringBuilder("Available commands:");
-        for (Command c : commands.values()) {
-            sb.append(System.lineSeparator()).append("  ").append(c.usage());
-            if (!c.note().isEmpty()) {
-                sb.append("   ").append(c.note());
-            }
-        }
-        return sb.toString();
+    /** Descriptions of every available command, in registration order. */
+    public List<CommandInfo> catalogue() {
+        return commands.values().stream().map(c -> new CommandInfo(c.usage(), c.note(), c.purpose())).toList();
     }
 
     /**

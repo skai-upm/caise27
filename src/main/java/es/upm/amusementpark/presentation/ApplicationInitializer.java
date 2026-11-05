@@ -7,6 +7,9 @@ import es.upm.amusementpark.business.service.InvoiceService;
 import es.upm.amusementpark.business.service.TicketService;
 import es.upm.amusementpark.business.service.UserService;
 import es.upm.amusementpark.persistence.repository.Repositories;
+import es.upm.amusementpark.presentation.help.ExtendedHelpFormat;
+import es.upm.amusementpark.presentation.help.HelpGenerator;
+import es.upm.amusementpark.presentation.help.SyntaxHelpFormat;
 
 /**
  * Composition root: injects the configured repositories into the park manager and the singleton
@@ -24,6 +27,7 @@ public final class ApplicationInitializer {
         TicketService tickets = TicketService.getInstance().inject(r.users(), r.tickets(), r.groups());
         AttractionService attractions = AttractionService.getInstance().inject(r.attractions(), r.tickets());
         InvoiceService invoices = InvoiceService.getInstance().inject(r.users(), r.groups(), r.tickets());
-        return new CommandProcessor(users, groups, tickets, attractions, invoices);
+        return new CommandProcessor(users, groups, tickets, attractions, invoices,
+                new HelpGenerator(new SyntaxHelpFormat()), new HelpGenerator(new ExtendedHelpFormat()));
     }
 }
