@@ -63,7 +63,12 @@ public class CommandProcessor {
             out.println("ERROR: Unknown command: " + line);
             return true;
         }
-        return handler.handle(line);
+        try {
+            return handler.handle(line);
+        } catch (RuntimeException e) {
+            out.println("ERROR: Could not process command: " + line);
+            return true;
+        }
     }
 
     /**

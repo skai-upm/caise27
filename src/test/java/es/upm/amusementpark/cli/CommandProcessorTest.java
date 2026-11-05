@@ -79,6 +79,16 @@ class CommandProcessorTest {
     }
 
     @Test
+    void failingCommandIsReportedAndProcessingContinues() throws IOException {
+        processor.register("BOOM", line -> {
+            throw new IllegalStateException("boom");
+        });
+        String out = run("BOOM", "HELP");
+        assertTrue(out.contains("ERROR: Could not process command: BOOM"));
+        assertTrue(out.contains("Available commands:"));
+    }
+
+    @Test
     void endOfInputWithoutExitTerminatesNormally() throws IOException {
         assertTrue(run("HELP").contains("Available commands:"));
     }
