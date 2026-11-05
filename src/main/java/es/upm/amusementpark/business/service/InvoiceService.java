@@ -9,6 +9,7 @@ import es.upm.amusementpark.business.model.Group;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.PassRepository;
 import es.upm.amusementpark.persistence.repository.TicketRepository;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 import java.util.List;
@@ -21,6 +22,7 @@ public class InvoiceService {
     private UserRepository users;
     private GroupRepository groups;
     private TicketRepository tickets;
+    private PassRepository passes = new PassRepository();
 
     private InvoiceService() {
     }
@@ -32,6 +34,12 @@ public class InvoiceService {
     /** The single instance of this controller. */
     public static InvoiceService getInstance() {
         return Holder.INSTANCE;
+    }
+
+    /** Injects the pass repository used for the passes section of user invoices. */
+    public InvoiceService injectPasses(PassRepository passes) {
+        this.passes = passes;
+        return this;
     }
 
     /** Injects the repositories this controller works with (done during application initialization). */
@@ -55,7 +63,9 @@ public class InvoiceService {
         User user = users.findByEmail(email).orElseThrow(() -> new NotFoundException("user not found"));
         List<IndividualTicket> direct = tickets.individualTicketsOf(user).stream()
                 .filter(t -> tickets.containerOf(t).isEmpty()).toList();
-        return new UserInvoiceBuilder().forUser(user).directTickets(direct).build();
+        List<es.upm.amusementpark.business.model.Pass> userPasses = tickets.individualTicketsOf(user).stream()
+                .flatMap(t -> passes.passesOf(t).stream()).toList();
+        return new UserInvoiceBuilder().forUser(user).directTickets(direct).passes(userPasses).build();
     }
 
     public Invoice groupInvoice(String groupIdentifier) {

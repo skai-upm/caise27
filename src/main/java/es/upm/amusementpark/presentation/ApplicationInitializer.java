@@ -5,6 +5,7 @@ import es.upm.amusementpark.business.security.BCryptPasswordEncoder;
 import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
 import es.upm.amusementpark.business.service.InvoiceService;
+import es.upm.amusementpark.business.service.PassService;
 import es.upm.amusementpark.business.service.TicketService;
 import es.upm.amusementpark.business.service.UserService;
 import es.upm.amusementpark.persistence.repository.Repositories;
@@ -26,10 +27,13 @@ public final class ApplicationInitializer {
         UserService users = UserService.getInstance().inject(r.users(), r.groups(), r.tickets())
                 .injectPasswordEncoder(new BCryptPasswordEncoder());
         GroupService groups = GroupService.getInstance().inject(r.users(), r.groups(), r.tickets());
-        TicketService tickets = TicketService.getInstance().inject(r.users(), r.tickets(), r.groups());
+        TicketService tickets = TicketService.getInstance().inject(r.users(), r.tickets(), r.groups())
+                .injectPasses(r.passes());
         AttractionService attractions = AttractionService.getInstance().inject(r.attractions(), r.tickets());
-        InvoiceService invoices = InvoiceService.getInstance().inject(r.users(), r.groups(), r.tickets());
-        return new CommandProcessor(users, groups, tickets, attractions, invoices,
+        InvoiceService invoices = InvoiceService.getInstance().inject(r.users(), r.groups(), r.tickets())
+                .injectPasses(r.passes());
+        PassService passes = PassService.getInstance().inject(r.tickets(), r.passes());
+        return new CommandProcessor(users, groups, tickets, attractions, invoices, passes,
                 new HelpGenerator(new SyntaxHelpFormat()), new HelpGenerator(new ExtendedHelpFormat()));
     }
 }

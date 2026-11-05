@@ -2,6 +2,7 @@ package es.upm.amusementpark.business.control;
 
 import es.upm.amusementpark.persistence.repository.AttractionRepository;
 import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.PassRepository;
 import es.upm.amusementpark.persistence.repository.Repositories;
 import es.upm.amusementpark.persistence.repository.TicketRepository;
 import es.upm.amusementpark.persistence.repository.UserRepository;
@@ -23,6 +24,7 @@ public final class Park {
     private GroupRepository groups;
     private TicketRepository tickets;
     private AttractionRepository attractions;
+    private PassRepository passes;
 
     private Park() {
         start(Repositories.inMemory());
@@ -46,6 +48,7 @@ public final class Park {
         this.groups = repositories.groups();
         this.tickets = repositories.tickets();
         this.attractions = repositories.attractions();
+        this.passes = repositories.passes();
     }
 
     public GroupRepository groups() {
@@ -58,6 +61,10 @@ public final class Park {
 
     public AttractionRepository attractions() {
         return attractions;
+    }
+
+    public PassRepository passes() {
+        return passes;
     }
 
     public UserRepository users() {

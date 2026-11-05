@@ -59,6 +59,18 @@ package business.model {
     - percent : int
   }
 
+  abstract class Pass {
+    - identifier : String {readOnly}
+    - price : BigDecimal {readOnly}
+    - consumed : boolean
+  }
+
+  class SpeedPass {
+    {static} + RATE : BigDecimal = 0.20
+  }
+
+  class SpecialPass
+
   class Attraction {
     - identifier : String {readOnly}
     - name : String
@@ -91,6 +103,10 @@ UserStorage <|.. UserFileStorage
 GroupStorage <|.. GroupFileStorage
 TicketStorage <|.. TicketFileStorage
 AttractionStorage <|.. AttractionFileStorage
+
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Pass --> "1" IndividualTicket : ticket
 
 ' --- model relationships (all unidirectional; User references nothing)
 IndividualTicket --> "1" User : user

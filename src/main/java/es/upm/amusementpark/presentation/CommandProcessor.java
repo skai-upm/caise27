@@ -10,6 +10,9 @@ import es.upm.amusementpark.business.control.Park;
 import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
 import es.upm.amusementpark.business.service.InvoiceService;
+import es.upm.amusementpark.business.service.PassService;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.service.TicketService;
 import es.upm.amusementpark.business.service.UserService;
 import java.math.BigDecimal;
@@ -56,6 +59,10 @@ public class CommandProcessor {
             Map.entry("TICKET DELETE", "Deletes a future individual ticket that is not part of a group ticket."),
             Map.entry("GROUPTICKET CREATE", "Buys a discounted group ticket for all current members of a group and shows the total."),
             Map.entry("GROUPTICKET DELETE", "Deletes a future group ticket together with its individual tickets."),
+            Map.entry("SPEEDPASS CREATE", "Buys 1 or 10 SpeedPasses (20% of the ticket price each) for an individual ticket."),
+            Map.entry("SPEEDPASS DELETE", "Refunds an unconsumed SpeedPass of a ticket dated after the current date."),
+            Map.entry("SPECIALPASS CREATE", "Buys the single Special Pass (ticket price) allowed for an individual ticket."),
+            Map.entry("SPECIALPASS DELETE", "Refunds an unconsumed Special Pass of a ticket dated after the current date."),
             Map.entry("ATTRACTION CREATE", "Creates an attraction with a unique identifier, a name and a maximum capacity."),
             Map.entry("ATTRACTION ENTER", "Lets the users of a ticket valid today into an attraction, all together or none."),
             Map.entry("ATTRACTION EXIT", "Takes a user out of an attraction, freeing one place."),
@@ -71,7 +78,7 @@ public class CommandProcessor {
     private boolean exitRequested;
 
     public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService,
-                            AttractionService attractionService, InvoiceService invoiceService,
+                            AttractionService attractionService, InvoiceService invoiceService, PassService passService,
                             HelpGenerator help, HelpGenerator extendedHelp) {
         this.userService = userService;
         register("USER CREATE", 8, "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>", "",
@@ -115,6 +122,23 @@ public class CommandProcessor {
         register("GROUPTICKET DELETE", 2, "GROUPTICKET DELETE;<identifier>", "", p -> {
             ticketService.deleteGroupTicket(p[1]);
             return "GROUP TICKET DELETED";
+        });
+        register("SPEEDPASS CREATE", 4, "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>", "(quantity: 1 or 10)",
+                p -> {
+                    var created = passService.createSpeedPasses(p[1], p[2], p[3]);
+                    String ids = created.size() == 1 ? created.get(0).getIdentifier()
+                            : created.get(0).getIdentifier() + ".." + created.get(created.size() - 1).getIdentifier();
+                    return "SPEEDPASS CREATED: " + ids + ". Total price: " + money(PassService.total(created));
+                });
+        register("SPEEDPASS DELETE", 2, "SPEEDPASS DELETE;<speedPassIdentifier>", "", p -> {
+            passService.refund(p[1], SpeedPass.class);
+            return "SPEEDPASS DELETED";
+        });
+        register("SPECIALPASS CREATE", 3, "SPECIALPASS CREATE;<identifier>;<individualTicket>", "", p ->
+                "SPECIALPASS CREATED. Price: " + money(passService.createSpecialPass(p[1], p[2]).getPrice()));
+        register("SPECIALPASS DELETE", 2, "SPECIALPASS DELETE;<specialPassIdentifier>", "", p -> {
+            passService.refund(p[1], SpecialPass.class);
+            return "SPECIALPASS DELETED";
         });
         register("ATTRACTION CREATE", 4, "ATTRACTION CREATE;<identifier>;<name>;<capacity>", "", p -> {
             attractionService.createAttraction(p[1], p[2], p[3]);
@@ -203,6 +227,10 @@ public class CommandProcessor {
     private String systemPrice(String[] p) {
         Park.getInstance().setCurrentPrice(parsePrice(p[1]));
         return "SYSTEM PRICE UPDATED";
+    }
+
+    private static String money(java.math.BigDecimal amount) {
+        return amount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + " EUR";
     }
 
     /** Parses a date in yyyy-MM-dd format, rejecting non-existent dates. */

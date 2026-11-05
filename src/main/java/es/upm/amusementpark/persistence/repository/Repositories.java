@@ -11,7 +11,7 @@ import java.nio.file.Path;
  * repositories are replaceable dependencies, not singletons.
  */
 public record Repositories(UserRepository users, GroupRepository groups, TicketRepository tickets,
-                           AttractionRepository attractions) {
+                           AttractionRepository attractions, PassRepository passes) {
 
     /** File-backed repositories in {@code dataDirectory}, loaded in dependency order. */
     public static Repositories files(Path dataDirectory) {
@@ -19,12 +19,13 @@ public record Repositories(UserRepository users, GroupRepository groups, TicketR
         GroupRepository g = new GroupRepository(new GroupFileStorage(dataDirectory.resolve("groups.txt")), u);
         TicketRepository t = new TicketRepository(new TicketFileStorage(dataDirectory.resolve("tickets.txt")), u, g);
         AttractionRepository a = new AttractionRepository(new AttractionFileStorage(dataDirectory.resolve("attractions.txt")));
-        return new Repositories(u, g, t, a);
+        return new Repositories(u, g, t, a, new PassRepository());
     }
 
     /** In-memory repositories around the given users repository. */
     public static Repositories inMemory(UserRepository users) {
-        return new Repositories(users, new GroupRepository(), new TicketRepository(), new AttractionRepository());
+        return new Repositories(users, new GroupRepository(), new TicketRepository(), new AttractionRepository(),
+                new PassRepository());
     }
 
     /** Empty in-memory repositories. */

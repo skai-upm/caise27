@@ -12,6 +12,7 @@ import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.control.Park;
 import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.PassRepository;
 import es.upm.amusementpark.persistence.repository.TicketRepository;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 import java.math.BigDecimal;
@@ -27,6 +28,7 @@ public class TicketService {
     private UserRepository users;
     private TicketRepository tickets;
     private GroupRepository groups;
+    private PassRepository passes = new PassRepository();
 
     private TicketService() {
     }
@@ -41,6 +43,12 @@ public class TicketService {
     }
 
     /** Injects the repositories this controller works with (done during application initialization). */
+    /** Injects the pass repository, whose passes are removed together with deleted tickets. */
+    public TicketService injectPasses(PassRepository passes) {
+        this.passes = passes;
+        return this;
+    }
+
     public TicketService inject(UserRepository users, TicketRepository tickets, GroupRepository groups) {
         this.users = users;
         this.tickets = tickets;
@@ -68,6 +76,7 @@ public class TicketService {
             throw new RuleViolationException("ticket '" + identifier + "' belongs to a group ticket; delete the group ticket instead");
         }
         requireDeletable(ticket);
+        passes.removeAll(passes.passesOf((IndividualTicket) ticket));
         tickets.remove(ticket);
     }
 
@@ -101,6 +110,7 @@ public class TicketService {
                 .filter(GroupTicket.class::isInstance).map(GroupTicket.class::cast)
                 .orElseThrow(() -> new NotFoundException("group ticket '" + identifier + "' not found"));
         requireDeletable(ticket);
+        ticket.getComposition().forEach(c -> passes.removeAll(passes.passesOf(c)));
         List<Ticket> all = new ArrayList<>(ticket.getComposition());
         all.add(ticket);
         tickets.removeAll(all);

@@ -1,6 +1,9 @@
 package es.upm.amusementpark.business.invoice;
 
 import es.upm.amusementpark.business.model.IndividualTicket;
+import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.business.model.SpecialPass;
+import es.upm.amusementpark.business.model.SpeedPass;
 import es.upm.amusementpark.business.model.User;
 import java.util.List;
 
@@ -27,5 +30,16 @@ public class UserInvoiceBuilder extends InvoiceBuilder<UserInvoiceBuilder> {
     public UserInvoiceBuilder directTickets(List<IndividualTicket> tickets) {
         return section("Individual tickets", tickets.stream()
                 .map(t -> InvoiceLine.item(t.getIdentifier() + " (" + t.getDate() + ")", t.getPrice())).toList());
+    }
+
+    /** SpeedPasses and Special Passes associated with the user's individual tickets (personal purchases). */
+    public UserInvoiceBuilder passes(List<Pass> passes) {
+        section("SpeedPasses", lines(passes.stream().filter(SpeedPass.class::isInstance).toList()));
+        return section("Special Passes", lines(passes.stream().filter(SpecialPass.class::isInstance).toList()));
+    }
+
+    private static List<InvoiceLine> lines(List<Pass> passes) {
+        return passes.stream().map(p -> InvoiceLine.item(p.getIdentifier() + " (ticket " + p.getTicket().getIdentifier()
+                + (p.isConsumed() ? ", consumed" : "") + ")", p.getPrice())).toList();
     }
 }
