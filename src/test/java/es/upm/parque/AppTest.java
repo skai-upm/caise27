@@ -1,19 +1,16 @@
 package es.upm.parque;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit test for simple App.
+ * Unit tests for the application entry point.
  */
 public class AppTest {
 
-    /**
-     * Rigorous Test :-)
-     */
     @Test
-    public void shouldAnswerWithTrue() {
-        assertTrue(true);
+    public void entryPointStartsWithoutArguments() {
+        assertDoesNotThrow(() -> App.main(new String[0]));
     }
 }
