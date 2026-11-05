@@ -2,6 +2,7 @@ package es.upm.amusementpark.persistence.repository;
 
 import es.upm.amusementpark.persistence.storage.AttractionFileStorage;
 import es.upm.amusementpark.persistence.storage.GroupFileStorage;
+import es.upm.amusementpark.persistence.storage.PassFileStorage;
 import es.upm.amusementpark.persistence.storage.TicketFileStorage;
 import es.upm.amusementpark.persistence.storage.UserFileStorage;
 import java.nio.file.Path;
@@ -19,7 +20,8 @@ public record Repositories(UserRepository users, GroupRepository groups, TicketR
         GroupRepository g = new GroupRepository(new GroupFileStorage(dataDirectory.resolve("groups.txt")), u);
         TicketRepository t = new TicketRepository(new TicketFileStorage(dataDirectory.resolve("tickets.txt")), u, g);
         AttractionRepository a = new AttractionRepository(new AttractionFileStorage(dataDirectory.resolve("attractions.txt")));
-        return new Repositories(u, g, t, a, new PassRepository());
+        PassRepository p = new PassRepository(new PassFileStorage(dataDirectory.resolve("passes.txt")), t);
+        return new Repositories(u, g, t, a, p);
     }
 
     /** In-memory repositories around the given users repository. */

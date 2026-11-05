@@ -1,7 +1,18 @@
 @startuml model
-' Amusement Park model (es.upm.amusementpark) - layered packages
+' Amusement Park - Delivery 3 design (es.upm.amusementpark), layered packages
 hide methods
+hide empty members
 skinparam classAttributeIconSize 0
+
+package presentation {
+  class App
+  class ApplicationInitializer <<composition root>>
+  class CommandProcessor
+  class HelpGenerator
+  interface HelpFormat
+  class SyntaxHelpFormat
+  class ExtendedHelpFormat
+}
 
 package business.control {
   class Park <<singleton>> {
@@ -11,13 +22,44 @@ package business.control {
   }
 }
 
+package business.service {
+  class UserService <<singleton>>
+  class GroupService <<singleton>>
+  class TicketService <<singleton>>
+  class AttractionService <<singleton>>
+  class PassService <<singleton>>
+  class InvoiceService <<singleton>> <<director>>
+}
+
+package business.security {
+  interface PasswordEncoder
+  class BCryptPasswordEncoder
+}
+
+package business.invoice {
+  abstract class InvoiceBuilder<B extends InvoiceBuilder<B>> {
+    - title : String
+  }
+  class UserInvoiceBuilder
+  class GroupInvoiceBuilder
+  class Invoice {
+    - title : String
+    - total : BigDecimal
+  }
+  class InvoiceLine <<record>> {
+    - description : String
+    - amount : BigDecimal
+    - counted : boolean
+  }
+}
+
 package business.model {
   class User {
     - firstName : String
     - surnames : String
     - dni : String {readOnly}
     - email : String
-    - password : String
+    - password : String (BCrypt)
     - telephone : String
     - cardNumber : String
   }
@@ -37,6 +79,10 @@ package business.model {
     - identifier : String {readOnly}
     - name : String
   }
+
+  interface TicketAccess
+  interface IndividualAccess
+  interface GroupAccess
 
   abstract class Ticket {
     - identifier : String {readOnly}
@@ -71,9 +117,8 @@ package business.model {
 
   class SpecialPass
 
-  interface TicketAccess
-  interface IndividualAccess
-  interface GroupAccess
+  interface PassLookup
+  class EntryResult <<record>>
 
   abstract class Attraction<T extends TicketAccess> {
     - identifier : String {readOnly}
@@ -81,9 +126,6 @@ package business.model {
     - capacity : int {readOnly}
     - accessType : Class<T> {readOnly}
   }
-
-  interface PassLookup
-  class EntryResult <<record>>
 
   class GeneralAttraction
   class IndividualAttraction
@@ -99,10 +141,12 @@ package business.model {
 }
 
 package persistence.repository {
+  class Repositories <<record>>
   class UserRepository
   class GroupRepository
   class TicketRepository
   class AttractionRepository
+  class PassRepository
 }
 
 package persistence.storage {
@@ -110,25 +154,25 @@ package persistence.storage {
   interface GroupStorage
   interface TicketStorage
   interface AttractionStorage
+  interface PassStorage
   class UserFileStorage
   class GroupFileStorage
   class TicketFileStorage
   class AttractionFileStorage
+  class PassFileStorage
+  class DataDirectory
 }
 
-' --- inheritance and implementations
-Ticket <|-- IndividualTicket
-Ticket <|-- GroupTicket
-UserStorage <|.. UserFileStorage
-GroupStorage <|.. GroupFileStorage
-TicketStorage <|.. TicketFileStorage
-AttractionStorage <|.. AttractionFileStorage
-
+' --- ticket hierarchy and access capabilities
 TicketAccess <|-- IndividualAccess
 TicketAccess <|-- GroupAccess
 TicketAccess <|.. Ticket
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
 IndividualAccess <|.. IndividualTicket
 GroupAccess <|.. GroupTicket
+
+' --- generic attractions
 Attraction <|-- GeneralAttraction : <T = TicketAccess>
 Attraction <|-- IndividualAttraction : <T = IndividualAccess>
 Attraction <|-- GroupAttraction : <T = GroupAccess>
@@ -138,9 +182,12 @@ Attraction ..> PassLookup : uses on entry
 Attraction ..> EntryResult : creates
 EntryResult --> "0..*" Pass : consumedPasses
 EntryResult --> "1..*" User : users
+
+' --- passes
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
-Pass --> "1" IndividualTicket : ticket
+SpeedPass "0..*" --> "1" IndividualTicket : ticket
+SpecialPass "0..1" --> "1" IndividualTicket : ticket
 
 ' --- model relationships (all unidirectional; User references nothing)
 IndividualTicket --> "1" User : user
@@ -152,17 +199,73 @@ GroupTicket ..> GroupDiscount : price rule
 UserValidator ..> User : validates
 UserField ..> User : modifiable field of
 
+' --- invoice Builder
+InvoiceBuilder <|-- UserInvoiceBuilder
+InvoiceBuilder <|-- GroupInvoiceBuilder
+InvoiceBuilder ..> Invoice : builds
+Invoice *-- "0..*" InvoiceLine : sections
+InvoiceService ..> UserInvoiceBuilder : directs
+InvoiceService ..> GroupInvoiceBuilder : directs
+
+' --- security
+PasswordEncoder <|.. BCryptPasswordEncoder
+UserService --> "1" PasswordEncoder : injected
+
+' --- help strategies
+HelpFormat <|.. SyntaxHelpFormat
+HelpFormat <|.. ExtendedHelpFormat
+HelpGenerator --> "1" HelpFormat : injected
+
+' --- composition root and dependency injection
+App ..> ApplicationInitializer : initialize(Repositories)
+App ..> DataDirectory : --fly
+ApplicationInitializer ..> Repositories : receives
+ApplicationInitializer ..> Park : injects
+ApplicationInitializer ..> UserService : injects
+ApplicationInitializer ..> GroupService : injects
+ApplicationInitializer ..> TicketService : injects
+ApplicationInitializer ..> AttractionService : injects
+ApplicationInitializer ..> PassService : injects
+ApplicationInitializer ..> InvoiceService : injects
+ApplicationInitializer ..> CommandProcessor : creates
+CommandProcessor --> "1" UserService
+CommandProcessor --> "1" GroupService
+CommandProcessor --> "1" TicketService
+CommandProcessor --> "1" AttractionService
+CommandProcessor --> "1" PassService
+CommandProcessor --> "1" InvoiceService
+CommandProcessor --> "2" HelpGenerator : HELP / HELP EXTENDED
+
 ' --- central management and storage
 Park --> "1" UserRepository : users
 Park --> "1" GroupRepository : groups
 Park --> "1" TicketRepository : tickets
 Park --> "1" AttractionRepository : attractions
+Park --> "1" PassRepository : passes
+Repositories o-- UserRepository
+Repositories o-- GroupRepository
+Repositories o-- TicketRepository
+Repositories o-- AttractionRepository
+Repositories o-- PassRepository
+UserService --> UserRepository
+TicketService --> TicketRepository
+TicketService --> PassRepository : cascade
+AttractionService --> AttractionRepository
+AttractionService --> PassRepository
+PassService --> PassRepository
 UserRepository o-- "0..*" User
 GroupRepository o-- "0..*" Group
 TicketRepository o-- "0..*" Ticket
 AttractionRepository o-- "0..*" Attraction
+PassRepository o-- "0..*" Pass
 UserRepository --> "1" UserStorage
 GroupRepository --> "1" GroupStorage
 TicketRepository --> "1" TicketStorage
 AttractionRepository --> "1" AttractionStorage
+PassRepository --> "1" PassStorage
+UserStorage <|.. UserFileStorage
+GroupStorage <|.. GroupFileStorage
+TicketStorage <|.. TicketFileStorage
+AttractionStorage <|.. AttractionFileStorage
+PassStorage <|.. PassFileStorage
 @enduml

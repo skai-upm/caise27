@@ -3,6 +3,7 @@ package es.upm.amusementpark.persistence.repository;
 import es.upm.amusementpark.business.exception.RuleViolationException;
 import es.upm.amusementpark.business.model.IndividualTicket;
 import es.upm.amusementpark.business.model.Pass;
+import es.upm.amusementpark.persistence.storage.PassStorage;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +16,16 @@ import java.util.Optional;
 public class PassRepository {
 
     private final Map<String, Pass> passes = new LinkedHashMap<>();
+    private final PassStorage storage;
+
+    public PassRepository() {
+        this(PassStorage.none(), new TicketRepository());
+    }
+
+    public PassRepository(PassStorage storage, TicketRepository tickets) {
+        this.storage = storage;
+        storage.load(tickets).forEach(p -> passes.put(p.getIdentifier(), p));
+    }
 
     /** Throws if any identifier is already used by an existing pass. */
     public void ensureAvailable(Collection<String> identifiers) {
@@ -54,7 +65,7 @@ public class PassRepository {
         save();
     }
 
-    protected void save() {
-        // in-memory for now
+    private void save() {
+        storage.save(passes.values());
     }
 }
