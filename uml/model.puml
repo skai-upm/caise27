@@ -126,10 +126,28 @@ package es.upm.park.business.model {
     - basePrice : BigDecimal
   }
 
-  class Attraction {
+  interface AccessCredential
+
+  abstract class Attraction<T extends AccessCredential> {
     - id : String
     - name : String
     - capacity : int
+    - admitted : Class<T>
+  }
+
+  class GeneralAttraction
+
+  class IndividualAttraction
+
+  class GroupAttraction
+
+  class SpecialAttraction
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 
   abstract class Pass {
@@ -255,6 +273,7 @@ GroupManager "1" *--> "0..*" Group : groups
 Group "0..*" o--> "0..*" User : members
 
 ' ---- Tickets ----
+AccessCredential <|.. Ticket
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 IndividualTicket "0..*" x--> "1" User : user
@@ -272,6 +291,10 @@ GroupTicketContents "0..*" x--> "0..*" GroupTicket : groupTickets
 AttractionManager "0..1" x--> "1" AttractionRepository : store
 AttractionManager "1" *--> "0..*" Attraction : attractions
 Attraction "0..*" o--> "0..*" User : present
+Attraction <|-- GeneralAttraction : <<bind>> T -> Ticket
+Attraction <|-- IndividualAttraction : <<bind>> T -> IndividualTicket
+Attraction <|-- GroupAttraction : <<bind>> T -> GroupTicket
+Attraction <|-- SpecialAttraction : <<bind>> T -> IndividualTicket
 
 '' ---- Invoices ----
 InvoiceBuilder <|-- UserInvoiceBuilder
@@ -293,6 +316,9 @@ ApplicationContext ..> TicketFileStore : creates
 ApplicationContext ..> GroupTicketFileStore : creates
 ApplicationContext ..> AttractionFileStore : creates
 ApplicationContext ..> PassFileStore : creates
+Attraction ..> AttractionType
+AttractionFileStore ..> AttractionType
+CommandProcessor ..> AttractionType
 PassFileStore ..> PassContents
 PassManager ..> PassContents
 PassManager ..> Result

@@ -140,6 +140,7 @@ class CommandProcessorTest {
             "SPECIALPASS CREATE;Id;IdTicket",
             "SPECIALPASS DELETE;IdPase",
             "ATTRACTION CREATE;Id;Nombre;Capacidad",
+            "ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo",
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
             "ATTRACTION STATUS;IdAtraccion",
@@ -596,5 +597,40 @@ class CommandProcessorTest {
         p.process("TICKET CREATE;T001;u0@correo.com;2026-10-15");
         assertFalse(p.process(command).success());
         assertTrue(p.getController().passes().getPasses().isEmpty());
+    }
+
+    // ---- attraction types ----
+
+    @Test
+    void typedAttractionsAdmitOnlyTheirTicketKinds() {
+        CommandProcessor p = groupOf(1);
+        p.process("TICKET CREATE;T001;u0@correo.com;2026-10-01");
+        p.process(CREATE_ANA);
+        p.process("GROUP CREATE;G02;Otros");
+        p.process("GROUP ADD;G02;ana@correo.com");
+        p.process("GROUPTICKET CREATE;TG01;G02;2026-10-01");
+        assertTrue(p.process("ATTRACTION CREATE;A01;Tornado;20").success());
+        assertEquals("GENERAL", attractions.find("A01").orElseThrow().getType().name());
+        assertTrue(p.process("ATTRACTION CREATE;A02;Familias;30;GROUP").success());
+        assertTrue(p.process("ATTRACTION CREATE;A03;Solo;30;INDIVIDUAL").success());
+        assertTrue(p.process("ATTRACTION CREATE;A04;Vip;30;SPECIAL").success());
+        assertEquals("ERROR: Attraction A02 (GROUP) does not admit ticket T001.",
+                p.process("ATTRACTION ENTER;A02;T001").toString());
+        assertFalse(p.process("ATTRACTION ENTER;A03;TG01").success());
+        assertFalse(p.process("ATTRACTION ENTER;A04;TG01").success());
+        assertTrue(p.process("ATTRACTION ENTER;A02;TG01").success());
+        assertTrue(p.process("ATTRACTION ENTER;A03;T001").success());
+        assertTrue(p.process("ATTRACTION ENTER;A04;T001").success());
+        assertTrue(p.process("ATTRACTION ENTER;A01;T001").success());
+        assertTrue(p.process("ATTRACTION ENTER;A01;TG01").success());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ATTRACTION CREATE;A05;Loop;5;VIP", "ATTRACTION CREATE;A05;Loop;5;group",
+        "ATTRACTION CREATE;A05;Loop;5;", "ATTRACTION CREATE;A05;Loop;5;GROUP;x", "ATTRACTION CREATE;A05;Loop;0;GROUP"})
+    void invalidTypedCreation(String command) {
+        CommandProcessor p = groupOf(1);
+        assertFalse(p.process(command).success());
+        assertTrue(attractions.find("A05").isEmpty());
     }
 }

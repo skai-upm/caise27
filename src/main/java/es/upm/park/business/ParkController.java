@@ -1,6 +1,7 @@
 package es.upm.park.business;
 
 import es.upm.park.business.model.Result;
+import es.upm.park.business.model.AttractionType;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.Invoice;
 import es.upm.park.business.model.SpecialPass;
@@ -233,6 +234,10 @@ public final class ParkController {
 
     public Result createAttraction(String id, String name, String capacity) {
         return attractions.create(id, name, capacity);
+    }
+
+    public Result createAttraction(String id, String name, String capacity, AttractionType type) {
+        return attractions.create(id, name, capacity, type);
     }
 
     public Result enterAttraction(String attractionId, String ticketId) {

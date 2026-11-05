@@ -31,7 +31,7 @@ class AttractionTest {
 
     @Test
     void individualAndGroupEntryUseSameOperation() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 20);
         List<Ticket> tickets = new ArrayList<>();
         tickets.add(new IndividualTicket("T001", DAY, P40, user(1)));
         tickets.add(groupTicket("TG01", 2, DAY));
@@ -44,7 +44,7 @@ class AttractionTest {
 
     @Test
     void ticketMustBeForTheSystemDate() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 20);
         assertFalse(a.enter(new IndividualTicket("T002", DAY.plusDays(1), P40, user(1)), DAY).success());
         assertFalse(a.enter(new IndividualTicket("T003", DAY.minusDays(1), P40, user(1)), DAY).success());
         assertTrue(a.getPresent().isEmpty());
@@ -52,7 +52,7 @@ class AttractionTest {
 
     @Test
     void groupEntryIsAllOrNothing() {
-        Attraction a = new Attraction("A01", "Tornado", 4);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 4);
         a.enter(new IndividualTicket("T001", DAY, P40, user(1)), DAY);
         assertEquals(3, a.getAvailable());
         assertFalse(a.enter(groupTicket("TG01", 4, DAY), DAY).success());
@@ -64,7 +64,7 @@ class AttractionTest {
 
     @Test
     void userAlreadyPresentIsRejected() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 20);
         IndividualTicket t = new IndividualTicket("T001", DAY, P40, user(1));
         a.enter(t, DAY);
         assertFalse(a.enter(t, DAY).success());
@@ -73,7 +73,7 @@ class AttractionTest {
 
     @Test
     void exitReleasesPlacesWithoutDateCheck() {
-        Attraction a = new Attraction("A01", "Tornado", 20);
+        Attraction a = new GeneralAttraction("A01", "Tornado", 20);
         IndividualTicket t = new IndividualTicket("T001", DAY, P40, user(1));
         GroupTicket g = groupTicket("TG01", 2, DAY);
         a.enter(t, DAY);

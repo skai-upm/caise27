@@ -1,9 +1,10 @@
 package es.upm.park.business;
 
 import es.upm.park.business.model.Result;
+import es.upm.park.business.model.AccessCredential;
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.AttractionType;
 import es.upm.park.persistence.AttractionRepository;
-import es.upm.park.business.model.Ticket;
 import es.upm.park.business.model.User;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -21,7 +22,7 @@ public final class AttractionManager {
     private static final AttractionManager INSTANCE = new AttractionManager();
 
     private AttractionRepository store;
-    private List<Attraction> attractions = new ArrayList<>();
+    private List<Attraction<?>> attractions = new ArrayList<>();
 
     private AttractionManager() {
     }
@@ -36,21 +37,26 @@ public final class AttractionManager {
      * (all empty). Called at startup by {@link ApplicationContext}.
      */
     public static AttractionManager configure(AttractionRepository store) throws IOException {
-        List<Attraction> loaded = new ArrayList<>(store.load());
+        List<Attraction<?>> loaded = new ArrayList<>(store.load());
         INSTANCE.store = store;
         INSTANCE.attractions = loaded;
         return INSTANCE;
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         return Collections.unmodifiableList(attractions);
     }
 
-    public Optional<Attraction> find(String id) {
+    public Optional<Attraction<?>> find(String id) {
         return attractions.stream().filter(a -> a.getId().equals(id)).findFirst();
     }
 
+    /** Creates a GENERAL attraction. */
     public Result create(String id, String name, String capacityText) {
+        return create(id, name, capacityText, AttractionType.GENERAL);
+    }
+
+    public Result create(String id, String name, String capacityText, AttractionType type) {
         if (!UserValidator.isNonBlank(id) || !UserValidator.isNonBlank(name)) {
             return Result.error("Attraction identifier and name must not be empty.");
         }
@@ -61,8 +67,8 @@ public final class AttractionManager {
         if (find(id).isPresent()) {
             return Result.error("An attraction with identifier " + id + " already exists.");
         }
-        List<Attraction> candidate = new ArrayList<>(attractions);
-        candidate.add(new Attraction(id, name, capacity));
+        List<Attraction<?>> candidate = new ArrayList<>(attractions);
+        candidate.add(type.create(id, name, capacity));
         try {
             store.save(candidate);
         } catch (IOException e) {
@@ -72,8 +78,8 @@ public final class AttractionManager {
         return Result.ok("Attraction " + id + " created.");
     }
 
-    public Result enter(String attractionId, Optional<Ticket> ticket, String ticketId, LocalDate today) {
-        Optional<Attraction> attraction = find(attractionId);
+    public Result enter(String attractionId, Optional<? extends AccessCredential> ticket, String ticketId, LocalDate today) {
+        Optional<Attraction<?>> attraction = find(attractionId);
         if (attraction.isEmpty()) {
             return Result.error("Attraction " + attractionId + " does not exist.");
         }
@@ -83,8 +89,8 @@ public final class AttractionManager {
         return attraction.get().enter(ticket.get(), today);
     }
 
-    public Result exit(String attractionId, Optional<Ticket> ticket, String ticketId) {
-        Optional<Attraction> attraction = find(attractionId);
+    public Result exit(String attractionId, Optional<? extends AccessCredential> ticket, String ticketId) {
+        Optional<Attraction<?>> attraction = find(attractionId);
         if (attraction.isEmpty()) {
             return Result.error("Attraction " + attractionId + " does not exist.");
         }
@@ -95,11 +101,11 @@ public final class AttractionManager {
     }
 
     public Result status(String attractionId) {
-        Optional<Attraction> found = find(attractionId);
+        Optional<Attraction<?>> found = find(attractionId);
         if (found.isEmpty()) {
             return Result.error("Attraction " + attractionId + " does not exist.");
         }
-        Attraction a = found.get();
+        Attraction<?> a = found.get();
         String users = a.getPresent().isEmpty() ? "(none)" : a.getPresent().stream()
                 .map(u -> u.getFirstName() + " " + u.getSurnames() + " (" + u.getEmail() + ")")
                 .collect(Collectors.joining(", "));

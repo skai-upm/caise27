@@ -167,7 +167,7 @@ class AppTest {
         Run second = interactive("ATTRACTION STATUS;A01", "EXIT");
         assertTrue(second.out().contains("Present: 0"));
         assertTrue(second.out().contains("Available: 20"));
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
     }
 
     // ---- --fly mode ----

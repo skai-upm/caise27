@@ -28,6 +28,7 @@ class HelpGeneratorTest {
             "SPECIALPASS CREATE;Id;IdTicket",
             "SPECIALPASS DELETE;IdPase",
             "ATTRACTION CREATE;Id;Nombre;Capacidad",
+            "ATTRACTION CREATE;Id;Nombre;Capacidad;Tipo",
             "ATTRACTION ENTER;IdAtraccion;IdTicket",
             "ATTRACTION EXIT;IdAtraccion;IdTicket",
             "ATTRACTION STATUS;IdAtraccion",

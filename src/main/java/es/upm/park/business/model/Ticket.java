@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Common abstraction for every kind of ticket: an identifier, a date of use and a price.
  */
-public abstract class Ticket {
+public abstract class Ticket implements AccessCredential {
 
     private final String id;
     private final LocalDate date;
@@ -19,10 +19,12 @@ public abstract class Ticket {
         this.price = price;
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }
@@ -32,5 +34,6 @@ public abstract class Ticket {
     }
 
     /** Users admitted when this ticket is used (polymorphic: one user or all group members). */
+    @Override
     public abstract List<User> getHolders();
 }

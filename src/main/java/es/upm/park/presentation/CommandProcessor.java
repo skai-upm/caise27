@@ -2,6 +2,7 @@ package es.upm.park.presentation;
 
 import es.upm.park.business.ParkController;
 import es.upm.park.business.model.Result;
+import es.upm.park.business.model.AttractionType;
 import es.upm.park.business.model.UserField;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -168,8 +169,7 @@ public class CommandProcessor {
 
     private Result attraction(String operation, String[] p, String command) {
         return switch (operation) {
-            case "CREATE" -> hasParams(p, 3) ? controller.createAttraction(p[0], p[1], p[2])
-                    : Result.error("Usage: ATTRACTION CREATE;Id;Nombre;Capacidad");
+            case "CREATE" -> attractionCreate(p);
             case "ENTER" -> hasParams(p, 2)
                     ? controller.enterAttraction(p[0], p[1])
                     : Result.error("Usage: ATTRACTION ENTER;IdAtraccion;IdTicket");
@@ -180,6 +180,20 @@ public class CommandProcessor {
                     : Result.error("Usage: ATTRACTION STATUS;IdAtraccion");
             default -> Result.error("Unknown command: " + command);
         };
+    }
+
+    private Result attractionCreate(String[] p) {
+        if (hasParams(p, 3)) {
+            return controller.createAttraction(p[0], p[1], p[2]);
+        }
+        if (!hasParams(p, 4)) {
+            return Result.error("Usage: ATTRACTION CREATE;Id;Nombre;Capacidad[;Tipo]");
+        }
+        Optional<AttractionType> type = AttractionType.parse(p[3]);
+        if (type.isEmpty()) {
+            return Result.error("Unknown attraction type " + p[3] + ". Types: GENERAL, INDIVIDUAL, GROUP, SPECIAL.");
+        }
+        return controller.createAttraction(p[0], p[1], p[2], type.get());
     }
 
     private Result pass(String kind, String operation, String[] p, String command) {

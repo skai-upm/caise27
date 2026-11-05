@@ -1,6 +1,7 @@
 package es.upm.park.business;
 
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.GeneralAttraction;
 import es.upm.park.persistence.AttractionFileStore;
 import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.model.Ticket;
@@ -44,7 +45,7 @@ class AttractionManagerTest {
     @Test
     void createPersistsDefinition() throws IOException {
         assertTrue(manager.create("A01", "Tornado", "20").success());
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(file));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(file));
     }
 
     @ParameterizedTest
@@ -54,7 +55,7 @@ class AttractionManagerTest {
         manager.create("A01", "Tornado", "20");
         assertFalse(manager.create(id, name, capacity).success());
         assertEquals(1, manager.getAttractions().size());
-        assertEquals(List.of("A01;Tornado;20"), Files.readAllLines(file));
+        assertEquals(List.of("A01;Tornado;20;GENERAL"), Files.readAllLines(file));
     }
 
     @Test
@@ -104,5 +105,16 @@ class AttractionManagerTest {
     void malformedFileLinesSkipped() throws IOException {
         Files.write(file, List.of("A01;Tornado;20", "A02;Loop;0", "bad", "", "A03;Rio;x"));
         assertEquals(1, AttractionManager.configure(new AttractionFileStore(file)).getAttractions().size());
+    }
+
+    @Test
+    void typesArePersistedAndLegacyLinesAreGeneral() throws IOException {
+        assertTrue(manager.create("A02", "Familias", "30", es.upm.park.business.model.AttractionType.GROUP).success());
+        assertEquals(List.of("A02;Familias;30;GROUP"), Files.readAllLines(file));
+        Files.write(file, List.of("A01;Tornado;20", "A02;Familias;30;GROUP", "A03;Raro;5;VIP"));
+        AttractionManager again = AttractionManager.configure(new AttractionFileStore(file));
+        assertEquals(2, again.getAttractions().size());
+        assertEquals(es.upm.park.business.model.AttractionType.GENERAL, again.find("A01").orElseThrow().getType());
+        assertEquals(es.upm.park.business.model.AttractionType.GROUP, again.find("A02").orElseThrow().getType());
     }
 }
