@@ -127,7 +127,7 @@ class ParkPersistenceTest {
         Path input = dir.resolve("input.txt");
         Files.write(input, List.of("ATTRACTION CREATE;A01;Dragon Rojo;20"));
         runArgs(dir, new String[] {input.toString()}, "");
-        assertEquals(List.of("A01;Dragon Rojo;20"), Files.readAllLines(dir.resolve("attractions.txt")));
+        assertEquals(List.of("A01;Dragon Rojo;20;GENERAL"), Files.readAllLines(dir.resolve("attractions.txt")));
         assertFalse(Files.exists(dir.resolve("tmp")));
     }
 }

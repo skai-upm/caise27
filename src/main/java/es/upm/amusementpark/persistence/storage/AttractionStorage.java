@@ -9,20 +9,20 @@ import java.util.List;
  */
 public interface AttractionStorage {
 
-    List<Attraction> load();
+    List<Attraction<?>> load();
 
-    void save(Collection<Attraction> attractions);
+    void save(Collection<Attraction<?>> attractions);
 
     /** Storage that keeps nothing (in-memory use). */
     static AttractionStorage none() {
         return new AttractionStorage() {
             @Override
-            public List<Attraction> load() {
+            public List<Attraction<?>> load() {
                 return List.of();
             }
 
             @Override
-            public void save(Collection<Attraction> attractions) {
+            public void save(Collection<Attraction<?>> attractions) {
                 // nothing to persist
             }
         };

@@ -34,7 +34,7 @@ class AttractionAccessTest {
         p.process("SYSTEM DATE;2027-04-15");
     }
 
-    private Attraction a(String id) {
+    private Attraction<?> a(String id) {
         return park.attractions().findById(id).orElseThrow();
     }
 

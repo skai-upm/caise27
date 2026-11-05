@@ -12,7 +12,7 @@ import java.util.Optional;
  */
 public class AttractionRepository {
 
-    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
     private final AttractionStorage storage;
 
     public AttractionRepository() {
@@ -24,21 +24,21 @@ public class AttractionRepository {
         storage.load().forEach(a -> attractions.put(a.getIdentifier(), a));
     }
 
-    public void add(Attraction attraction) {
+    public void add(Attraction<?> attraction) {
         attractions.put(attraction.getIdentifier(), attraction);
         storage.save(attractions.values());
     }
 
-    public Optional<Attraction> findById(String identifier) {
+    public Optional<Attraction<?>> findById(String identifier) {
         return Optional.ofNullable(attractions.get(identifier));
     }
 
-    public List<Attraction> findAll() {
+    public List<Attraction<?>> findAll() {
         return List.copyOf(attractions.values());
     }
 
     /** Occupant changes are not persisted; nothing else of an attraction changes after creation. */
-    public void update(Attraction attraction) {
+    public void update(Attraction<?> attraction) {
         // occupants are intentionally not persisted
     }
 }

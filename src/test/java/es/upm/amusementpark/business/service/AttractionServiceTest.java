@@ -32,7 +32,7 @@ class AttractionServiceTest {
     @Test
     void createAndRejectInvalid() {
         assertEquals("ATTRACTION CREATED", p.process("ATTRACTION CREATE;A01;Dragon Rojo;20"));
-        Attraction a = park.attractions().findById("A01").orElseThrow();
+        Attraction<?> a = park.attractions().findById("A01").orElseThrow();
         assertEquals("Dragon Rojo", a.getName());
         assertEquals(20, a.getCapacity());
         assertTrue(a.getOccupants().isEmpty());
@@ -58,7 +58,7 @@ class AttractionServiceTest {
 
     @Test
     void capacityIsNeverExceededAndAdmissionIsAllOrNothing() {
-        Attraction a = new Attraction("A", "Mini", 1);
+        Attraction<?> a = new es.upm.amusementpark.business.model.GeneralAttraction("A", "Mini", 1);
         User u1 = new User("A", "B", "12345678Z", "a@b.com", "Clave1!", "6", "1234567890123456");
         User u2 = new User("C", "D", "87654321X", "c@d.com", "Clave1!", "6", "1234567890123456");
         assertFalse(a.admitAll(List.of(u1, u2)));

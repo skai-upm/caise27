@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Common abstraction of every park ticket: identifier, date of use and price.
  */
-public abstract class Ticket {
+public abstract class Ticket implements TicketAccess {
 
     private final String identifier;
     private final LocalDate date;

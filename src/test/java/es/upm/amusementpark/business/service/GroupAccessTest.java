@@ -35,7 +35,7 @@ class GroupAccessTest {
         }
     }
 
-    private Attraction a(String id) {
+    private Attraction<?> a(String id) {
         return park.attractions().findById(id).orElseThrow();
     }
 
@@ -65,7 +65,7 @@ class GroupAccessTest {
         assertEquals("USER LEFT ATTRACTION", p.process("ATTRACTION EXIT;A01;ana@correo.com"));
         assertTrue(p.process("ATTRACTION EXIT;A01;ana@correo.com").startsWith("ERROR"));
         assertTrue(p.process("ATTRACTION EXIT;A99;pedro@correo.com").startsWith("ERROR"));
-        assertEquals(List.of("ATTRACTION A01 - Dragon Rojo", "Capacity: 20", "Inside: 2", "Available: 18",
+        assertEquals(List.of("ATTRACTION A01 - Dragon Rojo", "Type: GENERAL", "Capacity: 20", "Inside: 2", "Available: 18",
                 "Users: pedro@correo.com, luis@correo.com"), p.process("ATTRACTION STATUS;A01").lines().toList());
         assertTrue(p.process("ATTRACTION STATUS;A02").contains("Users: none"));
         assertTrue(p.process("ATTRACTION STATUS;A99").startsWith("ERROR"));

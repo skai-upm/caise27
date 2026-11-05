@@ -6,6 +6,7 @@ import es.upm.amusementpark.business.exception.RuleViolationException;
 
 
 import es.upm.amusementpark.business.model.Attraction;
+import es.upm.amusementpark.business.model.AttractionType;
 import es.upm.amusementpark.business.model.Ticket;
 import es.upm.amusementpark.business.model.User;
 import es.upm.amusementpark.business.control.Park;
@@ -49,7 +50,7 @@ public class AttractionService {
      * @return number of users admitted
      */
     public int enter(String attractionId, String ticketId) {
-        Attraction attraction = findAttraction(attractionId);
+        Attraction<?> attraction = findAttraction(attractionId);
         Ticket ticket = tickets.findById(ticketId)
                 .orElseThrow(() -> new NotFoundException("ticket '" + ticketId + "' not found"));
         LocalDate today = Park.getInstance().getCurrentDate();
@@ -57,14 +58,7 @@ public class AttractionService {
             throw new RuleViolationException("ticket '" + ticketId + "' is valid on " + ticket.getDate()
                     + ", not on the current date " + today);
         }
-        List<User> users = ticket.admittedUsers();
-        if (users.stream().anyMatch(attraction::contains)) {
-            throw new RuleViolationException("a user of ticket '" + ticketId + "' is already inside " + attractionId);
-        }
-        if (!attraction.admitAll(users)) {
-            throw new RuleViolationException("not enough capacity in " + attractionId + " (" + attraction.availableCapacity()
-                    + " available, " + users.size() + " needed)");
-        }
+        List<User> users = attraction.enter(ticket);
         attractions.update(attraction);
         return users.size();
     }
@@ -73,25 +67,31 @@ public class AttractionService {
         return attractions;
     }
 
-    public Attraction createAttraction(String identifier, String name, String capacityText) {
+    public Attraction<?> createAttraction(String identifier, String name, String capacityText) {
+        return createAttraction(identifier, name, capacityText, AttractionType.GENERAL.name());
+    }
+
+    public Attraction<?> createAttraction(String identifier, String name, String capacityText, String typeName) {
+        AttractionType type = AttractionType.fromName(typeName).orElseThrow(() ->
+                new InvalidDataException("invalid attraction type '" + typeName + "', expected GENERAL, INDIVIDUAL, GROUP or SPECIAL"));
         if (identifier.isEmpty() || name.isEmpty()) {
             throw new InvalidDataException("attraction identifier and name must not be empty");
         }
         if (attractions.findById(identifier).isPresent()) {
             throw new RuleViolationException("an attraction with identifier '" + identifier + "' already exists");
         }
-        Attraction attraction = new Attraction(identifier, name, parseCapacity(capacityText));
+        Attraction<?> attraction = type.create(identifier, name, parseCapacity(capacityText));
         attractions.add(attraction);
         return attraction;
     }
 
-    public Attraction findAttraction(String identifier) {
+    public Attraction<?> findAttraction(String identifier) {
         return attractions.findById(identifier)
                 .orElseThrow(() -> new NotFoundException("attraction '" + identifier + "' not found"));
     }
 
     public void exit(String attractionId, String email) {
-        Attraction attraction = findAttraction(attractionId);
+        Attraction<?> attraction = findAttraction(attractionId);
         User user = attraction.getOccupants().stream().filter(u -> u.getEmail().equals(email)).findFirst()
                 .orElseThrow(() -> new NotFoundException("user '" + email + "' is not inside " + attractionId));
         attraction.remove(user);
@@ -100,11 +100,12 @@ public class AttractionService {
 
     /** Read-only status of an attraction, from its own state. */
     public String status(String identifier) {
-        Attraction a = findAttraction(identifier);
+        Attraction<?> a = findAttraction(identifier);
         String users = a.getOccupants().isEmpty() ? "none"
                 : String.join(", ", a.getOccupants().stream().map(User::getEmail).toList());
         return String.join(System.lineSeparator(),
                 "ATTRACTION " + a.getIdentifier() + " - " + a.getName(),
+                "Type: " + a.getType(),
                 "Capacity: " + a.getCapacity(),
                 "Inside: " + a.getOccupants().size(),
                 "Available: " + a.availableCapacity(),
@@ -113,7 +114,7 @@ public class AttractionService {
 
     /** Read-only listing of the users currently inside an attraction. */
     public String list(String identifier) {
-        Attraction a = findAttraction(identifier);
+        Attraction<?> a = findAttraction(identifier);
         StringBuilder sb = new StringBuilder("ATTRACTION " + a.getIdentifier() + " (" + a.getName() + ") "
                 + a.getOccupants().size() + "/" + a.getCapacity() + ":");
         if (a.getOccupants().isEmpty()) {

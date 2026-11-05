@@ -71,10 +71,27 @@ package business.model {
 
   class SpecialPass
 
-  class Attraction {
+  interface TicketAccess
+  interface IndividualAccess
+  interface GroupAccess
+
+  abstract class Attraction<T extends TicketAccess> {
     - identifier : String {readOnly}
     - name : String
     - capacity : int {readOnly}
+    - accessType : Class<T> {readOnly}
+  }
+
+  class GeneralAttraction
+  class IndividualAttraction
+  class GroupAttraction
+  class SpecialAttraction
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 }
 
@@ -104,6 +121,16 @@ GroupStorage <|.. GroupFileStorage
 TicketStorage <|.. TicketFileStorage
 AttractionStorage <|.. AttractionFileStorage
 
+TicketAccess <|-- IndividualAccess
+TicketAccess <|-- GroupAccess
+TicketAccess <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Attraction <|-- GeneralAttraction : <T = TicketAccess>
+Attraction <|-- IndividualAttraction : <T = IndividualAccess>
+Attraction <|-- GroupAttraction : <T = GroupAccess>
+Attraction <|-- SpecialAttraction : <T = IndividualAccess>
+Attraction ..> AttractionType : type
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 Pass --> "1" IndividualTicket : ticket

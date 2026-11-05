@@ -41,7 +41,7 @@ public class CommandProcessor {
         String handle(String[] elements);
     }
 
-    private record Command(int elements, String usage, String note, String purpose, Handler handler) {
+    private record Command(int minElements, int maxElements, String usage, String note, String purpose, Handler handler) {
     }
 
     /** Brief purpose of each command, shown by HELP EXTENDED. */
@@ -140,8 +140,9 @@ public class CommandProcessor {
             passService.refund(p[1], SpecialPass.class);
             return "SPECIALPASS DELETED";
         });
-        register("ATTRACTION CREATE", 4, "ATTRACTION CREATE;<identifier>;<name>;<capacity>", "", p -> {
-            attractionService.createAttraction(p[1], p[2], p[3]);
+        register("ATTRACTION CREATE", 4, 5, "ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
+                "(type: GENERAL, INDIVIDUAL, GROUP, SPECIAL; optional, default GENERAL)", p -> {
+            attractionService.createAttraction(p[1], p[2], p[3], p.length == 5 ? p[4] : "GENERAL");
             return "ATTRACTION CREATED";
         });
         register("ATTRACTION ENTER", 3, "ATTRACTION ENTER;<attraction>;<ticket>", "", p ->
@@ -163,7 +164,11 @@ public class CommandProcessor {
     }
 
     private void register(String name, int elements, String usage, String note, Handler handler) {
-        commands.put(name, new Command(elements, usage, note, PURPOSES.getOrDefault(name, ""), handler));
+        register(name, elements, elements, usage, note, handler);
+    }
+
+    private void register(String name, int minElements, int maxElements, String usage, String note, Handler handler) {
+        commands.put(name, new Command(minElements, maxElements, usage, note, PURPOSES.getOrDefault(name, ""), handler));
     }
 
     /** Whether an EXIT command has been processed; no further commands must run. */
@@ -193,7 +198,7 @@ public class CommandProcessor {
         if (command == null) {
             return "ERROR: unknown command '" + parts[0] + "'";
         }
-        if (parts.length != command.elements()) {
+        if (parts.length < command.minElements() || parts.length > command.maxElements()) {
             return "ERROR: wrong number of arguments. Usage: " + command.usage();
         }
         try {

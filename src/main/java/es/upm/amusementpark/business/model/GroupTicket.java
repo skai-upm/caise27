@@ -8,7 +8,7 @@ import java.util.List;
  * Ticket purchased by a group, composed of one individual ticket per member at purchase time.
  * The composition never changes. The group reference becomes null if the group is deleted.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private final List<IndividualTicket> composition;
     private final String groupIdentifier;
