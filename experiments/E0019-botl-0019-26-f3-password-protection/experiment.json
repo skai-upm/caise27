@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0019-botl-0019-26-f3-password-protection",
+  "change": "botl-0019-26-f3-password-protection",
+  "status": "archived",
+  "createdAt": "2026-10-29T10:38:43.618314+00:00",
+  "updatedAt": "2026-10-29T10:44:59.354794+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261029T103843Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261029T103843Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 919638,
+        "totalCost": 0.29639239999999845
+      }
+    },
+    {
+      "runId": "0002-apply-20261029T104015Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261029T104015Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 2334136,
+        "totalCost": 0.6979714000000001
+      }
+    },
+    {
+      "runId": "0003-archive-20261029T104412Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261029T104412Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 471962,
+        "totalCost": 0.11599640000000022
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-29T10:44:59.284360+00:00"
+}

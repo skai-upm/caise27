@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0009-botl-0009-17-f2-individual-attraction-access",
+  "change": "botl-0009-17-f2-individual-attraction-access",
+  "status": "archived",
+  "createdAt": "2026-10-29T08:36:02.998320+00:00",
+  "updatedAt": "2026-10-29T08:40:18.938538+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261029T083602Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261029T083602Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 275173,
+        "totalCost": 0.1556154000000003
+      }
+    },
+    {
+      "runId": "0002-apply-20261029T083717Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261029T083717Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 560886,
+        "totalCost": 0.2813281999999999
+      }
+    },
+    {
+      "runId": "0003-archive-20261029T083937Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261029T083937Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 282473,
+        "totalCost": 0.07672040000000013
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-29T08:40:18.890763+00:00"
+}

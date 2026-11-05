@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0001-botl-0001-1-f1-project-initialization",
+  "change": "botl-0001-1-f1-project-initialization",
+  "runId": "0001-propose-20261029T073855Z",
+  "sequence": 1,
+  "phase": "propose",
+  "startedAt": "2026-10-29T07:38:55.954864+00:00",
+  "finishedAt": "2026-10-29T07:39:49.508286+00:00",
+  "durationSeconds": 53.553422,
+  "environment": {
+    "agent": "claude-code",
+    "agentAdapter": "claude-code",
+    "aiUsageSource": "claude",
+    "analysisAdapterConfigured": "auto",
+    "analysisAdapterBefore": "unknown",
+    "analysisAdapterAfter": "unknown"
+  },
+  "projectProfileBefore": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "projectProfileAfter": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "profileTransition": {
+    "changed": false,
+    "before": "unknown",
+    "after": "unknown"
+  },
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "2dc14047-8b0f-4efe-a7a2-8abe5e00c94d",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 10,
+    "outputTokens": 4232,
+    "cacheCreationTokens": 15328,
+    "cacheReadTokens": 445797,
+    "totalTokens": 465367,
+    "totalCost": 0.29646340000000004,
+    "newTokens": 19570,
+    "cachedTokens": 445797,
+    "totalProcessedTokens": 465367
+  },
+  "before": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_5_setup_multiple_gpt",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .botl/",
+        "?? experiments/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 0,
+      "lines": 0,
+      "words": 0,
+      "requirements": 0,
+      "scenarios": 0,
+      "tasks": 0,
+      "shallStatements": 0
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "unknown",
+          "modules": []
+        },
+        "modules": []
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "unknown",
+      "modules": []
+    }
+  },
+  "after": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_5_setup_multiple_gpt",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .botl/",
+        "?? experiments/",
+        "?? openspec/changes/botl-0001-1-f1-project-initialization/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 5,
+      "lines": 99,
+      "words": 871,
+      "requirements": 3,
+      "scenarios": 4,
+      "tasks": 4,
+      "shallStatements": 4
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "unknown",
+          "modules": []
+        },
+        "modules": []
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "unknown",
+      "modules": []
+    }
+  },
+  "delta": {
+    "git": {
+      "available": true,
+      "filesModified": 0,
+      "untrackedFiles": 9,
+      "locAdded": 0,
+      "locRemoved": 0,
+      "netLoc": 0
+    },
+    "artifacts": {
+      "words": 871,
+      "files": 5,
+      "shallStatements": 4,
+      "tasks": 4,
+      "requirements": 3,
+      "lines": 99,
+      "scenarios": 4
+    },
+    "radon": {},
+    "sonar": {
+      "allMeasures": {}
+    }
+  }
+}
