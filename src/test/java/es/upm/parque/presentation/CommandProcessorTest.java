@@ -48,12 +48,12 @@ class CommandProcessorTest {
     void helpListsTheAssignmentSyntaxInOrder() {
         String help = processor.process("HELP");
         int from = 0;
-        for (String syntax : CommandProcessor.HELP_SYNTAX) {
+        for (String syntax : CommandCatalog.syntaxes()) {
             int at = help.indexOf(syntax, from);
             assertTrue(at >= from, "missing or out of order: " + syntax);
             from = at + syntax.length();
         }
-        assertEquals(22, CommandProcessor.HELP_SYNTAX.size());
+        assertEquals(23, CommandCatalog.COMMANDS.size());
     }
 
     @Test

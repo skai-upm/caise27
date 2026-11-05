@@ -35,7 +35,7 @@ Commands are processed identically in both modes. `EXIT` stops processing, and n
 
 ## Commands
 
-Elements are separated by `;`. `HELP` prints this list.
+Elements are separated by `;`. `HELP` prints this list. `HELP EXTENDED` prints it with a short explanation of what each command does.
 
 ```text
 USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>
@@ -59,6 +59,7 @@ ATTRACTION STATUS;<attractionIdentifier>
 INVOICE CREATE;USER;<email>
 INVOICE CREATE;GROUP;<groupIdentifier>
 HELP
+HELP EXTENDED
 EXIT
 ```
 
@@ -110,4 +111,5 @@ The code is split into three layers: `presentation` (commands and responses), `b
 
 - **Singleton controllers.** `ParkController` and the managers (`UserManager`, `GroupManager`, `TicketManager`, `AttractionManager`, `SystemManager`, `InvoiceManager`) each have one instance, obtained with `getInstance()`.
 - **Injected repositories.** Repositories are ordinary, replaceable objects. At start-up, `ParkSession` creates them for the chosen storage location: the working directory, or the temporary directory in `--fly` mode. `ParkConfiguration.initialize` then injects them into `ParkController`, and wires each manager with its collaborators. For example, `AttractionManager` receives `TicketManager`. No dependency injection framework is used.
+- **Help.** `HelpGenerator` receives the formatting behaviour (`HelpFormatter`) by injection. `HelpConfiguration` registers `HELP` and `HELP EXTENDED`. A new help variant needs only a new formatter registered under a new command; the command processor does not change.
 - **Invoices.** Invoices use the Builder pattern. `InvoiceManager` directs `UserInvoiceBuilder` or `GroupInvoiceBuilder`, which extend `InvoiceBuilder`.

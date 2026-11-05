@@ -2,7 +2,6 @@ package es.upm.parque.presentation;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 
 import es.upm.parque.business.AttractionManager;
 import es.upm.parque.business.GroupManager;
@@ -22,39 +21,11 @@ import es.upm.parque.business.UserManager;
 public class CommandProcessor {
 
     private static final String SEPARATOR = ";";
-    private static final String HELP = "HELP";
     private static final String EXIT = "EXIT";
     private static final String SYSTEM_DATE = "SYSTEM DATE";
     private static final String SYSTEM_PRICE = "SYSTEM PRICE";
 
-    /** Command syntax exactly as listed by the assignment, in its order. */
-    static final List<String> HELP_SYNTAX = List.of(
-            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
-            "USER DELETE;<Email>;<Password>",
-            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
-            "SYSTEM DATE;<yyyy-MM-dd>",
-            "SYSTEM PRICE;<Price>",
-            "GROUP CREATE;<Identifier>;<Name>",
-            "GROUP ADD;<Identifier>;<Email>",
-            "GROUP REMOVE;<Identifier>;<Email>",
-            "GROUP DELETE;<Identifier>",
-            "TICKET CREATE;<identifier>;<email>;<date>",
-            "TICKET DELETE;<identifier>",
-            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
-            "GROUPTICKET DELETE;<identifier>",
-            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
-            "ATTRACTION ENTER;<attraction>;<ticket>",
-            "ATTRACTION EXIT;<attraction>;<email>",
-            "ATTRACTION LIST;<attraction>",
-            "ATTRACTION STATUS;<attractionIdentifier>",
-            "INVOICE CREATE;USER;<email>",
-            "INVOICE CREATE;GROUP;<groupIdentifier>",
-            "HELP",
-            "EXIT");
-    private static final String HELP_TEXT = "Available commands:" + System.lineSeparator() + "  "
-            + String.join(System.lineSeparator() + "  ", HELP_SYNTAX) + System.lineSeparator()
-            + "  (USER UPDATE <Field>: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)";
-
+    private final HelpCommands help;
     private final SystemManager system;
     private final UserCommands users;
     private final GroupCommands groups;
@@ -63,8 +34,17 @@ public class CommandProcessor {
     private final InvoiceCommands invoices;
     private boolean exitRequested;
 
-    /** Processes commands with the singleton controllers configured during application initialization. */
+    /** Processes commands with the standard help variants and the configured singleton controllers. */
     public CommandProcessor() {
+        this(HelpConfiguration.standard());
+    }
+
+    /**
+     * Processes commands with the injected help variants and the singleton controllers configured during
+     * application initialization.
+     */
+    public CommandProcessor(HelpCommands help) {
+        this.help = help;
         this.system = SystemManager.getInstance();
         this.users = new UserCommands(UserManager.getInstance());
         this.groups = new GroupCommands(GroupManager.getInstance());
@@ -97,11 +77,13 @@ public class CommandProcessor {
 
     private String dispatch(String[] elements) throws InvalidCommandException, ParkException {
         String command = elements[0];
+        if (help.handles(command)) {
+            return help.respond(elements);
+        }
         return switch (command) {
             case UserCommands.USER_CREATE -> users.create(elements);
             case UserCommands.USER_DELETE -> users.delete(elements);
             case UserCommands.USER_UPDATE -> users.update(elements);
-            case HELP -> help(elements);
             case EXIT -> exit(elements);
             case SYSTEM_DATE -> systemDate(elements);
             case SYSTEM_PRICE -> systemPrice(elements);
@@ -133,11 +115,6 @@ public class CommandProcessor {
         if (elements.length != count) {
             throw new InvalidCommandException(usage);
         }
-    }
-
-    private static String help(String[] e) throws InvalidCommandException {
-        expect(e, 1, "HELP takes no fields");
-        return HELP_TEXT;
     }
 
     private String systemDate(String[] e) throws InvalidCommandException, ParkException {

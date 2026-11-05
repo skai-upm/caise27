@@ -51,7 +51,7 @@ public class App {
                 console.println("WARNING: " + session.getIgnoredParkLines()
                         + " invalid line(s) in the park data files were ignored");
             }
-            start(session.getCommandArgs(), new CommandProcessor(), stdin, console);
+            start(session.getCommandArgs(), new CommandProcessor(HelpConfiguration.standard()), stdin, console);
         }
     }
 
