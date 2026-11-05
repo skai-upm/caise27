@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0010-botl-0010-temporary-persistence-fly",
+  "change": "botl-0010-temporary-persistence-fly",
+  "status": "archived",
+  "createdAt": "2026-11-03T21:32:10.856356+00:00",
+  "updatedAt": "2026-11-03T21:37:20.255527+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261103T213210Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261103T213210Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 355603,
+        "totalCost": 0.16169099999999936
+      }
+    },
+    {
+      "runId": "0002-apply-20261103T213345Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261103T213345Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1448213,
+        "totalCost": 0.43206919999999904
+      }
+    },
+    {
+      "runId": "0003-archive-20261103T213645Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261103T213645Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-03T21:37:20.208254+00:00"
+}

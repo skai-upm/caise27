@@ -1,0 +1,448 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0006-botl-0006-individual-ticket-management",
+  "change": "botl-0006-individual-ticket-management",
+  "runId": "0003-archive-20261103T211125Z",
+  "sequence": 3,
+  "phase": "archive",
+  "startedAt": "2026-11-03T21:11:25.100032+00:00",
+  "finishedAt": "2026-11-03T21:12:07.737576+00:00",
+  "durationSeconds": 42.637544,
+  "environment": {
+    "agent": "claude-code",
+    "agentAdapter": "claude-code",
+    "aiUsageSource": "claude",
+    "analysisAdapterConfigured": "auto",
+    "analysisAdapterBefore": "java-maven",
+    "analysisAdapterAfter": "java-maven"
+  },
+  "projectProfileBefore": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "projectProfileAfter": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "profileTransition": {
+    "changed": false,
+    "before": "java-maven",
+    "after": "java-maven"
+  },
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "b3acd2e7-e597-4545-9b3b-871ed37a190a",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 2,
+    "outputTokens": 936,
+    "cacheCreationTokens": 638,
+    "cacheReadTokens": 267067,
+    "totalTokens": 268643,
+    "totalCost": 0.0772453999999998,
+    "newTokens": 1576,
+    "cachedTokens": 267067,
+    "totalProcessedTokens": 268643
+  },
+  "before": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human",
+      "head": "dd13ec56feb901372fe687e10c2722bdd27189f5",
+      "dirty": true,
+      "statusPorcelain": [
+        " M .gitignore",
+        " M src/main/java/es/upm/etsisi/amusementpark/App.java",
+        " M src/main/java/es/upm/etsisi/amusementpark/CommandProcessor.java",
+        " M src/main/java/es/upm/etsisi/amusementpark/UserService.java",
+        " M src/test/java/es/upm/etsisi/amusementpark/AppTest.java",
+        " M src/test/java/es/upm/etsisi/amusementpark/CommandProcessorTest.java",
+        " M src/test/java/es/upm/etsisi/amusementpark/SystemDateTest.java",
+        " M uml/model.puml",
+        "?? .botl/proposals/opus_1_proposals_gpractices_multiple_human/0006-6.F2---Individual-ticket-management.md/",
+        "?? openspec/changes/botl-0006-individual-ticket-management/",
+        "?? src/main/java/es/upm/etsisi/amusementpark/Ticket.java",
+        "?? src/main/java/es/upm/etsisi/amusementpark/TicketFileStorage.java",
+        "?? src/main/java/es/upm/etsisi/amusementpark/TicketService.java",
+        "?? src/test/java/es/upm/etsisi/amusementpark/TicketCommandsTest.java",
+        "?? src/test/java/es/upm/etsisi/amusementpark/TicketFileStorageTest.java",
+        "?? src/test/java/es/upm/etsisi/amusementpark/TicketServiceTest.java",
+        "?? src/test/java/es/upm/etsisi/amusementpark/TicketTest.java"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 56,
+      "lines": 1806,
+      "words": 14540,
+      "requirements": 97,
+      "scenarios": 186,
+      "tasks": 35,
+      "shallStatements": 161
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "amusement-park",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "[INFO] Scanning for projects...\n[INFO] \n[INFO] --------------------< es.upm.etsisi:amusement-park >--------------------\n[INFO] Building amusement-park 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.13:prepare-agent (default-cli) @ amusement-park ---\n[INFO] argLine set to -javaagent:/Users/andreacimmino/.m2/repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13-runtime.jar=destfile=/Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.3.0:test (default-test) @ amusement-park ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running es.upm.etsisi.amusementpark.UserFileStorageTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.199 s -- in es.upm.etsisi.amusementpark.UserFileStorageTest\n[INFO] Running es.upm.etsisi.amusementpark.TicketFileStorageTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.056 s -- in es.upm.etsisi.amusementpark.TicketFileStorageTest\n[INFO] Running es.upm.etsisi.amusementpark.CommandProcessorTest\n[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.247 s -- in es.upm.etsisi.amusementpark.CommandProcessorTest\n[INFO] Running es.upm.etsisi.amusementpark.UserServiceTest\n[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.178 s -- in es.upm.etsisi.amusementpark.UserServiceTest\n[INFO] Running es.upm.etsisi.amusementpark.AppTest\n[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.124 s -- in es.upm.etsisi.amusementpark.AppTest\n[INFO] Running es.upm.etsisi.amusementpark.TicketServiceTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in es.upm.etsisi.amusementpark.TicketServiceTest\n[INFO] Running es.upm.etsisi.amusementpark.TicketTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in es.upm.etsisi.amusementpark.TicketTest\n[INFO] Running es.upm.etsisi.amusementpark.UserTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in es.upm.etsisi.amusementpark.UserTest\n[INFO] Running es.upm.etsisi.amusementpark.GroupServiceTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.060 s -- in es.upm.etsisi.amusementpark.GroupServiceTest\n[INFO] Running es.upm.etsisi.amusementpark.GroupTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in es.upm.etsisi.amusementpark.GroupTest\n[INFO] Running es.upm.etsisi.amusementpark.SystemDateTest\n[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.062 s -- in es.upm.etsisi.amusementpark.SystemDateTest\n[INFO] Running es.upm.etsisi.amusementpark.UserValidatorTest\n[INFO] Tests run: 48, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.145 s -- in es.upm.etsisi.amusementpark.UserValidatorTest\n[INFO] Running es.upm.etsisi.amusementpark.GroupFileStorageTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in es.upm.etsisi.amusementpark.GroupFileStorageTest\n[INFO] Running es.upm.etsisi.amusementpark.TicketCommandsTest\n[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.066 s -- in es.upm.etsisi.amusementpark.TicketCommandsTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 156, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ amusement-park ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/target/jacoco.exec\n[INFO] Analyzed bundle 'amusement-park' with 13 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  6.038 s\n[INFO] Finished at: 2026-11-03T22:11:39+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\nSkipping malformed user record: broken;line\nSkipping malformed ticket record: bad;line\nSkipping malformed ticket record: T003;12345678Z;2026-13-01;40.00\nSkipping malformed ticket record: T004;12345678Z;2026-10-15;abc\nIgnoring unknown member 00000000T of group G01\nSkipping malformed group record: bad\n"
+            },
+            "surefire": {
+              "reportFiles": 14,
+              "tests": 156,
+              "passed": 156,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 1.217
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 108,
+                    "covered": 2424,
+                    "total": 2532,
+                    "coverage": 95.73459715639811
+                  },
+                  "branch": {
+                    "missed": 9,
+                    "covered": 201,
+                    "total": 210,
+                    "coverage": 95.71428571428572
+                  },
+                  "line": {
+                    "missed": 31,
+                    "covered": 472,
+                    "total": 503,
+                    "coverage": 93.83697813121272
+                  },
+                  "complexity": {
+                    "missed": 18,
+                    "covered": 233,
+                    "total": 251,
+                    "coverage": 92.82868525896414
+                  },
+                  "method": {
+                    "missed": 9,
+                    "covered": 125,
+                    "total": 134,
+                    "coverage": 93.28358208955224
+                  },
+                  "class": {
+                    "missed": 0,
+                    "covered": 13,
+                    "total": 13,
+                    "coverage": 100.0
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "after": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human",
+      "head": "dd13ec56feb901372fe687e10c2722bdd27189f5",
+      "dirty": true,
+      "statusPorcelain": [
+        " M .gitignore",
+        " M openspec/specs/application-control/spec.md",
+        " M openspec/specs/domain-model-diagram/spec.md",
+        " M openspec/specs/user-management/spec.md",
+        " M src/main/java/es/upm/etsisi/amusementpark/App.java",
+        " M src/main/java/es/upm/etsisi/amusementpark/CommandProcessor.java",
+        " M src/main/java/es/upm/etsisi/amusementpark/UserService.java",
+        " M src/test/java/es/upm/etsisi/amusementpark/AppTest.java",
+        " M src/test/java/es/upm/etsisi/amusementpark/CommandProcessorTest.java",
+        " M src/test/java/es/upm/etsisi/amusementpark/SystemDateTest.java",
+        " M uml/model.puml",
+        "?? .botl/proposals/opus_1_proposals_gpractices_multiple_human/0006-6.F2---Individual-ticket-management.md/",
+        "?? openspec/changes/archive/2026-11-03-botl-0006-individual-ticket-management/",
+        "?? openspec/specs/individual-tickets/",
+        "?? openspec/specs/ticket-file-persistence/",
+        "?? openspec/specs/ticket-pricing/",
+        "?? src/main/java/es/upm/etsisi/amusementpark/Ticket.java",
+        "?? src/main/java/es/upm/etsisi/amusementpark/TicketFileStorage.java",
+        "?? src/main/java/es/upm/etsisi/amusementpark/TicketService.java",
+        "?? src/test/java/es/upm/etsisi/amusementpark/TicketCommandsTest.java",
+        "?? src/test/java/es/upm/etsisi/amusementpark/TicketFileStorageTest.java",
+        "?? src/test/java/es/upm/etsisi/amusementpark/TicketServiceTest.java",
+        "?? src/test/java/es/upm/etsisi/amusementpark/TicketTest.java"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 59,
+      "lines": 1953,
+      "words": 15671,
+      "requirements": 106,
+      "scenarios": 207,
+      "tasks": 35,
+      "shallStatements": 180
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "amusement-park",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "[INFO] Scanning for projects...\n[INFO] \n[INFO] --------------------< es.upm.etsisi:amusement-park >--------------------\n[INFO] Building amusement-park 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.13:prepare-agent (default-cli) @ amusement-park ---\n[INFO] argLine set to -javaagent:/Users/andreacimmino/.m2/repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13-runtime.jar=destfile=/Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.3.0:test (default-test) @ amusement-park ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running es.upm.etsisi.amusementpark.UserFileStorageTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.198 s -- in es.upm.etsisi.amusementpark.UserFileStorageTest\n[INFO] Running es.upm.etsisi.amusementpark.TicketFileStorageTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in es.upm.etsisi.amusementpark.TicketFileStorageTest\n[INFO] Running es.upm.etsisi.amusementpark.CommandProcessorTest\n[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.313 s -- in es.upm.etsisi.amusementpark.CommandProcessorTest\n[INFO] Running es.upm.etsisi.amusementpark.UserServiceTest\n[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.167 s -- in es.upm.etsisi.amusementpark.UserServiceTest\n[INFO] Running es.upm.etsisi.amusementpark.AppTest\n[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.106 s -- in es.upm.etsisi.amusementpark.AppTest\n[INFO] Running es.upm.etsisi.amusementpark.TicketServiceTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in es.upm.etsisi.amusementpark.TicketServiceTest\n[INFO] Running es.upm.etsisi.amusementpark.TicketTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in es.upm.etsisi.amusementpark.TicketTest\n[INFO] Running es.upm.etsisi.amusementpark.UserTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in es.upm.etsisi.amusementpark.UserTest\n[INFO] Running es.upm.etsisi.amusementpark.GroupServiceTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in es.upm.etsisi.amusementpark.GroupServiceTest\n[INFO] Running es.upm.etsisi.amusementpark.GroupTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in es.upm.etsisi.amusementpark.GroupTest\n[INFO] Running es.upm.etsisi.amusementpark.SystemDateTest\n[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in es.upm.etsisi.amusementpark.SystemDateTest\n[INFO] Running es.upm.etsisi.amusementpark.UserValidatorTest\n[INFO] Tests run: 48, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.108 s -- in es.upm.etsisi.amusementpark.UserValidatorTest\n[INFO] Running es.upm.etsisi.amusementpark.GroupFileStorageTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in es.upm.etsisi.amusementpark.GroupFileStorageTest\n[INFO] Running es.upm.etsisi.amusementpark.TicketCommandsTest\n[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.074 s -- in es.upm.etsisi.amusementpark.TicketCommandsTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 156, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ amusement-park ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/target/jacoco.exec\n[INFO] Analyzed bundle 'amusement-park' with 13 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  6.057 s\n[INFO] Finished at: 2026-11-03T22:12:07+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\nSkipping malformed user record: broken;line\nSkipping malformed ticket record: bad;line\nSkipping malformed ticket record: T003;12345678Z;2026-13-01;40.00\nSkipping malformed ticket record: T004;12345678Z;2026-10-15;abc\nIgnoring unknown member 00000000T of group G01\nSkipping malformed group record: bad\n"
+            },
+            "surefire": {
+              "reportFiles": 14,
+              "tests": 156,
+              "passed": 156,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 1.245
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 108,
+                    "covered": 2424,
+                    "total": 2532,
+                    "coverage": 95.73459715639811
+                  },
+                  "branch": {
+                    "missed": 9,
+                    "covered": 201,
+                    "total": 210,
+                    "coverage": 95.71428571428572
+                  },
+                  "line": {
+                    "missed": 31,
+                    "covered": 472,
+                    "total": 503,
+                    "coverage": 93.83697813121272
+                  },
+                  "complexity": {
+                    "missed": 18,
+                    "covered": 233,
+                    "total": 251,
+                    "coverage": 92.82868525896414
+                  },
+                  "method": {
+                    "missed": 9,
+                    "covered": 125,
+                    "total": 134,
+                    "coverage": 93.28358208955224
+                  },
+                  "class": {
+                    "missed": 0,
+                    "covered": 13,
+                    "total": 13,
+                    "coverage": 100.0
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_1_proposals_gpractices_multiple_human/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "delta": {
+    "git": {
+      "available": true,
+      "filesModified": 11,
+      "untrackedFiles": 21,
+      "locAdded": 164,
+      "locRemoved": 20,
+      "netLoc": 144
+    },
+    "artifacts": {
+      "tasks": 0,
+      "files": 3,
+      "words": 1131,
+      "scenarios": 21,
+      "requirements": 9,
+      "shallStatements": 19,
+      "lines": 147
+    },
+    "radon": {},
+    "sonar": {
+      "allMeasures": {}
+    }
+  }
+}
