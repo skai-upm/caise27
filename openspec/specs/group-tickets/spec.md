@@ -61,10 +61,3 @@ Each individual ticket in the composition SHALL cost the current system base pri
 #### Scenario: Composition ticket not deletable on its own
 - **WHEN** `TICKET DELETE;TG01:12345678Z` is processed
 - **THEN** an `ERROR` response is printed and the ticket still exists
-
-### Requirement: Group ticket commands listed in HELP
-The `HELP` output SHALL list `GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>` and `GROUPTICKET DELETE;<id>`.
-
-#### Scenario: HELP shows group ticket commands
-- **WHEN** `HELP` is processed
-- **THEN** the output contains both group ticket command syntaxes

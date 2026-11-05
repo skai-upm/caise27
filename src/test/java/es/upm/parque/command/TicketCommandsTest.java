@@ -129,7 +129,7 @@ class TicketCommandsTest {
     @Test
     void helpListsTicketCommands() {
         String help = processor.process("HELP");
-        assertTrue(help.contains("TICKET CREATE;<id>;<email>;<yyyy-MM-dd>"));
-        assertTrue(help.contains("TICKET DELETE;<id>"));
+        assertTrue(help.contains("TICKET CREATE;<identifier>;<email>;<date>"));
+        assertTrue(help.contains("TICKET DELETE;<identifier>"));
     }
 }

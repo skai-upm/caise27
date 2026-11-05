@@ -52,10 +52,3 @@ The command `SYSTEM PRICE;<Price>` SHALL set the current base ticket price to th
 #### Scenario: Invalid prices rejected
 - **WHEN** `SYSTEM PRICE;0`, `SYSTEM PRICE;-5`, `SYSTEM PRICE;abc`, `SYSTEM PRICE;45.555`, `SYSTEM PRICE;1E2` or `SYSTEM PRICE` is processed
 - **THEN** an `ERROR` response is printed and the base price is unchanged
-
-### Requirement: System commands listed in HELP
-The `HELP` output SHALL also list `SYSTEM DATE;<yyyy-MM-dd>` and `SYSTEM PRICE;<price>`.
-
-#### Scenario: HELP shows system commands
-- **WHEN** `HELP` is processed
-- **THEN** the output contains `SYSTEM DATE;<yyyy-MM-dd>` and `SYSTEM PRICE;<price>`

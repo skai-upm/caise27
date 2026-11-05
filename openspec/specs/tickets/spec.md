@@ -57,10 +57,3 @@ All ticket types SHALL share one identifier space: no two tickets of any type ma
 #### Scenario: Unknown ticket
 - **WHEN** `TICKET DELETE;T999` is processed and no such ticket exists
 - **THEN** an `ERROR` response is printed
-
-### Requirement: Ticket commands listed in HELP
-The `HELP` output SHALL list `TICKET CREATE;<id>;<email>;<yyyy-MM-dd>` and `TICKET DELETE;<id>`.
-
-#### Scenario: HELP shows ticket commands
-- **WHEN** `HELP` is processed
-- **THEN** the output contains both ticket command syntaxes

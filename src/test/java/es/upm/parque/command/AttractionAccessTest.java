@@ -178,6 +178,6 @@ class AttractionAccessTest {
         String help = processor.process("HELP");
         assertTrue(help.contains("ATTRACTION ENTER;<attraction>;<ticket>"));
         assertTrue(help.contains("ATTRACTION EXIT;<attraction>;<email>"));
-        assertTrue(help.contains("ATTRACTION STATUS;<id>"));
+        assertTrue(help.contains("ATTRACTION STATUS;<attractionIdentifier>"));
     }
 }

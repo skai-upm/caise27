@@ -90,8 +90,8 @@ class AttractionCommandsTest {
     void attractionsResetPerExecutionAndHelpListsCommands() {
         processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
         String help = processor.process("HELP");
-        assertTrue(help.contains("ATTRACTION CREATE;<id>;<name>;<capacity>"));
-        assertTrue(help.contains("ATTRACTION LIST;<id>"));
+        assertTrue(help.contains("ATTRACTION CREATE;<identifier>;<name>;<capacity>"));
+        assertTrue(help.contains("ATTRACTION LIST;<attraction>"));
         new CommandProcessor(new UserRepository());
         assertTrue(park.getAttractions().findAll().isEmpty());
     }

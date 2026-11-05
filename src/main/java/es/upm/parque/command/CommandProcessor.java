@@ -32,28 +32,31 @@ public class CommandProcessor {
     private static final String EXIT = "EXIT";
     private static final String SYSTEM_DATE = "SYSTEM DATE";
     private static final String SYSTEM_PRICE = "SYSTEM PRICE";
-    private static final String HELP_TEXT = String.join(System.lineSeparator(),
-            "Available commands:",
-            "  USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-            "  USER DELETE;<email>;<password>",
-            "  USER UPDATE;<email>;<password>;<field>;<value>   (field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)",
-            "  SYSTEM DATE;<yyyy-MM-dd>",
-            "  SYSTEM PRICE;<price>",
-            "  GROUP CREATE;<id>;<name>",
-            "  GROUP ADD;<id>;<email>",
-            "  GROUP REMOVE;<id>;<email>",
-            "  GROUP DELETE;<id>",
-            "  TICKET CREATE;<id>;<email>;<yyyy-MM-dd>",
-            "  TICKET DELETE;<id>",
-            "  GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>",
-            "  GROUPTICKET DELETE;<id>",
-            "  ATTRACTION CREATE;<id>;<name>;<capacity>",
-            "  ATTRACTION LIST;<id>",
-            "  ATTRACTION ENTER;<attraction>;<ticket>",
-            "  ATTRACTION EXIT;<attraction>;<email>",
-            "  ATTRACTION STATUS;<id>",
-            "  HELP",
-            "  EXIT");
+    /** Command syntax exactly as listed by the assignment, in its order. */
+    static final java.util.List<String> HELP_SYNTAX = java.util.List.of(
+            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+            "USER DELETE;<Email>;<Password>",
+            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
+            "SYSTEM DATE;<yyyy-MM-dd>",
+            "SYSTEM PRICE;<Price>",
+            "GROUP CREATE;<Identifier>;<Name>",
+            "GROUP ADD;<Identifier>;<Email>",
+            "GROUP REMOVE;<Identifier>;<Email>",
+            "GROUP DELETE;<Identifier>",
+            "TICKET CREATE;<identifier>;<email>;<date>",
+            "TICKET DELETE;<identifier>",
+            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
+            "GROUPTICKET DELETE;<identifier>",
+            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "ATTRACTION ENTER;<attraction>;<ticket>",
+            "ATTRACTION EXIT;<attraction>;<email>",
+            "ATTRACTION LIST;<attraction>",
+            "ATTRACTION STATUS;<attractionIdentifier>",
+            "HELP",
+            "EXIT");
+    private static final String HELP_TEXT = "Available commands:" + System.lineSeparator() + "  "
+            + String.join(System.lineSeparator() + "  ", HELP_SYNTAX) + System.lineSeparator()
+            + "  (USER UPDATE <Field>: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)";
 
     private final ParkController park;
     private final GroupCommands groups;

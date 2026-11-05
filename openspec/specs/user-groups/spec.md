@@ -64,13 +64,6 @@ A group SHALL be considered to have an active group ticket when at least one ass
 - **WHEN** a group has no associated group tickets
 - **THEN** `GROUP ADD`, `GROUP REMOVE` and `GROUP DELETE` are not rejected because of tickets
 
-### Requirement: Group commands listed in HELP
-The `HELP` output SHALL list `GROUP CREATE;<id>;<name>`, `GROUP ADD;<id>;<email>`, `GROUP REMOVE;<id>;<email>` and `GROUP DELETE;<id>`.
-
-#### Scenario: HELP shows group commands
-- **WHEN** `HELP` is processed
-- **THEN** the output contains the four group command syntaxes
-
 ### Requirement: Active group ticket locks the group
 While a group has an associated group ticket dated on or after the current system date, `GROUP ADD` and `GROUP REMOVE` on it MUST be rejected with an `ERROR` response, `GROUP DELETE` MUST be rejected, and `USER DELETE` of any of its members MUST be rejected. When all its group tickets are historical or have been deleted, the group SHALL become modifiable again.
 

@@ -33,15 +33,27 @@ class CommandProcessorTest {
     void helpListsAllCommandSyntaxes() {
         String help = processor.process("HELP");
         for (String syntax : new String[] {
-                "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-                "USER DELETE;<email>;<password>",
-                "USER UPDATE;<email>;<password>;<field>;<value>",
-                "SYSTEM DATE;<yyyy-MM-dd>", "SYSTEM PRICE;<price>",
+                "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+                "USER DELETE;<Email>;<Password>",
+                "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
+                "SYSTEM DATE;<yyyy-MM-dd>", "SYSTEM PRICE;<Price>",
                 "HELP", "EXIT"}) {
             assertTrue(help.contains(syntax), syntax);
         }
         assertTrue(processor.process("HELP;x").startsWith("ERROR"));
         assertFalse(processor.isExitRequested());
+    }
+
+    @Test
+    void helpListsTheAssignmentSyntaxInOrder() {
+        String help = processor.process("HELP");
+        int from = 0;
+        for (String syntax : CommandProcessor.HELP_SYNTAX) {
+            int at = help.indexOf(syntax, from);
+            assertTrue(at >= from, "missing or out of order: " + syntax);
+            from = at + syntax.length();
+        }
+        assertEquals(20, CommandProcessor.HELP_SYNTAX.size());
     }
 
     @Test

@@ -167,7 +167,7 @@ class GroupTicketCommandsTest {
     @Test
     void helpListsGroupTicketCommands() {
         String help = processor.process("HELP");
-        assertTrue(help.contains("GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>"));
-        assertTrue(help.contains("GROUPTICKET DELETE;<id>"));
+        assertTrue(help.contains("GROUPTICKET CREATE;<identifier>;<group>;<date>"));
+        assertTrue(help.contains("GROUPTICKET DELETE;<identifier>"));
     }
 }

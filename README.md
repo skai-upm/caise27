@@ -1,6 +1,6 @@
 # Amusement Park
 
-Command-line application for managing the users of an amusement park (Delivery 1).
+Command-line application for managing an amusement park: users, groups, individual and group tickets, and attractions (Deliveries 1 and 2).
 
 ## Requirements
 
@@ -35,15 +35,39 @@ Commands are processed identically in both modes. `EXIT` stops processing, and n
 
 ## Commands
 
-Elements are separated by `;`.
+Elements are separated by `;`. `HELP` prints this list.
 
 ```text
-USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>
-USER DELETE;<email>;<password>
-USER UPDATE;<email>;<password>;<field>;<value>    field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD
+USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>
+USER DELETE;<Email>;<Password>
+USER UPDATE;<Email>;<Password>;<Field>;<NewValue>     Field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD
+SYSTEM DATE;<yyyy-MM-dd>
+SYSTEM PRICE;<Price>
+GROUP CREATE;<Identifier>;<Name>
+GROUP ADD;<Identifier>;<Email>
+GROUP REMOVE;<Identifier>;<Email>
+GROUP DELETE;<Identifier>
+TICKET CREATE;<identifier>;<email>;<date>
+TICKET DELETE;<identifier>
+GROUPTICKET CREATE;<identifier>;<group>;<date>
+GROUPTICKET DELETE;<identifier>
+ATTRACTION CREATE;<identifier>;<name>;<capacity>
+ATTRACTION ENTER;<attraction>;<ticket>
+ATTRACTION EXIT;<attraction>;<email>
+ATTRACTION LIST;<attraction>
+ATTRACTION STATUS;<attractionIdentifier>
 HELP
 EXIT
 ```
+
+Park rules in short:
+
+- The system date starts as today, and the base price starts at 40.00 euros on every run. `SYSTEM DATE` and `SYSTEM PRICE` change them.
+- A ticket is valid only on its date. Tickets for today or earlier cannot be deleted; they are kept as history.
+- A group ticket contains one individual ticket per member, identified `<groupTicket>:<dni>`. Each member's ticket gets a member-count discount: fewer than 3 members, 0%; 3–5, 10%; 6–10, 20%; more than 10, 50%.
+- An active group ticket (dated today or later) locks the group against `GROUP ADD`, `GROUP REMOVE` and `GROUP DELETE`.
+- A user with an active ticket, or in a locked group, cannot be deleted.
+- Group entry to an attraction is all-or-nothing within its capacity.
 
 Successful commands answer with a line starting with `OK`. Rejected or unrecognised commands answer with a line starting with `ERROR` and do not change any data.
 
@@ -57,10 +81,22 @@ Validation rules:
 
 ## Persistence
 
-Users are stored in `users.txt` in the working directory, one user per line:
+Data is stored in text files in the working directory:
+
+| File | Content |
+| --- | --- |
+| `users.txt` | `FirstName;Surnames;DNI;Email;Password;Phone;Card` |
+| `groups.txt` | `id;name;dni1,dni2,...` |
+| `tickets.txt` | `I;id;date;price;dni;email;firstName;surnames` and `G;id;date;group;component1,component2,...` |
+| `attractions.txt` | `id;name;capacity` (users inside are not stored; attractions start empty) |
+
+Files are loaded at start-up and rewritten after every successful command. Historical tickets keep their holder data even after the user or group is deleted. Malformed, invalid or duplicated lines are ignored, with a `WARNING`. If a data file exists but cannot be read, the application prints an `ERROR` and processes no command.
+
+### Temporary mode
 
 ```text
-FirstName;Surnames;DNI;Email;Password;Phone;Card
+java -jar target/amusement-park.jar --fly
+java -jar target/amusement-park.jar --fly input_fase2.txt
 ```
 
-The file is loaded at start-up and rewritten after every successful change. Lines that are malformed, invalid or duplicated are ignored with a `WARNING` and dropped at the next save. If `users.txt` exists but cannot be read, the application prints an `ERROR` and does not process any command.
+With `--fly` as the first argument, all data files are written in a new `tmp/<yyyyMMdd_HHmmss>/` directory, which is deleted when the run ends (`EXIT` or end of input). Normal data files are never touched in this mode.

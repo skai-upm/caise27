@@ -42,13 +42,6 @@ An attraction SHALL hold references to the users currently inside it; users MUST
 - **WHEN** `ATTRACTION LIST;A99` is processed and no such attraction exists
 - **THEN** an `ERROR` response is printed
 
-### Requirement: Attraction commands listed in HELP
-The `HELP` output SHALL list `ATTRACTION CREATE;<id>;<name>;<capacity>` and `ATTRACTION LIST;<id>`.
-
-#### Scenario: HELP shows attraction commands
-- **WHEN** `HELP` is processed
-- **THEN** the output contains both attraction command syntaxes
-
 ### Requirement: Attraction access with an individual ticket
 `ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier` with an individual ticket SHALL admit the user associated with the ticket into the attraction and print a response starting with `OK`, provided the attraction exists, the ticket exists, the ticket's date equals the current system date, and the attraction has free capacity for that user. Otherwise it MUST print an `ERROR` response and leave the attraction's occupants unchanged.
 
@@ -78,13 +71,6 @@ The ticket date SHALL be checked only at entry; once a user is inside an attract
 #### Scenario: Date moves on after entry
 - **WHEN** Ana entered `A01` on 2027-04-15 and then `SYSTEM DATE;2027-04-16` is processed
 - **THEN** `ATTRACTION LIST;A01` still shows `ana@correo.com`
-
-### Requirement: Attraction access listed in HELP
-The `HELP` output SHALL list `ATTRACTION ENTER;<attraction>;<ticket>`.
-
-#### Scenario: HELP shows attraction access
-- **WHEN** `HELP` is processed
-- **THEN** the output contains `ATTRACTION ENTER;<attraction>;<ticket>`
 
 ### Requirement: Group ticket access through the common abstraction
 Attraction access SHALL determine who enters from the common ticket abstraction (the users associated with the ticket), with no separate access mechanism per ticket type. `ATTRACTION ENTER` with a group ticket valid on the current system date SHALL admit together all users of its composition who are not already inside, and only if the attraction has free capacity for all of them; otherwise it MUST print an `ERROR` response and nobody enters.
@@ -126,10 +112,3 @@ Attraction access SHALL determine who enters from the common ticket abstraction 
 #### Scenario: Status of an empty attraction
 - **WHEN** attraction `A02` (capacity 12) is empty
 - **THEN** `ATTRACTION STATUS;A02` shows 0 users inside and 12 available places
-
-### Requirement: Exit and status listed in HELP
-The `HELP` output SHALL list `ATTRACTION EXIT;<attraction>;<email>` and `ATTRACTION STATUS;<id>`.
-
-#### Scenario: HELP shows exit and status
-- **WHEN** `HELP` is processed
-- **THEN** the output contains both syntaxes

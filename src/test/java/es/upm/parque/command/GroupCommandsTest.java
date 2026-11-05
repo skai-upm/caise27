@@ -105,8 +105,8 @@ class GroupCommandsTest {
     @Test
     void helpListsGroupCommands() {
         String help = processor.process("HELP");
-        for (String syntax : new String[] {"GROUP CREATE;<id>;<name>", "GROUP ADD;<id>;<email>",
-                "GROUP REMOVE;<id>;<email>", "GROUP DELETE;<id>"}) {
+        for (String syntax : new String[] {"GROUP CREATE;<Identifier>;<Name>", "GROUP ADD;<Identifier>;<Email>",
+                "GROUP REMOVE;<Identifier>;<Email>", "GROUP DELETE;<Identifier>"}) {
             assertTrue(help.contains(syntax), syntax);
         }
     }

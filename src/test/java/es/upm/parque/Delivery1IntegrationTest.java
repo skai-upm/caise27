@@ -53,7 +53,7 @@ class Delivery1IntegrationTest {
 
         assertEquals(stdinOutput, fileOutput);
         assertFalse(fileOutput.contains("ERROR"), fileOutput);
-        assertTrue(fileOutput.contains("USER DELETE;<email>;<password>"));
+        assertTrue(fileOutput.contains("USER DELETE;<Email>;<Password>"));
         assertTrue(fileOutput.trim().endsWith("OK: exiting application"));
 
         List<String> expected = List.of(
