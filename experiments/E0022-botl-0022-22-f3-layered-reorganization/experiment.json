@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0022-botl-0022-22-f3-layered-reorganization",
+  "change": "botl-0022-22-f3-layered-reorganization",
+  "status": "archived",
+  "createdAt": "2026-10-27T20:38:46.382265+00:00",
+  "updatedAt": "2026-10-27T20:47:25.425136+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261027T203846Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261027T203846Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 3837650,
+        "totalCost": 1.5255938000000029
+      }
+    },
+    {
+      "runId": "0002-apply-20261027T204339Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261027T204339Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 796194,
+        "totalCost": 0.26971580000000017
+      }
+    },
+    {
+      "runId": "0003-archive-20261027T204643Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261027T204643Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-27T20:47:25.371286+00:00"
+}
