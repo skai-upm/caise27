@@ -51,7 +51,12 @@ class CommandProcessorTest {
             "GROUPTICKET CREATE;<identifier>;<group>;<date>", "GROUPTICKET DELETE;<identifier>",
             "ATTRACTION CREATE;<identifier>;<name>;<capacity>", "ATTRACTION ENTER;<attraction>;<ticket>",
             "ATTRACTION EXIT;<attraction>;<email>", "ATTRACTION LIST;<attraction>",
-            "ATTRACTION STATUS;<attractionIdentifier>", "HELP", "EXIT"}) {
+            "ATTRACTION STATUS;<attractionIdentifier>", "ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
+            "ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
+            "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>",
+            "SPEEDPASS DELETE;<speedPassIdentifier>", "SPECIALPASS CREATE;<identifier>;<individualTicket>",
+            "SPECIALPASS DELETE;<specialPassIdentifier>", "INVOICE CREATE;USER;<email>",
+            "INVOICE CREATE;GROUP;<groupIdentifier>", "HELP", "HELP EXTENDED", "EXIT"}) {
             assertTrue(out.contains("  " + syntax + System.lineSeparator()), "missing: " + syntax);
         }
     }
