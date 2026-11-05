@@ -54,6 +54,11 @@ public class GroupTicket extends Ticket {
         return composition;
     }
 
+    @Override
+    public List<User> getHolders() {
+        return composition.stream().map(IndividualTicket::getUser).toList();
+    }
+
     /** The purchasing group, or {@code null} once that group has been deleted. */
     public Group getGroup() {
         return group;

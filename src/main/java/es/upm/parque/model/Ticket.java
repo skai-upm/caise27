@@ -2,6 +2,7 @@ package es.upm.parque.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Common abstraction for every ticket type: a unique identifier, a date of use and a price.
@@ -29,6 +30,9 @@ public abstract class Ticket {
     public BigDecimal getPrice() {
         return price;
     }
+
+    /** Users who enter an attraction with this ticket. */
+    public abstract List<User> getHolders();
 
     /** A ticket is active when its date is equal to or later than the given current date. */
     public boolean isActiveOn(LocalDate currentDate) {

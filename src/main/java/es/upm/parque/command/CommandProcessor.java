@@ -49,6 +49,7 @@ public class CommandProcessor {
             "  GROUPTICKET DELETE;<id>",
             "  ATTRACTION CREATE;<id>;<name>;<capacity>",
             "  ATTRACTION LIST;<id>",
+            "  ATTRACTION ENTER;<attraction>;<ticket>",
             "  HELP",
             "  EXIT");
 
@@ -109,6 +110,7 @@ public class CommandProcessor {
                 case TicketCommands.GROUPTICKET_DELETE -> tickets.deleteGroupTicket(elements);
                 case AttractionCommands.ATTRACTION_CREATE -> attractions.create(elements);
                 case AttractionCommands.ATTRACTION_LIST -> attractions.list(elements);
+                case AttractionCommands.ATTRACTION_ENTER -> attractions.enter(elements);
                 default -> error("unknown command '" + command + "'");
             };
         } catch (RuntimeException e) {

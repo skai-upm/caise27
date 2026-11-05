@@ -1,6 +1,10 @@
 package es.upm.parque.command;
 
+import java.util.List;
+
 import es.upm.parque.model.Attraction;
+import es.upm.parque.model.GroupTicket;
+import es.upm.parque.model.Ticket;
 import es.upm.parque.model.User;
 import es.upm.parque.park.ParkController;
 
@@ -11,6 +15,7 @@ class AttractionCommands {
 
     static final String ATTRACTION_CREATE = "ATTRACTION CREATE";
     static final String ATTRACTION_LIST = "ATTRACTION LIST";
+    static final String ATTRACTION_ENTER = "ATTRACTION ENTER";
 
     private final ParkController park;
 
@@ -51,6 +56,39 @@ class AttractionCommands {
             text.append(System.lineSeparator()).append("  ").append(user.getEmail());
         }
         return text.toString();
+    }
+
+    String enter(String[] e) {
+        if (e.length != 3) {
+            return error("ATTRACTION ENTER expects: ATTRACTION ENTER;<attraction>;<ticket>");
+        }
+        Attraction attraction = park.getAttractions().findById(e[1]);
+        if (attraction == null) {
+            return error("no attraction with identifier " + e[1]);
+        }
+        Ticket ticket = park.getTickets().findById(e[2]);
+        if (ticket == null) {
+            return error("no ticket with identifier " + e[2]);
+        }
+        if (ticket instanceof GroupTicket) {
+            return error("access with group tickets is not available yet");
+        }
+        if (!ticket.getDate().equals(park.getCurrentDate())) {
+            return error("ticket " + e[2] + " is valid on " + ticket.getDate() + ", not on " + park.getCurrentDate());
+        }
+        List<User> entrants = ticket.getHolders().stream().filter(u -> !attraction.isInside(u)).toList();
+        if (entrants.isEmpty()) {
+            return error("the users of ticket " + e[2] + " are already inside attraction " + e[1]);
+        }
+        int free = attraction.getCapacity() - attraction.getOccupants().size();
+        if (entrants.size() > free) {
+            return error("attraction " + e[1] + " has room for " + free + " user(s) but " + entrants.size()
+                    + " need to enter; nobody entered");
+        }
+        entrants.forEach(attraction::addOccupant);
+        return "OK: " + entrants.size() + " user(s) entered attraction " + attraction.getId() + " ("
+                + attraction.getName() + "): "
+                + String.join(", ", entrants.stream().map(User::getEmail).toList());
     }
 
     /** Parses a whole number made only of digits; returns -1 when it is not one or does not fit an int. */
