@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0018-botl-0018-18-f2-access-using-group-tickets",
+  "change": "botl-0018-18-f2-access-using-group-tickets",
+  "status": "archived",
+  "createdAt": "2026-10-27T16:24:10.587381+00:00",
+  "updatedAt": "2026-10-27T16:28:02.911726+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261027T162410Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261027T162410Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    },
+    {
+      "runId": "0002-apply-20261027T162500Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261027T162500Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 743187,
+        "totalCost": 0.2432546000000002
+      }
+    },
+    {
+      "runId": "0003-archive-20261027T162729Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261027T162729Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-27T16:28:02.857842+00:00"
+}
