@@ -25,6 +25,8 @@ public class CommandProcessor {
             "  GROUP DELETE;<Identifier>",
             "  TICKET CREATE;<identifier>;<email>;<date>",
             "  TICKET DELETE;<identifier>",
+            "  GROUPTICKET CREATE;<identifier>;<group>;<date>",
+            "  GROUPTICKET DELETE;<identifier>",
             "  HELP",
             "  EXIT");
 

@@ -3,6 +3,10 @@ package es.upm.amusementpark.park;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -24,7 +28,8 @@ public final class ParkController {
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private UserDirectory userDirectory = UserDirectory.EMPTY;
-    private GroupTicketDates groupTicketDates = GroupTicketDates.NONE;
+    private final GroupTicketDates registeredGroupTicketDates = this::registeredGroupTicketDates;
+    private GroupTicketDates groupTicketDates = registeredGroupTicketDates;
 
     private ParkController() {
         reset();
@@ -46,7 +51,7 @@ public final class ParkController {
         groups.clear();
         tickets.clear();
         userDirectory = UserDirectory.EMPTY;
-        groupTicketDates = GroupTicketDates.NONE;
+        groupTicketDates = registeredGroupTicketDates;
     }
 
     public synchronized void setUserDirectory(UserDirectory directory) {
@@ -139,10 +144,26 @@ public final class ParkController {
         }
     }
 
-    /** Deletes an unlocked group. */
+    /** Deletes an unlocked group; its historical group tickets are kept with an empty group reference. */
     public synchronized void deleteGroup(String id) {
-        modifiableGroup(id);
+        Group group = modifiableGroup(id);
+        for (Ticket ticket : tickets.values()) {
+            if (ticket instanceof GroupTicket groupTicket && groupTicket.getGroup() == group) {
+                groupTicket.clearGroup();
+            }
+        }
         groups.remove(id);
+    }
+
+    private List<LocalDate> registeredGroupTicketDates(String groupId) {
+        List<LocalDate> dates = new ArrayList<>();
+        for (Ticket ticket : tickets.values()) {
+            if (ticket instanceof GroupTicket groupTicket && groupTicket.getGroup() != null
+                    && groupTicket.getGroup().getId().equals(groupId)) {
+                dates.add(ticket.getDate());
+            }
+        }
+        return dates;
     }
 
     private Group modifiableGroup(String id) {
@@ -220,8 +241,12 @@ public final class ParkController {
      */
     public synchronized void deleteTicket(String id) {
         Ticket ticket = tickets.get(id);
-        if (!(ticket instanceof IndividualTicket)) {
+        if (!(ticket instanceof IndividualTicket individual)) {
             throw new ParkException("Individual ticket " + id + " does not exist");
+        }
+        if (individual.getContainingGroupTicket() != null) {
+            throw new ParkException("Ticket " + id + " belongs to group ticket "
+                    + individual.getContainingGroupTicket().getId() + " and cannot be deleted on its own");
         }
         if (!ticket.isDeletableOn(currentDate)) {
             throw new ParkException("Ticket " + id + " is for today or a past date and must be kept");
@@ -248,5 +273,79 @@ public final class ParkController {
         if (userHasActiveTicket(email)) {
             throw new ParkException("User " + email + " has active tickets and cannot be deleted");
         }
+        for (Group group : groups.values()) {
+            if (group.hasMember(email) && isGroupLocked(group.getId())) {
+                throw new ParkException("User " + email + " belongs to group " + group.getId()
+                        + ", which has an active group ticket");
+            }
+        }
+    }
+
+    /** Removes the user from every group, as an internal consequence of an allowed user deletion. */
+    public synchronized void removeUserFromAllGroups(String email) {
+        ensureUserDeletable(email);
+        for (Group group : groups.values()) {
+            group.removeMember(email);
+        }
+    }
+
+    // ----- group tickets -----
+
+    /**
+     * Creates a group ticket for all current members of a non-empty group, all-or-nothing.
+     *
+     * @throws ParkException if the group is missing or empty, the date is past, or any identifier is used
+     */
+    public synchronized GroupTicket createGroupTicket(String id, String groupId, LocalDate date) {
+        ensureTicketIdAvailable(id);
+        Group group = groups.get(groupId);
+        if (group == null) {
+            throw new ParkException("Group " + groupId + " does not exist");
+        }
+        if (group.getMembers().isEmpty()) {
+            throw new ParkException("Group " + groupId + " is empty");
+        }
+        ensureNotPast(date);
+        int members = group.getMembers().size();
+        BigDecimal price = GroupTicket.memberPrice(currentPrice, members);
+        List<IndividualTicket> components = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
+        ids.add(id);
+        for (String email : group.getMembers()) {
+            String dni = userDirectory.dniOf(email);
+            if (dni == null || dni.isEmpty()) {
+                throw new ParkException("DNI of user " + email + " is unknown");
+            }
+            String componentId = id + ":" + dni;
+            ensureTicketIdAvailable(componentId);
+            if (!ids.add(componentId)) {
+                throw new ParkException("Duplicate ticket identifier " + componentId);
+            }
+            components.add(new IndividualTicket(componentId, email, date, price));
+        }
+        GroupTicket groupTicket = new GroupTicket(id, group, date, components);
+        tickets.put(id, groupTicket);
+        for (IndividualTicket component : components) {
+            tickets.put(component.getId(), component);
+        }
+        return groupTicket;
+    }
+
+    /**
+     * Deletes a group ticket dated strictly after the current system date, with its composition.
+     *
+     * @throws ParkException otherwise
+     */
+    public synchronized void deleteGroupTicket(String id) {
+        if (!(tickets.get(id) instanceof GroupTicket groupTicket)) {
+            throw new ParkException("Group ticket " + id + " does not exist");
+        }
+        if (!groupTicket.isDeletableOn(currentDate)) {
+            throw new ParkException("Group ticket " + id + " is for today or a past date and must be kept");
+        }
+        for (IndividualTicket component : groupTicket.getComponents()) {
+            tickets.remove(component.getId());
+        }
+        tickets.remove(id);
     }
 }

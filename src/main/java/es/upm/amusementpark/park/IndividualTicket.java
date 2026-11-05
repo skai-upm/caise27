@@ -11,6 +11,7 @@ public class IndividualTicket extends Ticket {
 
     private final String userEmail;
     private final BigDecimal price;
+    private GroupTicket containingGroupTicket;
 
     public IndividualTicket(String id, String userEmail, LocalDate date, BigDecimal price) {
         super(id, date);
@@ -20,6 +21,15 @@ public class IndividualTicket extends Ticket {
 
     public String getUserEmail() {
         return userEmail;
+    }
+
+    /** @return the group ticket this ticket belongs to, or {@code null} for a standalone ticket */
+    public GroupTicket getContainingGroupTicket() {
+        return containingGroupTicket;
+    }
+
+    void setContainingGroupTicket(GroupTicket groupTicket) {
+        containingGroupTicket = groupTicket;
     }
 
     @Override

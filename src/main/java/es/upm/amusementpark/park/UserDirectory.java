@@ -10,4 +10,12 @@ public interface UserDirectory {
     UserDirectory EMPTY = email -> false;
 
     boolean exists(String email);
+
+    /**
+     * @param email user e-mail
+     * @return the user's DNI, or {@code null} if unknown
+     */
+    default String dniOf(String email) {
+        return null;
+    }
 }
