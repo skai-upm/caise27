@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0016-botl-0016-16-f2-adding-attractions",
+  "change": "botl-0016-16-f2-adding-attractions",
+  "status": "archived",
+  "createdAt": "2026-10-28T22:15:48.818384+00:00",
+  "updatedAt": "2026-10-28T22:20:00.568190+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261028T221548Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261028T221548Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 314922,
+        "totalCost": 0.14824600000000032
+      }
+    },
+    {
+      "runId": "0002-apply-20261028T221659Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261028T221659Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 640094,
+        "totalCost": 0.2904102000000002
+      }
+    },
+    {
+      "runId": "0003-archive-20261028T221927Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261028T221927Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-28T22:20:00.520290+00:00"
+}

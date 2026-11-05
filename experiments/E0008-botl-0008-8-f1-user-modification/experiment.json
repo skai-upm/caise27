@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0008-botl-0008-8-f1-user-modification",
+  "change": "botl-0008-8-f1-user-modification",
+  "status": "archived",
+  "createdAt": "2026-10-28T21:38:14.922929+00:00",
+  "updatedAt": "2026-10-28T21:42:15.358664+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261028T213814Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261028T213814Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 194306,
+        "totalCost": 0.11333419999999972
+      }
+    },
+    {
+      "runId": "0002-apply-20261028T213921Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261028T213921Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 399958,
+        "totalCost": 0.25267780000000073
+      }
+    },
+    {
+      "runId": "0003-archive-20261028T214142Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261028T214142Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-28T21:42:15.308602+00:00"
+}
