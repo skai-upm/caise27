@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0001-botl-0001-f1-amusement-park",
+  "change": "botl-0001-f1-amusement-park",
+  "runId": "0001-propose-20261025T173841Z",
+  "sequence": 1,
+  "phase": "propose",
+  "startedAt": "2026-10-25T17:38:41.365917+00:00",
+  "finishedAt": "2026-10-25T17:40:57.918901+00:00",
+  "durationSeconds": 136.552984,
+  "environment": {
+    "agent": "claude-code",
+    "agentAdapter": "claude-code",
+    "aiUsageSource": "claude",
+    "analysisAdapterConfigured": "auto",
+    "analysisAdapterBefore": "unknown",
+    "analysisAdapterAfter": "unknown"
+  },
+  "projectProfileBefore": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "projectProfileAfter": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "profileTransition": {
+    "changed": false,
+    "before": "unknown",
+    "after": "unknown"
+  },
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "c87d50d3-2acf-4768-8e51-f5335ee38fb4",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 12,
+    "outputTokens": 13752,
+    "cacheCreationTokens": 21545,
+    "cacheReadTokens": 601860,
+    "totalTokens": 637169,
+    "totalCost": 0.56782,
+    "newTokens": 35309,
+    "cachedTokens": 601860,
+    "totalProcessedTokens": 637169
+  },
+  "before": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_5_setup_single_human",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .botl/",
+        "?? experiments/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 0,
+      "lines": 0,
+      "words": 0,
+      "requirements": 0,
+      "scenarios": 0,
+      "tasks": 0,
+      "shallStatements": 0
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "unknown",
+          "modules": []
+        },
+        "modules": []
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "unknown",
+      "modules": []
+    }
+  },
+  "after": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_5_setup_single_human",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .botl/",
+        "?? experiments/",
+        "?? openspec/changes/botl-0001-f1-amusement-park/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 9,
+      "lines": 431,
+      "words": 3755,
+      "requirements": 29,
+      "scenarios": 44,
+      "tasks": 11,
+      "shallStatements": 50
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "unknown",
+          "modules": []
+        },
+        "modules": []
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "unknown",
+      "modules": []
+    }
+  },
+  "delta": {
+    "git": {
+      "available": true,
+      "filesModified": 0,
+      "untrackedFiles": 13,
+      "locAdded": 0,
+      "locRemoved": 0,
+      "netLoc": 0
+    },
+    "artifacts": {
+      "requirements": 29,
+      "files": 9,
+      "scenarios": 44,
+      "tasks": 11,
+      "words": 3755,
+      "shallStatements": 50,
+      "lines": 431
+    },
+    "radon": {},
+    "sonar": {
+      "allMeasures": {}
+    }
+  }
+}
