@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,11 +25,30 @@ public class App {
 
     static final String USERS_FILE = "users.txt";
 
+    /** UTF-8 console output on the process's standard output; intentionally never closed. */
+    private static final PrintStream CONSOLE =
+            new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
+
     public static void main(String[] args) throws IOException {
-        CommandProcessor processor = new CommandProcessor(
-                new UserRepository(new UserFileStore(Path.of(USERS_FILE))));
-        PrintStream console = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
-        start(args, processor, System.in, console);
+        UserRepository users = loadUsers(CONSOLE);
+        if (users != null) {
+            start(args, new CommandProcessor(users), System.in, CONSOLE);
+        }
+    }
+
+    /** Loads the stored users, reporting ignored lines; returns {@code null} if the users file cannot be read. */
+    private static UserRepository loadUsers(PrintStream console) {
+        UserRepository users;
+        try {
+            users = new UserRepository(new UserFileStore(Path.of(USERS_FILE)));
+        } catch (UncheckedIOException e) {
+            console.println("ERROR: cannot read users file '" + USERS_FILE + "'");
+            return null;
+        }
+        if (users.getIgnoredOnLoad() > 0) {
+            console.println("WARNING: " + users.getIgnoredOnLoad() + " invalid line(s) in " + USERS_FILE + " were ignored");
+        }
+        return users;
     }
 
     /** Selects the command source from the arguments and processes every command from it. */

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import es.upm.parque.model.User;
+import es.upm.parque.model.UserValidator;
 import es.upm.parque.persistence.UserFileStore;
 
 /**
@@ -15,18 +16,31 @@ public class UserRepository {
 
     private final Map<String, User> usersByDni = new LinkedHashMap<>();
     private final UserFileStore store;
+    private final int ignoredOnLoad;
 
     /** Creates a purely in-memory repository. */
     public UserRepository() {
         this.store = null;
+        this.ignoredOnLoad = 0;
     }
 
     /** Creates a repository backed by a file: users are loaded now and saved after each change. */
     public UserRepository(UserFileStore store) {
         this.store = store;
+        int rejected = 0;
         for (User user : store.load()) {
-            usersByDni.put(user.getDni(), user);
+            if (UserValidator.isValid(user) && !existsByDni(user.getDni()) && !existsByEmail(user.getEmail())) {
+                usersByDni.put(user.getDni(), user);
+            } else {
+                rejected++;
+            }
         }
+        this.ignoredOnLoad = rejected + store.getMalformedLineCount();
+    }
+
+    /** Number of stored lines ignored while loading because they were malformed, invalid or duplicated. */
+    public int getIgnoredOnLoad() {
+        return ignoredOnLoad;
     }
 
     public void add(User user) {

@@ -87,6 +87,31 @@ class UserRepositoryTest {
     }
 
     @Test
+    void invalidAndDuplicateStoredLinesAreIgnoredOnLoad(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("users.txt");
+        Files.write(file, java.util.List.of(
+                "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
+                "Mal;Dni;12345678A;mal@correo.com;Clave1!;600000000;1234567890123456",
+                "Otra;Ana;12345678Z;otra@correo.com;Clave1!;600000000;1234567890123456",
+                "Mismo;Email;87654321X;ana@correo.com;Clave1!;600000000;1234567890123456",
+                "short;line",
+                ""));
+        UserRepository repo = new UserRepository(new UserFileStore(file));
+        assertEquals(1, repo.size());
+        assertEquals("Ana", repo.findByDni("12345678Z").getFirstName());
+        assertEquals(4, repo.getIgnoredOnLoad());
+    }
+
+    @Test
+    void cleanFileHasNoIgnoredLines(@TempDir Path dir) {
+        Path file = dir.resolve("users.txt");
+        UserRepository repo = new UserRepository(new UserFileStore(file));
+        repo.add(new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456"));
+        assertEquals(0, new UserRepository(new UserFileStore(file)).getIgnoredOnLoad());
+        assertEquals(0, new UserRepository().getIgnoredOnLoad());
+    }
+
+    @Test
     void findAllKeepsInsertionOrder() {
         UserRepository repo = new UserRepository();
         repo.add(user("87654321X", "b@correo.com"));
