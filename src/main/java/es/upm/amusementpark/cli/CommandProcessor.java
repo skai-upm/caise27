@@ -23,6 +23,8 @@ public class CommandProcessor {
             "  GROUP ADD;<Identifier>;<Email>",
             "  GROUP REMOVE;<Identifier>;<Email>",
             "  GROUP DELETE;<Identifier>",
+            "  TICKET CREATE;<identifier>;<email>;<date>",
+            "  TICKET DELETE;<identifier>",
             "  HELP",
             "  EXIT");
 

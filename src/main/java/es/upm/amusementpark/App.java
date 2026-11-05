@@ -4,6 +4,7 @@ import es.upm.amusementpark.cli.CommandProcessor;
 import es.upm.amusementpark.park.GroupCommands;
 import es.upm.amusementpark.park.ParkController;
 import es.upm.amusementpark.park.SystemCommands;
+import es.upm.amusementpark.park.TicketCommands;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,6 +38,7 @@ public final class App {
         CommandProcessor processor = new CommandProcessor(out);
         SystemCommands.register(processor, park, out);
         GroupCommands.register(processor, park, out);
+        TicketCommands.register(processor, park, out);
         if (args.length == 0) {
             process(processor, stdin, out, "standard input");
             return;

@@ -22,6 +22,7 @@ public final class ParkController {
     private LocalDate currentDate;
     private BigDecimal currentPrice;
     private final Map<String, Group> groups = new LinkedHashMap<>();
+    private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private UserDirectory userDirectory = UserDirectory.EMPTY;
     private GroupTicketDates groupTicketDates = GroupTicketDates.NONE;
 
@@ -43,6 +44,7 @@ public final class ParkController {
         currentDate = LocalDate.now();
         currentPrice = INITIAL_PRICE;
         groups.clear();
+        tickets.clear();
         userDirectory = UserDirectory.EMPTY;
         groupTicketDates = GroupTicketDates.NONE;
     }
@@ -156,5 +158,95 @@ public final class ParkController {
 
     private static boolean isBlank(String text) {
         return text == null || text.trim().isEmpty();
+    }
+
+    // ----- tickets -----
+
+    public synchronized Ticket findTicket(String id) {
+        return tickets.get(id);
+    }
+
+    public synchronized Collection<Ticket> getTickets() {
+        return Collections.unmodifiableCollection(tickets.values());
+    }
+
+    /**
+     * Registers a ticket of any type, enforcing the shared identifier space.
+     *
+     * @throws ParkException if the identifier is empty or already used by any ticket
+     */
+    synchronized void registerTicket(Ticket ticket) {
+        ensureTicketIdAvailable(ticket.getId());
+        tickets.put(ticket.getId(), ticket);
+    }
+
+    /** Checks that {@code id} is non-empty and unused in the shared ticket identifier space. */
+    synchronized void ensureTicketIdAvailable(String id) {
+        if (isBlank(id)) {
+            throw new ParkException("Ticket identifier is required");
+        }
+        if (tickets.containsKey(id)) {
+            throw new ParkException("Ticket " + id + " already exists");
+        }
+    }
+
+    /** Checks that {@code date} is not earlier than the current system date. */
+    synchronized void ensureNotPast(LocalDate date) {
+        if (date.isBefore(currentDate)) {
+            throw new ParkException("Tickets cannot be created for past dates");
+        }
+    }
+
+    /**
+     * Creates an individual ticket at the current base price.
+     *
+     * @throws ParkException if the identifier is used, the user does not exist or the date is in the past
+     */
+    public synchronized IndividualTicket createIndividualTicket(String id, String email, LocalDate date) {
+        ensureTicketIdAvailable(id);
+        if (!userDirectory.exists(email)) {
+            throw new ParkException("User " + email + " does not exist");
+        }
+        ensureNotPast(date);
+        IndividualTicket ticket = new IndividualTicket(id, email, date, currentPrice);
+        registerTicket(ticket);
+        return ticket;
+    }
+
+    /**
+     * Deletes a standalone individual ticket dated strictly after the current system date.
+     *
+     * @throws ParkException otherwise
+     */
+    public synchronized void deleteTicket(String id) {
+        Ticket ticket = tickets.get(id);
+        if (!(ticket instanceof IndividualTicket)) {
+            throw new ParkException("Individual ticket " + id + " does not exist");
+        }
+        if (!ticket.isDeletableOn(currentDate)) {
+            throw new ParkException("Ticket " + id + " is for today or a past date and must be kept");
+        }
+        tickets.remove(id);
+    }
+
+    /** @return whether the user has any ticket dated today or later (derived, never stored) */
+    public synchronized boolean userHasActiveTicket(String email) {
+        for (Ticket ticket : tickets.values()) {
+            if (ticket.concernsUser(email) && ticket.isActiveOn(currentDate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Guard for user deletion.
+     *
+     * @throws ParkException if the user has an active ticket
+     */
+    public synchronized void ensureUserDeletable(String email) {
+        if (userHasActiveTicket(email)) {
+            throw new ParkException("User " + email + " has active tickets and cannot be deleted");
+        }
     }
 }
