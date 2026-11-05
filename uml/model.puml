@@ -89,6 +89,10 @@ package es.upm.amusementpark.business {
   }
   interface ParkRepository {
   }
+  interface PasswordHasher {
+  }
+  class BCryptPasswordHasher {
+  }
   class RepositoryException {
   }
   class Group {
@@ -148,6 +152,8 @@ ParkController ..> ParkException : throws
 ParkController --> "1" ParkRepository : repository (injected)
 ParkRepository ..> RepositoryException : throws
 ParkRepository <|.. ParkStorage
+PasswordHasher <|.. BCryptPasswordHasher
+ParkController --> "1" PasswordHasher : passwordHasher (injected)
 
 ' ---- commands ----
 CommandProcessor --> "0..*" CommandHandler : handlers

@@ -1,5 +1,6 @@
 package es.upm.amusementpark;
 
+import es.upm.amusementpark.business.BCryptPasswordHasher;
 import es.upm.amusementpark.business.ParkController;
 import es.upm.amusementpark.business.RepositoryException;
 import es.upm.amusementpark.persistence.ParkStorage;
@@ -78,6 +79,7 @@ public final class App {
         ParkController park = ParkController.getInstance();
         park.reset();
         park.setRepository(storage);
+        park.setPasswordHasher(new BCryptPasswordHasher());
         try {
             for (String warning : park.loadState()) {
                 out.println("WARNING: Ignoring persisted record (" + warning + ")");

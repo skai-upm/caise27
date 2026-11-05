@@ -35,6 +35,7 @@ public final class ParkController {
     private final GroupTicketDates registeredGroupTicketDates = this::registeredGroupTicketDates;
     private GroupTicketDates groupTicketDates = registeredGroupTicketDates;
     private ParkRepository repository = ParkRepository.NONE;
+    private PasswordHasher passwordHasher = new BCryptPasswordHasher();
 
     private ParkController() {
         reset();
@@ -59,6 +60,26 @@ public final class ParkController {
         userDirectory = UserDirectory.EMPTY;
         groupTicketDates = registeredGroupTicketDates;
         repository = ParkRepository.NONE;
+        passwordHasher = new BCryptPasswordHasher();
+    }
+
+    /** Injects the password protection behavior configured at application initialization. */
+    public synchronized void setPasswordHasher(PasswordHasher hasher) {
+        passwordHasher = Objects.requireNonNull(hasher, "hasher");
+    }
+
+    /**
+     * Protects a validated password before storing it; a new value is produced on every call.
+     *
+     * @return the protected value to store
+     */
+    public synchronized String protectPassword(String plainPassword) {
+        return passwordHasher.protect(plainPassword);
+    }
+
+    /** @return whether the entered password matches the stored protected value */
+    public synchronized boolean verifyPassword(String plainPassword, String storedValue) {
+        return passwordHasher.verify(plainPassword, storedValue);
     }
 
     /** Injects the persistence dependency configured at application initialization. */

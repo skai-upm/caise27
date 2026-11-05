@@ -33,10 +33,23 @@ class TechnicalRestrictionsTest {
         while (from >= 0) {
             int to = deps.indexOf("</dependency>", from);
             String dependency = deps.substring(from, to);
-            if (!dependency.contains("<scope>test</scope>")) {
+            if (!dependency.contains("<scope>test</scope>")
+                    && !dependency.contains("<artifactId>jbcrypt</artifactId>")) {
                 fail("Non-test dependency declared: " + dependency);
             }
             from = deps.indexOf("<dependency>", to);
+        }
+    }
+
+    @Test
+    void bcryptIsUsedOnlyByThePasswordHasher() throws IOException {
+        try (Stream<Path> files = Files.walk(Path.of("src", "main", "java"))) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
+                if (Files.readString(file).contains("org.mindrot.jbcrypt")
+                        && !file.getFileName().toString().equals("BCryptPasswordHasher.java")) {
+                    fail(file + " uses jBCrypt directly");
+                }
+            }
         }
     }
 
