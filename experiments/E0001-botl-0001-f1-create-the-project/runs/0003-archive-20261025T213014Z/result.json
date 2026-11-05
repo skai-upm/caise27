@@ -1,0 +1,413 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0001-botl-0001-f1-create-the-project",
+  "change": "botl-0001-f1-create-the-project",
+  "runId": "0003-archive-20261025T213014Z",
+  "sequence": 3,
+  "phase": "archive",
+  "startedAt": "2026-10-25T21:30:14.619405+00:00",
+  "finishedAt": "2026-10-25T21:31:19.878186+00:00",
+  "durationSeconds": 65.258781,
+  "environment": {
+    "agent": "claude-code",
+    "agentAdapter": "claude-code",
+    "aiUsageSource": "claude",
+    "analysisAdapterConfigured": "auto",
+    "analysisAdapterBefore": "java-maven",
+    "analysisAdapterAfter": "java-maven"
+  },
+  "projectProfileBefore": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "projectProfileAfter": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "profileTransition": {
+    "changed": false,
+    "before": "java-maven",
+    "after": "java-maven"
+  },
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "f65f9894-c3f1-4bfa-b3ec-026ad67e48c5",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 6,
+    "outputTokens": 3967,
+    "cacheCreationTokens": 4938,
+    "cacheReadTokens": 432316,
+    "totalTokens": 441227,
+    "totalCost": 0.20533120000000027,
+    "newTokens": 8911,
+    "cachedTokens": 432316,
+    "totalProcessedTokens": 441227
+  },
+  "before": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .botl/",
+        "?? .mvn/",
+        "?? .scannerwork/",
+        "?? experiments/",
+        "?? openspec/changes/botl-0001-f1-create-the-project/",
+        "?? pom.xml",
+        "?? sonar_metric_catalog.json",
+        "?? src/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 5,
+      "lines": 108,
+      "words": 894,
+      "requirements": 5,
+      "scenarios": 5,
+      "tasks": 4,
+      "shallStatements": 6
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "parque",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "[INFO] Scanning for projects...\n[INFO] \n[INFO] ------------------------< es.upm.parque:parque >------------------------\n[INFO] Building parque 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.13:prepare-agent (default-cli) @ parque ---\n[INFO] argLine set to -javaagent:/Users/andreacimmino/.m2/repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13-runtime.jar=destfile=/Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ parque ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ parque ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.3.0:test (default-test) @ parque ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running es.upm.parque.AppTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.119 s -- in es.upm.parque.AppTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ parque ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/target/jacoco.exec\n[INFO] Analyzed bundle 'parque' with 1 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  4.192 s\n[INFO] Finished at: 2026-10-25T22:30:26+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "surefire": {
+              "reportFiles": 1,
+              "tests": 1,
+              "passed": 1,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.119
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 7,
+                    "covered": 0,
+                    "total": 7,
+                    "coverage": 0.0
+                  },
+                  "line": {
+                    "missed": 3,
+                    "covered": 0,
+                    "total": 3,
+                    "coverage": 0.0
+                  },
+                  "complexity": {
+                    "missed": 2,
+                    "covered": 0,
+                    "total": 2,
+                    "coverage": 0.0
+                  },
+                  "method": {
+                    "missed": 2,
+                    "covered": 0,
+                    "total": 2,
+                    "coverage": 0.0
+                  },
+                  "class": {
+                    "missed": 1,
+                    "covered": 0,
+                    "total": 1,
+                    "coverage": 0.0
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "after": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human",
+      "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+      "dirty": true,
+      "statusPorcelain": [
+        "?? .botl/",
+        "?? .mvn/",
+        "?? .scannerwork/",
+        "?? experiments/",
+        "?? openspec/changes/archive/2026-10-25-botl-0001-f1-create-the-project/",
+        "?? openspec/specs/project-build/",
+        "?? pom.xml",
+        "?? sonar_metric_catalog.json",
+        "?? src/"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 6,
+      "lines": 150,
+      "words": 1201,
+      "requirements": 10,
+      "scenarios": 10,
+      "tasks": 4,
+      "shallStatements": 12
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "parque",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "[INFO] Scanning for projects...\n[INFO] \n[INFO] ------------------------< es.upm.parque:parque >------------------------\n[INFO] Building parque 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.13:prepare-agent (default-cli) @ parque ---\n[INFO] argLine set to -javaagent:/Users/andreacimmino/.m2/repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13-runtime.jar=destfile=/Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ parque ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ parque ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.3.0:test (default-test) @ parque ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running es.upm.parque.AppTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.103 s -- in es.upm.parque.AppTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ parque ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/target/jacoco.exec\n[INFO] Analyzed bundle 'parque' with 1 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  4.001 s\n[INFO] Finished at: 2026-10-25T22:31:19+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "surefire": {
+              "reportFiles": 1,
+              "tests": 1,
+              "passed": 1,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.103
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 7,
+                    "covered": 0,
+                    "total": 7,
+                    "coverage": 0.0
+                  },
+                  "line": {
+                    "missed": 3,
+                    "covered": 0,
+                    "total": 3,
+                    "coverage": 0.0
+                  },
+                  "complexity": {
+                    "missed": 2,
+                    "covered": 0,
+                    "total": 2,
+                    "coverage": 0.0
+                  },
+                  "method": {
+                    "missed": 2,
+                    "covered": 0,
+                    "total": 2,
+                    "coverage": 0.0
+                  },
+                  "class": {
+                    "missed": 1,
+                    "covered": 0,
+                    "total": 1,
+                    "coverage": 0.0
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_1_setup_multiple_human/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "delta": {
+    "git": {
+      "available": true,
+      "filesModified": 0,
+      "untrackedFiles": 24,
+      "locAdded": 0,
+      "locRemoved": 0,
+      "netLoc": 0
+    },
+    "artifacts": {
+      "words": 307,
+      "scenarios": 5,
+      "tasks": 0,
+      "files": 1,
+      "requirements": 5,
+      "lines": 42,
+      "shallStatements": 6
+    },
+    "radon": {},
+    "sonar": {
+      "allMeasures": {}
+    }
+  }
+}

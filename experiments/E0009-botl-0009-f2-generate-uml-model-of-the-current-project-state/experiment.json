@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0009-botl-0009-f2-generate-uml-model-of-the-current-project-state",
+  "change": "botl-0009-f2-generate-uml-model-of-the-current-project-state",
+  "status": "archived",
+  "createdAt": "2026-10-25T22:22:58.413524+00:00",
+  "updatedAt": "2026-10-25T22:28:34.197024+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261025T222258Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261025T222258Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 501888,
+        "totalCost": 0.16991979999999884
+      }
+    },
+    {
+      "runId": "0002-apply-20261025T222408Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261025T222408Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 3087994,
+        "totalCost": 0.8897666000000015
+      }
+    },
+    {
+      "runId": "0003-archive-20261025T222800Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261025T222800Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-25T22:28:34.147912+00:00"
+}

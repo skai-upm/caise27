@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0019-botl-0019-f3-extended-persistence-and-uml-model",
+  "change": "botl-0019-f3-extended-persistence-and-uml-model",
+  "status": "archived",
+  "createdAt": "2026-10-26T03:14:37.597381+00:00",
+  "updatedAt": "2026-10-26T03:21:32.407323+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261026T031437Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261026T031437Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 970506,
+        "totalCost": 0.28481740000000144
+      }
+    },
+    {
+      "runId": "0002-apply-20261026T031650Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261026T031650Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1724788,
+        "totalCost": 0.784349000000006
+      }
+    },
+    {
+      "runId": "0003-archive-20261026T032053Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261026T032053Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-26T03:21:32.350765+00:00"
+}

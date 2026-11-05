@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0006-botl-0006-f2-individual-ticket-management",
+  "change": "botl-0006-f2-individual-ticket-management",
+  "status": "archived",
+  "createdAt": "2026-10-25T22:00:32.946389+00:00",
+  "updatedAt": "2026-10-25T22:06:25.723812+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261025T220032Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261025T220032Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 356191,
+        "totalCost": 0.19616579999999928
+      }
+    },
+    {
+      "runId": "0002-apply-20261025T220154Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261025T220154Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1871334,
+        "totalCost": 0.7864015999999996
+      }
+    },
+    {
+      "runId": "0003-archive-20261025T220554Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261025T220554Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-25T22:06:25.677900+00:00"
+}
