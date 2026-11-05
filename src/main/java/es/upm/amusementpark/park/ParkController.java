@@ -415,4 +415,19 @@ public final class ParkController {
         }
         return holders;
     }
+
+    /**
+     * Removes a user from an attraction, releasing their place.
+     *
+     * @throws ParkException if the attraction is unknown or the user is not inside
+     */
+    public synchronized void leaveAttraction(String attractionId, String email) {
+        Attraction attraction = attractions.get(attractionId);
+        if (attraction == null) {
+            throw new ParkException("Attraction " + attractionId + " does not exist");
+        }
+        if (!attraction.leave(email)) {
+            throw new ParkException("User " + email + " is not inside attraction " + attractionId);
+        }
+    }
 }

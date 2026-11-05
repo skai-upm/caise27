@@ -21,6 +21,8 @@ public final class AttractionCommands {
         processor.register("ATTRACTION CREATE", commands::create);
         processor.register("ATTRACTION LIST", commands::list);
         processor.register("ATTRACTION ENTER", commands::enter);
+        processor.register("ATTRACTION EXIT", commands::exit);
+        processor.register("ATTRACTION STATUS", commands::status);
     }
 
     private boolean create(String line) {
@@ -75,6 +77,48 @@ public final class AttractionCommands {
             out.println("ENTERED ATTRACTION " + f[1] + ": " + String.join(", ", park.enterAttraction(f[1], f[2])));
         } catch (ParkException e) {
             out.println("ERROR: " + e.getMessage());
+        }
+        return true;
+    }
+
+    private boolean exit(String line) {
+        String[] f = TicketCommands.fields(line);
+        if (f.length != 3) {
+            out.println("ERROR: Invalid syntax. Usage: ATTRACTION EXIT;<AttractionIdentifier>;<Email>");
+            return true;
+        }
+        try {
+            park.leaveAttraction(f[1], f[2]);
+            out.println("USER " + f[2] + " LEFT ATTRACTION " + f[1]);
+        } catch (ParkException e) {
+            out.println("ERROR: " + e.getMessage());
+        }
+        return true;
+    }
+
+    private boolean status(String line) {
+        String[] f = TicketCommands.fields(line);
+        if (f.length != 2) {
+            out.println("ERROR: Invalid syntax. Usage: ATTRACTION STATUS;<AttractionIdentifier>");
+            return true;
+        }
+        Attraction attraction = park.findAttraction(f[1]);
+        if (attraction == null) {
+            out.println("ERROR: Attraction " + f[1] + " does not exist");
+            return true;
+        }
+        out.println("ATTRACTION " + attraction.getId());
+        out.println("  NAME: " + attraction.getName());
+        out.println("  CAPACITY: " + attraction.getCapacity());
+        out.println("  INSIDE: " + attraction.getOccupants().size());
+        out.println("  AVAILABLE: " + attraction.getAvailablePlaces());
+        if (attraction.getOccupants().isEmpty()) {
+            out.println("  USERS: (none)");
+        } else {
+            out.println("  USERS:");
+            for (String email : attraction.getOccupants()) {
+                out.println("    " + email);
+            }
         }
         return true;
     }

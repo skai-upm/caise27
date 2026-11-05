@@ -41,6 +41,11 @@ public class Attraction {
         return Collections.unmodifiableSet(occupants);
     }
 
+    /** @return capacity minus the number of users currently inside */
+    public int getAvailablePlaces() {
+        return capacity - occupants.size();
+    }
+
     public boolean isFull() {
         return occupants.size() >= capacity;
     }

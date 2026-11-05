@@ -30,6 +30,8 @@ public class CommandProcessor {
             "  ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>",
             "  ATTRACTION LIST;<AttractionIdentifier>",
             "  ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>",
+            "  ATTRACTION EXIT;<AttractionIdentifier>;<Email>",
+            "  ATTRACTION STATUS;<AttractionIdentifier>",
             "  HELP",
             "  EXIT");
 
