@@ -1,12 +1,12 @@
 package es.upm.amusementpark;
 
-import es.upm.amusementpark.cli.CommandProcessor;
-import es.upm.amusementpark.park.AttractionCommands;
-import es.upm.amusementpark.park.GroupCommands;
-import es.upm.amusementpark.park.ParkController;
-import es.upm.amusementpark.park.SystemCommands;
-import es.upm.amusementpark.park.TicketCommands;
+import es.upm.amusementpark.business.ParkController;
 import es.upm.amusementpark.persistence.ParkStorage;
+import es.upm.amusementpark.presentation.AttractionCommands;
+import es.upm.amusementpark.presentation.CommandProcessor;
+import es.upm.amusementpark.presentation.GroupCommands;
+import es.upm.amusementpark.presentation.SystemCommands;
+import es.upm.amusementpark.presentation.TicketCommands;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

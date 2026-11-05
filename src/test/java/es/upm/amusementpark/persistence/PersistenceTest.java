@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import es.upm.amusementpark.App;
-import es.upm.amusementpark.park.GroupTicket;
-import es.upm.amusementpark.park.IndividualTicket;
-import es.upm.amusementpark.park.ParkController;
-import es.upm.amusementpark.park.UserDirectory;
+import es.upm.amusementpark.business.GroupTicket;
+import es.upm.amusementpark.business.IndividualTicket;
+import es.upm.amusementpark.business.ParkController;
+import es.upm.amusementpark.business.UserDirectory;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

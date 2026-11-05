@@ -1,6 +1,6 @@
 package es.upm.amusementpark.persistence;
 
-import es.upm.amusementpark.park.ParkController;
+import es.upm.amusementpark.business.ParkController;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;

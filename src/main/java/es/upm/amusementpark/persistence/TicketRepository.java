@@ -1,10 +1,10 @@
 package es.upm.amusementpark.persistence;
 
-import es.upm.amusementpark.park.GroupTicket;
-import es.upm.amusementpark.park.IndividualTicket;
-import es.upm.amusementpark.park.ParkController;
-import es.upm.amusementpark.park.ParkException;
-import es.upm.amusementpark.park.Ticket;
+import es.upm.amusementpark.business.GroupTicket;
+import es.upm.amusementpark.business.IndividualTicket;
+import es.upm.amusementpark.business.ParkController;
+import es.upm.amusementpark.business.ParkException;
+import es.upm.amusementpark.business.Ticket;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Path;

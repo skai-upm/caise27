@@ -33,8 +33,10 @@ class UmlModelTest {
     /** @return the declaration kind written in the diagram for the given source, e.g. "abstract class" */
     static String kindOf(String source, String name) {
         for (String kind : List.of("abstract class", "interface", "enum", "class")) {
-            if (source.contains("public " + kind + " " + name) || source.contains("public final " + kind + " " + name)) {
-                return kind;
+            for (String prefix : List.of("public ", "public final ", "final ", "")) {
+                if (source.contains("\n" + prefix + kind + " " + name + " ")) {
+                    return kind;
+                }
             }
         }
         return null;

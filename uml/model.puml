@@ -1,5 +1,5 @@
 @startuml model
-' Amusement Park - class model of the implemented design (Delivery 2 state).
+' Amusement Park - class model of the implemented design (layered: presentation / business / persistence).
 ' Only relevant attributes are shown; methods and constructors are omitted.
 hide empty methods
 skinparam classAttributeIconSize 0
@@ -10,7 +10,7 @@ package es.upm.amusementpark {
   }
 }
 
-package es.upm.amusementpark.cli {
+package es.upm.amusementpark.presentation {
   interface CommandHandler {
   }
   class CommandProcessor {
@@ -18,9 +18,21 @@ package es.upm.amusementpark.cli {
     - out : PrintStream
     - afterCommand : Runnable
   }
+  class InvalidCommandException {
+  }
+  class CommandSupport {
+  }
+  class SystemCommands {
+  }
+  class GroupCommands {
+  }
+  class TicketCommands {
+  }
+  class AttractionCommands {
+  }
 }
 
-package es.upm.amusementpark.park {
+package es.upm.amusementpark.business {
   class ParkController <<singleton>> {
     {static} INITIAL_PRICE : BigDecimal
     {static} - INSTANCE : ParkController
@@ -54,14 +66,6 @@ package es.upm.amusementpark.park {
     - name : String
     - capacity : int
     - occupants : Set<String> <<user e-mails>>
-  }
-  class SystemCommands {
-  }
-  class GroupCommands {
-  }
-  class TicketCommands {
-  }
-  class AttractionCommands {
   }
 }
 
@@ -99,8 +103,8 @@ ParkController ..> ParkException : throws
 ' ---- commands ----
 CommandProcessor --> "0..*" CommandHandler : handlers
 SystemCommands --> "1" ParkController : park
-GroupCommands --> "1" ParkController : park
-TicketCommands --> "1" ParkController : park
+GroupCommands ..> ParkController : uses
+TicketCommands ..> ParkController : uses
 AttractionCommands --> "1" ParkController : park
 SystemCommands ..> CommandProcessor : registers
 GroupCommands ..> CommandProcessor : registers
@@ -109,6 +113,12 @@ AttractionCommands ..> CommandProcessor : registers
 App ..> CommandProcessor : creates
 App ..> ParkController : uses
 App ..> ParkStorage : configures
+CommandProcessor ..> InvalidCommandException : handles
+CommandProcessor ..> ParkException : handles
+SystemCommands ..> CommandSupport : parses with
+GroupCommands ..> CommandSupport : parses with
+TicketCommands ..> CommandSupport : parses with
+AttractionCommands ..> CommandSupport : parses with
 
 ' ---- persistence ----
 ParkStorage *-- "1" GroupRepository : groups

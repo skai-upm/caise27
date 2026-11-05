@@ -3,6 +3,7 @@ package es.upm.amusementpark;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import es.upm.amusementpark.business.ParkController;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,7 +44,7 @@ class AppTest {
         assertTrue(out.contains("SYSTEM PRICE UPDATED: 45.50"));
         run(new String[0], "EXIT\n");
         assertEquals(new java.math.BigDecimal("40.00"),
-                es.upm.amusementpark.park.ParkController.getInstance().getCurrentPrice());
+                es.upm.amusementpark.business.ParkController.getInstance().getCurrentPrice());
     }
 
     @Test

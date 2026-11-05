@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import es.upm.amusementpark.park.Attraction;
-import es.upm.amusementpark.park.Group;
-import es.upm.amusementpark.park.GroupTicket;
-import es.upm.amusementpark.park.IndividualTicket;
-import es.upm.amusementpark.park.ParkController;
-import es.upm.amusementpark.park.Ticket;
+import es.upm.amusementpark.business.Attraction;
+import es.upm.amusementpark.business.Group;
+import es.upm.amusementpark.business.GroupTicket;
+import es.upm.amusementpark.business.IndividualTicket;
+import es.upm.amusementpark.business.ParkController;
+import es.upm.amusementpark.business.Ticket;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
