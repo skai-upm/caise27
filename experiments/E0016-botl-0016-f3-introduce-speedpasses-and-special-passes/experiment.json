@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0016-botl-0016-f3-introduce-speedpasses-and-special-passes",
+  "change": "botl-0016-f3-introduce-speedpasses-and-special-passes",
+  "status": "archived",
+  "createdAt": "2026-10-26T17:48:19.182843+00:00",
+  "updatedAt": "2026-10-26T17:56:48.879298+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261026T174819Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261026T174819Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 499669,
+        "totalCost": 0.2471040000000002
+      }
+    },
+    {
+      "runId": "0002-apply-20261026T175003Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261026T175003Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 4626352,
+        "totalCost": 1.4410969999999956
+      }
+    },
+    {
+      "runId": "0003-archive-20261026T175609Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261026T175609Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-26T17:56:48.810959+00:00"
+}

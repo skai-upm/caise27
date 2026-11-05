@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0018-botl-0018-f3-attraction-access-using-passes",
+  "change": "botl-0018-f3-attraction-access-using-passes",
+  "status": "archived",
+  "createdAt": "2026-10-26T19:17:23.065460+00:00",
+  "updatedAt": "2026-10-26T19:23:44.197953+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261026T191723Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261026T191723Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 566939,
+        "totalCost": 0.20803400000000138
+      }
+    },
+    {
+      "runId": "0002-apply-20261026T191853Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261026T191853Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 3456591,
+        "totalCost": 0.9390203999999969
+      }
+    },
+    {
+      "runId": "0003-archive-20261026T192306Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261026T192306Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-26T19:23:44.138198+00:00"
+}
