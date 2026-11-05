@@ -2,6 +2,7 @@ package es.upm.amusementpark.command;
 
 import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.park.Park;
+import es.upm.amusementpark.service.GroupService;
 import es.upm.amusementpark.service.OperationException;
 import es.upm.amusementpark.service.UserService;
 import java.math.BigDecimal;
@@ -35,6 +36,10 @@ public class CommandProcessor {
     private boolean exitRequested;
 
     public CommandProcessor(UserService userService) {
+        this(userService, new GroupService(userService.users(), userService.groups()));
+    }
+
+    public CommandProcessor(UserService userService, GroupService groupService) {
         this.userService = userService;
         register("USER CREATE", 8, "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>", "",
                 p -> {
@@ -47,6 +52,18 @@ public class CommandProcessor {
         });
         register("USER UPDATE", 5, "USER UPDATE;<email>;<password>;<field>;<value>",
                 "(field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)", this::userUpdate);
+        register("GROUP CREATE", 3, "GROUP CREATE;<identifier>;<name>", "", p -> {
+            groupService.createGroup(p[1], p[2]);
+            return "GROUP CREATED";
+        });
+        register("GROUP ADD", 3, "GROUP ADD;<identifier>;<email>", "", p -> {
+            groupService.addMember(p[1], p[2]);
+            return "USER ADDED TO GROUP";
+        });
+        register("GROUP REMOVE", 3, "GROUP REMOVE;<identifier>;<email>", "", p -> {
+            groupService.removeMember(p[1], p[2]);
+            return "USER REMOVED FROM GROUP";
+        });
         register("SYSTEM DATE", 2, "SYSTEM DATE;<yyyy-MM-dd>", "", this::systemDate);
         register("SYSTEM PRICE", 2, "SYSTEM PRICE;<Price>", "", this::systemPrice);
         register("HELP", 1, "HELP", "", p -> helpText());

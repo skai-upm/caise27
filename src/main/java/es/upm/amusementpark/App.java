@@ -4,6 +4,7 @@ import es.upm.amusementpark.command.CommandProcessor;
 import es.upm.amusementpark.park.Park;
 import es.upm.amusementpark.persistence.UserFileStorage;
 import es.upm.amusementpark.repository.UserRepository;
+import es.upm.amusementpark.service.GroupService;
 import es.upm.amusementpark.service.UserService;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -40,7 +41,8 @@ public class App {
         try {
             Park park = Park.getInstance();
             park.start(new UserRepository(new UserFileStorage(usersFile)));
-            processor = new CommandProcessor(new UserService(park.users()));
+            processor = new CommandProcessor(new UserService(park.users(), park.groups()),
+                    new GroupService(park.users(), park.groups()));
         } catch (UncheckedIOException e) {
             err.println("ERROR: cannot read users file '" + usersFile + "'");
             return 1;

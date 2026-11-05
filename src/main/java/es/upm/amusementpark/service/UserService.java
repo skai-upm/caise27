@@ -3,6 +3,7 @@ package es.upm.amusementpark.service;
 import es.upm.amusementpark.model.User;
 import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.model.UserValidator;
+import es.upm.amusementpark.repository.GroupRepository;
 import es.upm.amusementpark.repository.UserRepository;
 
 /**
@@ -11,9 +12,23 @@ import es.upm.amusementpark.repository.UserRepository;
 public class UserService {
 
     private final UserRepository repository;
+    private final GroupRepository groups;
 
     public UserService(UserRepository repository) {
+        this(repository, new GroupRepository());
+    }
+
+    public UserService(UserRepository repository, GroupRepository groups) {
         this.repository = repository;
+        this.groups = groups;
+    }
+
+    public UserRepository users() {
+        return repository;
+    }
+
+    public GroupRepository groups() {
+        return groups;
     }
 
     public User createUser(String firstName, String surnames, String dni, String email,
@@ -42,7 +57,13 @@ public class UserService {
     }
 
     public void deleteUser(String email, String password) {
-        repository.remove(authenticate(email, password));
+        User user = authenticate(email, password);
+        for (var group : groups.findAll()) {
+            if (group.remove(user)) {
+                groups.update(group);
+            }
+        }
+        repository.remove(user);
     }
 
     public void updateUser(String email, String password, UserField field, String newValue) {

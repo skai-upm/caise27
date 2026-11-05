@@ -42,3 +42,11 @@ A successful deletion SHALL be reflected in the persisted users file, so that th
 - **GIVEN** users Ana and Pedro stored in `users.txt`
 - **WHEN** `USER DELETE;pedro@correo.com;Otra2#` is processed and the application is restarted
 - **THEN** `users.txt` contains only Ana's line and only Ana is loaded
+
+### Requirement: Deleted users leave their groups
+When a user is deleted, the system SHALL also remove that user from every group it belongs to, so that groups only contain registered users.
+
+#### Scenario: Member deleted
+- **GIVEN** Ana belongs to group `G01`
+- **WHEN** `USER DELETE;ana@correo.com;Clave1!` succeeds
+- **THEN** `G01` no longer contains Ana
