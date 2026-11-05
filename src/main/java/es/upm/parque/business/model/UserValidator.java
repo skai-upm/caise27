@@ -1,12 +1,14 @@
 package es.upm.parque.business.model;
 
 /**
- * Validation rules for user data (DNI, email, password and card number).
+ * Validation rules for user data (DNI, email, password and card number) and for stored protected passwords.
  *
  * <p>Stateless and reusable by any user operation. No regular expressions are used.
  * The telephone number is intentionally not validated in this delivery.
  */
 public final class UserValidator {
+
+    private static final int BCRYPT_LENGTH = 60;
 
     private static final String DNI_LETTERS = "TRWAGMYFPDXBNJZSQVHLCKE";
 
@@ -91,12 +93,37 @@ public final class UserValidator {
         return true;
     }
 
-    /** True when DNI, email, password and card number are all valid. The telephone is not checked. */
+    /**
+     * Whether the value has the format of a BCrypt-protected password: {@code $2a$}, {@code $2b$} or
+     * {@code $2y$}, a two-digit cost, {@code $} and 53 characters of the BCrypt alphabet (60 characters in all).
+     */
+    public static boolean isProtectedPassword(String value) {
+        if (value == null || value.length() != BCRYPT_LENGTH || !value.startsWith("$2")
+                || "aby".indexOf(value.charAt(2)) < 0 || value.charAt(3) != '$'
+                || !isAsciiDigit(value.charAt(4)) || !isAsciiDigit(value.charAt(5)) || value.charAt(6) != '$') {
+            return false;
+        }
+        for (int i = 7; i < value.length(); i++) {
+            if (!isBCryptCharacter(value.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isBCryptCharacter(char c) {
+        return c == '.' || c == '/' || isAsciiDigit(c) || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+
+    /**
+     * True when a stored user is valid: DNI, email and card number valid and the password stored as a
+     * BCrypt-protected value. The telephone is not checked.
+     */
     public static boolean isValid(User user) {
         return user != null
                 && isValidDni(user.getDni())
                 && isValidEmail(user.getEmail())
-                && isValidPassword(user.getPassword())
+                && isProtectedPassword(user.getPassword())
                 && isValidCardNumber(user.getCardNumber());
     }
 }

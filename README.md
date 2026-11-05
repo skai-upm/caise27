@@ -7,7 +7,7 @@ Command-line application for managing an amusement park: users, groups, individu
 - JDK 21 or newer (the build targets Java 21 with `maven.compiler.release`).
 - Maven 3.9 or newer.
 
-The application only uses the Java standard library.
+The application uses the Java standard library plus jBCrypt (`org.mindrot:jbcrypt:0.4`) for password protection. Maven downloads it, and it is bundled in the executable JAR.
 
 ## Build
 
@@ -89,10 +89,12 @@ Data is stored in text files in the working directory:
 
 | File | Content |
 | --- | --- |
-| `users.txt` | `FirstName;Surnames;DNI;Email;Password;Phone;Card` |
+| `users.txt` | `FirstName;Surnames;DNI;Email;PasswordHash;Phone;Card` (BCrypt value, never the plain password) |
 | `groups.txt` | `id;name;dni1,dni2,...` |
 | `tickets.txt` | `I;id;date;price;dni;email;firstName;surnames` and `G;id;date;group;component1,component2,...` |
 | `attractions.txt` | `id;name;capacity` (users inside are not stored; attractions start empty) |
+
+Passwords are checked against the validation rules and then stored only as BCrypt values, using the jBCrypt library. `USER DELETE` and `USER UPDATE` check the entered password against the stored value. Users files written by earlier versions with plain-text passwords are not migrated; those lines are ignored with a `WARNING`.
 
 Files are loaded at start-up and rewritten after every successful command. Historical tickets keep their holder data even after the user or group is deleted. Malformed, invalid or duplicated lines are ignored, with a `WARNING`. If a data file exists but cannot be read, the application prints an `ERROR` and processes no command.
 
@@ -112,4 +114,5 @@ The code is split into three layers: `presentation` (commands and responses), `b
 - **Singleton controllers.** `ParkController` and the managers (`UserManager`, `GroupManager`, `TicketManager`, `AttractionManager`, `SystemManager`, `InvoiceManager`) each have one instance, obtained with `getInstance()`.
 - **Injected repositories.** Repositories are ordinary, replaceable objects. At start-up, `ParkSession` creates them for the chosen storage location: the working directory, or the temporary directory in `--fly` mode. `ParkConfiguration.initialize` then injects them into `ParkController`, and wires each manager with its collaborators. For example, `AttractionManager` receives `TicketManager`. No dependency injection framework is used.
 - **Help.** `HelpGenerator` receives the formatting behaviour (`HelpFormatter`) by injection. `HelpConfiguration` registers `HELP` and `HELP EXTENDED`. A new help variant needs only a new formatter registered under a new command; the command processor does not change.
+- **Password protection.** `UserManager` receives a `PasswordProtector` by injection. In normal runs this is `BCryptPasswordProtector`, with cost 10. jBCrypt (`org.mindrot:jbcrypt:0.4`) is the only runtime dependency, and `mvn package` bundles it into `target/amusement-park.jar`.
 - **Invoices.** Invoices use the Builder pattern. `InvoiceManager` directs `UserInvoiceBuilder` or `GroupInvoiceBuilder`, which extend `InvoiceBuilder`.

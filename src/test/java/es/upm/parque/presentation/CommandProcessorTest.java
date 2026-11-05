@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 import es.upm.parque.business.model.User;
 import es.upm.parque.persistence.UserRepository;
 
@@ -132,7 +134,7 @@ class CommandProcessorTest {
         assertTrue(update("CARD", "999988887777666").startsWith("ERROR"));
         User u = repo.findByDni("12345678Z");
         assertEquals("ana@correo.com", u.getEmail());
-        assertEquals("Clave1!", u.getPassword());
+        assertTrue(BCrypt.checkpw("Clave1!", u.getPassword()), "the stored protected password is unchanged");
         assertEquals("1234567890123456", u.getCardNumber());
     }
 
@@ -158,7 +160,7 @@ class CommandProcessorTest {
         String r = processor.process("USER DELETE;ana@correo.com;Otra1!");
         assertTrue(r.startsWith("ERROR") && r.contains("password"), r);
         assertEquals(1, repo.size());
-        assertEquals("Clave1!", repo.findByDni("12345678Z").getPassword());
+        assertTrue(BCrypt.checkpw("Clave1!", repo.findByDni("12345678Z").getPassword()));
     }
 
     @Test
@@ -183,7 +185,8 @@ class CommandProcessorTest {
         assertEquals("Ana", u.getFirstName());
         assertEquals("Garcia Lopez", u.getSurnames());
         assertEquals("ana@correo.com", u.getEmail());
-        assertEquals("Clave1!", u.getPassword());
+        assertFalse(u.getPassword().contains("Clave1!"), "the plain password is not stored");
+        assertTrue(BCrypt.checkpw("Clave1!", u.getPassword()));
         assertEquals("612345678", u.getTelephone());
         assertEquals("1234567890123456", u.getCardNumber());
     }

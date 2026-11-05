@@ -14,6 +14,7 @@ public class UserManager {
     private static final String INVALID_CARD = "invalid card number (requires exactly 16 digits)";
 
     private ParkController park;
+    private PasswordProtector passwords;
 
     private UserManager() {
     }
@@ -27,13 +28,18 @@ public class UserManager {
         return Holder.INSTANCE;
     }
 
-    /** Injects the central park management configured during application initialization. */
-    public void inject(ParkController park) {
+    /** Injects the central park management and the password protection configured during initialization. */
+    public void inject(ParkController park, PasswordProtector passwords) {
         this.park = park;
+        this.passwords = passwords;
     }
 
     private ParkController park() {
         return ParkConfiguration.requireInjected(park);
+    }
+
+    private PasswordProtector passwords() {
+        return ParkConfiguration.requireInjected(passwords);
     }
 
     private UserRepository users() {
@@ -61,7 +67,7 @@ public class UserManager {
         if (users().existsByEmail(email)) {
             throw duplicate("email", email);
         }
-        User user = new User(firstName, surnames, dni, email, password, phone, card);
+        User user = new User(firstName, surnames, dni, email, passwords().protect(password), phone, card);
         users().add(user);
         park().persist();
         return user;
@@ -73,7 +79,7 @@ public class UserManager {
         if (user == null) {
             throw new NotFoundException("no user with email " + email);
         }
-        if (!user.getPassword().equals(password)) {
+        if (!passwords().verify(password, user.getPassword())) {
             throw new InvalidDataException("incorrect password");
         }
         return user;
@@ -137,12 +143,12 @@ public class UserManager {
         }
     }
 
-    private static void applyField(User user, UserField field, String value) {
+    private void applyField(User user, UserField field, String value) {
         switch (field) {
             case NAME -> user.setFirstName(value);
             case SURNAME -> user.setSurnames(value);
             case EMAIL -> user.setEmail(value);
-            case PASSWORD -> user.setPassword(value);
+            case PASSWORD -> user.setPassword(passwords().protect(value));
             case PHONE -> user.setTelephone(value);
             case CARD -> user.setCardNumber(value);
         }

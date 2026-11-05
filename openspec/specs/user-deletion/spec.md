@@ -13,7 +13,7 @@ The system SHALL accept the command `USER DELETE;Email;Password` with exactly tw
 - **THEN** an `ERROR` response is printed and no user is deleted
 
 ### Requirement: Deletion with correct credentials
-The system SHALL locate the user by email, verify that it exists, check that the given password equals the user's password, delete the user, update the persisted users file, and print a response starting with `OK`.
+The system SHALL locate the user by email, verify that it exists, verify the given password against the user's stored BCrypt-protected password with the jBCrypt library, delete the user, update the persisted users file, and print a response starting with `OK`.
 
 #### Scenario: Matching email and password
 - **WHEN** a user with email `ana@correo.com` and password `Clave1!` exists and `USER DELETE;ana@correo.com;Clave1!` is processed

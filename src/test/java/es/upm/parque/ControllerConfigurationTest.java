@@ -106,7 +106,7 @@ class ControllerConfigurationTest {
     void controllersFailClearlyBeforeInitialization() throws ParkException {
         ParkConfiguration.initialize(ParkRepositories.inMemory());
         AttractionManager.getInstance().create("A01", "Dragon", "10");
-        UserManager.getInstance().inject(null);
+        UserManager.getInstance().inject(null, null);
         IllegalStateException e = assertThrows(IllegalStateException.class,
                 () -> UserManager.getInstance().delete("ana@correo.com", "Clave1!"));
         assertEquals("the application has not been initialized", e.getMessage());

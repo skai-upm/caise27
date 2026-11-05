@@ -12,12 +12,17 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 import es.upm.parque.business.model.User;
 
 class UserRepositoryTest {
 
+    /** Stored passwords are BCrypt values; loading ignores plain-text ones. */
+    private static final String PROTECTED = BCrypt.hashpw("Clave1!", BCrypt.gensalt(4));
+
     private static User user(String dni, String email) {
-        return new User("N", "S", dni, email, "Clave1!", "600000000", "1234567890123456");
+        return new User("N", "S", dni, email, PROTECTED, "600000000", "1234567890123456");
     }
 
     @Test
@@ -89,23 +94,25 @@ class UserRepositoryTest {
     void invalidAndDuplicateStoredLinesAreIgnoredOnLoad(@TempDir Path dir) throws Exception {
         Path file = dir.resolve("users.txt");
         Files.write(file, java.util.List.of(
-                "Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456",
-                "Mal;Dni;12345678A;mal@correo.com;Clave1!;600000000;1234567890123456",
-                "Otra;Ana;12345678Z;otra@correo.com;Clave1!;600000000;1234567890123456",
-                "Mismo;Email;87654321X;ana@correo.com;Clave1!;600000000;1234567890123456",
+                "Ana;Garcia Lopez;12345678Z;ana@correo.com;" + PROTECTED + ";612345678;1234567890123456",
+                "Mal;Dni;12345678A;mal@correo.com;" + PROTECTED + ";600000000;1234567890123456",
+                "Otra;Ana;12345678Z;otra@correo.com;" + PROTECTED + ";600000000;1234567890123456",
+                "Mismo;Email;87654321X;ana@correo.com;" + PROTECTED + ";600000000;1234567890123456",
+                "Plano;Texto;11111111H;plano@correo.com;Clave1!;600000000;1234567890123456",
                 "short;line",
                 ""));
         UserRepository repo = new UserRepository(new UserFileStore(file));
         assertEquals(1, repo.size());
         assertEquals("Ana", repo.findByDni("12345678Z").getFirstName());
-        assertEquals(4, repo.getIgnoredOnLoad());
+        assertNull(repo.findByDni("11111111H"), "plain-text passwords from earlier versions are not loaded");
+        assertEquals(5, repo.getIgnoredOnLoad());
     }
 
     @Test
     void cleanFileHasNoIgnoredLines(@TempDir Path dir) {
         Path file = dir.resolve("users.txt");
         UserRepository repo = new UserRepository(new UserFileStore(file));
-        repo.add(new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456"));
+        repo.add(new User("Ana", "G", "12345678Z", "ana@correo.com", PROTECTED, "6", "1234567890123456"));
         assertEquals(0, new UserRepository(new UserFileStore(file)).getIgnoredOnLoad());
         assertEquals(0, new UserRepository().getIgnoredOnLoad());
     }

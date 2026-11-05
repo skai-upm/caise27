@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.mindrot.jbcrypt.BCrypt;
+
 import org.junit.jupiter.params.provider.ValueSource;
 
 class UserValidatorTest {
@@ -60,8 +62,32 @@ class UserValidatorTest {
         assertFalse(UserValidator.isValidCardNumber(card));
     }
 
+    private static final String PROTECTED = BCrypt.hashpw("Clave1!", BCrypt.gensalt(4));
+
     private User validUser(String card, String telephone) {
-        return new User("Ana", "García", "12345678Z", "ana@correo.com", "Clave1!", telephone, card);
+        return new User("Ana", "García", "12345678Z", "ana@correo.com", PROTECTED, telephone, card);
+    }
+
+    @Test
+    void storedPlainTextPasswordMakesTheUserInvalid() {
+        User u = new User("Ana", "García", "12345678Z", "ana@correo.com", "Clave1!", "600", "1234567890123456");
+        assertFalse(UserValidator.isValid(u));
+    }
+
+    @Test
+    void protectedPasswordFormatIsCheckedWithoutRegularExpressions() {
+        assertTrue(UserValidator.isProtectedPassword(PROTECTED));
+        assertTrue(UserValidator.isProtectedPassword("$2b$12$" + "a".repeat(53)));
+        assertTrue(UserValidator.isProtectedPassword("$2y$10$./" + "Z9".repeat(25) + "x"));
+        assertFalse(UserValidator.isProtectedPassword(null));
+        assertFalse(UserValidator.isProtectedPassword("Clave1!"));
+        assertFalse(UserValidator.isProtectedPassword("$2c$10$" + "a".repeat(53)));
+        assertFalse(UserValidator.isProtectedPassword("$2a$1x$" + "a".repeat(53)));
+        assertFalse(UserValidator.isProtectedPassword("$2a$10$" + "a".repeat(52)));
+        assertFalse(UserValidator.isProtectedPassword("$2a$10$" + "a".repeat(52) + "!"));
+        assertFalse(UserValidator.isProtectedPassword("x2a$10$" + "a".repeat(53)));
+        assertFalse(UserValidator.isProtectedPassword("$2a#10$" + "a".repeat(53)));
+        assertFalse(UserValidator.isProtectedPassword("$2a$10#" + "a".repeat(53)));
     }
 
     @Test
@@ -78,7 +104,7 @@ class UserValidatorTest {
         assertEquals("123456789012345", u.getCardNumber());
         assertEquals("12345678Z", u.getDni());
         assertEquals("ana@correo.com", u.getEmail());
-        assertEquals("Clave1!", u.getPassword());
+        assertEquals(PROTECTED, u.getPassword());
     }
 
     @Test

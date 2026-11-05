@@ -13,7 +13,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * Guards the Delivery 1 technical restrictions: Java standard library only, no regular expressions.
+ * Guards the technical restrictions: Java standard library only (plus jBCrypt for passwords since Delivery 3),
+ * no regular expressions.
  */
 class TechnicalRestrictionsTest {
 
@@ -26,8 +27,10 @@ class TechnicalRestrictionsTest {
         while ((start = pom.indexOf("<dependency>", start)) >= 0) {
             int end = pom.indexOf("</dependency>", start);
             String dependency = pom.substring(start, end);
-            assertTrue(dependency.contains("<scope>test</scope>") || dependency.contains("<scope>import</scope>"),
-                    "runtime dependency found: " + dependency);
+            boolean passwordLibrary = dependency.contains("<groupId>org.mindrot</groupId>")
+                    && dependency.contains("<artifactId>jbcrypt</artifactId>");
+            assertTrue(passwordLibrary || dependency.contains("<scope>test</scope>")
+                    || dependency.contains("<scope>import</scope>"), "runtime dependency found: " + dependency);
             start = end;
         }
     }

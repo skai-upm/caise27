@@ -14,13 +14,18 @@ public final class ParkConfiguration {
     private ParkConfiguration() {
     }
 
-    /** Starts an execution with the given repositories and injects the dependencies of every controller. */
+    /** Starts an execution with the given repositories and BCrypt password protection. */
     public static ParkController initialize(ParkRepositories repositories) {
+        return initialize(repositories, new BCryptPasswordProtector());
+    }
+
+    /** Starts an execution with the given repositories and injects the dependencies of every controller. */
+    public static ParkController initialize(ParkRepositories repositories, PasswordProtector passwords) {
         ParkController park = ParkController.getInstance();
         park.startExecution(repositories);
         TicketManager tickets = TicketManager.getInstance();
         tickets.inject(park);
-        UserManager.getInstance().inject(park);
+        UserManager.getInstance().inject(park, passwords);
         GroupManager.getInstance().inject(park);
         SystemManager.getInstance().inject(park);
         InvoiceManager.getInstance().inject(park);

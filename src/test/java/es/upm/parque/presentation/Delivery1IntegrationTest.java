@@ -11,10 +11,13 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import org.mindrot.jbcrypt.BCrypt;
 
 import es.upm.parque.persistence.UserFileStore;
 import es.upm.parque.persistence.UserRepository;
@@ -55,10 +58,15 @@ class Delivery1IntegrationTest {
         assertTrue(fileOutput.contains("USER DELETE;<Email>;<Password>"));
         assertTrue(fileOutput.trim().endsWith("OK: exiting application"));
 
-        List<String> expected = List.of(
-                "Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456");
-        assertEquals(expected, Files.readAllLines(fileDir.resolve("users.txt")));
-        assertArrayEquals(expected.toArray(), Files.readAllLines(stdinDir.resolve("users.txt")).toArray());
+        for (Path dir : List.of(fileDir, stdinDir)) {
+            List<String> lines = Files.readAllLines(dir.resolve("users.txt"));
+            assertEquals(1, lines.size(), lines.toString());
+            String[] fields = lines.get(0).split(";", -1);
+            assertArrayEquals(new String[] {"Ana", "Garcia Lopez", "12345678Z", "ana.nueva@correo.com"},
+                    Arrays.copyOfRange(fields, 0, 4));
+            assertArrayEquals(new String[] {"699999999", "1234567890123456"}, Arrays.copyOfRange(fields, 5, 7));
+            assertTrue(BCrypt.checkpw("Clave1!", fields[4]), "password stored as a BCrypt value");
+        }
     }
 
     @Test

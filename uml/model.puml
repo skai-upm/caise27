@@ -76,6 +76,11 @@ package es.upm.parque.business {
   }
   class SystemValues <<utility>> {
   }
+  interface PasswordProtector {
+  }
+  class BCryptPasswordProtector {
+    - cost : int {readOnly}
+  }
   class ParkConfiguration <<composition root>> {
   }
   class ParkSession {
@@ -170,6 +175,11 @@ ParkConfiguration ..> TicketManager : injects
 ParkConfiguration ..> AttractionManager : injects
 ParkConfiguration ..> SystemManager : injects
 ParkConfiguration ..> InvoiceManager : injects
+ParkConfiguration ..> PasswordProtector : configures
+
+' --- Password protection (BCrypt through jBCrypt), injected into user management ---
+PasswordProtector <|.. BCryptPasswordProtector
+UserManager --> "1" PasswordProtector : passwords
 
 ' --- Business operations and exceptions ---
 UserManager --> "1" ParkController : park

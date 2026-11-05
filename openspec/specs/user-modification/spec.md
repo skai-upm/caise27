@@ -13,7 +13,7 @@ The system SHALL accept the command `USER UPDATE;Email;Password;Field;NewValue` 
 - **THEN** an `ERROR` response is printed and no user is modified
 
 ### Requirement: Authentication before modification
-Before any modification, the system SHALL locate the user by the given current email and check that the given password equals the user's password. If no user has that email or the password is incorrect, the command MUST be rejected with an `ERROR` response and no user modified.
+Before any modification, the system SHALL locate the user by the given current email and verify the given password against the user's stored BCrypt-protected password with the jBCrypt library. If no user has that email or the password does not match, the command MUST be rejected with an `ERROR` response and no user modified.
 
 #### Scenario: Incorrect password
 - **WHEN** `USER UPDATE;ana@correo.com;Mala1!;NAME;Ana Maria` is processed for a user whose password is `Clave1!`
