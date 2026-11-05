@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * Ticket for a single user. The ticket knows its user (by e-mail); users never hold their tickets.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final String userEmail;
     private final BigDecimal price;
@@ -20,6 +20,7 @@ public class IndividualTicket extends Ticket {
         this.price = Objects.requireNonNull(price, "price");
     }
 
+    @Override
     public String getUserEmail() {
         return userEmail;
     }

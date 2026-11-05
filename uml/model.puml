@@ -121,11 +121,34 @@ package es.upm.amusementpark.business {
   }
   class SpecialPass {
   }
-  class Attraction {
+  interface GeneralAccess {
+  }
+  interface IndividualAccess {
+  }
+  interface GroupAccess {
+  }
+  interface PassLookup {
+  }
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+  abstract class Attraction<T extends GeneralAccess> {
     - id : String
     - name : String
     - capacity : int
+    - accessType : Class<T>
     - occupants : Set<String> <<user e-mails>>
+  }
+  class GeneralAttraction {
+  }
+  class IndividualAttraction {
+  }
+  class GroupAttraction {
+  }
+  class SpecialAttraction {
   }
 }
 
@@ -153,6 +176,20 @@ Ticket <|-- GroupTicket
 GroupTicket *-- "1..*" IndividualTicket : components
 IndividualTicket --> "0..1" GroupTicket : containingGroupTicket
 GroupTicket --> "0..1" Group : group
+
+' ---- access capabilities and generic attractions ----
+GeneralAccess <|-- IndividualAccess
+GeneralAccess <|-- GroupAccess
+Ticket ..|> GeneralAccess
+IndividualTicket ..|> IndividualAccess
+GroupTicket ..|> GroupAccess
+Attraction <|-- GeneralAttraction : <<bind>> T::GeneralAccess
+Attraction <|-- IndividualAttraction : <<bind>> T::IndividualAccess
+Attraction <|-- GroupAttraction : <<bind>> T::GroupAccess
+Attraction <|-- SpecialAttraction : <<bind>> T::IndividualAccess
+Attraction ..> PassLookup : checks passes via
+AttractionType ..> Attraction : creates
+ParkController ..> PassLookup : provides passesOfTicket
 
 ' ---- passes ----
 Pass <|-- SpeedPass

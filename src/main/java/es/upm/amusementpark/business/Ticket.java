@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * Information and behavior common to every ticket type: identifier, date of use and price.
  */
-public abstract class Ticket {
+public abstract class Ticket implements GeneralAccess {
 
     private final String id;
     private final LocalDate date;
@@ -18,10 +18,12 @@ public abstract class Ticket {
         this.date = Objects.requireNonNull(date, "date");
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }
@@ -40,6 +42,7 @@ public abstract class Ticket {
     }
 
     /** @return e-mails of the users admitted together when this ticket is used */
+    @Override
     public abstract List<String> holders();
 
     /** @return whether this ticket is associated with the user identified by {@code email} */

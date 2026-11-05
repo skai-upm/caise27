@@ -1,6 +1,7 @@
 package es.upm.amusementpark.presentation;
 
 import es.upm.amusementpark.business.Attraction;
+import es.upm.amusementpark.business.AttractionType;
 import es.upm.amusementpark.business.ParkController;
 import es.upm.amusementpark.business.ParkException;
 import java.io.PrintStream;
@@ -28,18 +29,23 @@ public final class AttractionCommands {
     }
 
     private boolean create(String line) {
-        String[] f = CommandSupport.fields(line, 4, "ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>");
+        String usage = "ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>[;<Type>]";
+        String[] f = CommandSupport.fields(line, line.split(";", -1).length == 5 ? 5 : 4, usage);
         int capacity = parseCapacity(f[3]);
         if (capacity <= 0) {
             throw new InvalidCommandException("Capacity must be a positive whole number");
         }
-        park.createAttraction(f[1], f[2], capacity);
+        AttractionType type = f.length == 5 ? AttractionType.parse(f[4]) : AttractionType.GENERAL;
+        if (type == null) {
+            throw new InvalidCommandException("Invalid attraction type. Expected GENERAL, INDIVIDUAL, GROUP or SPECIAL");
+        }
+        park.createAttraction(f[1], f[2], capacity, type);
         out.println("ATTRACTION CREATED");
         return true;
     }
 
-    private Attraction existing(String id) {
-        Attraction attraction = park.findAttraction(id);
+    private Attraction<?> existing(String id) {
+        Attraction<?> attraction = park.findAttraction(id);
         if (attraction == null) {
             throw new ParkException("Attraction " + id + " does not exist");
         }
@@ -48,7 +54,7 @@ public final class AttractionCommands {
 
     private boolean list(String line) {
         String[] f = CommandSupport.fields(line, 2, "ATTRACTION LIST;<AttractionIdentifier>");
-        Attraction attraction = existing(f[1]);
+        Attraction<?> attraction = existing(f[1]);
         if (attraction.getOccupants().isEmpty()) {
             out.println("ATTRACTION " + attraction.getId() + " USERS: (none)");
             return true;
@@ -75,9 +81,10 @@ public final class AttractionCommands {
 
     private boolean status(String line) {
         String[] f = CommandSupport.fields(line, 2, "ATTRACTION STATUS;<AttractionIdentifier>");
-        Attraction attraction = existing(f[1]);
+        Attraction<?> attraction = existing(f[1]);
         out.println("ATTRACTION " + attraction.getId());
         out.println("  NAME: " + attraction.getName());
+        out.println("  TYPE: " + attraction.getType());
         out.println("  CAPACITY: " + attraction.getCapacity());
         out.println("  INSIDE: " + attraction.getOccupants().size());
         out.println("  AVAILABLE: " + attraction.getAvailablePlaces());

@@ -30,7 +30,7 @@ public final class ParkController {
     private BigDecimal currentPrice;
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
-    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
     private final Map<String, Pass> passes = new LinkedHashMap<>();
     private UserDirectory userDirectory = UserDirectory.EMPTY;
     private final GroupTicketDates registeredGroupTicketDates = this::registeredGroupTicketDates;
@@ -414,7 +414,16 @@ public final class ParkController {
      *
      * @throws ParkException if a field is empty, the capacity is not positive or the identifier is used
      */
-    public synchronized Attraction createAttraction(String id, String name, int capacity) {
+    public synchronized Attraction<?> createAttraction(String id, String name, int capacity) {
+        return createAttraction(id, name, capacity, AttractionType.GENERAL);
+    }
+
+    /**
+     * Creates an attraction of the given type with no occupants.
+     *
+     * @throws ParkException if a field is empty, the capacity is not positive or the identifier is used
+     */
+    public synchronized Attraction<?> createAttraction(String id, String name, int capacity, AttractionType type) {
         if (isBlank(id) || isBlank(name)) {
             throw new ParkException("Attraction identifier and name are required");
         }
@@ -424,16 +433,16 @@ public final class ParkController {
         if (attractions.containsKey(id)) {
             throw new ParkException("Attraction " + id + " already exists");
         }
-        Attraction attraction = new Attraction(id, name, capacity);
+        Attraction<?> attraction = Objects.requireNonNull(type, "type").create(id, name, capacity);
         attractions.put(id, attraction);
         return attraction;
     }
 
-    public synchronized Attraction findAttraction(String id) {
+    public synchronized Attraction<?> findAttraction(String id) {
         return attractions.get(id);
     }
 
-    public synchronized Collection<Attraction> getAttractions() {
+    public synchronized Collection<Attraction<?>> getAttractions() {
         return Collections.unmodifiableCollection(attractions.values());
     }
 
@@ -445,7 +454,7 @@ public final class ParkController {
      *         already inside or capacity is insufficient for all of them
      */
     public synchronized List<String> enterAttraction(String attractionId, String ticketId) {
-        Attraction attraction = attractions.get(attractionId);
+        Attraction<?> attraction = attractions.get(attractionId);
         if (attraction == null) {
             throw new ParkException("Attraction " + attractionId + " does not exist");
         }
@@ -456,7 +465,7 @@ public final class ParkController {
         if (!ticket.getDate().equals(currentDate)) {
             throw new ParkException("Ticket " + ticketId + " is not valid on " + currentDate);
         }
-        List<String> holders = ticket.holders();
+        List<String> holders = attraction.admissionFor(ticket, this::passesOfTicket).holders();
         for (String email : holders) {
             if (attraction.contains(email)) {
                 throw new ParkException("User " + email + " is already inside attraction " + attractionId);
@@ -478,7 +487,7 @@ public final class ParkController {
      * @throws ParkException if the attraction is unknown or the user is not inside
      */
     public synchronized void leaveAttraction(String attractionId, String email) {
-        Attraction attraction = attractions.get(attractionId);
+        Attraction<?> attraction = attractions.get(attractionId);
         if (attraction == null) {
             throw new ParkException("Attraction " + attractionId + " does not exist");
         }
@@ -593,6 +602,11 @@ public final class ParkController {
 
     public synchronized Collection<Pass> getPasses() {
         return Collections.unmodifiableCollection(passes.values());
+    }
+
+    /** @return the passes of the individual ticket with that identifier (empty if none) */
+    public synchronized List<Pass> passesOfTicket(String ticketId) {
+        return tickets.get(ticketId) instanceof IndividualTicket ticket ? passesOf(ticket) : List.of();
     }
 
     /** @return the passes associated with an individual ticket (traversal; tickets hold no passes) */

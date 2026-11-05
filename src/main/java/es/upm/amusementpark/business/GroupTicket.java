@@ -10,7 +10,7 @@ import java.util.Objects;
  * Joint ticket of a group, composed of one individual ticket per member at purchase time. The composition never
  * changes; the reference to the purchasing group becomes {@code null} if the group is deleted.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private final String groupId;
     private Group group;
@@ -69,6 +69,7 @@ public class GroupTicket extends Ticket {
         group = null;
     }
 
+    @Override
     public List<IndividualTicket> getComponents() {
         return components;
     }

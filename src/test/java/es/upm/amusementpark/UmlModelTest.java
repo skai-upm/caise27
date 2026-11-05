@@ -53,7 +53,7 @@ class UmlModelTest {
                 String kind = kindOf(Files.readString(file), name);
                 String drawn = "record".equals(kind) ? "class" : kind;
                 if (kind == null || !(model.contains(drawn + " " + name + " {")
-                        || model.contains(drawn + " " + name + " <<"))) {
+                        || model.contains(drawn + " " + name + " <<") || model.contains(drawn + " " + name + "<"))) {
                     missing.add(kind + " " + name);
                 }
             }
