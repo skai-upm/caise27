@@ -5,6 +5,7 @@ import es.upm.amusementpark.model.GroupTicket;
 import es.upm.amusementpark.model.IndividualTicket;
 import es.upm.amusementpark.model.Ticket;
 import es.upm.amusementpark.model.User;
+import es.upm.amusementpark.persistence.TicketStorage;
 import es.upm.amusementpark.service.OperationException;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -19,6 +20,16 @@ import java.util.Optional;
 public class TicketRepository {
 
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
+    private final TicketStorage storage;
+
+    public TicketRepository() {
+        this(TicketStorage.none(), new UserRepository(), new GroupRepository());
+    }
+
+    public TicketRepository(TicketStorage storage, UserRepository users, GroupRepository groups) {
+        this.storage = storage;
+        storage.load(users, groups).forEach(t -> tickets.put(t.getIdentifier(), t));
+    }
 
     /** Common uniqueness check for any ticket type; throws if any identifier is already used. */
     public void ensureAvailable(Collection<String> identifiers) {
@@ -36,12 +47,32 @@ public class TicketRepository {
     }
 
     public void add(Ticket ticket) {
-        ensureAvailable(List.of(ticket.getIdentifier()));
-        tickets.put(ticket.getIdentifier(), ticket);
+        addAll(List.of(ticket));
+    }
+
+    /** Adds several tickets at once (all identifiers are checked first). */
+    public void addAll(List<? extends Ticket> newTickets) {
+        ensureAvailable(newTickets.stream().map(Ticket::getIdentifier).toList());
+        newTickets.forEach(t -> tickets.put(t.getIdentifier(), t));
+        save();
     }
 
     public void remove(Ticket ticket) {
-        tickets.remove(ticket.getIdentifier());
+        removeAll(List.of(ticket));
+    }
+
+    public void removeAll(List<? extends Ticket> oldTickets) {
+        oldTickets.forEach(t -> tickets.remove(t.getIdentifier()));
+        save();
+    }
+
+    /** Persists changes made to stored tickets or to the data they reference. */
+    public void update() {
+        save();
+    }
+
+    private void save() {
+        storage.save(tickets.values());
     }
 
     public Optional<Ticket> findById(String identifier) {

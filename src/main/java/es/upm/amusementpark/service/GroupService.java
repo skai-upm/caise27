@@ -31,6 +31,7 @@ public class GroupService {
         requireUnlocked(group);
         tickets.groupTicketsOf(group).forEach(t -> t.detachGroup());
         groups.remove(group);
+        tickets.update();
     }
 
     private void requireUnlocked(Group group) {

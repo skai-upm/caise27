@@ -42,7 +42,7 @@ class DeliveryOneIntegrationTest {
                     .getDeclaredMethod("run", String[].class, java.io.InputStream.class, PrintStream.class, PrintStream.class, Path.class);
             run.setAccessible(true);
             return (int) run.invoke(null, args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                    new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8), users);
+                    new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8), users.getParent());
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }

@@ -1,11 +1,16 @@
 package es.upm.amusementpark.park;
 
+import es.upm.amusementpark.persistence.AttractionFileStorage;
+import es.upm.amusementpark.persistence.GroupFileStorage;
+import es.upm.amusementpark.persistence.TicketFileStorage;
+import es.upm.amusementpark.persistence.UserFileStorage;
 import es.upm.amusementpark.repository.AttractionRepository;
 import es.upm.amusementpark.repository.GroupRepository;
 import es.upm.amusementpark.repository.TicketRepository;
 import es.upm.amusementpark.repository.UserRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Path;
 import java.time.LocalDate;
 
 /**
@@ -39,12 +44,28 @@ public final class Park {
      * Initialises the state of a new execution: today's date, the initial price and the given users.
      */
     public void start(UserRepository userRepository) {
+        start(userRepository, new GroupRepository(), new TicketRepository(), new AttractionRepository());
+    }
+
+    /**
+     * Initialises a new execution whose state is persisted in text files inside {@code dataDirectory}.
+     * Repositories are loaded in dependency order: users, groups, tickets, attractions.
+     */
+    public void start(Path dataDirectory) {
+        UserRepository u = new UserRepository(new UserFileStorage(dataDirectory.resolve("users.txt")));
+        GroupRepository g = new GroupRepository(new GroupFileStorage(dataDirectory.resolve("groups.txt")), u);
+        TicketRepository t = new TicketRepository(new TicketFileStorage(dataDirectory.resolve("tickets.txt")), u, g);
+        AttractionRepository a = new AttractionRepository(new AttractionFileStorage(dataDirectory.resolve("attractions.txt")));
+        start(u, g, t, a);
+    }
+
+    private void start(UserRepository u, GroupRepository g, TicketRepository t, AttractionRepository a) {
         this.currentDate = LocalDate.now();
         this.currentPrice = INITIAL_PRICE;
-        this.users = userRepository;
-        this.groups = new GroupRepository();
-        this.tickets = new TicketRepository();
-        this.attractions = new AttractionRepository();
+        this.users = u;
+        this.groups = g;
+        this.tickets = t;
+        this.attractions = a;
     }
 
     public AttractionRepository attractions() {

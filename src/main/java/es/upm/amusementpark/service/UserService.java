@@ -86,6 +86,7 @@ public class UserService {
             }
         }
         repository.remove(user);
+        tickets.update();
     }
 
     public void updateUser(String email, String password, UserField field, String newValue) {

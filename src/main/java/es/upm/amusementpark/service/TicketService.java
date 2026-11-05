@@ -74,8 +74,9 @@ public class TicketService {
                     date, member, unitPrice));
         }
         GroupTicket groupTicket = new GroupTicket(identifier, date, group, composition);
-        composition.forEach(tickets::add);
-        tickets.add(groupTicket);
+        List<Ticket> all = new ArrayList<>(composition);
+        all.add(groupTicket);
+        tickets.addAll(all);
         return groupTicket;
     }
 
@@ -84,8 +85,9 @@ public class TicketService {
                 .filter(GroupTicket.class::isInstance).map(GroupTicket.class::cast)
                 .orElseThrow(() -> new OperationException("group ticket '" + identifier + "' not found"));
         requireDeletable(ticket);
-        ticket.getComposition().forEach(tickets::remove);
-        tickets.remove(ticket);
+        List<Ticket> all = new ArrayList<>(ticket.getComposition());
+        all.add(ticket);
+        tickets.removeAll(all);
     }
 
     static void requireNotPast(LocalDate date, LocalDate today) {

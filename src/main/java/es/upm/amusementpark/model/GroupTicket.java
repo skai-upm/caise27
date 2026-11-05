@@ -15,9 +15,15 @@ public class GroupTicket extends Ticket {
     private Group group;
 
     public GroupTicket(String identifier, LocalDate date, Group group, List<IndividualTicket> composition) {
+        this(identifier, date, group.getIdentifier(), group, composition);
+    }
+
+    /** Rebuilds a group ticket; {@code group} may be null when the purchasing group no longer exists. */
+    public GroupTicket(String identifier, LocalDate date, String groupIdentifier, Group group,
+                       List<IndividualTicket> composition) {
         super(identifier, date);
         this.group = group;
-        this.groupIdentifier = group.getIdentifier();
+        this.groupIdentifier = groupIdentifier;
         this.composition = List.copyOf(composition);
     }
 

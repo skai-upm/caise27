@@ -27,7 +27,7 @@ class AppTest {
 
     private int run(String[] args, String stdin, Path users) {
         return App.run(args, new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
-                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8), users);
+                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(err, true, StandardCharsets.UTF_8), users.getParent());
     }
 
     @Test
