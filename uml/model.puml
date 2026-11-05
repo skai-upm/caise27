@@ -97,6 +97,15 @@ package es.upm.amusementpark.business {
   }
   class RepositoryException {
   }
+  class User {
+    - firstName : String
+    - surnames : String
+    - {final} dni : String
+    - email : String
+    - password : String <<protected value>>
+    - phone : String
+    - card : String
+  }
   class Group {
     - id : String
     - name : String
@@ -277,7 +286,8 @@ note top of UserDirectory
   Users are identified by e-mail and looked up through
   UserDirectory (exists, dniOf). Individual tickets, groups and
   attractions reference users by e-mail, one-way: users never
-  reference tickets, groups or attractions. A User class is not
-  part of the code base yet.
+  reference tickets, groups or attractions. The User class holds
+  the user data; object references replace e-mails once a user
+  registry exists.
 end note
 @enduml
