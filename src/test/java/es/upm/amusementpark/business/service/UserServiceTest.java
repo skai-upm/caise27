@@ -1,5 +1,8 @@
 package es.upm.amusementpark.business.service;
 
+import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.TicketRepository;
+
 import es.upm.amusementpark.business.exception.OperationException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,7 +20,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         repo = new UserRepository();
-        service = new UserService(repo);
+        service = UserService.getInstance().inject(repo, new GroupRepository(), new TicketRepository());
     }
 
     @Test

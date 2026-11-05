@@ -1,5 +1,8 @@
 package es.upm.amusementpark.business.invoice;
 
+import es.upm.amusementpark.presentation.ApplicationInitializer;
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,8 +23,8 @@ class InvoiceTest {
     @BeforeEach
     void setUp() {
         Park park = Park.getInstance();
-        park.start(new UserRepository());
-        p = new CommandProcessor(new UserService(park.users(), park.groups(), park.tickets()));
+        park.start(Repositories.inMemory(new UserRepository()));
+        p = ApplicationInitializer.initialize(Repositories.inMemory(park.users()));
         for (String c : List.of("SYSTEM DATE;2027-04-01",
                 "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;6;1234567890123456",
                 "USER CREATE;Pedro;Lopez;87654321X;pedro@correo.com;Otra2#;6;9876543210987654",

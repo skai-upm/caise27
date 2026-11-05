@@ -1,5 +1,8 @@
 package es.upm.amusementpark.integration;
 
+import es.upm.amusementpark.presentation.ApplicationInitializer;
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,14 +86,14 @@ class DeliveryOneIntegrationTest {
                 throw new es.upm.amusementpark.persistence.storage.PersistenceException("disk full", new IOException("disk full"));
             }
         };
-        CommandProcessor p = new CommandProcessor(new UserService(new UserRepository(broken)));
+        CommandProcessor p = ApplicationInitializer.initialize(Repositories.inMemory(new UserRepository(broken)));
         assertTrue(p.process(EXAMPLE.get(0)).startsWith("ERROR: data could not be saved"));
         assertTrue(p.process("HELP").contains("USER CREATE"));
     }
 
     @Test
     void malformedInputIsControlled() {
-        CommandProcessor p = new CommandProcessor(new UserService(new UserRepository()));
+        CommandProcessor p = ApplicationInitializer.initialize(Repositories.inMemory(new UserRepository()));
         for (String line : List.of(";;;", "USER", "user create;a", "USER UPDATE;;;;", "EXIT;x")) {
             assertTrue(p.process(line).startsWith("ERROR"), line);
         }

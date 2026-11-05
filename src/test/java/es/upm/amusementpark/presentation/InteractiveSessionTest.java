@@ -1,5 +1,7 @@
 package es.upm.amusementpark.presentation;
 
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,7 +19,7 @@ class InteractiveSessionTest {
 
     private static String run(String input) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        CommandProcessor processor = new CommandProcessor(new UserService(new UserRepository()));
+        CommandProcessor processor = ApplicationInitializer.initialize(Repositories.inMemory(new UserRepository()));
         new InteractiveSession(new BufferedReader(new StringReader(input)),
                 new PrintStream(out, true, StandardCharsets.UTF_8), processor).run();
         return out.toString(StandardCharsets.UTF_8);

@@ -3,16 +3,12 @@ package es.upm.amusementpark.presentation;
 import es.upm.amusementpark.persistence.storage.DataDirectory;
 
 import es.upm.amusementpark.presentation.CommandProcessor;
-import es.upm.amusementpark.business.control.Park;
-import es.upm.amusementpark.business.service.AttractionService;
-import es.upm.amusementpark.business.service.GroupService;
-import es.upm.amusementpark.business.service.TicketService;
-import es.upm.amusementpark.business.service.UserService;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import es.upm.amusementpark.persistence.repository.Repositories;
 import es.upm.amusementpark.persistence.storage.PersistenceException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -64,12 +60,7 @@ public class App {
     private static int runWithData(String[] args, InputStream in, PrintStream out, PrintStream err, Path dataDirectory) {
         CommandProcessor processor;
         try {
-            Park park = Park.getInstance();
-            park.start(dataDirectory);
-            processor = new CommandProcessor(new UserService(park.users(), park.groups(), park.tickets()),
-                    new GroupService(park.users(), park.groups(), park.tickets()),
-                    new TicketService(park.users(), park.tickets(), park.groups()),
-                    new AttractionService(park.attractions(), park.tickets()));
+            processor = ApplicationInitializer.initialize(Repositories.files(dataDirectory));
         } catch (PersistenceException e) {
             err.println("ERROR: cannot load the park data: " + e.getMessage());
             return 1;

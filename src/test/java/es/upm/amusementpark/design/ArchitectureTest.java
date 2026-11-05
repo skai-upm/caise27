@@ -1,5 +1,8 @@
 package es.upm.amusementpark.design;
 
+import es.upm.amusementpark.presentation.ApplicationInitializer;
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,10 +71,10 @@ class ArchitectureTest {
     @Test
     void exceptionCategories() {
         Park park = Park.getInstance();
-        park.start(new UserRepository());
-        GroupService groups = new GroupService(park.users(), park.groups(), park.tickets());
-        UserService users = new UserService(park.users(), park.groups(), park.tickets());
-        TicketService tickets = new TicketService(park.users(), park.tickets(), park.groups());
+        park.start(Repositories.inMemory(new UserRepository()));
+        GroupService groups = GroupService.getInstance().inject(park.users(), park.groups(), park.tickets());
+        UserService users = UserService.getInstance().inject(park.users(), park.groups(), park.tickets());
+        TicketService tickets = TicketService.getInstance().inject(park.users(), park.tickets(), park.groups());
         assertThrows(NotFoundException.class, () -> groups.findGroup("G99"));
         assertThrows(InvalidDataException.class, () -> users.createUser("A", "B", "12345678A", "a@b.com", "Clave1!", "6", "1234567890123456"));
         users.createUser("A", "B", "12345678Z", "a@b.com", "Clave1!", "6", "1234567890123456");
@@ -84,8 +87,8 @@ class ArchitectureTest {
 
     @Test
     void rejectedCommandDoesNotStopProcessing() {
-        Park.getInstance().start(new UserRepository());
-        CommandProcessor p = new CommandProcessor(new UserService(Park.getInstance().users()));
+        Park.getInstance().start(Repositories.inMemory(new UserRepository()));
+        CommandProcessor p = ApplicationInitializer.initialize(Repositories.inMemory(Park.getInstance().users()));
         assertTrue(p.process("TICKET DELETE;NOPE").startsWith("ERROR"));
         assertTrue(p.process("HELP").startsWith("Available commands"));
         assertEquals(false, p.isExitRequested());

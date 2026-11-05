@@ -1,16 +1,12 @@
 package es.upm.amusementpark.business.control;
 
-import es.upm.amusementpark.persistence.storage.AttractionFileStorage;
-import es.upm.amusementpark.persistence.storage.GroupFileStorage;
-import es.upm.amusementpark.persistence.storage.TicketFileStorage;
-import es.upm.amusementpark.persistence.storage.UserFileStorage;
 import es.upm.amusementpark.persistence.repository.AttractionRepository;
 import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.Repositories;
 import es.upm.amusementpark.persistence.repository.TicketRepository;
 import es.upm.amusementpark.persistence.repository.UserRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Path;
 import java.time.LocalDate;
 
 /**
@@ -29,7 +25,7 @@ public final class Park {
     private AttractionRepository attractions;
 
     private Park() {
-        start(new UserRepository());
+        start(Repositories.inMemory());
     }
 
     private static final class Holder {
@@ -41,43 +37,27 @@ public final class Park {
     }
 
     /**
-     * Initialises the state of a new execution: today's date, the initial price and the given users.
+     * Initialises a new execution with the injected repositories: today's date and the initial price.
      */
-    public void start(UserRepository userRepository) {
-        start(userRepository, new GroupRepository(), new TicketRepository(), new AttractionRepository());
-    }
-
-    /**
-     * Initialises a new execution whose state is persisted in text files inside {@code dataDirectory}.
-     * Repositories are loaded in dependency order: users, groups, tickets, attractions.
-     */
-    public void start(Path dataDirectory) {
-        UserRepository u = new UserRepository(new UserFileStorage(dataDirectory.resolve("users.txt")));
-        GroupRepository g = new GroupRepository(new GroupFileStorage(dataDirectory.resolve("groups.txt")), u);
-        TicketRepository t = new TicketRepository(new TicketFileStorage(dataDirectory.resolve("tickets.txt")), u, g);
-        AttractionRepository a = new AttractionRepository(new AttractionFileStorage(dataDirectory.resolve("attractions.txt")));
-        start(u, g, t, a);
-    }
-
-    private void start(UserRepository u, GroupRepository g, TicketRepository t, AttractionRepository a) {
+    public void start(Repositories repositories) {
         this.currentDate = LocalDate.now();
         this.currentPrice = INITIAL_PRICE;
-        this.users = u;
-        this.groups = g;
-        this.tickets = t;
-        this.attractions = a;
+        this.users = repositories.users();
+        this.groups = repositories.groups();
+        this.tickets = repositories.tickets();
+        this.attractions = repositories.attractions();
     }
 
-    public AttractionRepository attractions() {
-        return attractions;
+    public GroupRepository groups() {
+        return groups;
     }
 
     public TicketRepository tickets() {
         return tickets;
     }
 
-    public GroupRepository groups() {
-        return groups;
+    public AttractionRepository attractions() {
+        return attractions;
     }
 
     public UserRepository users() {

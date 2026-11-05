@@ -19,17 +19,29 @@ import java.util.List;
  */
 public class AttractionService {
 
-    private final AttractionRepository attractions;
-    private final TicketRepository tickets;
+    private AttractionRepository attractions;
+    private TicketRepository tickets;
 
-    public AttractionService(AttractionRepository attractions) {
-        this(attractions, new TicketRepository());
+    private AttractionService() {
     }
 
-    public AttractionService(AttractionRepository attractions, TicketRepository tickets) {
+    private static final class Holder {
+        private static final AttractionService INSTANCE = new AttractionService();
+    }
+
+    /** The single instance of this controller. */
+    public static AttractionService getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /** Injects the repositories this controller works with (done during application initialization). */
+    public AttractionService inject(AttractionRepository attractions, TicketRepository tickets) {
         this.attractions = attractions;
         this.tickets = tickets;
+        return this;
     }
+
+
 
     /**
      * Admits the users of a ticket valid today into an attraction, all or none.

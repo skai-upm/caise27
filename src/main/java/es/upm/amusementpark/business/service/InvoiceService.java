@@ -18,15 +18,30 @@ import java.util.List;
  */
 public class InvoiceService {
 
-    private final UserRepository users;
-    private final GroupRepository groups;
-    private final TicketRepository tickets;
+    private UserRepository users;
+    private GroupRepository groups;
+    private TicketRepository tickets;
 
-    public InvoiceService(UserRepository users, GroupRepository groups, TicketRepository tickets) {
+    private InvoiceService() {
+    }
+
+    private static final class Holder {
+        private static final InvoiceService INSTANCE = new InvoiceService();
+    }
+
+    /** The single instance of this controller. */
+    public static InvoiceService getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /** Injects the repositories this controller works with (done during application initialization). */
+    public InvoiceService inject(UserRepository users, GroupRepository groups, TicketRepository tickets) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        return this;
     }
+
 
     public Invoice create(String recipientType, String identifier) {
         return switch (recipientType) {

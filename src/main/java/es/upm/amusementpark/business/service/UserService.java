@@ -18,35 +18,32 @@ import es.upm.amusementpark.persistence.repository.UserRepository;
  */
 public class UserService {
 
-    private final UserRepository repository;
-    private final GroupRepository groups;
-    private final TicketRepository tickets;
+    private UserRepository repository;
+    private GroupRepository groups;
+    private TicketRepository tickets;
 
-    public UserService(UserRepository repository) {
-        this(repository, new GroupRepository());
+    private UserService() {
     }
 
-    public UserService(UserRepository repository, GroupRepository groups) {
-        this(repository, groups, new TicketRepository());
+    private static final class Holder {
+        private static final UserService INSTANCE = new UserService();
     }
 
-    public UserService(UserRepository repository, GroupRepository groups, TicketRepository tickets) {
+    /** The single instance of this controller. */
+    public static UserService getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /** Injects the repositories this controller works with (done during application initialization). */
+    public UserService inject(UserRepository repository, GroupRepository groups, TicketRepository tickets) {
         this.repository = repository;
         this.groups = groups;
         this.tickets = tickets;
+        return this;
     }
 
-    public TicketRepository tickets() {
-        return tickets;
-    }
 
-    public UserRepository users() {
-        return repository;
-    }
 
-    public GroupRepository groups() {
-        return groups;
-    }
 
     public User createUser(String firstName, String surnames, String dni, String email,
                            String password, String phone, String card) {

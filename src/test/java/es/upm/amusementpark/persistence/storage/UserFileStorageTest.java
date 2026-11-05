@@ -1,5 +1,8 @@
 package es.upm.amusementpark.persistence.storage;
 
+import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.TicketRepository;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,14 +56,14 @@ class UserFileStorageTest {
     @Test
     void usersWrittenOnePerLineAndRecoveredAfterRestart() throws IOException {
         Path f = dir.resolve("users.txt");
-        UserService first = new UserService(new UserRepository(new UserFileStorage(f)));
+        UserService first = UserService.getInstance().inject(new UserRepository(new UserFileStorage(f)), new GroupRepository(), new TicketRepository());
         first.createUser("Ana", "Garcia Lopez", "12345678Z", "ana@correo.com", "Clave1!", "612345678", "1234567890123456");
         first.createUser("Pedro", "Lopez Martin", "87654321X", "pedro@correo.com", "Otra2#", "623456789", "9876543210987654");
         assertEquals(List.of(ANA, PEDRO), Files.readAllLines(f, StandardCharsets.UTF_8));
 
         UserRepository restarted = new UserRepository(new UserFileStorage(f));
         assertEquals(2, restarted.count());
-        UserService second = new UserService(restarted);
+        UserService second = UserService.getInstance().inject(restarted, new GroupRepository(), new TicketRepository());
         Assertions.assertThrows(OperationException.class, () ->
                 second.createUser("Luis", "M", "12345678Z", "luis@correo.com", "Clave1!", "6", "1111222233334444"));
         assertEquals(List.of(ANA, PEDRO), Files.readAllLines(f, StandardCharsets.UTF_8));

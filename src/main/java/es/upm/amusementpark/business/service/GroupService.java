@@ -17,19 +17,31 @@ import es.upm.amusementpark.persistence.repository.UserRepository;
  */
 public class GroupService {
 
-    private final UserRepository users;
-    private final GroupRepository groups;
-    private final TicketRepository tickets;
+    private UserRepository users;
+    private GroupRepository groups;
+    private TicketRepository tickets;
 
-    public GroupService(UserRepository users, GroupRepository groups) {
-        this(users, groups, new TicketRepository());
+    private GroupService() {
     }
 
-    public GroupService(UserRepository users, GroupRepository groups, TicketRepository tickets) {
+    private static final class Holder {
+        private static final GroupService INSTANCE = new GroupService();
+    }
+
+    /** The single instance of this controller. */
+    public static GroupService getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /** Injects the repositories this controller works with (done during application initialization). */
+    public GroupService inject(UserRepository users, GroupRepository groups, TicketRepository tickets) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
+        return this;
     }
+
+
 
     public void deleteGroup(String identifier) {
         Group group = findGroup(identifier);

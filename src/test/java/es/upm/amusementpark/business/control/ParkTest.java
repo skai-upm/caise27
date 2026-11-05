@@ -1,5 +1,8 @@
 package es.upm.amusementpark.business.control;
 
+import es.upm.amusementpark.presentation.ApplicationInitializer;
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,8 +23,8 @@ class ParkTest {
 
     @BeforeEach
     void setUp() {
-        Park.getInstance().start(new UserRepository());
-        processor = new CommandProcessor(new UserService(Park.getInstance().users()));
+        Park.getInstance().start(Repositories.inMemory(new UserRepository()));
+        processor = ApplicationInitializer.initialize(Repositories.inMemory(Park.getInstance().users()));
     }
 
     @Test
@@ -64,7 +67,7 @@ class ParkTest {
     @Test
     void newExecutionRevertsPrice() {
         processor.process("SYSTEM PRICE;45.50");
-        Park.getInstance().start(new UserRepository());
+        Park.getInstance().start(Repositories.inMemory(new UserRepository()));
         assertEquals(new BigDecimal("40.00"), Park.getInstance().getCurrentPrice());
     }
 

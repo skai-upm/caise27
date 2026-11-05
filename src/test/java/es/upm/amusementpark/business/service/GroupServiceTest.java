@@ -1,5 +1,8 @@
 package es.upm.amusementpark.business.service;
 
+import es.upm.amusementpark.presentation.ApplicationInitializer;
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,8 +21,8 @@ class GroupServiceTest {
     @BeforeEach
     void setUp() {
         park = Park.getInstance();
-        park.start(new UserRepository());
-        p = new CommandProcessor(new UserService(park.users(), park.groups(), park.tickets()), new GroupService(park.users(), park.groups()), new es.upm.amusementpark.business.service.TicketService(park.users(), park.tickets()));
+        park.start(Repositories.inMemory(new UserRepository()));
+        p = ApplicationInitializer.initialize(Repositories.inMemory(park.users()));
         p.process("USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456");
         p.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
     }

@@ -1,5 +1,8 @@
 package es.upm.amusementpark.business.service;
 
+import es.upm.amusementpark.presentation.ApplicationInitializer;
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -23,7 +26,7 @@ class UserModificationTest {
     @BeforeEach
     void setUp() {
         repo = new UserRepository(new UserFileStorage(dir.resolve("users.txt")));
-        processor = new CommandProcessor(new UserService(repo));
+        processor = ApplicationInitializer.initialize(Repositories.inMemory(repo));
         processor.process("USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456");
         processor.process("USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654");
     }

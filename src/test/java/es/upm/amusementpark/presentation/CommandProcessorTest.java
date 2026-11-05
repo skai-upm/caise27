@@ -1,5 +1,7 @@
 package es.upm.amusementpark.presentation;
 
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,7 +19,7 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() {
         repo = new UserRepository();
-        processor = new CommandProcessor(new UserService(repo));
+        processor = ApplicationInitializer.initialize(Repositories.inMemory(repo));
     }
 
     @Test

@@ -1,5 +1,10 @@
 package es.upm.amusementpark.business.service;
 
+import es.upm.amusementpark.presentation.ApplicationInitializer;
+import es.upm.amusementpark.persistence.repository.Repositories;
+import es.upm.amusementpark.persistence.repository.GroupRepository;
+import es.upm.amusementpark.persistence.repository.TicketRepository;
+
 import es.upm.amusementpark.business.exception.OperationException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +32,7 @@ class UserDeletionTest {
     @BeforeEach
     void setUp() {
         repo = new UserRepository(new UserFileStorage(dir.resolve("users.txt")));
-        processor = new CommandProcessor(new UserService(repo));
+        processor = ApplicationInitializer.initialize(Repositories.inMemory(repo));
         processor.process(ANA);
         processor.process(PEDRO);
     }
@@ -63,7 +68,7 @@ class UserDeletionTest {
 
     @Test
     void serviceRejectsWrongPassword() {
-        UserService service = new UserService(repo);
+        UserService service = UserService.getInstance().inject(repo, new GroupRepository(), new TicketRepository());
         assertThrows(OperationException.class, () -> service.deleteUser("ana@correo.com", "nope"));
     }
 }

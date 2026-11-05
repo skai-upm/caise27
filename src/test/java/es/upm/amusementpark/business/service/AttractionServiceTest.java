@@ -1,5 +1,8 @@
 package es.upm.amusementpark.business.service;
 
+import es.upm.amusementpark.presentation.ApplicationInitializer;
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,10 +25,8 @@ class AttractionServiceTest {
     @BeforeEach
     void setUp() {
         park = Park.getInstance();
-        park.start(new UserRepository());
-        p = new CommandProcessor(new UserService(park.users(), park.groups(), park.tickets()),
-                new GroupService(park.users(), park.groups(), park.tickets()),
-                new TicketService(park.users(), park.tickets(), park.groups()), new AttractionService(park.attractions()));
+        park.start(Repositories.inMemory(new UserRepository()));
+        p = ApplicationInitializer.initialize(Repositories.inMemory(park.users()));
     }
 
     @Test

@@ -24,19 +24,31 @@ import java.util.List;
  */
 public class TicketService {
 
-    private final UserRepository users;
-    private final TicketRepository tickets;
-    private final GroupRepository groups;
+    private UserRepository users;
+    private TicketRepository tickets;
+    private GroupRepository groups;
 
-    public TicketService(UserRepository users, TicketRepository tickets) {
-        this(users, tickets, new GroupRepository());
+    private TicketService() {
     }
 
-    public TicketService(UserRepository users, TicketRepository tickets, GroupRepository groups) {
+    private static final class Holder {
+        private static final TicketService INSTANCE = new TicketService();
+    }
+
+    /** The single instance of this controller. */
+    public static TicketService getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /** Injects the repositories this controller works with (done during application initialization). */
+    public TicketService inject(UserRepository users, TicketRepository tickets, GroupRepository groups) {
         this.users = users;
         this.tickets = tickets;
         this.groups = groups;
+        return this;
     }
+
+
 
     public IndividualTicket createTicket(String identifier, String email, LocalDate date) {
         Park park = Park.getInstance();

@@ -1,5 +1,7 @@
 package es.upm.amusementpark.presentation;
 
+import es.upm.amusementpark.persistence.repository.Repositories;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,7 +20,7 @@ class ExecutionControlTest {
 
     @Test
     void helpListsAllCommands() {
-        String help = new CommandProcessor(new UserService(new UserRepository())).process("HELP");
+        String help = ApplicationInitializer.initialize(Repositories.inMemory(new UserRepository())).process("HELP");
         assertTrue(help.contains("USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>"));
         assertTrue(help.contains("USER DELETE;<Email>;<Password>"));
         assertTrue(help.contains("USER UPDATE;<Email>;<Password>;<Field>;<NewValue>"));
@@ -28,7 +30,7 @@ class ExecutionControlTest {
 
     @Test
     void helpListsDeliveryTwoSyntaxInOrder() {
-        String help = new CommandProcessor(new UserService(new UserRepository())).process("HELP");
+        String help = ApplicationInitializer.initialize(Repositories.inMemory(new UserRepository())).process("HELP");
         String[] expected = {"USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
             "USER DELETE;<Email>;<Password>", "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
             "SYSTEM DATE;<yyyy-MM-dd>", "SYSTEM PRICE;<Price>", "GROUP CREATE;<Identifier>;<Name>",
@@ -48,7 +50,7 @@ class ExecutionControlTest {
 
     @Test
     void exitSetsStateAndExtraArgumentsRejected() {
-        CommandProcessor p = new CommandProcessor(new UserService(new UserRepository()));
+        CommandProcessor p = ApplicationInitializer.initialize(Repositories.inMemory(new UserRepository()));
         assertTrue(p.process("EXIT;now").startsWith("ERROR"));
         assertTrue(p.process("HELP;x").startsWith("ERROR"));
         assertFalse(p.isExitRequested());
@@ -59,7 +61,7 @@ class ExecutionControlTest {
     @Test
     void noCommandRunsAfterExit() {
         UserRepository repo = new UserRepository();
-        CommandProcessor p = new CommandProcessor(new UserService(repo));
+        CommandProcessor p = ApplicationInitializer.initialize(Repositories.inMemory(repo));
         String input = "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456\n"
                 + "EXIT\n"
                 + "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654\n";

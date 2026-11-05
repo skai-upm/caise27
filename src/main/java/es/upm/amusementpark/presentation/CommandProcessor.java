@@ -7,7 +7,6 @@ import es.upm.amusementpark.business.exception.OperationException;
 
 import es.upm.amusementpark.business.model.UserField;
 import es.upm.amusementpark.business.control.Park;
-import es.upm.amusementpark.persistence.repository.AttractionRepository;
 import es.upm.amusementpark.business.service.AttractionService;
 import es.upm.amusementpark.business.service.GroupService;
 import es.upm.amusementpark.business.service.InvoiceService;
@@ -43,18 +42,8 @@ public class CommandProcessor {
     private final UserService userService;
     private boolean exitRequested;
 
-    public CommandProcessor(UserService userService) {
-        this(userService, new GroupService(userService.users(), userService.groups(), userService.tickets()),
-                new TicketService(userService.users(), userService.tickets(), userService.groups()));
-    }
-
-    public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService) {
-        this(userService, groupService, ticketService,
-                new AttractionService(new AttractionRepository(), userService.tickets()));
-    }
-
     public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService,
-                            AttractionService attractionService) {
+                            AttractionService attractionService, InvoiceService invoiceService) {
         this.userService = userService;
         register("USER CREATE", 8, "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>", "",
                 p -> {
@@ -110,7 +99,6 @@ public class CommandProcessor {
         });
         register("ATTRACTION LIST", 2, "ATTRACTION LIST;<attraction>", "", p -> attractionService.list(p[1]));
         register("ATTRACTION STATUS", 2, "ATTRACTION STATUS;<attractionIdentifier>", "", p -> attractionService.status(p[1]));
-        InvoiceService invoiceService = new InvoiceService(userService.users(), userService.groups(), userService.tickets());
         register("INVOICE CREATE", 3, "INVOICE CREATE;USER;<email>", "| INVOICE CREATE;GROUP;<groupIdentifier>",
                 p -> invoiceService.create(p[1], p[2]).render());
         register("HELP", 1, "HELP", "", p -> helpText());
