@@ -38,8 +38,40 @@ class CommandProcessorTest {
     @Test
     void unknownCommandIsAnErrorAndKeepsState() {
         assertTrue(processor.process("FOO;bar").startsWith("ERROR"));
-        assertTrue(processor.process("USER DELETE;12345678Z").startsWith("ERROR"));
+        assertTrue(processor.process("USER UPDATE;ana@correo.com;Clave1!").startsWith("ERROR"));
         assertEquals(0, repo.size());
+    }
+
+    @Test
+    void deleteWithMatchingEmailAndPasswordRemovesUser() {
+        processor.process(ANA);
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!").startsWith("OK"));
+        assertEquals(0, repo.size());
+        assertTrue(processor.process(ANA).startsWith("OK"), "DNI and email reusable after deletion");
+    }
+
+    @Test
+    void deleteWithWrongPasswordKeepsUser() {
+        processor.process(ANA);
+        String r = processor.process("USER DELETE;ana@correo.com;Otra1!");
+        assertTrue(r.startsWith("ERROR") && r.contains("password"), r);
+        assertEquals(1, repo.size());
+        assertEquals("Clave1!", repo.findByDni("12345678Z").getPassword());
+    }
+
+    @Test
+    void deleteUnknownEmailIsRejected() {
+        processor.process(ANA);
+        assertTrue(processor.process("USER DELETE;nadie@correo.com;Clave1!").startsWith("ERROR"));
+        assertEquals(1, repo.size());
+    }
+
+    @Test
+    void deleteWithWrongElementCountIsRejected() {
+        processor.process(ANA);
+        assertTrue(processor.process("USER DELETE;ana@correo.com").startsWith("ERROR"));
+        assertTrue(processor.process("USER DELETE;ana@correo.com;Clave1!;x").startsWith("ERROR"));
+        assertEquals(1, repo.size());
     }
 
     @Test

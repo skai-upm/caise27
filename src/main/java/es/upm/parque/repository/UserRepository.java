@@ -34,6 +34,22 @@ public class UserRepository {
         persist();
     }
 
+    /** Removes the user with the given DNI, if present, and persists the change. */
+    public void remove(String dni) {
+        if (usersByDni.remove(dni) != null) {
+            persist();
+        }
+    }
+
+    public User findByEmail(String email) {
+        for (User user : usersByDni.values()) {
+            if (user.getEmail().equals(email)) {
+                return user;
+            }
+        }
+        return null;
+    }
+
     private void persist() {
         if (store != null) {
             store.save(findAll());
@@ -49,12 +65,7 @@ public class UserRepository {
     }
 
     public boolean existsByEmail(String email) {
-        for (User user : usersByDni.values()) {
-            if (user.getEmail().equals(email)) {
-                return true;
-            }
-        }
-        return false;
+        return findByEmail(email) != null;
     }
 
     public List<User> findAll() {

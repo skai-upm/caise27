@@ -58,6 +58,23 @@ class UserRepositoryTest {
     }
 
     @Test
+    void findByEmailAndRemovePersist(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("users.txt");
+        UserRepository repo = new UserRepository(new UserFileStore(file));
+        repo.add(user("12345678Z", "ana@correo.com"));
+        repo.add(user("87654321X", "luis@correo.com"));
+        assertEquals("87654321X", repo.findByEmail("luis@correo.com").getDni());
+        assertNull(repo.findByEmail("nadie@correo.com"));
+
+        repo.remove("12345678Z");
+        assertEquals(1, repo.size());
+        assertEquals(1, Files.readAllLines(file).size());
+        UserRepository reloaded = new UserRepository(new UserFileStore(file));
+        assertFalse(reloaded.existsByDni("12345678Z"));
+        assertTrue(reloaded.existsByDni("87654321X"));
+    }
+
+    @Test
     void findAllKeepsInsertionOrder() {
         UserRepository repo = new UserRepository();
         repo.add(user("87654321X", "b@correo.com"));

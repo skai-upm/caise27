@@ -36,5 +36,5 @@ An unrecognized, incomplete or otherwise incorrect command SHALL produce an erro
 - **AND** the following `USER CREATE` is still processed and the user is created
 
 #### Scenario: Not-yet-supported command
-- **WHEN** a line whose command name is not implemented in this delivery step (e.g. `USER DELETE;12345678Z`) is entered
+- **WHEN** a line whose command name is not implemented in this delivery step (e.g. `USER UPDATE;ana@correo.com;Clave1!`) is entered
 - **THEN** an error response starting with `ERROR` is printed and the application keeps running

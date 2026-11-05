@@ -15,6 +15,8 @@ public class CommandProcessor {
     private static final String SEPARATOR = ";";
     private static final String USER_CREATE = "USER CREATE";
     private static final int USER_CREATE_ELEMENTS = 8;
+    private static final String USER_DELETE = "USER DELETE";
+    private static final int USER_DELETE_ELEMENTS = 3;
 
     private final UserRepository users;
 
@@ -39,6 +41,9 @@ public class CommandProcessor {
             String command = elements[0];
             if (USER_CREATE.equals(command)) {
                 return createUser(elements);
+            }
+            if (USER_DELETE.equals(command)) {
+                return deleteUser(elements);
             }
             return "ERROR: unknown command '" + command + "'";
         } catch (RuntimeException e) {
@@ -79,5 +84,22 @@ public class CommandProcessor {
         }
         users.add(new User(firstName, surnames, dni, email, password, phone, card));
         return "OK: user " + dni + " created";
+    }
+
+    private String deleteUser(String[] e) {
+        if (e.length != USER_DELETE_ELEMENTS) {
+            return "ERROR: USER DELETE expects 2 fields: USER DELETE;Email;Password";
+        }
+        String email = e[1];
+        String password = e[2];
+        User user = users.findByEmail(email);
+        if (user == null) {
+            return "ERROR: no user with email " + email;
+        }
+        if (!user.getPassword().equals(password)) {
+            return "ERROR: incorrect password";
+        }
+        users.remove(user.getDni());
+        return "OK: user " + user.getDni() + " deleted";
     }
 }
