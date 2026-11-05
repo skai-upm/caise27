@@ -68,7 +68,14 @@ class UmlModelTest {
         for (String edge : List.of("Ticket <|-- IndividualTicket", "Ticket <|-- GroupTicket",
                 "GroupTicket *-- \"1..*\" IndividualTicket", "GroupTicket --> \"0..1\" Group",
                 "ParkController --> \"0..*\" Attraction", "ParkController --> \"0..*\" Group",
-                "ParkController --> \"0..*\" Ticket")) {
+                "ParkController --> \"0..*\" Ticket",
+                "GeneralAccess <|-- IndividualAccess", "GeneralAccess <|-- GroupAccess",
+                "IndividualTicket ..|> IndividualAccess", "GroupTicket ..|> GroupAccess",
+                "abstract class Attraction<T extends GeneralAccess>", "Attraction <|-- SpecialAttraction",
+                "enum AttractionType", "IndividualTicket \"1\" -- \"0..*\" SpeedPass",
+                "IndividualTicket \"1\" -- \"0..1\" SpecialPass", "InvoiceBuilder <|-- UserInvoiceBuilder",
+                "InvoiceBuilder <|-- GroupInvoiceBuilder", "ParkController --> \"1\" ParkRepository",
+                "ParkController --> \"1\" PasswordHasher", "class ParkController <<singleton>>")) {
             assertTrue(model.contains(edge), "missing relationship: " + edge);
         }
     }

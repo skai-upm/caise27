@@ -124,6 +124,7 @@ package es.upm.amusementpark.business {
   }
   abstract class Pass {
     - id : String
+    - price : BigDecimal <<stored at purchase>>
     - consumed : boolean
   }
   class SpeedPass {
@@ -210,6 +211,8 @@ ParkController ..> PassLookup : provides passesOfTicket
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 Pass --> "1" IndividualTicket : ticket
+IndividualTicket "1" -- "0..*" SpeedPass : speed passes >
+IndividualTicket "1" -- "0..1" SpecialPass : special pass >
 ParkController --> "0..*" Pass : passes
 PassCommands ..> ParkController : uses
 PassCommands ..> CommandSupport : parses with

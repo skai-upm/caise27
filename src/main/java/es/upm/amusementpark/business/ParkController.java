@@ -731,11 +731,27 @@ public final class ParkController {
      * @throws ParkException if the identifier is used or the ticket is not an individual ticket
      */
     public synchronized Pass restorePass(String id, String ticketId, boolean special, boolean consumed) {
+        return restorePass(id, ticketId, special, null, consumed);
+    }
+
+    /**
+     * Rebuilds a persisted pass with its stored price ({@code null} derives it from the ticket, for files written
+     * before prices were stored).
+     *
+     * @throws ParkException if the identifier is used or the ticket is not an individual ticket
+     */
+    public synchronized Pass restorePass(String id, String ticketId, boolean special, BigDecimal storedPrice,
+            boolean consumed) {
         ensurePassIdAvailable(id);
         if (!(tickets.get(ticketId) instanceof IndividualTicket ticket)) {
             throw new ParkException("Individual ticket " + ticketId + " does not exist");
         }
-        Pass pass = special ? new SpecialPass(id, ticket) : new SpeedPass(id, ticket);
+        Pass pass;
+        if (special) {
+            pass = storedPrice == null ? new SpecialPass(id, ticket) : new SpecialPass(id, ticket, storedPrice);
+        } else {
+            pass = storedPrice == null ? new SpeedPass(id, ticket) : new SpeedPass(id, ticket, storedPrice);
+        }
         if (consumed) {
             pass.markConsumed();
         }

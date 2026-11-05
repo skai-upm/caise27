@@ -11,11 +11,16 @@ public abstract class Pass {
 
     private final String id;
     private final IndividualTicket ticket;
+    private final BigDecimal price;
     private boolean consumed;
 
-    protected Pass(String id, IndividualTicket ticket) {
+    /**
+     * @param price price fixed at purchase (stored with the pass)
+     */
+    protected Pass(String id, IndividualTicket ticket, BigDecimal price) {
         this.id = Objects.requireNonNull(id, "id");
         this.ticket = Objects.requireNonNull(ticket, "ticket");
+        this.price = Objects.requireNonNull(price, "price");
     }
 
     public String getId() {
@@ -34,8 +39,10 @@ public abstract class Pass {
         consumed = true;
     }
 
-    /** @return the price, derived from the price stored in the associated ticket */
-    public abstract BigDecimal getPrice();
+    /** @return the price stored at purchase, computed from the associated ticket's price */
+    public BigDecimal getPrice() {
+        return price;
+    }
 
     /** @return human-readable pass type, for example {@code SpeedPass} */
     public abstract String getTypeName();
