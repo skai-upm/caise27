@@ -1,0 +1,280 @@
+{
+  "capturedAt": "2026-11-02T22:39:40.965635+00:00",
+  "agent": "claude-code",
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "5f768a36-b2b7-4119-b18a-dae48f27135f",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 240,
+    "outputTokens": 261390,
+    "cacheCreationTokens": 434879,
+    "cacheReadTokens": 30233057,
+    "totalTokens": 30929566,
+    "totalCost": 14.754403400000003
+  },
+  "git": {
+    "available": true,
+    "repo": "/Users/andreacimmino/Desktop/opendev/opus_3_proposals_gpractices_single_gpt",
+    "head": "d53793678cf3fbecfe10052e95cd551822810f88",
+    "dirty": true,
+    "statusPorcelain": [
+      " M openspec/specs/delivery-one-integration/spec.md",
+      " M openspec/specs/delivery-two-integration/spec.md",
+      " M openspec/specs/help-and-exit/spec.md",
+      " M openspec/specs/user-persistence/spec.md",
+      " M pom.xml",
+      " M src/main/java/es/upm/etsisi/park/App.java",
+      "RM src/main/java/es/upm/etsisi/park/Attraction.java -> src/main/java/es/upm/etsisi/park/business/Attraction.java",
+      "RM src/main/java/es/upm/etsisi/park/Group.java -> src/main/java/es/upm/etsisi/park/business/Group.java",
+      "RM src/main/java/es/upm/etsisi/park/GroupTicket.java -> src/main/java/es/upm/etsisi/park/business/GroupTicket.java",
+      "RM src/main/java/es/upm/etsisi/park/IndividualTicket.java -> src/main/java/es/upm/etsisi/park/business/IndividualTicket.java",
+      "RM src/main/java/es/upm/etsisi/park/Money.java -> src/main/java/es/upm/etsisi/park/business/Money.java",
+      "RM src/main/java/es/upm/etsisi/park/Park.java -> src/main/java/es/upm/etsisi/park/business/Park.java",
+      "RM src/main/java/es/upm/etsisi/park/ParkException.java -> src/main/java/es/upm/etsisi/park/business/ParkException.java",
+      "RM src/main/java/es/upm/etsisi/park/Ticket.java -> src/main/java/es/upm/etsisi/park/business/Ticket.java",
+      "RM src/main/java/es/upm/etsisi/park/User.java -> src/main/java/es/upm/etsisi/park/business/User.java",
+      "RM src/main/java/es/upm/etsisi/park/UserException.java -> src/main/java/es/upm/etsisi/park/business/UserException.java",
+      "RM src/main/java/es/upm/etsisi/park/UserField.java -> src/main/java/es/upm/etsisi/park/business/UserField.java",
+      "RM src/main/java/es/upm/etsisi/park/UserValidator.java -> src/main/java/es/upm/etsisi/park/business/UserValidator.java",
+      "RM src/main/java/es/upm/etsisi/park/ValueParser.java -> src/main/java/es/upm/etsisi/park/business/ValueParser.java",
+      "RM src/main/java/es/upm/etsisi/park/AttractionRepository.java -> src/main/java/es/upm/etsisi/park/persistence/AttractionFileStore.java",
+      "RM src/main/java/es/upm/etsisi/park/GroupRepository.java -> src/main/java/es/upm/etsisi/park/persistence/GroupFileStore.java",
+      "RM src/main/java/es/upm/etsisi/park/TemporaryStorage.java -> src/main/java/es/upm/etsisi/park/persistence/TemporaryStorage.java",
+      "RM src/main/java/es/upm/etsisi/park/TextFile.java -> src/main/java/es/upm/etsisi/park/persistence/TextFile.java",
+      "RM src/main/java/es/upm/etsisi/park/ParkRepository.java -> src/main/java/es/upm/etsisi/park/persistence/TextParkRepository.java",
+      "RM src/main/java/es/upm/etsisi/park/TicketRepository.java -> src/main/java/es/upm/etsisi/park/persistence/TicketFileStore.java",
+      "RM src/main/java/es/upm/etsisi/park/UserRepository.java -> src/main/java/es/upm/etsisi/park/persistence/UserFileStore.java",
+      "RM src/main/java/es/upm/etsisi/park/CommandProcessor.java -> src/main/java/es/upm/etsisi/park/presentation/CommandProcessor.java",
+      " M src/test/java/es/upm/etsisi/park/AppTest.java",
+      "RM src/test/java/es/upm/etsisi/park/ParkAttractionTest.java -> src/test/java/es/upm/etsisi/park/business/ParkAttractionTest.java",
+      "RM src/test/java/es/upm/etsisi/park/ParkGroupTest.java -> src/test/java/es/upm/etsisi/park/business/ParkGroupTest.java",
+      "RM src/test/java/es/upm/etsisi/park/ParkGroupTicketTest.java -> src/test/java/es/upm/etsisi/park/business/ParkGroupTicketTest.java",
+      "RM src/test/java/es/upm/etsisi/park/ParkRollbackTest.java -> src/test/java/es/upm/etsisi/park/business/ParkRollbackTest.java",
+      "RM src/test/java/es/upm/etsisi/park/ParkSystemTest.java -> src/test/java/es/upm/etsisi/park/business/ParkSystemTest.java",
+      "RM src/test/java/es/upm/etsisi/park/ParkTestSupport.java -> src/test/java/es/upm/etsisi/park/business/ParkTestSupport.java",
+      "RM src/test/java/es/upm/etsisi/park/ParkTicketTest.java -> src/test/java/es/upm/etsisi/park/business/ParkTicketTest.java",
+      "RM src/test/java/es/upm/etsisi/park/ParkUserTest.java -> src/test/java/es/upm/etsisi/park/business/ParkUserTest.java",
+      "RM src/test/java/es/upm/etsisi/park/UserTest.java -> src/test/java/es/upm/etsisi/park/business/UserTest.java",
+      "RM src/test/java/es/upm/etsisi/park/UserValidatorTest.java -> src/test/java/es/upm/etsisi/park/business/UserValidatorTest.java",
+      "RM src/test/java/es/upm/etsisi/park/ParkPersistenceTest.java -> src/test/java/es/upm/etsisi/park/persistence/ParkPersistenceTest.java",
+      "RM src/test/java/es/upm/etsisi/park/TemporaryStorageTest.java -> src/test/java/es/upm/etsisi/park/persistence/TemporaryStorageTest.java",
+      "RM src/test/java/es/upm/etsisi/park/UserRepositoryTest.java -> src/test/java/es/upm/etsisi/park/persistence/UserRepositoryTest.java",
+      "RM src/test/java/es/upm/etsisi/park/CommandProcessorTest.java -> src/test/java/es/upm/etsisi/park/presentation/CommandProcessorTest.java",
+      " M uml/model.puml",
+      "?? .botl/proposals/opus_3_proposals_gpractices_single_gpt/0003-3.F3_Amusement_Park_Improved_OpenSpec.md/",
+      "?? .scannerwork/",
+      "?? experiments/",
+      "?? openspec/changes/archive/2026-11-02-botl-0003-f3-amusement-park/",
+      "?? openspec/specs/atomic-pass-consumption/",
+      "?? openspec/specs/bcrypt-passwords/",
+      "?? openspec/specs/delivery-three-integration/",
+      "?? openspec/specs/extended-help/",
+      "?? openspec/specs/generic-attraction-types/",
+      "?? openspec/specs/invoice-builders/",
+      "?? openspec/specs/layered-packages-and-exceptions/",
+      "?? openspec/specs/pass-persistence-and-uml/",
+      "?? openspec/specs/singleton-controllers-and-injected-repositories/",
+      "?? openspec/specs/speed-and-special-passes/",
+      "?? sonar_metric_catalog.json",
+      "?? src/main/java/es/upm/etsisi/park/ParkApplication.java",
+      "?? src/main/java/es/upm/etsisi/park/business/AccessTicket.java",
+      "?? src/main/java/es/upm/etsisi/park/business/AttractionController.java",
+      "?? src/main/java/es/upm/etsisi/park/business/AttractionType.java",
+      "?? src/main/java/es/upm/etsisi/park/business/BCryptPasswordHasher.java",
+      "?? src/main/java/es/upm/etsisi/park/business/ConflictException.java",
+      "?? src/main/java/es/upm/etsisi/park/business/EntryResult.java",
+      "?? src/main/java/es/upm/etsisi/park/business/GeneralAttraction.java",
+      "?? src/main/java/es/upm/etsisi/park/business/GroupAccess.java",
+      "?? src/main/java/es/upm/etsisi/park/business/GroupAttraction.java",
+      "?? src/main/java/es/upm/etsisi/park/business/GroupController.java",
+      "?? src/main/java/es/upm/etsisi/park/business/IndividualAccess.java",
+      "?? src/main/java/es/upm/etsisi/park/business/IndividualAttraction.java",
+      "?? src/main/java/es/upm/etsisi/park/business/InvoiceController.java",
+      "?? src/main/java/es/upm/etsisi/park/business/NotFoundException.java",
+      "?? src/main/java/es/upm/etsisi/park/business/ParkData.java",
+      "?? src/main/java/es/upm/etsisi/park/business/ParkRepository.java",
+      "?? src/main/java/es/upm/etsisi/park/business/ParkServices.java",
+      "?? src/main/java/es/upm/etsisi/park/business/Pass.java",
+      "?? src/main/java/es/upm/etsisi/park/business/PassController.java",
+      "?? src/main/java/es/upm/etsisi/park/business/PasswordHasher.java",
+      "?? src/main/java/es/upm/etsisi/park/business/PersistenceException.java",
+      "?? src/main/java/es/upm/etsisi/park/business/RuleViolationException.java",
+      "?? src/main/java/es/upm/etsisi/park/business/SpecialAttraction.java",
+      "?? src/main/java/es/upm/etsisi/park/business/SpecialPass.java",
+      "?? src/main/java/es/upm/etsisi/park/business/SpeedPass.java",
+      "?? src/main/java/es/upm/etsisi/park/business/TicketController.java",
+      "?? src/main/java/es/upm/etsisi/park/business/UserController.java",
+      "?? src/main/java/es/upm/etsisi/park/business/invoice/",
+      "?? src/main/java/es/upm/etsisi/park/persistence/PassFileStore.java",
+      "?? src/main/java/es/upm/etsisi/park/presentation/CommandDefinition.java",
+      "?? src/main/java/es/upm/etsisi/park/presentation/ExtendedHelpFormatter.java",
+      "?? src/main/java/es/upm/etsisi/park/presentation/HelpFormatter.java",
+      "?? src/main/java/es/upm/etsisi/park/presentation/HelpGenerator.java",
+      "?? src/main/java/es/upm/etsisi/park/presentation/SyntaxHelpFormatter.java",
+      "?? src/test/java/es/upm/etsisi/park/ArchitectureTest.java",
+      "?? src/test/java/es/upm/etsisi/park/business/AttractionTypeTest.java",
+      "?? src/test/java/es/upm/etsisi/park/business/ControllerWiringTest.java",
+      "?? src/test/java/es/upm/etsisi/park/business/InvoiceTest.java",
+      "?? src/test/java/es/upm/etsisi/park/business/PassEntryTest.java",
+      "?? src/test/java/es/upm/etsisi/park/business/PassTest.java",
+      "?? src/test/java/es/upm/etsisi/park/business/PasswordTest.java",
+      "?? src/test/java/es/upm/etsisi/park/persistence/PassPersistenceTest.java",
+      "?? src/test/java/es/upm/etsisi/park/presentation/HelpTest.java"
+    ]
+  },
+  "artifacts": {
+    "available": true,
+    "files": 80,
+    "lines": 2748,
+    "words": 26424,
+    "requirements": 172,
+    "scenarios": 307,
+    "tasks": 71,
+    "shallStatements": 320
+  },
+  "projectProfile": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "codeQuality": {
+    "common": {
+      "sonar": {
+        "available": false,
+        "skipped": true
+      }
+    },
+    "languageSpecific": {
+      "profile": {
+        "kind": "java-maven",
+        "modules": [
+          {
+            "path": ".",
+            "adapter": "java-maven",
+            "marker": "pom.xml"
+          }
+        ]
+      },
+      "modules": [
+        {
+          "adapter": "java-maven",
+          "path": ".",
+          "preflight": {
+            "pomExists": true,
+            "mavenAvailable": true,
+            "javaAvailable": true,
+            "mavenVersion": {
+              "returnCode": 0,
+              "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+              "stderr": ""
+            },
+            "javaVersion": {
+              "returnCode": 0,
+              "stdout": "",
+              "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+            },
+            "projectEvaluation": {
+              "returnCode": 0,
+              "stdout": "amusement-park",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "ok": true
+          },
+          "build": {
+            "returnCode": 0,
+            "stdout": "[INFO] Scanning for projects...\n[INFO] \n[INFO] --------------------< es.upm.etsisi:amusement-park >--------------------\n[INFO] Building amusement-park 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.13:prepare-agent (default-cli) @ amusement-park ---\n[INFO] argLine set to -javaagent:/Users/andreacimmino/.m2/repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13-runtime.jar=destfile=/Users/andreacimmino/Desktop/opendev/opus_3_proposals_gpractices_single_gpt/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_3_proposals_gpractices_single_gpt/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_3_proposals_gpractices_single_gpt/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.5.2:test (default-test) @ amusement-park ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running es.upm.etsisi.park.AppTest\n[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.732 s -- in es.upm.etsisi.park.AppTest\n[INFO] Running es.upm.etsisi.park.business.ParkSystemTest\n[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.250 s -- in es.upm.etsisi.park.business.ParkSystemTest\n[INFO] Running es.upm.etsisi.park.business.InvoiceTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.124 s -- in es.upm.etsisi.park.business.InvoiceTest\n[INFO] Running es.upm.etsisi.park.business.AttractionTypeTest\n[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.177 s -- in es.upm.etsisi.park.business.AttractionTypeTest\n[INFO] Running es.upm.etsisi.park.business.ParkAttractionTest\n[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.312 s -- in es.upm.etsisi.park.business.ParkAttractionTest\n[INFO] Running es.upm.etsisi.park.business.ParkTicketTest\n[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.218 s -- in es.upm.etsisi.park.business.ParkTicketTest\n[INFO] Running es.upm.etsisi.park.business.ParkUserTest\n[INFO] Tests run: 29, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.505 s -- in es.upm.etsisi.park.business.ParkUserTest\n[INFO] Running es.upm.etsisi.park.business.ParkGroupTicketTest\n[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.417 s -- in es.upm.etsisi.park.business.ParkGroupTicketTest\n[INFO] Running es.upm.etsisi.park.business.ParkGroupTest\n[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.116 s -- in es.upm.etsisi.park.business.ParkGroupTest\n[INFO] Running es.upm.etsisi.park.business.PassTest\n[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.271 s -- in es.upm.etsisi.park.business.PassTest\n[INFO] Running es.upm.etsisi.park.business.UserTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in es.upm.etsisi.park.business.UserTest\n[INFO] Running es.upm.etsisi.park.business.PasswordTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.132 s -- in es.upm.etsisi.park.business.PasswordTest\n[INFO] Running es.upm.etsisi.park.business.ParkRollbackTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.087 s -- in es.upm.etsisi.park.business.ParkRollbackTest\n[INFO] Running es.upm.etsisi.park.business.ControllerWiringTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in es.upm.etsisi.park.business.ControllerWiringTest\n[INFO] Running es.upm.etsisi.park.business.PassEntryTest\n[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.181 s -- in es.upm.etsisi.park.business.PassEntryTest\n[INFO] Running es.upm.etsisi.park.business.UserValidatorTest\n[INFO] Tests run: 46, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.093 s -- in es.upm.etsisi.park.business.UserValidatorTest\n[INFO] Running es.upm.etsisi.park.ArchitectureTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.038 s -- in es.upm.etsisi.park.ArchitectureTest\n[INFO] Running es.upm.etsisi.park.persistence.PassPersistenceTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in es.upm.etsisi.park.persistence.PassPersistenceTest\n[INFO] Running es.upm.etsisi.park.persistence.ParkPersistenceTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.063 s -- in es.upm.etsisi.park.persistence.ParkPersistenceTest\n[INFO] Running es.upm.etsisi.park.persistence.UserRepositoryTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in es.upm.etsisi.park.persistence.UserRepositoryTest\n[INFO] Running es.upm.etsisi.park.persistence.TemporaryStorageTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in es.upm.etsisi.park.persistence.TemporaryStorageTest\n[INFO] Running es.upm.etsisi.park.presentation.CommandProcessorTest\n[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.147 s -- in es.upm.etsisi.park.presentation.CommandProcessorTest\n[INFO] Running es.upm.etsisi.park.presentation.HelpTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in es.upm.etsisi.park.presentation.HelpTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 273, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ amusement-park ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_3_proposals_gpractices_single_gpt/target/jacoco.exec\n[INFO] Analyzed bundle 'amusement-park' with 60 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  9.298 s\n[INFO] Finished at: 2026-11-02T23:39:40+01:00\n[INFO] ------------------------------------------------------------------------\n",
+            "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-16342371029640752610/passes.txt: Q;Z1;T001;1.00;false\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-9129545233674276347/passes.txt: S;SP1:1;MISSING;8.00;false\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-9129545233674276347/passes.txt: X;bad\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-9129545233674276347/passes.txt: Q;P;T;1;false\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-9129545233674276347/attractions.txt: A02;Bad;3;VIP2X;extra\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-1482524980240509275/groups.txt: G01;Familia;12345678Z;99999999R\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-1482524980240509275/groups.txt: bad\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-1482524980240509275/tickets.txt: X;nonsense\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-1482524980240509275/tickets.txt: G;TG9\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-1482524980240509275/attractions.txt: A02;broken\nWARNING: skipping malformed line in /var/folders/qc/m9d6xjy52b9c7_3zr9rt3whh0000gn/T/junit-17326677867914661463/users.txt: broken;line\n"
+          },
+          "surefire": {
+            "reportFiles": 23,
+            "tests": 273,
+            "passed": 273,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "timeSeconds": 3.9570000000000003
+          },
+          "failsafe": {
+            "reportFiles": 0,
+            "tests": 0,
+            "passed": 0,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "timeSeconds": 0.0
+          },
+          "jacoco": [
+            {
+              "available": true,
+              "path": "/Users/andreacimmino/Desktop/opendev/opus_3_proposals_gpractices_single_gpt/target/site/jacoco/jacoco.xml",
+              "counters": {
+                "instruction": {
+                  "missed": 115,
+                  "covered": 6459,
+                  "total": 6574,
+                  "coverage": 98.2506845147551
+                },
+                "branch": {
+                  "missed": 21,
+                  "covered": 491,
+                  "total": 512,
+                  "coverage": 95.8984375
+                },
+                "line": {
+                  "missed": 32,
+                  "covered": 1254,
+                  "total": 1286,
+                  "coverage": 97.51166407465007
+                },
+                "complexity": {
+                  "missed": 29,
+                  "covered": 599,
+                  "total": 628,
+                  "coverage": 95.38216560509554
+                },
+                "method": {
+                  "missed": 9,
+                  "covered": 358,
+                  "total": 367,
+                  "coverage": 97.54768392370572
+                },
+                "class": {
+                  "missed": 0,
+                  "covered": 60,
+                  "total": 60,
+                  "coverage": 100.0
+                }
+              }
+            }
+          ],
+          "jacocoXmlPaths": [
+            "/Users/andreacimmino/Desktop/opendev/opus_3_proposals_gpractices_single_gpt/target/site/jacoco/jacoco.xml"
+          ],
+          "compiledClasses": true
+        }
+      ]
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "radon": {
+      "available": false
+    }
+  },
+  "sonar": {
+    "available": false,
+    "skipped": true
+  },
+  "radon": {
+    "available": false
+  }
+}
