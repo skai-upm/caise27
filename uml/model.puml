@@ -1,0 +1,129 @@
+@startuml model
+' Amusement Park - class model of the implemented design (Delivery 2 state).
+' Only relevant attributes are shown; methods and constructors are omitted.
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package es.upm.amusementpark {
+  class App {
+    {static} FLY : String
+  }
+}
+
+package es.upm.amusementpark.cli {
+  interface CommandHandler {
+  }
+  class CommandProcessor {
+    {static} HELP_TEXT : String
+    - out : PrintStream
+    - afterCommand : Runnable
+  }
+}
+
+package es.upm.amusementpark.park {
+  class ParkController <<singleton>> {
+    {static} INITIAL_PRICE : BigDecimal
+    {static} - INSTANCE : ParkController
+    - currentDate : LocalDate
+    - currentPrice : BigDecimal
+  }
+  class ParkException {
+  }
+  interface UserDirectory {
+  }
+  interface GroupTicketDates {
+  }
+  class Group {
+    - id : String
+    - name : String
+    - members : Set<String> <<user e-mails>>
+  }
+  abstract class Ticket {
+    - id : String
+    - date : LocalDate
+  }
+  class IndividualTicket {
+    - userEmail : String
+    - price : BigDecimal
+  }
+  class GroupTicket {
+    - groupId : String
+  }
+  class Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+    - occupants : Set<String> <<user e-mails>>
+  }
+  class SystemCommands {
+  }
+  class GroupCommands {
+  }
+  class TicketCommands {
+  }
+  class AttractionCommands {
+  }
+}
+
+package es.upm.amusementpark.persistence {
+  class ParkStorage {
+    - directory : Path
+  }
+  class TextFile {
+    {static} SEPARATOR : String
+    - path : Path
+  }
+  class GroupRepository {
+  }
+  class TicketRepository {
+  }
+  class AttractionRepository {
+  }
+}
+
+' ---- ticket hierarchy and composition ----
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+GroupTicket *-- "1..*" IndividualTicket : components
+IndividualTicket --> "0..1" GroupTicket : containingGroupTicket
+GroupTicket --> "0..1" Group : group
+
+' ---- central management ----
+ParkController --> "0..*" Group : groups
+ParkController --> "0..*" Ticket : tickets
+ParkController --> "0..*" Attraction : attractions
+ParkController --> "1" UserDirectory : userDirectory
+ParkController --> "1" GroupTicketDates : groupTicketDates
+ParkController ..> ParkException : throws
+
+' ---- commands ----
+CommandProcessor --> "0..*" CommandHandler : handlers
+SystemCommands --> "1" ParkController : park
+GroupCommands --> "1" ParkController : park
+TicketCommands --> "1" ParkController : park
+AttractionCommands --> "1" ParkController : park
+SystemCommands ..> CommandProcessor : registers
+GroupCommands ..> CommandProcessor : registers
+TicketCommands ..> CommandProcessor : registers
+AttractionCommands ..> CommandProcessor : registers
+App ..> CommandProcessor : creates
+App ..> ParkController : uses
+App ..> ParkStorage : configures
+
+' ---- persistence ----
+ParkStorage *-- "1" GroupRepository : groups
+ParkStorage *-- "1" TicketRepository : tickets
+ParkStorage *-- "1" AttractionRepository : attractions
+GroupRepository *-- "1" TextFile : file
+TicketRepository *-- "1" TextFile : file
+AttractionRepository *-- "1" TextFile : file
+ParkStorage ..> ParkController : loads/saves
+
+note top of UserDirectory
+  Users are identified by e-mail and looked up through
+  UserDirectory (exists, dniOf). Individual tickets, groups and
+  attractions reference users by e-mail, one-way: users never
+  reference tickets, groups or attractions. A User class is not
+  part of the code base yet.
+end note
+@enduml
