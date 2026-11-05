@@ -1,0 +1,46 @@
+# project-initialization Specification
+
+## Purpose
+
+Defines the build baseline of the Amusement Park application: a Maven project with the quickstart archetype structure that targets JDK 21 and compiles with Maven.
+
+## Requirements
+
+### Requirement: Maven project structure
+The repository SHALL contain a Maven project at its root with a `pom.xml` and the standard `maven-archetype-quickstart` directory layout (`src/main/java` for production sources and `src/test/java` for test sources).
+
+#### Scenario: Standard structure present in a clean checkout
+- **GIVEN** a clean checkout of the repository
+- **WHEN** the project root is inspected
+- **THEN** a `pom.xml` file exists at the root
+- **AND** the directories `src/main/java` and `src/test/java` exist and contain Java sources
+
+#### Scenario: Non-standard structure is not acceptable
+- **GIVEN** a checkout in which `pom.xml` is missing from the root
+- **WHEN** a Maven build is attempted
+- **THEN** the build fails because no Maven project is found, which violates this requirement
+
+### Requirement: JDK 21 target
+The Maven project SHALL be configured to compile sources for Java 21.
+
+#### Scenario: Compiler release configured to 21
+- **WHEN** the `pom.xml` is inspected
+- **THEN** the Java compiler release (or source/target) is configured as `21`
+
+#### Scenario: Compiled bytecode targets Java 21
+- **GIVEN** the project has been compiled
+- **WHEN** the class file version of a compiled production class is inspected
+- **THEN** it corresponds to Java 21 (class file major version 65)
+
+### Requirement: Maven compilation succeeds
+The project SHALL compile and run its tests successfully with Maven using a JDK that supports Java 21.
+
+#### Scenario: Build from a clean checkout
+- **GIVEN** a clean checkout, JDK 21 (or newer) and Maven available
+- **WHEN** `mvn clean test` is executed at the repository root
+- **THEN** compilation succeeds and the build finishes with `BUILD SUCCESS`
+
+#### Scenario: Compilation error breaks the build
+- **GIVEN** a source file containing a compilation error
+- **WHEN** `mvn compile` is executed
+- **THEN** the build fails, so the baseline is only satisfied when all sources compile
