@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0008-botl-0008-attraction-management-and-visitor-access",
+  "change": "botl-0008-attraction-management-and-visitor-access",
+  "status": "archived",
+  "createdAt": "2026-11-04T11:20:24.877076+00:00",
+  "updatedAt": "2026-11-04T11:28:19.532330+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261104T112024Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261104T112024Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 604937,
+        "totalCost": 0.29301719999999953
+      }
+    },
+    {
+      "runId": "0002-apply-20261104T112227Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261104T112227Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1273654,
+        "totalCost": 0.5870867999999998
+      }
+    },
+    {
+      "runId": "0003-archive-20261104T112711Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261104T112711Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-04T11:28:19.057169+00:00"
+}
