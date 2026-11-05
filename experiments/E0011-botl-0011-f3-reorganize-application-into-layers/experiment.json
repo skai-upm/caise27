@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0011-botl-0011-f3-reorganize-application-into-layers",
+  "change": "botl-0011-f3-reorganize-application-into-layers",
+  "status": "archived",
+  "createdAt": "2026-10-26T08:03:06.884808+00:00",
+  "updatedAt": "2026-10-26T08:11:07.144981+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261026T080306Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261026T080306Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 430097,
+        "totalCost": 0.19004119999999958
+      }
+    },
+    {
+      "runId": "0002-apply-20261026T080432Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261026T080432Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 6651916,
+        "totalCost": 1.8331093999999943
+      }
+    },
+    {
+      "runId": "0003-archive-20261026T081014Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261026T081014Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-10-26T08:11:07.057722+00:00"
+}

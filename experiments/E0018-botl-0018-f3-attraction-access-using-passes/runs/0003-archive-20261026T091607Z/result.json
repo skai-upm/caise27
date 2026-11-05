@@ -1,0 +1,447 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0018-botl-0018-f3-attraction-access-using-passes",
+  "change": "botl-0018-f3-attraction-access-using-passes",
+  "runId": "0003-archive-20261026T091607Z",
+  "sequence": 3,
+  "phase": "archive",
+  "startedAt": "2026-10-26T09:16:07.396970+00:00",
+  "finishedAt": "2026-10-26T09:16:52.162059+00:00",
+  "durationSeconds": 44.765089,
+  "environment": {
+    "agent": "claude-code",
+    "agentAdapter": "claude-code",
+    "aiUsageSource": "claude",
+    "analysisAdapterConfigured": "auto",
+    "analysisAdapterBefore": "java-maven",
+    "analysisAdapterAfter": "java-maven"
+  },
+  "projectProfileBefore": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "projectProfileAfter": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "profileTransition": {
+    "changed": false,
+    "before": "java-maven",
+    "after": "java-maven"
+  },
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "81849327-1825-4912-bf34-9a3748602dcc",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "cacheCreationTokens": 0,
+    "cacheReadTokens": 0,
+    "totalTokens": 0,
+    "totalCost": 0.0,
+    "newTokens": 0,
+    "cachedTokens": 0,
+    "totalProcessedTokens": 0
+  },
+  "before": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human",
+      "head": "4f66b8fc342585d45b7add8a52740a7645545121",
+      "dirty": true,
+      "statusPorcelain": [
+        " M src/main/java/es/upm/parque/business/controller/AttractionController.java",
+        " M src/main/java/es/upm/parque/business/model/Admission.java",
+        " M src/main/java/es/upm/parque/business/model/Attraction.java",
+        " M src/main/java/es/upm/parque/business/model/GroupTicket.java",
+        " M src/main/java/es/upm/parque/business/model/IndividualAdmission.java",
+        " M src/main/java/es/upm/parque/business/model/IndividualTicket.java",
+        " M src/main/java/es/upm/parque/business/model/SpecialAttraction.java",
+        " M src/main/java/es/upm/parque/presentation/CommandProcessor.java",
+        " M src/test/java/es/upm/parque/business/controller/AttractionControllerTest.java",
+        " M src/test/java/es/upm/parque/business/model/AttractionTest.java",
+        " M src/test/java/es/upm/parque/presentation/CommandProcessorTest.java",
+        " M uml/model.puml",
+        "?? .botl/proposals/opus_2_setup_multiple_human/0018-18.F3---Attraction-access-using-passes.md",
+        "?? .scannerwork/",
+        "?? experiments/",
+        "?? openspec/changes/botl-0018-f3-attraction-access-using-passes/",
+        "?? sonar_metric_catalog.json",
+        "?? src/main/java/es/upm/parque/business/model/EntryResult.java",
+        "?? src/test/java/es/upm/parque/business/model/AttractionPassEntryTest.java"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 110,
+      "lines": 3898,
+      "words": 37824,
+      "requirements": 209,
+      "scenarios": 422,
+      "tasks": 99,
+      "shallStatements": 456
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "parque",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "[INFO] Scanning for projects...\n[INFO] \n[INFO] ------------------------< es.upm.parque:parque >------------------------\n[INFO] Building parque 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.13:prepare-agent (default-cli) @ parque ---\n[INFO] argLine set to -javaagent:/Users/andreacimmino/.m2/repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13-runtime.jar=destfile=/Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ parque ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ parque ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.3.0:test (default-test) @ parque ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running es.upm.parque.LayeredArchitectureTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.231 s -- in es.upm.parque.LayeredArchitectureTest\n[INFO] Running es.upm.parque.AppTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.327 s -- in es.upm.parque.AppTest\n[INFO] Running es.upm.parque.FlyModeTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.997 s -- in es.upm.parque.FlyModeTest\n[INFO] Running es.upm.parque.ComponentConfigurationTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.049 s -- in es.upm.parque.ComponentConfigurationTest\n[INFO] Running es.upm.parque.business.security.BCryptPasswordHasherTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in es.upm.parque.business.security.BCryptPasswordHasherTest\n[INFO] Running es.upm.parque.business.controller.UserControllerTest\n[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.428 s -- in es.upm.parque.business.controller.UserControllerTest\n[INFO] Running es.upm.parque.business.controller.GroupControllerTest\n[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.098 s -- in es.upm.parque.business.controller.GroupControllerTest\n[INFO] Running es.upm.parque.business.controller.PassControllerTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.181 s -- in es.upm.parque.business.controller.PassControllerTest\n[INFO] Running es.upm.parque.business.controller.InvoiceControllerTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.148 s -- in es.upm.parque.business.controller.InvoiceControllerTest\n[INFO] Running es.upm.parque.business.controller.AttractionControllerTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.091 s -- in es.upm.parque.business.controller.AttractionControllerTest\n[INFO] Running es.upm.parque.business.controller.TicketControllerTest\n[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.189 s -- in es.upm.parque.business.controller.TicketControllerTest\n[INFO] Running es.upm.parque.business.controller.MainControllerTest\n[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.071 s -- in es.upm.parque.business.controller.MainControllerTest\n[INFO] Running es.upm.parque.business.model.GroupTicketTest\n[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.096 s -- in es.upm.parque.business.model.GroupTicketTest\n[INFO] Running es.upm.parque.business.model.PassTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in es.upm.parque.business.model.PassTest\n[INFO] Running es.upm.parque.business.model.AttractionPassEntryTest\n[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in es.upm.parque.business.model.AttractionPassEntryTest\n[INFO] Running es.upm.parque.business.model.UserTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in es.upm.parque.business.model.UserTest\n[INFO] Running es.upm.parque.business.model.GroupTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in es.upm.parque.business.model.GroupTest\n[INFO] Running es.upm.parque.business.model.AttractionTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in es.upm.parque.business.model.AttractionTest\n[INFO] Running es.upm.parque.business.validation.UserValidatorTest\n[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.127 s -- in es.upm.parque.business.validation.UserValidatorTest\n[INFO] Running es.upm.parque.business.invoice.StandardInvoiceBuilderTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in es.upm.parque.business.invoice.StandardInvoiceBuilderTest\n[INFO] Running es.upm.parque.persistence.TicketRepositoryTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in es.upm.parque.persistence.TicketRepositoryTest\n[INFO] Running es.upm.parque.persistence.DataDirectoryTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in es.upm.parque.persistence.DataDirectoryTest\n[INFO] Running es.upm.parque.persistence.AttractionRepositoryTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in es.upm.parque.persistence.AttractionRepositoryTest\n[INFO] Running es.upm.parque.persistence.GroupRepositoryTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in es.upm.parque.persistence.GroupRepositoryTest\n[INFO] Running es.upm.parque.persistence.UserRepositoryTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in es.upm.parque.persistence.UserRepositoryTest\n[INFO] Running es.upm.parque.presentation.CommandProcessorTest\n[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.319 s -- in es.upm.parque.presentation.CommandProcessorTest\n[INFO] Running es.upm.parque.presentation.ExecutionOptionsTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in es.upm.parque.presentation.ExecutionOptionsTest\n[INFO] Running es.upm.parque.presentation.help.HelpGeneratorTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in es.upm.parque.presentation.help.HelpGeneratorTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 225, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ parque ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/target/jacoco.exec\n[INFO] Analyzed bundle 'parque' with 53 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  10.072 s\n[INFO] Finished at: 2026-10-26T10:16:27+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "surefire": {
+              "reportFiles": 49,
+              "tests": 426,
+              "passed": 426,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 5.204
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 65,
+                    "covered": 5964,
+                    "total": 6029,
+                    "coverage": 98.92187759164041
+                  },
+                  "branch": {
+                    "missed": 13,
+                    "covered": 497,
+                    "total": 510,
+                    "coverage": 97.45098039215686
+                  },
+                  "line": {
+                    "missed": 13,
+                    "covered": 1207,
+                    "total": 1220,
+                    "coverage": 98.9344262295082
+                  },
+                  "complexity": {
+                    "missed": 15,
+                    "covered": 572,
+                    "total": 587,
+                    "coverage": 97.44463373083475
+                  },
+                  "method": {
+                    "missed": 2,
+                    "covered": 314,
+                    "total": 316,
+                    "coverage": 99.36708860759494
+                  },
+                  "class": {
+                    "missed": 0,
+                    "covered": 53,
+                    "total": 53,
+                    "coverage": 100.0
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "after": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human",
+      "head": "4f66b8fc342585d45b7add8a52740a7645545121",
+      "dirty": true,
+      "statusPorcelain": [
+        " M openspec/specs/attraction-management/spec.md",
+        " M src/main/java/es/upm/parque/business/controller/AttractionController.java",
+        " M src/main/java/es/upm/parque/business/model/Admission.java",
+        " M src/main/java/es/upm/parque/business/model/Attraction.java",
+        " M src/main/java/es/upm/parque/business/model/GroupTicket.java",
+        " M src/main/java/es/upm/parque/business/model/IndividualAdmission.java",
+        " M src/main/java/es/upm/parque/business/model/IndividualTicket.java",
+        " M src/main/java/es/upm/parque/business/model/SpecialAttraction.java",
+        " M src/main/java/es/upm/parque/presentation/CommandProcessor.java",
+        " M src/test/java/es/upm/parque/business/controller/AttractionControllerTest.java",
+        " M src/test/java/es/upm/parque/business/model/AttractionTest.java",
+        " M src/test/java/es/upm/parque/presentation/CommandProcessorTest.java",
+        " M uml/model.puml",
+        "?? .botl/proposals/opus_2_setup_multiple_human/0018-18.F3---Attraction-access-using-passes.md",
+        "?? .scannerwork/",
+        "?? experiments/",
+        "?? openspec/changes/archive/2026-10-26-botl-0018-f3-attraction-access-using-passes/",
+        "?? sonar_metric_catalog.json",
+        "?? src/main/java/es/upm/parque/business/model/EntryResult.java",
+        "?? src/test/java/es/upm/parque/business/model/AttractionPassEntryTest.java"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 110,
+      "lines": 3955,
+      "words": 38405,
+      "requirements": 213,
+      "scenarios": 433,
+      "tasks": 99,
+      "shallStatements": 470
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "parque",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "[INFO] Scanning for projects...\n[INFO] \n[INFO] ------------------------< es.upm.parque:parque >------------------------\n[INFO] Building parque 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.13:prepare-agent (default-cli) @ parque ---\n[INFO] argLine set to -javaagent:/Users/andreacimmino/.m2/repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13-runtime.jar=destfile=/Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ parque ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ parque ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ parque ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.3.0:test (default-test) @ parque ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running es.upm.parque.LayeredArchitectureTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.239 s -- in es.upm.parque.LayeredArchitectureTest\n[INFO] Running es.upm.parque.AppTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.355 s -- in es.upm.parque.AppTest\n[INFO] Running es.upm.parque.FlyModeTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.998 s -- in es.upm.parque.FlyModeTest\n[INFO] Running es.upm.parque.ComponentConfigurationTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.049 s -- in es.upm.parque.ComponentConfigurationTest\n[INFO] Running es.upm.parque.business.security.BCryptPasswordHasherTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in es.upm.parque.business.security.BCryptPasswordHasherTest\n[INFO] Running es.upm.parque.business.controller.UserControllerTest\n[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.412 s -- in es.upm.parque.business.controller.UserControllerTest\n[INFO] Running es.upm.parque.business.controller.GroupControllerTest\n[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.104 s -- in es.upm.parque.business.controller.GroupControllerTest\n[INFO] Running es.upm.parque.business.controller.PassControllerTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.175 s -- in es.upm.parque.business.controller.PassControllerTest\n[INFO] Running es.upm.parque.business.controller.InvoiceControllerTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.137 s -- in es.upm.parque.business.controller.InvoiceControllerTest\n[INFO] Running es.upm.parque.business.controller.AttractionControllerTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.095 s -- in es.upm.parque.business.controller.AttractionControllerTest\n[INFO] Running es.upm.parque.business.controller.TicketControllerTest\n[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.188 s -- in es.upm.parque.business.controller.TicketControllerTest\n[INFO] Running es.upm.parque.business.controller.MainControllerTest\n[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in es.upm.parque.business.controller.MainControllerTest\n[INFO] Running es.upm.parque.business.model.GroupTicketTest\n[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.106 s -- in es.upm.parque.business.model.GroupTicketTest\n[INFO] Running es.upm.parque.business.model.PassTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in es.upm.parque.business.model.PassTest\n[INFO] Running es.upm.parque.business.model.AttractionPassEntryTest\n[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.038 s -- in es.upm.parque.business.model.AttractionPassEntryTest\n[INFO] Running es.upm.parque.business.model.UserTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in es.upm.parque.business.model.UserTest\n[INFO] Running es.upm.parque.business.model.GroupTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in es.upm.parque.business.model.GroupTest\n[INFO] Running es.upm.parque.business.model.AttractionTest\n[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in es.upm.parque.business.model.AttractionTest\n[INFO] Running es.upm.parque.business.validation.UserValidatorTest\n[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.086 s -- in es.upm.parque.business.validation.UserValidatorTest\n[INFO] Running es.upm.parque.business.invoice.StandardInvoiceBuilderTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in es.upm.parque.business.invoice.StandardInvoiceBuilderTest\n[INFO] Running es.upm.parque.persistence.TicketRepositoryTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.043 s -- in es.upm.parque.persistence.TicketRepositoryTest\n[INFO] Running es.upm.parque.persistence.DataDirectoryTest\n[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in es.upm.parque.persistence.DataDirectoryTest\n[INFO] Running es.upm.parque.persistence.AttractionRepositoryTest\n[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in es.upm.parque.persistence.AttractionRepositoryTest\n[INFO] Running es.upm.parque.persistence.GroupRepositoryTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in es.upm.parque.persistence.GroupRepositoryTest\n[INFO] Running es.upm.parque.persistence.UserRepositoryTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in es.upm.parque.persistence.UserRepositoryTest\n[INFO] Running es.upm.parque.presentation.CommandProcessorTest\n[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.313 s -- in es.upm.parque.presentation.CommandProcessorTest\n[INFO] Running es.upm.parque.presentation.ExecutionOptionsTest\n[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in es.upm.parque.presentation.ExecutionOptionsTest\n[INFO] Running es.upm.parque.presentation.help.HelpGeneratorTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in es.upm.parque.presentation.help.HelpGeneratorTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 225, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ parque ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/target/jacoco.exec\n[INFO] Analyzed bundle 'parque' with 53 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  10.046 s\n[INFO] Finished at: 2026-10-26T10:16:51+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "surefire": {
+              "reportFiles": 49,
+              "tests": 426,
+              "passed": 426,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 5.161999999999999
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 65,
+                    "covered": 5964,
+                    "total": 6029,
+                    "coverage": 98.92187759164041
+                  },
+                  "branch": {
+                    "missed": 13,
+                    "covered": 497,
+                    "total": 510,
+                    "coverage": 97.45098039215686
+                  },
+                  "line": {
+                    "missed": 13,
+                    "covered": 1207,
+                    "total": 1220,
+                    "coverage": 98.9344262295082
+                  },
+                  "complexity": {
+                    "missed": 15,
+                    "covered": 572,
+                    "total": 587,
+                    "coverage": 97.44463373083475
+                  },
+                  "method": {
+                    "missed": 2,
+                    "covered": 314,
+                    "total": 316,
+                    "coverage": 99.36708860759494
+                  },
+                  "class": {
+                    "missed": 0,
+                    "covered": 53,
+                    "total": 53,
+                    "coverage": 100.0
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_2_setup_multiple_human/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "delta": {
+    "git": {
+      "available": true,
+      "filesModified": 13,
+      "untrackedFiles": 199,
+      "locAdded": 235,
+      "locRemoved": 21,
+      "netLoc": 214
+    },
+    "artifacts": {
+      "files": 0,
+      "tasks": 0,
+      "shallStatements": 14,
+      "words": 581,
+      "scenarios": 11,
+      "requirements": 4,
+      "lines": 57
+    },
+    "radon": {},
+    "sonar": {
+      "allMeasures": {}
+    }
+  }
+}
