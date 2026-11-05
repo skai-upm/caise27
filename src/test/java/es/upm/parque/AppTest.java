@@ -1,5 +1,6 @@
 package es.upm.parque;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,8 +11,11 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.parque.command.CommandProcessor;
 import es.upm.parque.repository.UserRepository;
@@ -32,6 +36,60 @@ public class AppTest {
         } finally {
             System.setIn(original);
         }
+    }
+
+    private static final String ANA =
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
+    private static final String PEDRO =
+            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
+
+    private static String[] startWith(String[] args, UserRepository repo, String stdin) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        App.start(args, new CommandProcessor(repo),
+                new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
+                new PrintStream(out, true, StandardCharsets.UTF_8));
+        String text = out.toString(StandardCharsets.UTF_8).trim();
+        return text.isEmpty() ? new String[0] : text.split("\\R");
+    }
+
+    @Test
+    public void commandFileIsProcessedInOrderIgnoringBlankLines(@TempDir Path dir) throws Exception {
+        Path input = dir.resolve("input.txt");
+        Files.write(input, java.util.List.of(ANA, "", PEDRO, "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999"));
+        UserRepository repo = new UserRepository();
+        String[] lines = startWith(new String[] {input.toString()}, repo, "IGNORED STDIN");
+        assertEquals(3, lines.length);
+        for (String line : lines) {
+            assertTrue(line.startsWith("OK"), line);
+        }
+        assertEquals("699999999", repo.findByDni("12345678Z").getTelephone());
+        assertEquals(2, repo.size());
+    }
+
+    @Test
+    public void fileAndStandardInputProduceIdenticalOutput(@TempDir Path dir) throws Exception {
+        String commands = String.join("\n", ANA, "FOO;bar", ANA, PEDRO, "USER DELETE;pedro@correo.com;Otra2#");
+        Path input = dir.resolve("input.txt");
+        Files.writeString(input, commands);
+        UserRepository fromFile = new UserRepository();
+        UserRepository fromStdin = new UserRepository();
+        assertArrayEquals(startWith(new String[0], fromStdin, commands),
+                startWith(new String[] {input.toString()}, fromFile, ""));
+        assertEquals(fromStdin.size(), fromFile.size());
+    }
+
+    @Test
+    public void missingOrUnreadableFileIsReportedWithoutChanges(@TempDir Path dir) throws Exception {
+        UserRepository repo = new UserRepository();
+        String missing = dir.resolve("missing.txt").toString();
+        String[] lines = startWith(new String[] {missing}, repo, ANA);
+        assertEquals(1, lines.length);
+        assertTrue(lines[0].startsWith("ERROR") && lines[0].contains("missing.txt"), lines[0]);
+
+        lines = startWith(new String[] {dir.toString()}, repo, ANA);
+        assertEquals(1, lines.length);
+        assertTrue(lines[0].startsWith("ERROR") && lines[0].contains(dir.toString()), lines[0]);
+        assertEquals(0, repo.size());
     }
 
     @Test
