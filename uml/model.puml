@@ -1,0 +1,120 @@
+@startuml model
+' Amusement Park - Phase 2 class model.
+' Only relevant attributes are shown; methods and constructors are omitted.
+' Association directions follow the fields that hold the references in the code.
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+package es.upm.parque.model {
+
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - telephone : String
+    - cardNumber : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class UserValidator <<utility>> {
+  }
+
+  class Group {
+    - id : String {readOnly}
+    - name : String {readOnly}
+  }
+
+  abstract class Ticket {
+    - id : String {readOnly}
+    - date : LocalDate {readOnly}
+    - price : BigDecimal {readOnly}
+  }
+
+  class IndividualTicket {
+  }
+
+  class GroupTicket {
+  }
+
+  class Attraction {
+    - id : String {readOnly}
+    - name : String {readOnly}
+    - capacity : int {readOnly}
+  }
+}
+
+package es.upm.parque.repository {
+  class UserRepository {
+    - ignoredOnLoad : int
+  }
+  class GroupRepository {
+  }
+  class TicketRepository {
+  }
+  class AttractionRepository {
+  }
+}
+
+package es.upm.parque.park {
+  class ParkController <<singleton>> {
+    - currentDate : LocalDate
+    - basePrice : BigDecimal
+  }
+  class SystemValues <<utility>> {
+  }
+}
+
+package es.upm.parque.persistence {
+  class UserFileStore {
+    - file : Path
+  }
+  class ParkFileStore {
+    - dataDir : Path
+  }
+  class StorageLocation {
+    - directory : Path
+    - temporary : boolean
+  }
+}
+
+' --- Ticket hierarchy ---
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+
+' --- Composition: a group ticket owns its individual tickets ---
+GroupTicket "0..1" *-- "1..*" IndividualTicket : composition
+
+' --- Directed associations (users hold no references back) ---
+IndividualTicket "*" --> "1" User : user
+GroupTicket "*" --> "0..1" Group : group
+Group "*" o--> "*" User : members
+Attraction "*" o--> "*" User : occupants
+
+' --- Central management and its repositories ---
+ParkController "1" *--> "1" UserRepository : users
+ParkController "1" *--> "1" GroupRepository : groups
+ParkController "1" *--> "1" TicketRepository : tickets
+ParkController "1" *--> "1" AttractionRepository : attractions
+ParkController "1" --> "0..1" ParkFileStore : store
+
+UserRepository "1" o--> "*" User : usersByDni
+GroupRepository "1" o--> "*" Group : groupsById
+TicketRepository "1" o--> "*" Ticket : ticketsById
+AttractionRepository "1" o--> "*" Attraction : attractionsById
+
+' --- Persistence ---
+UserRepository "1" --> "0..1" UserFileStore : store
+StorageLocation ..> ParkFileStore : locates data for
+
+@enduml
