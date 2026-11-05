@@ -2,6 +2,7 @@ package es.upm.amusementpark.park;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -35,6 +36,11 @@ public class IndividualTicket extends Ticket {
     @Override
     public BigDecimal getPrice() {
         return price;
+    }
+
+    @Override
+    public List<String> holders() {
+        return List.of(userEmail);
     }
 
     @Override

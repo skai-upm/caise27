@@ -78,6 +78,11 @@ public class GroupTicket extends Ticket {
         return total;
     }
 
+    @Override
+    public List<String> holders() {
+        return components.stream().map(IndividualTicket::getUserEmail).toList();
+    }
+
     /** Users are associated through the component tickets, which are registered on their own. */
     @Override
     public boolean concernsUser(String email) {

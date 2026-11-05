@@ -29,6 +29,7 @@ public class CommandProcessor {
             "  GROUPTICKET DELETE;<identifier>",
             "  ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>",
             "  ATTRACTION LIST;<AttractionIdentifier>",
+            "  ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>",
             "  HELP",
             "  EXIT");
 

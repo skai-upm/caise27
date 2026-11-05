@@ -20,6 +20,7 @@ public final class AttractionCommands {
         AttractionCommands commands = new AttractionCommands(park, out);
         processor.register("ATTRACTION CREATE", commands::create);
         processor.register("ATTRACTION LIST", commands::list);
+        processor.register("ATTRACTION ENTER", commands::enter);
     }
 
     private boolean create(String line) {
@@ -60,6 +61,20 @@ public final class AttractionCommands {
         out.println("ATTRACTION " + attraction.getId() + " USERS:");
         for (String email : attraction.getOccupants()) {
             out.println("  " + email);
+        }
+        return true;
+    }
+
+    private boolean enter(String line) {
+        String[] f = TicketCommands.fields(line);
+        if (f.length != 3) {
+            out.println("ERROR: Invalid syntax. Usage: ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>");
+            return true;
+        }
+        try {
+            out.println("ENTERED ATTRACTION " + f[1] + ": " + String.join(", ", park.enterAttraction(f[1], f[2])));
+        } catch (ParkException e) {
+            out.println("ERROR: " + e.getMessage());
         }
         return true;
     }

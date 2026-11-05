@@ -2,6 +2,7 @@ package es.upm.amusementpark.park;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -37,6 +38,9 @@ public abstract class Ticket {
     public boolean isDeletableOn(LocalDate today) {
         return date.isAfter(today);
     }
+
+    /** @return e-mails of the users admitted together when this ticket is used */
+    public abstract List<String> holders();
 
     /** @return whether this ticket is associated with the user identified by {@code email} */
     public abstract boolean concernsUser(String email);

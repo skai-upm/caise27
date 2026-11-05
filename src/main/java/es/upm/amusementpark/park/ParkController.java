@@ -380,4 +380,39 @@ public final class ParkController {
     public synchronized Collection<Attraction> getAttractions() {
         return Collections.unmodifiableCollection(attractions.values());
     }
+
+    /**
+     * Admits every user of a ticket valid on the current system date into an attraction, all or none.
+     *
+     * @return e-mails of the admitted users
+     * @throws ParkException if the attraction or ticket is unknown, the ticket is not valid today, a user is
+     *         already inside or capacity is insufficient for all of them
+     */
+    public synchronized List<String> enterAttraction(String attractionId, String ticketId) {
+        Attraction attraction = attractions.get(attractionId);
+        if (attraction == null) {
+            throw new ParkException("Attraction " + attractionId + " does not exist");
+        }
+        Ticket ticket = tickets.get(ticketId);
+        if (ticket == null) {
+            throw new ParkException("Ticket " + ticketId + " does not exist");
+        }
+        if (!ticket.getDate().equals(currentDate)) {
+            throw new ParkException("Ticket " + ticketId + " is not valid on " + currentDate);
+        }
+        List<String> holders = ticket.holders();
+        for (String email : holders) {
+            if (attraction.contains(email)) {
+                throw new ParkException("User " + email + " is already inside attraction " + attractionId);
+            }
+        }
+        if (attraction.getCapacity() - attraction.getOccupants().size() < holders.size()) {
+            throw new ParkException("Attraction " + attractionId + " does not have capacity for "
+                    + holders.size() + " user(s)");
+        }
+        for (String email : holders) {
+            attraction.enter(email);
+        }
+        return holders;
+    }
 }
