@@ -266,4 +266,48 @@ class AppTest {
         Run second = interactive("USER DELETE;ana@correo.com;Clave1!", "EXIT");
         assertTrue(second.out().startsWith("OK: User ana@correo.com deleted."));
     }
+
+    // ---- Delivery 3 persistence ----
+
+    private static final String F3_SESSION = String.join("\n",
+            CommandRunnerTest.CREATE_ANA, "SYSTEM DATE;2026-10-15",
+            "TICKET CREATE;T001;ana@correo.com;2026-10-15",
+            "SPEEDPASS CREATE;SP01;T001;10", "SPECIALPASS CREATE;SPC1;T001",
+            "ATTRACTION CREATE;A01;Tornado;20", "ATTRACTION CREATE;A04;Vip;5;SPECIAL",
+            "ATTRACTION ENTER;A01;T001;SPEED", "ATTRACTION ENTER;A04;T001", "EXIT");
+
+    @Test
+    void passesAndAttractionTypesSurviveRestart() throws IOException {
+        Run first = interactive(F3_SESSION);
+        assertTrue(first.out().contains("SpeedPasses consumed: SP01-1."), first.out());
+        Run second = interactive("SYSTEM DATE;2026-10-15", "ATTRACTION ENTER;A04;T001",
+                "ATTRACTION ENTER;A01;T001;SPEED", "INVOICE CREATE;USER;ana@correo.com", "EXIT");
+        List<String> out = second.out().lines().toList();
+        assertTrue(out.get(1).startsWith("ERROR: Ticket T001 has no unused Special Pass"), "SPECIAL type and consumed state kept");
+        assertTrue(out.get(2).endsWith("SpeedPasses consumed: SP01-2."), "SP01-1 still consumed after restart");
+        assertTrue(second.out().contains("SP01-1 SPEED (ticket T001) 8.00"), "price and ticket link kept");
+        List<String> passes = Files.readAllLines(dir.resolve("passes.txt"));
+        assertTrue(passes.contains("SPEED;SP01-1;T001;8.00;true"));
+        assertTrue(passes.contains("SPECIAL;SPC1;T001;40.00;true"));
+        assertTrue(Files.readAllLines(dir.resolve("attractions.txt")).contains("A04;Vip;5;SPECIAL"));
+    }
+
+    @Test
+    void flyRunIsolatesDelivery3Data() throws IOException {
+        interactive(F3_SESSION);
+        java.util.Map<String, byte[]> before = new java.util.TreeMap<>();
+        try (Stream<Path> files = Files.list(dir)) {
+            for (Path f : files.filter(Files::isRegularFile).toList()) {
+                before.put(f.getFileName().toString(), Files.readAllBytes(f));
+            }
+        }
+        Path tmpRoot = dir.resolve("tmp");
+        Run r = fly(new String[] {"--fly"}, F3_SESSION.replace("EXIT", "SPEEDPASS CREATE;SP09;T001;1\nEXIT"), dir, tmpRoot);
+        assertEquals(0, r.status());
+        assertTrue(r.out().contains("Special Pass consumed: SPC1."), "fly run starts from empty data");
+        for (var e : before.entrySet()) {
+            assertTrue(java.util.Arrays.equals(e.getValue(), Files.readAllBytes(dir.resolve(e.getKey()))), e.getKey());
+        }
+        assertEquals(0, entries(tmpRoot));
+    }
 }

@@ -173,8 +173,13 @@ public final class ParkController {
         return tickets.create(id, email, date, currentDate, currentPrice);
     }
 
+    /** Deletes a future individual ticket together with its passes (passes first). */
     public Result deleteTicket(String id) {
-        return tickets.delete(id, currentDate);
+        Result rejected = tickets.checkDeletable(id, currentDate);
+        if (rejected != null) {
+            return rejected;
+        }
+        return cascade(List.of(tickets.find(id).orElseThrow()), () -> tickets.delete(id, currentDate));
     }
 
     public Result createGroupTicket(String id, String groupId, LocalDate date) {
@@ -185,8 +190,29 @@ public final class ParkController {
         return tickets.createGroupTicket(id, group.get(), date, currentDate, currentPrice);
     }
 
+    /** Deletes a future group ticket: passes of its tickets, then the tickets and the group ticket. */
     public Result deleteGroupTicket(String id) {
-        return tickets.deleteGroupTicket(id, currentDate);
+        Result rejected = tickets.checkGroupDeletable(id, currentDate);
+        if (rejected != null) {
+            return rejected;
+        }
+        return cascade(tickets.findGroupTicket(id).orElseThrow().getTickets(),
+                () -> tickets.deleteGroupTicket(id, currentDate));
+    }
+
+    /** Removes the passes of {@code owners}, then runs the ticket deletion; restores the passes if it fails. */
+    private Result cascade(List<IndividualTicket> owners, java.util.function.Supplier<Result> ticketDeletion) {
+        PassManager.Removal removal = passes.removePassesOf(owners);
+        if (!removal.result().success()) {
+            return removal.result();
+        }
+        Result deleted = ticketDeletion.get();
+        if (!deleted.success()) {
+            Result restored = passes.restore(removal.removed());
+            return restored.success() ? deleted : Result.error(deleted.message() + " " + restored.message());
+        }
+        int count = removal.removed().size();
+        return count == 0 ? deleted : Result.ok(deleted.message() + " " + count + " pass(es) deleted.");
     }
 
     // ---- passes ----

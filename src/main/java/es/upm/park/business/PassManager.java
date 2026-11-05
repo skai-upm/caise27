@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -136,6 +137,35 @@ public final class PassManager {
         List<Pass> candidate = new ArrayList<>(passes);
         candidate.remove(pass.get());
         return commit(candidate, "Pass " + id + " refunded: " + pass.get().getPrice().toPlainString());
+    }
+
+    /**
+     * Deletes every pass attached to the given tickets and saves; returns the removed passes
+     * (empty when nothing was attached or saving failed — check {@code result}).
+     */
+    public Removal removePassesOf(Collection<IndividualTicket> owners) {
+        List<Pass> removed = passes.stream().filter(p -> owners.stream().anyMatch(t -> t == p.getTicket())).toList();
+        if (removed.isEmpty()) {
+            return new Removal(Result.ok("No passes attached."), removed);
+        }
+        List<Pass> candidate = new ArrayList<>(passes);
+        candidate.removeAll(removed);
+        Result saved = commit(candidate, removed.size() + " pass(es) deleted.");
+        return new Removal(saved, saved.success() ? removed : List.of());
+    }
+
+    /** Puts back passes removed by {@link #removePassesOf} (compensation of a failed cascade). */
+    public Result restore(List<Pass> removed) {
+        if (removed.isEmpty()) {
+            return Result.ok("Nothing to restore.");
+        }
+        List<Pass> candidate = new ArrayList<>(passes);
+        candidate.addAll(removed);
+        return commit(candidate, removed.size() + " pass(es) restored.");
+    }
+
+    /** Outcome of {@link #removePassesOf}: the save result and the passes removed. */
+    public record Removal(Result result, List<Pass> removed) {
     }
 
     /** First unused SpeedPass of the ticket, if any. */

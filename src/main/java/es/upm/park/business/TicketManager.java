@@ -137,7 +137,8 @@ public final class TicketManager {
         return Result.verbatim(true, "OK TICKET CREATED -> " + price.toPlainString());
     }
 
-    public Result delete(String id, LocalDate today) {
+    /** Rejection of {@code TICKET DELETE} for this ticket today, or {@code null} if it may be deleted. */
+    public Result checkDeletable(String id, LocalDate today) {
         Optional<IndividualTicket> ticket = find(id);
         if (ticket.isEmpty()) {
             boolean constituent = groupTickets.stream()
@@ -149,8 +150,17 @@ public final class TicketManager {
         if (!ticket.get().getDate().isAfter(today)) {
             return Result.error("Ticket " + id + " can only be deleted if its date is later than the system date " + today + ".");
         }
+        return null;
+    }
+
+    public Result delete(String id, LocalDate today) {
+        Result rejected = checkDeletable(id, today);
+        if (rejected != null) {
+            return rejected;
+        }
+        Optional<IndividualTicket> ticket = find(id);
         List<IndividualTicket> candidate = new ArrayList<>(tickets);
-        candidate.remove(ticket.get());
+        candidate.remove(ticket.orElseThrow());
         try {
             store.save(candidate, historicalLines);
         } catch (IOException e) {
@@ -182,7 +192,8 @@ public final class TicketManager {
                 : saved;
     }
 
-    public Result deleteGroupTicket(String id, LocalDate today) {
+    /** Rejection of {@code GROUPTICKET DELETE} for this group ticket today, or {@code null}. */
+    public Result checkGroupDeletable(String id, LocalDate today) {
         Optional<GroupTicket> ticket = findGroupTicket(id);
         if (ticket.isEmpty()) {
             return Result.error("Group ticket " + id + " does not exist.");
@@ -190,8 +201,17 @@ public final class TicketManager {
         if (!ticket.get().getDate().isAfter(today)) {
             return Result.error("Group ticket " + id + " can only be deleted if its date is later than the system date " + today + ".");
         }
+        return null;
+    }
+
+    public Result deleteGroupTicket(String id, LocalDate today) {
+        Result rejected = checkGroupDeletable(id, today);
+        if (rejected != null) {
+            return rejected;
+        }
+        Optional<GroupTicket> ticket = findGroupTicket(id);
         List<GroupTicket> candidate = new ArrayList<>(groupTickets);
-        candidate.remove(ticket.get());
+        candidate.remove(ticket.orElseThrow());
         Result saved = saveGroups(candidate);
         return saved.success() ? Result.ok("Group ticket " + id + " and its individual tickets deleted.") : saved;
     }
