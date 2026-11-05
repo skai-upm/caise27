@@ -51,40 +51,42 @@ public class CommandProcessor {
     public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService,
                             AttractionService attractionService) {
         this.userService = userService;
-        register("USER CREATE", 8, "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>", "",
+        register("USER CREATE", 8, "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>", "",
                 p -> {
                     userService.createUser(p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
                     return "USER CREATED";
                 });
-        register("USER DELETE", 3, "USER DELETE;<email>;<password>", "", p -> {
+        register("USER DELETE", 3, "USER DELETE;<Email>;<Password>", "", p -> {
             userService.deleteUser(p[1], p[2]);
             return "USER DELETED";
         });
-        register("USER UPDATE", 5, "USER UPDATE;<email>;<password>;<field>;<value>",
-                "(field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)", this::userUpdate);
-        register("GROUP CREATE", 3, "GROUP CREATE;<identifier>;<name>", "", p -> {
+        register("USER UPDATE", 5, "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
+                "(Field: NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD)", this::userUpdate);
+        register("SYSTEM DATE", 2, "SYSTEM DATE;<yyyy-MM-dd>", "", this::systemDate);
+        register("SYSTEM PRICE", 2, "SYSTEM PRICE;<Price>", "", this::systemPrice);
+        register("GROUP CREATE", 3, "GROUP CREATE;<Identifier>;<Name>", "", p -> {
             groupService.createGroup(p[1], p[2]);
             return "GROUP CREATED";
         });
-        register("GROUP ADD", 3, "GROUP ADD;<identifier>;<email>", "", p -> {
+        register("GROUP ADD", 3, "GROUP ADD;<Identifier>;<Email>", "", p -> {
             groupService.addMember(p[1], p[2]);
             return "USER ADDED TO GROUP";
         });
-        register("GROUP REMOVE", 3, "GROUP REMOVE;<identifier>;<email>", "", p -> {
+        register("GROUP REMOVE", 3, "GROUP REMOVE;<Identifier>;<Email>", "", p -> {
             groupService.removeMember(p[1], p[2]);
             return "USER REMOVED FROM GROUP";
         });
-        register("GROUP DELETE", 2, "GROUP DELETE;<identifier>", "", p -> {
+        register("GROUP DELETE", 2, "GROUP DELETE;<Identifier>", "", p -> {
             groupService.deleteGroup(p[1]);
             return "GROUP DELETED";
         });
-        register("TICKET CREATE", 4, "TICKET CREATE;<identifier>;<email>;<yyyy-MM-dd>", "", p ->
+        register("TICKET CREATE", 4, "TICKET CREATE;<identifier>;<email>;<date>", "(date: yyyy-MM-dd)", p ->
                 "TICKET CREATED. Price: " + ticketService.createTicket(p[1], p[2], parseDate(p[3])).formattedPrice());
         register("TICKET DELETE", 2, "TICKET DELETE;<identifier>", "", p -> {
             ticketService.deleteTicket(p[1]);
             return "TICKET DELETED";
         });
-        register("GROUPTICKET CREATE", 4, "GROUPTICKET CREATE;<identifier>;<group>;<yyyy-MM-dd>", "", p ->
+        register("GROUPTICKET CREATE", 4, "GROUPTICKET CREATE;<identifier>;<group>;<date>", "(date: yyyy-MM-dd)", p ->
                 "GROUP TICKET CREATED. Total price: "
                         + ticketService.createGroupTicket(p[1], p[2], parseDate(p[3])).formattedPrice());
         register("GROUPTICKET DELETE", 2, "GROUPTICKET DELETE;<identifier>", "", p -> {
@@ -101,10 +103,8 @@ public class CommandProcessor {
             attractionService.exit(p[1], p[2]);
             return "USER LEFT ATTRACTION";
         });
-        register("ATTRACTION STATUS", 2, "ATTRACTION STATUS;<attraction>", "", p -> attractionService.status(p[1]));
-        register("ATTRACTION LIST", 2, "ATTRACTION LIST;<identifier>", "", p -> attractionService.list(p[1]));
-        register("SYSTEM DATE", 2, "SYSTEM DATE;<yyyy-MM-dd>", "", this::systemDate);
-        register("SYSTEM PRICE", 2, "SYSTEM PRICE;<Price>", "", this::systemPrice);
+        register("ATTRACTION LIST", 2, "ATTRACTION LIST;<attraction>", "", p -> attractionService.list(p[1]));
+        register("ATTRACTION STATUS", 2, "ATTRACTION STATUS;<attractionIdentifier>", "", p -> attractionService.status(p[1]));
         register("HELP", 1, "HELP", "", p -> helpText());
         register("EXIT", 1, "EXIT", "", p -> {
             exitRequested = true;
