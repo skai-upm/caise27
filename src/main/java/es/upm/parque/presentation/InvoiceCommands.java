@@ -2,7 +2,6 @@ package es.upm.parque.presentation;
 
 import es.upm.parque.business.InvoiceManager;
 import es.upm.parque.business.NotFoundException;
-import es.upm.parque.business.ParkController;
 import es.upm.parque.business.model.Invoice;
 import es.upm.parque.business.model.InvoiceItem;
 import es.upm.parque.business.model.InvoiceSection;
@@ -22,8 +21,8 @@ class InvoiceCommands {
 
     private final InvoiceManager invoices;
 
-    InvoiceCommands(ParkController park) {
-        this.invoices = new InvoiceManager(park);
+    InvoiceCommands(InvoiceManager invoices) {
+        this.invoices = invoices;
     }
 
     String create(String[] e) throws InvalidCommandException, NotFoundException {

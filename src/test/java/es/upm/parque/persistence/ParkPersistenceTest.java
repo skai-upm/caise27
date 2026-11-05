@@ -16,11 +16,12 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import es.upm.parque.presentation.CommandProcessor;
+import es.upm.parque.business.ParkConfiguration;
+import es.upm.parque.business.ParkController;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
-import es.upm.parque.business.ParkController;
+import es.upm.parque.presentation.CommandProcessor;
 
 class ParkPersistenceTest {
 
@@ -29,7 +30,7 @@ class ParkPersistenceTest {
 
     private CommandProcessor startExecution() {
         UserRepository users = new UserRepository(new UserFileStore(dir.resolve("users.txt")));
-        ParkController.getInstance().startExecution(users, new ParkFileStore(dir));
+        ParkConfiguration.initialize(ParkRepositories.fileBacked(users, new ParkFileStore(dir)));
         return new CommandProcessor();
     }
 
@@ -110,7 +111,7 @@ class ParkPersistenceTest {
         Files.write(dir.resolve(ParkFileStore.ATTRACTIONS_FILE), List.of("A01;Dragon;20", "A02;Bad;0"),
                 StandardCharsets.UTF_8);
         ParkFileStore store = new ParkFileStore(dir);
-        ParkController.getInstance().startExecution(new UserRepository(), store);
+        ParkConfiguration.initialize(ParkRepositories.fileBacked(new UserRepository(), store));
         assertEquals(4, store.getMalformedLineCount());
         assertEquals(1, ParkController.getInstance().getGroups().findAll().size());
         assertEquals(1, ParkController.getInstance().getAttractions().findAll().size());

@@ -4,13 +4,15 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
 import es.upm.parque.persistence.ParkFileStore;
+import es.upm.parque.persistence.ParkRepositories;
 import es.upm.parque.persistence.StorageLocation;
 import es.upm.parque.persistence.UserFileStore;
 import es.upm.parque.persistence.UserRepository;
 
 /**
  * One execution of the park backed by its data files: chooses the storage location from the program
- * arguments (normal or {@code --fly}), loads the park, and releases temporary storage when closed.
+ * arguments (normal or {@code --fly}), configures the repositories for that location, initializes the
+ * application with them, and releases temporary storage when closed.
  */
 public final class ParkSession implements AutoCloseable {
 
@@ -37,8 +39,9 @@ public final class ParkSession implements AutoCloseable {
         ParkFileStore store = new ParkFileStore(dataDir);
         try {
             UserRepository users = new UserRepository(new UserFileStore(dataDir.resolve(USERS_FILE)));
-            ParkController.getInstance().startExecution(users, store);
-            return new ParkSession(location, users.getIgnoredOnLoad(), store.getMalformedLineCount());
+            ParkRepositories repositories = ParkRepositories.fileBacked(users, store);
+            ParkConfiguration.initialize(repositories);
+            return new ParkSession(location, users.getIgnoredOnLoad(), repositories.getMalformedLineCount());
         } catch (UncheckedIOException e) {
             location.cleanUp();
             throw new InvalidDataException("cannot read the park data files in '" + dataDir.toAbsolutePath() + "' ("

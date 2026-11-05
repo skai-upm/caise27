@@ -13,9 +13,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import es.upm.parque.persistence.ParkRepositories;
+import es.upm.parque.persistence.UserRepository;
 import es.upm.parque.presentation.CommandProcessor;
 import es.upm.parque.presentation.TestSupport;
-import es.upm.parque.persistence.UserRepository;
 
 class ParkControllerTest {
 
@@ -30,7 +31,7 @@ class ParkControllerTest {
         park.setCurrentDate(LocalDate.of(2000, 1, 1));
         park.setBasePrice(new BigDecimal("99.99"));
         UserRepository users = new UserRepository();
-        park.startExecution(users);
+        park.startExecution(ParkRepositories.inMemory(users));
         assertEquals(LocalDate.now(), park.getCurrentDate());
         assertEquals(new BigDecimal("40.00"), park.getBasePrice());
         assertSame(users, park.getUsers());

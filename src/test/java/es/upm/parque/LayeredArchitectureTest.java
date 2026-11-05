@@ -14,10 +14,11 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-import es.upm.parque.business.ParkController;
+import es.upm.parque.business.ParkConfiguration;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.RuleViolationException;
 import es.upm.parque.business.UserManager;
+import es.upm.parque.persistence.ParkRepositories;
 import es.upm.parque.persistence.UserRepository;
 import es.upm.parque.presentation.CommandProcessor;
 import es.upm.parque.presentation.TestSupport;
@@ -74,9 +75,8 @@ class LayeredArchitectureTest {
 
     @Test
     void businessOperationsThrowTypedExceptions() throws ParkException {
-        ParkController park = ParkController.getInstance();
-        park.startExecution(new UserRepository());
-        UserManager users = new UserManager(park);
+        ParkConfiguration.initialize(ParkRepositories.inMemory());
+        UserManager users = UserManager.getInstance();
         users.create("Ana", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "600", "1234567890123456");
         RuleViolationException e = assertThrows(RuleViolationException.class, () -> users.create("Otra", "X",
                 "12345678Z", "otra@correo.com", "Clave1!", "600", "1234567890123456"));

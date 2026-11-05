@@ -15,8 +15,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import es.upm.parque.business.ParkController;
+import es.upm.parque.business.ParkConfiguration;
 import es.upm.parque.persistence.ParkFileStore;
+import es.upm.parque.persistence.ParkRepositories;
 import es.upm.parque.persistence.UserFileStore;
 import es.upm.parque.persistence.UserRepository;
 
@@ -30,7 +31,7 @@ class InvoiceCommandsTest {
     @BeforeEach
     void setUp() {
         UserRepository users = new UserRepository(new UserFileStore(dir.resolve("users.txt")));
-        ParkController.getInstance().startExecution(users, new ParkFileStore(dir));
+        ParkConfiguration.initialize(ParkRepositories.fileBacked(users, new ParkFileStore(dir)));
         processor = new CommandProcessor();
         run("USER CREATE;Ana;Garcia;12345678Z;ana@correo.com;Clave1!;600000000;1234567890123456",
                 "USER CREATE;Pedro;Lopez;87654321X;pedro@correo.com;Otra2#;600000001;1234567890123457",

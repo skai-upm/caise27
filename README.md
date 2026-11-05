@@ -103,3 +103,11 @@ java -jar target/amusement-park.jar --fly input_fase2.txt
 ```
 
 With `--fly` as the first argument, all data files are written in a new `tmp/<yyyyMMdd_HHmmss>/` directory, which is deleted when the run ends (`EXIT` or end of input). Normal data files are never touched in this mode.
+
+## Design
+
+The code is split into three layers: `presentation` (commands and responses), `business` (controllers, rules and the domain model in `business.model`), and `persistence` (repositories and data files). The class model is in `uml/model.puml`.
+
+- **Singleton controllers.** `ParkController` and the managers (`UserManager`, `GroupManager`, `TicketManager`, `AttractionManager`, `SystemManager`, `InvoiceManager`) each have one instance, obtained with `getInstance()`.
+- **Injected repositories.** Repositories are ordinary, replaceable objects. At start-up, `ParkSession` creates them for the chosen storage location: the working directory, or the temporary directory in `--fly` mode. `ParkConfiguration.initialize` then injects them into `ParkController`, and wires each manager with its collaborators. For example, `AttractionManager` receives `TicketManager`. No dependency injection framework is used.
+- **Invoices.** Invoices use the Builder pattern. `InvoiceManager` directs `UserInvoiceBuilder` or `GroupInvoiceBuilder`, which extend `InvoiceBuilder`.

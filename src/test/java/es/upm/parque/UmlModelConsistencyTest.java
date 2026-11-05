@@ -76,7 +76,10 @@ class UmlModelConsistencyTest {
                 "IndividualTicket \"*\" --> \"1\" User : user",
                 "GroupTicket \"*\" --> \"0..1\" Group : group",
                 "Group \"*\" o--> \"*\" User : members",
-                "Attraction \"*\" o--> \"*\" User : occupants"}) {
+                "Attraction \"*\" o--> \"*\" User : occupants",
+                "ParkController \"1\" --> \"1\" ParkRepositories : repositories",
+                "ParkConfiguration ..> ParkController : injects repositories",
+                "AttractionManager --> \"1\" TicketManager : tickets"}) {
             assertTrue(lines.contains(required), required);
         }
     }

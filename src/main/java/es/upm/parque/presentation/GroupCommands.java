@@ -1,7 +1,6 @@
 package es.upm.parque.presentation;
 
 import es.upm.parque.business.GroupManager;
-import es.upm.parque.business.ParkController;
 import es.upm.parque.business.ParkException;
 
 /**
@@ -16,8 +15,8 @@ class GroupCommands {
 
     private final GroupManager groups;
 
-    GroupCommands(ParkController park) {
-        this.groups = new GroupManager(park);
+    GroupCommands(GroupManager groups) {
+        this.groups = groups;
     }
 
     String create(String[] e) throws InvalidCommandException, ParkException {

@@ -1,6 +1,5 @@
 package es.upm.parque.presentation;
 
-import es.upm.parque.business.ParkController;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.TicketManager;
 import es.upm.parque.business.model.GroupTicket;
@@ -18,8 +17,8 @@ class TicketCommands {
 
     private final TicketManager tickets;
 
-    TicketCommands(ParkController park) {
-        this.tickets = new TicketManager(park);
+    TicketCommands(TicketManager tickets) {
+        this.tickets = tickets;
     }
 
     String create(String[] e) throws InvalidCommandException, ParkException {

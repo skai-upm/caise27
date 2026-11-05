@@ -11,9 +11,9 @@ import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
-import es.upm.parque.persistence.ParkFileStore;
 import es.upm.parque.persistence.AttractionRepository;
 import es.upm.parque.persistence.GroupRepository;
+import es.upm.parque.persistence.ParkRepositories;
 import es.upm.parque.persistence.TicketRepository;
 import es.upm.parque.persistence.UserRepository;
 
@@ -26,11 +26,7 @@ public final class ParkController {
     /** Base ticket price at the start of every execution. */
     public static final BigDecimal INITIAL_PRICE = new BigDecimal("40.00");
 
-    private UserRepository users = new UserRepository();
-    private GroupRepository groups = new GroupRepository();
-    private TicketRepository tickets = new TicketRepository();
-    private AttractionRepository attractions = new AttractionRepository();
-    private ParkFileStore store;
+    private ParkRepositories repositories;
     private LocalDate currentDate = LocalDate.now(ZoneId.systemDefault());
     private BigDecimal basePrice = INITIAL_PRICE;
 
@@ -46,37 +42,35 @@ public final class ParkController {
         return Holder.INSTANCE;
     }
 
-    /** Starts a new execution: uses the given users and resets the date to today and the price to 40.00. */
-    public void startExecution(UserRepository users) {
-        this.users = users;
-        this.groups = new GroupRepository();
-        this.tickets = new TicketRepository();
-        this.attractions = new AttractionRepository();
-        this.store = null;
+    /**
+     * Starts a new execution with the repositories configured during initialization (see
+     * {@link ParkConfiguration}) and resets the date to today and the price to 40.00.
+     */
+    public void startExecution(ParkRepositories repositories) {
+        this.repositories = Objects.requireNonNull(repositories);
         this.currentDate = LocalDate.now(ZoneId.systemDefault());
         this.basePrice = INITIAL_PRICE;
     }
 
-    /** Starts a new execution backed by files: groups, tickets and attractions are loaded from the store. */
-    public void startExecution(UserRepository users, ParkFileStore store) {
-        startExecution(users);
-        store.load(users, groups, tickets, attractions);
-        this.store = store;
+    /** The injected repositories; fails clearly when no execution has been started. */
+    private ParkRepositories repositories() {
+        if (repositories == null) {
+            throw new IllegalStateException(ParkConfiguration.NOT_INITIALIZED);
+        }
+        return repositories;
     }
 
     /** Saves groups, tickets and attractions when the execution is backed by files. */
     public void persist() {
-        if (store != null) {
-            store.save(groups, tickets, attractions);
-        }
+        repositories().save();
     }
 
     public UserRepository getUsers() {
-        return users;
+        return repositories().getUsers();
     }
 
     public GroupRepository getGroups() {
-        return groups;
+        return repositories().getGroups();
     }
 
     /**
@@ -95,7 +89,7 @@ public final class ParkController {
 
     private List<GroupTicket> groupTickets() {
         List<GroupTicket> result = new ArrayList<>();
-        for (Ticket ticket : tickets.findAll()) {
+        for (Ticket ticket : getTickets().findAll()) {
             if (ticket instanceof GroupTicket groupTicket) {
                 result.add(groupTicket);
             }
@@ -104,21 +98,21 @@ public final class ParkController {
     }
 
     public AttractionRepository getAttractions() {
-        return attractions;
+        return repositories().getAttractions();
     }
 
     public TicketRepository getTickets() {
-        return tickets;
+        return repositories().getTickets();
     }
 
     /** Whether the user has an active ticket, derived by traversing the tickets managed by the system. */
     public boolean hasActiveTicket(User user) {
-        return tickets.individualTicketsOf(user).stream().anyMatch(t -> t.isActiveOn(currentDate));
+        return getTickets().individualTicketsOf(user).stream().anyMatch(t -> t.isActiveOn(currentDate));
     }
 
     /** Whether the user belongs to a group that currently has an active group ticket. */
     public boolean belongsToLockedGroup(User user) {
-        return groups.findAll().stream().anyMatch(g -> g.contains(user) && hasActiveGroupTicket(g));
+        return getGroups().findAll().stream().anyMatch(g -> g.contains(user) && hasActiveGroupTicket(g));
     }
 
     /** Whether the ticket is part of the composition of a group ticket, found by traversal. */

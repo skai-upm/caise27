@@ -10,26 +10,43 @@ import es.upm.parque.business.model.User;
  */
 public class InvoiceManager {
 
-    private final ParkController park;
+    private ParkController park;
 
-    public InvoiceManager(ParkController park) {
+    private InvoiceManager() {
+    }
+
+    private static final class Holder {
+        private static final InvoiceManager INSTANCE = new InvoiceManager();
+    }
+
+    /** Returns the only instance of this controller. */
+    public static InvoiceManager getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /** Injects the central park management configured during application initialization. */
+    public void inject(ParkController park) {
         this.park = park;
     }
 
+    private ParkController park() {
+        return ParkConfiguration.requireInjected(park);
+    }
+
     public Invoice forUser(String email) throws NotFoundException {
-        User user = park.getUsers().findByEmail(email);
+        User user = park().getUsers().findByEmail(email);
         if (user == null) {
             throw new NotFoundException("no user with email " + email);
         }
-        return construct(new UserInvoiceBuilder(user, park));
+        return construct(new UserInvoiceBuilder(user, park()));
     }
 
     public Invoice forGroup(String id) throws NotFoundException {
-        Group group = park.getGroups().findById(id);
+        Group group = park().getGroups().findById(id);
         if (group == null) {
             throw new NotFoundException("no group with identifier " + id);
         }
-        return construct(new GroupInvoiceBuilder(group, park));
+        return construct(new GroupInvoiceBuilder(group, park()));
     }
 
     static Invoice construct(InvoiceBuilder builder) {

@@ -1,6 +1,5 @@
 package es.upm.parque.presentation;
 
-import es.upm.parque.business.ParkController;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.UserManager;
 import es.upm.parque.business.model.User;
@@ -16,8 +15,8 @@ class UserCommands {
 
     private final UserManager users;
 
-    UserCommands(ParkController park) {
-        this.users = new UserManager(park);
+    UserCommands(UserManager users) {
+        this.users = users;
     }
 
     String create(String[] e) throws InvalidCommandException, ParkException {

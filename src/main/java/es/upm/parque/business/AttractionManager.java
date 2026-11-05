@@ -11,16 +11,37 @@ import es.upm.parque.business.model.User;
  */
 public class AttractionManager {
 
-    private final ParkController park;
-    private final TicketManager tickets;
+    private ParkController park;
+    private TicketManager tickets;
 
-    public AttractionManager(ParkController park) {
+    private AttractionManager() {
+    }
+
+    private static final class Holder {
+        private static final AttractionManager INSTANCE = new AttractionManager();
+    }
+
+    /** Returns the only attraction management instance. */
+    public static AttractionManager getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /** Injects the central park management and the ticket management this controller collaborates with. */
+    public void inject(ParkController park, TicketManager tickets) {
         this.park = park;
-        this.tickets = new TicketManager(park);
+        this.tickets = tickets;
+    }
+
+    private ParkController park() {
+        return ParkConfiguration.requireInjected(park);
+    }
+
+    private TicketManager tickets() {
+        return ParkConfiguration.requireInjected(tickets);
     }
 
     public Attraction create(String id, String name, String capacityText) throws ParkException {
-        if (park.getAttractions().exists(id)) {
+        if (park().getAttractions().exists(id)) {
             throw new RuleViolationException("an attraction with identifier " + id + " already exists");
         }
         int capacity = parseCapacity(capacityText);
@@ -28,13 +49,13 @@ public class AttractionManager {
             throw new InvalidDataException("invalid capacity '" + capacityText + "' (expected a positive whole number)");
         }
         Attraction attraction = new Attraction(id, name, capacity);
-        park.getAttractions().add(attraction);
-        park.persist();
+        park().getAttractions().add(attraction);
+        park().persist();
         return attraction;
     }
 
     public Attraction find(String id) throws NotFoundException {
-        Attraction attraction = park.getAttractions().findById(id);
+        Attraction attraction = park().getAttractions().findById(id);
         if (attraction == null) {
             throw new NotFoundException("no attraction with identifier " + id);
         }
@@ -47,10 +68,10 @@ public class AttractionManager {
      */
     public List<User> enter(String attractionId, String ticketId) throws ParkException {
         Attraction attraction = find(attractionId);
-        Ticket ticket = tickets.find(ticketId);
-        if (!ticket.getDate().equals(park.getCurrentDate())) {
+        Ticket ticket = tickets().find(ticketId);
+        if (!ticket.getDate().equals(park().getCurrentDate())) {
             throw new RuleViolationException("ticket " + ticketId + " is valid on " + ticket.getDate() + ", not on "
-                    + park.getCurrentDate());
+                    + park().getCurrentDate());
         }
         List<User> entrants = ticket.getHolders().stream().filter(u -> !attraction.isInside(u)).toList();
         if (entrants.isEmpty()) {

@@ -3,7 +3,6 @@ package es.upm.parque.presentation;
 import java.util.List;
 
 import es.upm.parque.business.AttractionManager;
-import es.upm.parque.business.ParkController;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.model.Attraction;
 import es.upm.parque.business.model.User;
@@ -21,8 +20,8 @@ class AttractionCommands {
 
     private final AttractionManager attractions;
 
-    AttractionCommands(ParkController park) {
-        this.attractions = new AttractionManager(park);
+    AttractionCommands(AttractionManager attractions) {
+        this.attractions = attractions;
     }
 
     String create(String[] e) throws InvalidCommandException, ParkException {

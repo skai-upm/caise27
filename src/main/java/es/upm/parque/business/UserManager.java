@@ -13,14 +13,31 @@ public class UserManager {
     private static final String INVALID_PASSWORD = "invalid password (requires uppercase, lowercase, digit and symbol)";
     private static final String INVALID_CARD = "invalid card number (requires exactly 16 digits)";
 
-    private final ParkController park;
+    private ParkController park;
 
-    public UserManager(ParkController park) {
+    private UserManager() {
+    }
+
+    private static final class Holder {
+        private static final UserManager INSTANCE = new UserManager();
+    }
+
+    /** Returns the only instance of this controller. */
+    public static UserManager getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /** Injects the central park management configured during application initialization. */
+    public void inject(ParkController park) {
         this.park = park;
     }
 
+    private ParkController park() {
+        return ParkConfiguration.requireInjected(park);
+    }
+
     private UserRepository users() {
-        return park.getUsers();
+        return park().getUsers();
     }
 
     /** Registers a new user after validating its data and the uniqueness of DNI and email. */
@@ -46,7 +63,7 @@ public class UserManager {
         }
         User user = new User(firstName, surnames, dni, email, password, phone, card);
         users().add(user);
-        park.persist();
+        park().persist();
         return user;
     }
 
@@ -65,16 +82,16 @@ public class UserManager {
     /** Deletes the authenticated user unless active tickets or a locked group prevent it. */
     public User delete(String email, String password) throws ParkException {
         User user = authenticate(email, password);
-        if (park.hasActiveTicket(user)) {
+        if (park().hasActiveTicket(user)) {
             throw new RuleViolationException("user " + user.getEmail()
                     + " has a ticket for today or a later date and cannot be deleted");
         }
-        if (park.belongsToLockedGroup(user)) {
+        if (park().belongsToLockedGroup(user)) {
             throw new RuleViolationException("user " + user.getEmail() + " belongs to a group with an active group ticket");
         }
-        park.getGroups().removeUserEverywhere(user);
+        park().getGroups().removeUserEverywhere(user);
         users().remove(user.getDni());
-        park.persist();
+        park().persist();
         return user;
     }
 
@@ -89,7 +106,7 @@ public class UserManager {
         checkNewValue(user, field, value);
         applyField(user, field, value);
         users().update(user);
-        park.persist();
+        park().persist();
         return user;
     }
 

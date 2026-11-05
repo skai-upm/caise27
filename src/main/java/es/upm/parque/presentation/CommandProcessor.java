@@ -4,9 +4,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import es.upm.parque.business.ParkController;
+import es.upm.parque.business.AttractionManager;
+import es.upm.parque.business.GroupManager;
+import es.upm.parque.business.InvoiceManager;
 import es.upm.parque.business.ParkException;
 import es.upm.parque.business.SystemManager;
+import es.upm.parque.business.TicketManager;
+import es.upm.parque.business.UserManager;
 
 /**
  * Interprets text commands whose elements are separated by ';' and executes them through the business layer.
@@ -59,15 +63,14 @@ public class CommandProcessor {
     private final InvoiceCommands invoices;
     private boolean exitRequested;
 
-    /** Processes commands against the current central park management state. */
+    /** Processes commands with the singleton controllers configured during application initialization. */
     public CommandProcessor() {
-        ParkController park = ParkController.getInstance();
-        this.system = new SystemManager(park);
-        this.users = new UserCommands(park);
-        this.groups = new GroupCommands(park);
-        this.tickets = new TicketCommands(park);
-        this.attractions = new AttractionCommands(park);
-        this.invoices = new InvoiceCommands(park);
+        this.system = SystemManager.getInstance();
+        this.users = new UserCommands(UserManager.getInstance());
+        this.groups = new GroupCommands(GroupManager.getInstance());
+        this.tickets = new TicketCommands(TicketManager.getInstance());
+        this.attractions = new AttractionCommands(AttractionManager.getInstance());
+        this.invoices = new InvoiceCommands(InvoiceManager.getInstance());
     }
 
     /**

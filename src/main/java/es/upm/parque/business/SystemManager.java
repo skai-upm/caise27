@@ -12,10 +12,27 @@ public class SystemManager {
     static final String PRICE_EXPECTED =
             "SYSTEM PRICE expects a positive amount with at most 2 decimals: SYSTEM PRICE;<price>";
 
-    private final ParkController park;
+    private ParkController park;
 
-    public SystemManager(ParkController park) {
+    private SystemManager() {
+    }
+
+    private static final class Holder {
+        private static final SystemManager INSTANCE = new SystemManager();
+    }
+
+    /** Returns the only instance of this controller. */
+    public static SystemManager getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    /** Injects the central park management configured during application initialization. */
+    public void inject(ParkController park) {
         this.park = park;
+    }
+
+    private ParkController park() {
+        return ParkConfiguration.requireInjected(park);
     }
 
     /** Sets the current system date from its {@code yyyy-MM-dd} text. */
@@ -24,7 +41,7 @@ public class SystemManager {
         if (date == null) {
             throw new InvalidDataException(DATE_EXPECTED);
         }
-        park.setCurrentDate(date);
+        park().setCurrentDate(date);
         return date;
     }
 
@@ -34,7 +51,7 @@ public class SystemManager {
         if (price == null) {
             throw new InvalidDataException(PRICE_EXPECTED);
         }
-        park.setBasePrice(price);
+        park().setBasePrice(price);
         return price;
     }
 }
