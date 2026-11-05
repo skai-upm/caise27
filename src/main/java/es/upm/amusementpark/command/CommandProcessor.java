@@ -75,6 +75,8 @@ public class CommandProcessor {
             return "ERROR: unknown command '" + parts[0] + "'";
         } catch (UserOperationException e) {
             return "ERROR: " + e.getMessage();
+        } catch (RuntimeException e) {
+            return "ERROR: the command could not be processed (" + e.getMessage() + ")";
         }
     }
 

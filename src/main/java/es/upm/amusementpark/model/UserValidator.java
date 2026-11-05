@@ -33,10 +33,14 @@ public final class UserValidator {
         if (atParts.length != 2 || atParts[0].isEmpty()) {
             return false;
         }
-        String[] domainParts = atParts[1].split("\\.", -1);
-        return domainParts.length == 2
-                && !domainParts[0].isEmpty()
-                && domainParts[1].length() == EMAIL_EXTENSION_LENGTH;
+        String domainPart = atParts[1];
+        int dot = domainPart.indexOf('.');
+        if (dot < 0 || dot != domainPart.lastIndexOf('.')) {
+            return false;
+        }
+        String domain = domainPart.substring(0, dot);
+        String extension = domainPart.substring(dot + 1);
+        return !domain.isEmpty() && extension.length() == EMAIL_EXTENSION_LENGTH;
     }
 
     public static boolean isValidPassword(String password) {

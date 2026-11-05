@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,7 +35,13 @@ public class App {
      * @return the process exit status
      */
     static int run(String[] args, InputStream in, PrintStream out, PrintStream err, Path usersFile) {
-        CommandProcessor processor = new CommandProcessor(new UserService(new UserRepository(new UserFileStorage(usersFile))));
+        CommandProcessor processor;
+        try {
+            processor = new CommandProcessor(new UserService(new UserRepository(new UserFileStorage(usersFile))));
+        } catch (UncheckedIOException e) {
+            err.println("ERROR: cannot read users file '" + usersFile + "'");
+            return 1;
+        }
         if (args.length == 0) {
             BufferedReader stdin = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
             new InteractiveSession(stdin, out, processor).run();

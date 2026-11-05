@@ -40,7 +40,7 @@ class AppTest {
         Path input = dir.resolve("input.txt");
         Files.write(input, List.of("FOO", ANA, "", UPDATE), StandardCharsets.UTF_8);
         assertEquals(0, run(new String[] {input.toString()}, "", dir.resolve("users.txt")));
-        String[] lines = out.toString(StandardCharsets.UTF_8).split("\\R");
+        String[] lines = out.toString(StandardCharsets.UTF_8).lines().toArray(String[]::new);
         assertEquals(3, lines.length);
         assertTrue(lines[0].startsWith("ERROR"));
         assertEquals("USER CREATED", lines[1]);

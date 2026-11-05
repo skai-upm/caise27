@@ -31,7 +31,7 @@ class InteractiveSessionTest {
     @Test
     void processesEachLineAndContinuesAfterErrors() {
         String out = run("FOO\nUSER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456\n");
-        String[] lines = out.split("\\R");
+        String[] lines = out.lines().toArray(String[]::new);
         assertEquals(2, lines.length);
         assertTrue(lines[0].startsWith("ERROR"));
         assertEquals("USER CREATED", lines[1]);
