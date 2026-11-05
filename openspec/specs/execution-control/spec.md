@@ -6,7 +6,7 @@ Provides the general application commands `HELP`, which lists the available oper
 ## Requirements
 
 ### Requirement: HELP lists available commands
-The `HELP` command SHALL print the syntax of every command recognized by the application, including at least, in this order: `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>`, `USER DELETE;<Email>;<Password>`, `USER UPDATE;<Email>;<Password>;<Field>;<NewValue>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `GROUPTICKET CREATE;<identifier>;<group>;<date>`, `GROUPTICKET DELETE;<identifier>`, `SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>`, `SPECIALPASS CREATE;<identifier>;<individualTicket>`, `SPEEDPASS DELETE;<speedPassIdentifier>`, `SPECIALPASS DELETE;<specialPassIdentifier>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>[;<type>]`, `ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]`, `ATTRACTION EXIT;<attraction>;<email>`, `ATTRACTION LIST;<attraction>`, `ATTRACTION STATUS;<attractionIdentifier>`, `INVOICE CREATE;USER;<email>`, `INVOICE CREATE;GROUP;<groupIdentifier>`, `HELP`, `HELP EXTENDED` and `EXIT`, without changing any stored data.
+The `HELP` command SHALL print the syntax of the commands of the three deliveries, each on its own line, including at least, in this order: `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>`, `USER DELETE;<Email>;<Password>`, `USER UPDATE;<Email>;<Password>;<Field>;<NewValue>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<Price>`, `GROUP CREATE;<Identifier>;<Name>`, `GROUP ADD;<Identifier>;<Email>`, `GROUP REMOVE;<Identifier>;<Email>`, `GROUP DELETE;<Identifier>`, `TICKET CREATE;<identifier>;<email>;<date>`, `TICKET DELETE;<identifier>`, `GROUPTICKET CREATE;<identifier>;<group>;<date>`, `GROUPTICKET DELETE;<identifier>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>`, `ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>`, `ATTRACTION ENTER;<attraction>;<ticket>`, `ATTRACTION ENTER;<attraction>;<ticket>;SPEED`, `ATTRACTION EXIT;<attraction>;<email>`, `ATTRACTION LIST;<attraction>`, `ATTRACTION STATUS;<attractionIdentifier>`, `SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>`, `SPEEDPASS DELETE;<speedPassIdentifier>`, `SPECIALPASS CREATE;<identifier>;<individualTicket>`, `SPECIALPASS DELETE;<specialPassIdentifier>`, `INVOICE CREATE;USER;<email>`, `INVOICE CREATE;GROUP;<groupIdentifier>`, `HELP`, `HELP EXTENDED` and `EXIT`, without changing any stored data. Delivery 1 and 2 syntaxes SHALL keep appearing and working; the Delivery 3 forms of `ATTRACTION CREATE` (with type) and `ATTRACTION ENTER` (with `SPEED`) SHALL be listed as separate syntaxes.
 
 #### Scenario: HELP in interactive mode
 - **WHEN** `HELP` is entered on standard input
@@ -16,6 +16,10 @@ The `HELP` command SHALL print the syntax of every command recognized by the app
 #### Scenario: HELP in file mode
 - **WHEN** a command file contains `HELP`
 - **THEN** the same help text as in interactive mode is printed and processing continues with the next line
+
+#### Scenario: Delivery 3 syntax listed literally
+- **WHEN** `HELP` is processed
+- **THEN** the output contains the lines `ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>` and `ATTRACTION ENTER;<attraction>;<ticket>;SPEED` in addition to the Delivery 2 forms `ATTRACTION CREATE;<identifier>;<name>;<capacity>` and `ATTRACTION ENTER;<attraction>;<ticket>`
 
 ### Requirement: EXIT terminates in a controlled manner
 The `EXIT` command SHALL print a confirmation response starting with `OK`, stop command processing and terminate the application normally with exit status 0, keeping all previously persisted data.

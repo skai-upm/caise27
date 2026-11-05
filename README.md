@@ -33,6 +33,16 @@ java -jar target/amusement-park.jar input.txt
 
 Commands are processed identically in both modes. `EXIT` stops processing, and no later line is executed. A nonexistent or unreadable command file is reported with an `ERROR` line.
 
+Delivery 3 runs a command file in normal mode or in temporary mode; temporary mode leaves no data behind:
+
+```text
+mvn package
+java -jar target/amusement-park.jar input_fase3.txt
+java -jar target/amusement-park.jar --fly input_fase3.txt
+```
+
+Commands from all three deliveries can be mixed in one file. `Delivery3IntegrationTest` runs such a file in both modes, restarts the application, and checks that the restored state still enforces every rule.
+
 ## Commands
 
 Elements are separated by `;`. `HELP` prints this list. `HELP EXTENDED` prints it with a short explanation of what each command does.
@@ -51,15 +61,17 @@ TICKET CREATE;<identifier>;<email>;<date>
 TICKET DELETE;<identifier>
 GROUPTICKET CREATE;<identifier>;<group>;<date>
 GROUPTICKET DELETE;<identifier>
-SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>
-SPECIALPASS CREATE;<identifier>;<individualTicket>
-SPEEDPASS DELETE;<speedPassIdentifier>
-SPECIALPASS DELETE;<specialPassIdentifier>
-ATTRACTION CREATE;<identifier>;<name>;<capacity>[;<type>]     type: GENERAL (default), INDIVIDUAL, GROUP, SPECIAL
-ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]
+ATTRACTION CREATE;<identifier>;<name>;<capacity>
+ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>     type: GENERAL, INDIVIDUAL, GROUP, SPECIAL
+ATTRACTION ENTER;<attraction>;<ticket>
+ATTRACTION ENTER;<attraction>;<ticket>;SPEED
 ATTRACTION EXIT;<attraction>;<email>
 ATTRACTION LIST;<attraction>
 ATTRACTION STATUS;<attractionIdentifier>
+SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>
+SPEEDPASS DELETE;<speedPassIdentifier>
+SPECIALPASS CREATE;<identifier>;<individualTicket>
+SPECIALPASS DELETE;<specialPassIdentifier>
 INVOICE CREATE;USER;<email>
 INVOICE CREATE;GROUP;<groupIdentifier>
 HELP
