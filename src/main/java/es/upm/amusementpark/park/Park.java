@@ -1,5 +1,6 @@
 package es.upm.amusementpark.park;
 
+import es.upm.amusementpark.repository.AttractionRepository;
 import es.upm.amusementpark.repository.GroupRepository;
 import es.upm.amusementpark.repository.TicketRepository;
 import es.upm.amusementpark.repository.UserRepository;
@@ -20,6 +21,7 @@ public final class Park {
     private UserRepository users;
     private GroupRepository groups;
     private TicketRepository tickets;
+    private AttractionRepository attractions;
 
     private Park() {
         start(new UserRepository());
@@ -42,6 +44,11 @@ public final class Park {
         this.users = userRepository;
         this.groups = new GroupRepository();
         this.tickets = new TicketRepository();
+        this.attractions = new AttractionRepository();
+    }
+
+    public AttractionRepository attractions() {
+        return attractions;
     }
 
     public TicketRepository tickets() {

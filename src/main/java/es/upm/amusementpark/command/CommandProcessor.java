@@ -2,6 +2,8 @@ package es.upm.amusementpark.command;
 
 import es.upm.amusementpark.model.UserField;
 import es.upm.amusementpark.park.Park;
+import es.upm.amusementpark.repository.AttractionRepository;
+import es.upm.amusementpark.service.AttractionService;
 import es.upm.amusementpark.service.GroupService;
 import es.upm.amusementpark.service.OperationException;
 import es.upm.amusementpark.service.TicketService;
@@ -42,6 +44,11 @@ public class CommandProcessor {
     }
 
     public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService) {
+        this(userService, groupService, ticketService, new AttractionService(new AttractionRepository()));
+    }
+
+    public CommandProcessor(UserService userService, GroupService groupService, TicketService ticketService,
+                            AttractionService attractionService) {
         this.userService = userService;
         register("USER CREATE", 8, "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>", "",
                 p -> {
@@ -83,6 +90,11 @@ public class CommandProcessor {
             ticketService.deleteGroupTicket(p[1]);
             return "GROUP TICKET DELETED";
         });
+        register("ATTRACTION CREATE", 4, "ATTRACTION CREATE;<identifier>;<name>;<capacity>", "", p -> {
+            attractionService.createAttraction(p[1], p[2], p[3]);
+            return "ATTRACTION CREATED";
+        });
+        register("ATTRACTION LIST", 2, "ATTRACTION LIST;<identifier>", "", p -> attractionService.list(p[1]));
         register("SYSTEM DATE", 2, "SYSTEM DATE;<yyyy-MM-dd>", "", this::systemDate);
         register("SYSTEM PRICE", 2, "SYSTEM PRICE;<Price>", "", this::systemPrice);
         register("HELP", 1, "HELP", "", p -> helpText());

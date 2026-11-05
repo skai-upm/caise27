@@ -4,6 +4,7 @@ import es.upm.amusementpark.command.CommandProcessor;
 import es.upm.amusementpark.park.Park;
 import es.upm.amusementpark.persistence.UserFileStorage;
 import es.upm.amusementpark.repository.UserRepository;
+import es.upm.amusementpark.service.AttractionService;
 import es.upm.amusementpark.service.GroupService;
 import es.upm.amusementpark.service.TicketService;
 import es.upm.amusementpark.service.UserService;
@@ -44,7 +45,8 @@ public class App {
             park.start(new UserRepository(new UserFileStorage(usersFile)));
             processor = new CommandProcessor(new UserService(park.users(), park.groups(), park.tickets()),
                     new GroupService(park.users(), park.groups(), park.tickets()),
-                    new TicketService(park.users(), park.tickets(), park.groups()));
+                    new TicketService(park.users(), park.tickets(), park.groups()),
+                    new AttractionService(park.attractions()));
         } catch (UncheckedIOException e) {
             err.println("ERROR: cannot read users file '" + usersFile + "'");
             return 1;
