@@ -70,7 +70,7 @@ class ParkPersistenceTest {
         assertEquals(new BigDecimal("80.00"), tg01.getPrice());
         assertEquals(2, tg01.getComposition().size());
         assertSame(park.getUsers().findByDni("87654321X"), tg01.getComposition().get(1).getUser());
-        Attraction a01 = park.getAttractions().findById("A01");
+        Attraction<?> a01 = park.getAttractions().findById("A01");
         assertEquals(20, a01.getCapacity());
         assertTrue(a01.getOccupants().isEmpty());
         p.process("SYSTEM DATE;2027-04-01");

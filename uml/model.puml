@@ -47,10 +47,36 @@ package es.upm.parque.business.model {
   class GroupTicket {
   }
 
-  class Attraction {
+  interface GeneralAccess {
+  }
+  interface IndividualAccess {
+  }
+  interface GroupAccess {
+  }
+  interface PassLookup {
+  }
+
+  abstract class Attraction<T extends GeneralAccess> {
     - id : String {readOnly}
     - name : String {readOnly}
     - capacity : int {readOnly}
+    - accessType : Class<T> {readOnly}
+  }
+
+  class GeneralAttraction <<bind T=GeneralAccess>> {
+  }
+  class IndividualAttraction <<bind T=IndividualAccess>> {
+  }
+  class GroupAttraction <<bind T=GroupAccess>> {
+  }
+  class SpecialAttraction <<bind T=IndividualAccess>> {
+  }
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 
   abstract class Pass {
@@ -155,14 +181,31 @@ package es.upm.parque.persistence {
   }
 }
 
-' --- Ticket hierarchy ---
+' --- Ticket hierarchy and access capabilities ---
 Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
+GeneralAccess <|-- IndividualAccess
+GeneralAccess <|-- GroupAccess
+GeneralAccess <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+
+' --- Attraction types: bounded generic attraction, each type binds the capability it accepts ---
+Attraction <|-- GeneralAttraction
+Attraction <|-- IndividualAttraction
+Attraction <|-- GroupAttraction
+Attraction <|-- SpecialAttraction
+Attraction ..> AttractionType : getType
+GeneralAttraction ..> GeneralAccess : accepts
+IndividualAttraction ..> IndividualAccess : accepts
+GroupAttraction ..> GroupAccess : accepts
+SpecialAttraction ..> IndividualAccess : accepts
+SpecialAttraction ..> PassLookup : requires Special Pass
 
 ' --- Composition: a group ticket owns its individual tickets ---
 GroupTicket "0..1" *-- "1..*" IndividualTicket : composition
 
-'' --- Passes: personal purchases of an individual ticket (tickets hold no references to their passes) ---
+' --- Passes: personal purchases of an individual ticket (tickets hold no references to their passes) ---
 Pass <|-- SpeedPass
 Pass <|-- SpecialPass
 SpeedPass "*" --> "1" IndividualTicket : ticket
@@ -188,6 +231,7 @@ GroupRepository "1" o--> "*" Group : groupsById
 TicketRepository "1" o--> "*" Ticket : ticketsById
 AttractionRepository "1" o--> "*" Attraction : attractionsById
 PassRepository "1" o--> "*" Pass : passesById
+PassLookup <|.. PassRepository
 
 ' --- Initialization: the composition root injects repositories and collaborators ---
 ParkSession ..> ParkRepositories : creates for the storage location

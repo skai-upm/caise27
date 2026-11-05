@@ -6,7 +6,7 @@ Preserves the park's groups, tickets and attractions between executions in text 
 ## Requirements
 
 ### Requirement: Park state persisted between executions
-In addition to users, the system SHALL store in text files, and reconstruct at start-up, groups with their users, individual tickets with their user, group tickets with their constituent individual tickets and (while it exists) the purchasing group, and attractions with their identifier, name and capacity. Changes SHALL be saved after each successful command. Automatic Java object serialization, databases, persistence frameworks and external libraries MUST NOT be used.
+In addition to users, the system SHALL store in text files, and reconstruct at start-up, groups with their users, individual tickets with their user, group tickets with their constituent individual tickets and (while it exists) the purchasing group, and attractions with their identifier, name, capacity and type; a stored attraction without a type (data written by Delivery 2) SHALL be loaded as a `GENERAL` attraction. Changes SHALL be saved after each successful command. Automatic Java object serialization, databases, persistence frameworks and external libraries MUST NOT be used.
 
 #### Scenario: Groups and members restored
 - **WHEN** group `G01` with members Ana and Pedro exists, the application ends and starts again
@@ -28,6 +28,14 @@ In addition to users, the system SHALL store in text files, and reconstruct at s
 #### Scenario: Malformed stored line ignored
 - **WHEN** a groups, tickets or attractions file contains a malformed line
 - **THEN** that line is ignored, a warning reports the number of ignored lines, and the rest of the state is loaded
+
+#### Scenario: Attraction types restored
+- **WHEN** attractions of types `GENERAL`, `INDIVIDUAL`, `GROUP` and `SPECIAL` exist and the application restarts
+- **THEN** each attraction is restored with its type
+
+#### Scenario: Delivery 2 attraction line loaded as general
+- **WHEN** the attractions file contains the line `A01;Dragon Rojo;20`
+- **THEN** after start-up attraction `A01` exists with type `GENERAL` and capacity 20
 
 ### Requirement: Historical tickets reconstructable after deletions
 Tickets SHALL retain the minimum information needed to reconstruct them as fiscal records even if their user or purchasing group no longer exists: identifier, date, price, holder identity (DNI, email, first name, surnames) and, for group tickets, the composition. A group ticket whose group was deleted SHALL be restored with no group reference.

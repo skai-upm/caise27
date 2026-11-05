@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Ticket for a single user. The ticket knows its user; the user does not know its tickets.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final User user;
 
@@ -23,6 +23,11 @@ public class IndividualTicket extends Ticket {
     @Override
     public List<User> getHolders() {
         return List.of(user);
+    }
+
+    @Override
+    public IndividualTicket individualTicket() {
+        return this;
     }
 
     public boolean belongsTo(User other) {

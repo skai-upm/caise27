@@ -10,7 +10,7 @@ import java.util.List;
  * Its price is the sum of the prices of its composition. It knows its group (while the group
  * exists); members are reached through the composition, never through a parallel user list.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
@@ -50,6 +50,7 @@ public class GroupTicket extends Ticket {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
+    @Override
     public List<IndividualTicket> getComposition() {
         return composition;
     }

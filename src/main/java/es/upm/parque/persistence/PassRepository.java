@@ -7,12 +7,13 @@ import java.util.Map;
 
 import es.upm.parque.business.model.IndividualTicket;
 import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.PassLookup;
 import es.upm.parque.business.model.SpecialPass;
 
 /**
  * Stores SpeedPasses and Special Passes in one identifier space, independent of ticket identifiers.
  */
-public class PassRepository {
+public class PassRepository implements PassLookup {
 
     private final Map<String, Pass> passesById = new LinkedHashMap<>();
 
@@ -42,6 +43,7 @@ public class PassRepository {
     }
 
     /** The Special Pass of the ticket, consumed or not, or {@code null} when it has none. */
+    @Override
     public SpecialPass specialPassOf(IndividualTicket ticket) {
         for (Pass pass : passesById.values()) {
             if (pass.getTicket() == ticket && pass instanceof SpecialPass special) {

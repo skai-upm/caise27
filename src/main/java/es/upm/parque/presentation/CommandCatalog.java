@@ -41,8 +41,10 @@ public final class CommandCatalog {
                     "Refunds an unconsumed SpeedPass whose ticket is dated after the current date."),
             new CommandDescriptor("SPECIALPASS DELETE;<specialPassIdentifier>",
                     "Refunds an unconsumed Special Pass whose ticket is dated after the current date."),
-            new CommandDescriptor("ATTRACTION CREATE;<identifier>;<name>;<capacity>",
-                    "Creates an attraction with a maximum number of simultaneous users."),
+            new CommandDescriptor("ATTRACTION CREATE;<identifier>;<name>;<capacity>[;<type>]",
+                    "Creates an attraction with a maximum number of simultaneous users and a type: GENERAL (default,"
+                            + " any ticket), INDIVIDUAL (individual tickets), GROUP (group tickets) or SPECIAL"
+                            + " (individual tickets with a Special Pass)."),
             new CommandDescriptor("ATTRACTION ENTER;<attraction>;<ticket>",
                     "Lets the holders of a ticket valid today into an attraction, all or none, within its capacity."),
             new CommandDescriptor("ATTRACTION EXIT;<attraction>;<email>",

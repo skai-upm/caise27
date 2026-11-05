@@ -32,7 +32,7 @@ class AttractionCommandsTest {
     @Test
     void createsEmptyAttraction() {
         assertTrue(processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20").startsWith("OK"));
-        Attraction a01 = park.getAttractions().findById("A01");
+        Attraction<?> a01 = park.getAttractions().findById("A01");
         assertEquals("Dragon Rojo", a01.getName());
         assertEquals(20, a01.getCapacity());
         assertTrue(a01.getOccupants().isEmpty());
@@ -65,7 +65,7 @@ class AttractionCommandsTest {
     @Test
     void listsOccupantEmails() {
         processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
-        Attraction a01 = park.getAttractions().findById("A01");
+        Attraction<?> a01 = park.getAttractions().findById("A01");
         User ana = park.getUsers().findByEmail("ana@correo.com");
         assertTrue(a01.addOccupant(ana));
         assertFalse(a01.addOccupant(ana));

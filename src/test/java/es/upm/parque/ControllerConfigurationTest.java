@@ -97,7 +97,7 @@ class ControllerConfigurationTest {
         assertSame(b.getUsers(), park.getUsers());
         assertSame(b.getTickets(), park.getTickets());
         assertNull(park.getUsers().findByEmail("ana@correo.com"));
-        AttractionManager.getInstance().create("A01", "Dragon", "10");
+        AttractionManager.getInstance().create("A01", "Dragon", "10", null);
         assertNotNull(b.getAttractions().findById("A01"));
         assertNull(a.getAttractions().findById("A01"));
         assertThrows(ParkException.class, () -> AttractionManager.getInstance().enter("A01", "T1"),
@@ -107,7 +107,7 @@ class ControllerConfigurationTest {
     @Test
     void controllersFailClearlyBeforeInitialization() throws ParkException {
         ParkConfiguration.initialize(ParkRepositories.inMemory());
-        AttractionManager.getInstance().create("A01", "Dragon", "10");
+        AttractionManager.getInstance().create("A01", "Dragon", "10", null);
         UserManager.getInstance().inject(null, null);
         IllegalStateException e = assertThrows(IllegalStateException.class,
                 () -> UserManager.getInstance().delete("ana@correo.com", "Clave1!"));

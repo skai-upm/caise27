@@ -5,9 +5,10 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Common abstraction for every ticket type: a unique identifier, a date of use and a price.
+ * Common abstraction for every ticket type: a unique identifier, a date of use and a price. Every ticket has the
+ * general access capability; subclasses add the individual or group capability.
  */
-public abstract class Ticket {
+public abstract class Ticket implements GeneralAccess {
 
     private final String id;
     private final LocalDate date;
@@ -19,10 +20,12 @@ public abstract class Ticket {
         this.price = price;
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }
@@ -32,6 +35,7 @@ public abstract class Ticket {
     }
 
     /** Users who enter an attraction with this ticket. */
+    @Override
     public abstract List<User> getHolders();
 
     /** A ticket is active when its date is equal to or later than the given current date. */

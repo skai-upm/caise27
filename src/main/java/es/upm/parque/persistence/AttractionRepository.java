@@ -12,13 +12,13 @@ import es.upm.parque.business.model.Attraction;
  */
 public class AttractionRepository {
 
-    private final Map<String, Attraction> attractionsById = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractionsById = new LinkedHashMap<>();
 
-    public void add(Attraction attraction) {
+    public void add(Attraction<?> attraction) {
         attractionsById.put(attraction.getId(), attraction);
     }
 
-    public Attraction findById(String id) {
+    public Attraction<?> findById(String id) {
         return attractionsById.get(id);
     }
 
@@ -26,7 +26,7 @@ public class AttractionRepository {
         return attractionsById.containsKey(id);
     }
 
-    public List<Attraction> findAll() {
+    public List<Attraction<?>> findAll() {
         return new ArrayList<>(attractionsById.values());
     }
 }

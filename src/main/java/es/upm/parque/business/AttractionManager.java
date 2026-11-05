@@ -3,11 +3,14 @@ package es.upm.parque.business;
 import java.util.List;
 
 import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
+import es.upm.parque.business.model.GeneralAccess;
+import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 
 /**
- * Business operations on attractions: creation, access with any ticket type, and exit.
+ * Business operations on attractions: creation of typed attractions, access restricted by attraction type, and exit.
  */
 public class AttractionManager {
 
@@ -40,7 +43,8 @@ public class AttractionManager {
         return ParkConfiguration.requireInjected(tickets);
     }
 
-    public Attraction create(String id, String name, String capacityText) throws ParkException {
+    /** Creates an attraction of the given type; a {@code null} type creates a GENERAL attraction (Delivery 2). */
+    public Attraction<?> create(String id, String name, String capacityText, String typeText) throws ParkException {
         if (park().getAttractions().exists(id)) {
             throw new RuleViolationException("an attraction with identifier " + id + " already exists");
         }
@@ -48,14 +52,19 @@ public class AttractionManager {
         if (capacity <= 0) {
             throw new InvalidDataException("invalid capacity '" + capacityText + "' (expected a positive whole number)");
         }
-        Attraction attraction = new Attraction(id, name, capacity);
+        AttractionType type = typeText == null ? AttractionType.GENERAL : AttractionType.fromName(typeText);
+        if (type == null) {
+            throw new InvalidDataException("invalid attraction type '" + typeText
+                    + "' (allowed: GENERAL, INDIVIDUAL, GROUP, SPECIAL)");
+        }
+        Attraction<?> attraction = type.create(id, name, capacity);
         park().getAttractions().add(attraction);
         park().persist();
         return attraction;
     }
 
-    public Attraction find(String id) throws NotFoundException {
-        Attraction attraction = park().getAttractions().findById(id);
+    public Attraction<?> find(String id) throws NotFoundException {
+        Attraction<?> attraction = park().getAttractions().findById(id);
         if (attraction == null) {
             throw new NotFoundException("no attraction with identifier " + id);
         }
@@ -63,33 +72,46 @@ public class AttractionManager {
     }
 
     /**
-     * Admits the holders of the ticket who are not inside yet, all or none, when the ticket is for today
-     * and the attraction has room for all of them. Returns the users who entered.
+     * Admits the holders of the ticket who are not inside yet, all or none, when the attraction type accepts the
+     * ticket, the ticket is for today, the type's entry condition holds and there is room for all of them.
+     * Returns the users who entered.
      */
     public List<User> enter(String attractionId, String ticketId) throws ParkException {
-        Attraction attraction = find(attractionId);
-        Ticket ticket = tickets().find(ticketId);
-        if (!ticket.getDate().equals(park().getCurrentDate())) {
-            throw new RuleViolationException("ticket " + ticketId + " is valid on " + ticket.getDate() + ", not on "
-                    + park().getCurrentDate());
+        return admit(find(attractionId), tickets().find(ticketId));
+    }
+
+    /** Entry through the attraction's bound capability: only tickets it accepts are typed and checked as {@code T}. */
+    private <T extends GeneralAccess> List<User> admit(Attraction<T> attraction, Ticket ticket) throws ParkException {
+        T accepted = attraction.accept(ticket);
+        if (accepted == null) {
+            throw new RuleViolationException("attraction " + attraction.getId() + " (" + attraction.getType()
+                    + ") does not accept " + (ticket instanceof GroupTicket ? "group" : "individual") + " tickets");
         }
-        List<User> entrants = ticket.getHolders().stream().filter(u -> !attraction.isInside(u)).toList();
+        if (!accepted.getDate().equals(park().getCurrentDate())) {
+            throw new RuleViolationException("ticket " + accepted.getId() + " is valid on " + accepted.getDate()
+                    + ", not on " + park().getCurrentDate());
+        }
+        String refusal = attraction.entryRefusal(accepted, park().getPasses());
+        if (refusal != null) {
+            throw new RuleViolationException(refusal);
+        }
+        List<User> entrants = accepted.getHolders().stream().filter(u -> !attraction.isInside(u)).toList();
         if (entrants.isEmpty()) {
-            throw new RuleViolationException("the users of ticket " + ticketId + " are already inside attraction "
-                    + attractionId);
+            throw new RuleViolationException("the users of ticket " + accepted.getId()
+                    + " are already inside attraction " + attraction.getId());
         }
         int free = attraction.getCapacity() - attraction.getOccupants().size();
         if (entrants.size() > free) {
-            throw new RuleViolationException("attraction " + attractionId + " has room for " + free + " user(s) but "
-                    + entrants.size() + " need to enter; nobody entered");
+            throw new RuleViolationException("attraction " + attraction.getId() + " has room for " + free
+                    + " user(s) but " + entrants.size() + " need to enter; nobody entered");
         }
         entrants.forEach(attraction::addOccupant);
         return entrants;
     }
 
     /** Removes the occupant with the given email from the attraction. */
-    public Attraction exit(String attractionId, String email) throws ParkException {
-        Attraction attraction = find(attractionId);
+    public Attraction<?> exit(String attractionId, String email) throws ParkException {
+        Attraction<?> attraction = find(attractionId);
         User occupant = attraction.getOccupants().stream()
                 .filter(u -> u.getEmail().equals(email)).findFirst().orElse(null);
         if (occupant == null) {

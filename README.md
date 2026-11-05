@@ -55,7 +55,7 @@ SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>
 SPECIALPASS CREATE;<identifier>;<individualTicket>
 SPEEDPASS DELETE;<speedPassIdentifier>
 SPECIALPASS DELETE;<specialPassIdentifier>
-ATTRACTION CREATE;<identifier>;<name>;<capacity>
+ATTRACTION CREATE;<identifier>;<name>;<capacity>[;<type>]     type: GENERAL (default), INDIVIDUAL, GROUP, SPECIAL
 ATTRACTION ENTER;<attraction>;<ticket>
 ATTRACTION EXIT;<attraction>;<email>
 ATTRACTION LIST;<attraction>
@@ -75,6 +75,11 @@ Park rules in short:
 - An active group ticket (dated today or later) locks the group against `GROUP ADD`, `GROUP REMOVE` and `GROUP DELETE`.
 - A user with an active ticket, or in a locked group, cannot be deleted.
 - Group entry to an attraction is all-or-nothing within its capacity.
+- Attraction types limit the tickets that can enter:
+  - `GENERAL`: individual and group tickets.
+  - `INDIVIDUAL`: individual tickets only.
+  - `GROUP`: group tickets only.
+  - `SPECIAL`: individual tickets that have an unconsumed Special Pass.
 - Passes belong to an individual ticket, including the tickets inside a group ticket, and can be bought for tickets dated today or later.
   - A SpeedPass costs 20% of the ticket's stored price. It is bought 1 or 10 at a time, and the passes are numbered `<purchase>:1` to `<purchase>:10`.
   - A Special Pass costs the ticket's price. A ticket can have only one, even after it has been consumed.
@@ -102,7 +107,7 @@ Data is stored in text files in the working directory:
 | `users.txt` | `FirstName;Surnames;DNI;Email;PasswordHash;Phone;Card` (BCrypt value, never the plain password) |
 | `groups.txt` | `id;name;dni1,dni2,...` |
 | `tickets.txt` | `I;id;date;price;dni;email;firstName;surnames` and `G;id;date;group;component1,component2,...` |
-| `attractions.txt` | `id;name;capacity` (users inside are not stored; attractions start empty) |
+| `attractions.txt` | `id;name;capacity;type` (users inside are not stored, and attractions start empty; a line without a type is a `GENERAL` attraction) |
 
 Passwords are checked against the validation rules and then stored only as BCrypt values, using the jBCrypt library. `USER DELETE` and `USER UPDATE` check the entered password against the stored value. Users files written by earlier versions with plain-text passwords are not migrated; those lines are ignored with a `WARNING`.
 
@@ -125,4 +130,5 @@ The code is split into three layers: `presentation` (commands and responses), `b
 - **Injected repositories.** Repositories are ordinary, replaceable objects. At start-up, `ParkSession` creates them for the chosen storage location: the working directory, or the temporary directory in `--fly` mode. `ParkConfiguration.initialize` then injects them into `ParkController`, and wires each manager with its collaborators. For example, `AttractionManager` receives `TicketManager`. No dependency injection framework is used.
 - **Help.** `HelpGenerator` receives the formatting behaviour (`HelpFormatter`) by injection. `HelpConfiguration` registers `HELP` and `HELP EXTENDED`. A new help variant needs only a new formatter registered under a new command; the command processor does not change.
 - **Password protection.** `UserManager` receives a `PasswordProtector` by injection. In normal runs this is `BCryptPasswordProtector`, with cost 10. jBCrypt (`org.mindrot:jbcrypt:0.4`) is the only runtime dependency, and `mvn package` bundles it into `target/amusement-park.jar`.
+- **Attraction types.** Ticket capabilities are interfaces: `GeneralAccess`, implemented by every ticket; `IndividualAccess`, implemented by `IndividualTicket`; and `GroupAccess`, implemented by `GroupTicket`. `Attraction<T extends GeneralAccess>` is generic, and each type binds `T` to the capability it accepts. `INDIVIDUAL` and `SPECIAL` both use `IndividualAccess`; the Special Pass check is behaviour of `SpecialAttraction`.
 - **Invoices.** Invoices use the Builder pattern. `InvoiceManager` directs `UserInvoiceBuilder` or `GroupInvoiceBuilder`, which extend `InvoiceBuilder`.

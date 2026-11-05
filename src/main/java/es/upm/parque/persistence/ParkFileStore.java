@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import es.upm.parque.business.model.Attraction;
+import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
@@ -27,7 +27,8 @@ import es.upm.parque.business.model.User;
  *   <li>{@code groups.txt}: {@code id;name;dni1,dni2,...}</li>
  *   <li>{@code tickets.txt}: {@code I;id;date;price;dni;email;firstName;surnames} and
  *       {@code G;id;date;groupIdOrEmpty;componentId1,componentId2,...}</li>
- *   <li>{@code attractions.txt}: {@code id;name;capacity} (occupants are never stored)</li>
+ *   <li>{@code attractions.txt}: {@code id;name;capacity;type} (occupants are never stored; a line without a type
+ *       is a GENERAL attraction)</li>
  * </ul>
  */
 public class ParkFileStore {
@@ -86,7 +87,8 @@ public class ParkFileStore {
             }
         }
         List<String> attractionLines = attractions.findAll().stream()
-                .map(a -> String.join(SEP, a.getId(), a.getName(), Integer.toString(a.getCapacity())))
+                .map(a -> String.join(SEP, a.getId(), a.getName(), Integer.toString(a.getCapacity()),
+                        a.getType().name()))
                 .toList();
         write(GROUPS_FILE, groupLines);
         write(TICKETS_FILE, ticketLines);
@@ -170,11 +172,13 @@ public class ParkFileStore {
 
     private void loadAttractions(AttractionRepository attractions) {
         for (String[] f : rows(ATTRACTIONS_FILE)) {
-            int capacity = f.length == 3 ? capacity(f[2]) : -1;
-            if (capacity <= 0 || f[0].isEmpty() || attractions.exists(f[0])) {
+            int capacity = f.length == 3 || f.length == 4 ? capacity(f[2]) : -1;
+            // Lines without a type (Delivery 2 data) are general attractions.
+            AttractionType type = f.length == 4 ? AttractionType.fromName(f[3]) : AttractionType.GENERAL;
+            if (capacity <= 0 || type == null || f[0].isEmpty() || attractions.exists(f[0])) {
                 malformedLineCount++;
             } else {
-                attractions.add(new Attraction(f[0], f[1], capacity));
+                attractions.add(type.create(f[0], f[1], capacity));
             }
         }
     }
