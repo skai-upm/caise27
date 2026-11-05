@@ -14,6 +14,11 @@ public class SpeedPass extends Pass {
         super(id, ticket, priceFor(ticket));
     }
 
+    /** Reconstructs a stored SpeedPass with the price it was bought at. */
+    public SpeedPass(String id, IndividualTicket ticket, BigDecimal storedPrice) {
+        super(id, ticket, storedPrice);
+    }
+
     /** Price of one SpeedPass for the ticket, from the ticket's stored (possibly discounted) price. */
     public static BigDecimal priceFor(IndividualTicket ticket) {
         return ticket.getPrice().multiply(RATE).setScale(2, RoundingMode.HALF_UP);

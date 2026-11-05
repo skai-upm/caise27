@@ -79,7 +79,24 @@ class UmlModelConsistencyTest {
                 "Attraction \"*\" o--> \"*\" User : occupants",
                 "ParkController \"1\" --> \"1\" ParkRepositories : repositories",
                 "ParkConfiguration ..> ParkController : injects repositories",
-                "AttractionManager --> \"1\" TicketManager : tickets"}) {
+                "AttractionManager --> \"1\" TicketManager : tickets",
+                // Delivery 3: access interfaces, generic attraction types, passes, Builder, injection, singletons
+                "GeneralAccess <|.. Ticket",
+                "IndividualAccess <|.. IndividualTicket",
+                "GroupAccess <|.. GroupTicket",
+                "abstract class Attraction<T extends GeneralAccess> {",
+                "Attraction <|-- GeneralAttraction",
+                "Attraction <|-- IndividualAttraction",
+                "Attraction <|-- GroupAttraction",
+                "Attraction <|-- SpecialAttraction",
+                "SpeedPass \"*\" --> \"1\" IndividualTicket : ticket",
+                "SpecialPass \"0..1\" --> \"1\" IndividualTicket : ticket",
+                "InvoiceBuilder <|-- UserInvoiceBuilder",
+                "InvoiceBuilder <|-- GroupInvoiceBuilder",
+                "InvoiceManager ..> InvoiceBuilder : directs",
+                "UserManager --> \"1\" PasswordProtector : passwords",
+                "class ParkController <<singleton>> {",
+                "ParkFileStore ..> PassRepository : loads/saves"}) {
             assertTrue(lines.contains(required), required);
         }
     }

@@ -17,11 +17,14 @@ import es.upm.parque.business.model.AttractionType;
 import es.upm.parque.business.model.Group;
 import es.upm.parque.business.model.GroupTicket;
 import es.upm.parque.business.model.IndividualTicket;
+import es.upm.parque.business.model.Pass;
+import es.upm.parque.business.model.SpecialPass;
+import es.upm.parque.business.model.SpeedPass;
 import es.upm.parque.business.model.Ticket;
 import es.upm.parque.business.model.User;
 
 /**
- * Reads and writes groups, tickets and attractions as ';'-separated text files in a data directory.
+ * Reads and writes groups, tickets, attractions and passes as ';'-separated text files in a data directory.
  *
  * <ul>
  *   <li>{@code groups.txt}: {@code id;name;dni1,dni2,...}</li>
@@ -29,6 +32,8 @@ import es.upm.parque.business.model.User;
  *       {@code G;id;date;groupIdOrEmpty;componentId1,componentId2,...}</li>
  *   <li>{@code attractions.txt}: {@code id;name;capacity;type} (occupants are never stored; a line without a type
  *       is a GENERAL attraction)</li>
+ *   <li>{@code passes.txt}: {@code S|P;id;individualTicketId;price;consumed} ({@code S} SpeedPass,
+ *       {@code P} Special Pass; the stored price is kept, never recalculated)</li>
  * </ul>
  */
 public class ParkFileStore {
@@ -36,11 +41,14 @@ public class ParkFileStore {
     public static final String GROUPS_FILE = "groups.txt";
     public static final String TICKETS_FILE = "tickets.txt";
     public static final String ATTRACTIONS_FILE = "attractions.txt";
+    public static final String PASSES_FILE = "passes.txt";
 
     private static final String SEP = ";";
     private static final String LIST_SEP = ",";
     private static final String INDIVIDUAL = "I";
     private static final String GROUP = "G";
+    private static final String SPEED_PASS = "S";
+    private static final String SPECIAL_PASS = "P";
 
     private final Path dataDir;
     private int malformedLineCount;
@@ -54,17 +62,19 @@ public class ParkFileStore {
         return malformedLineCount;
     }
 
-    /** Loads groups, tickets and attractions, linking them to the given users. */
+    /** Loads groups, tickets, attractions and passes, linking them to the given users and to each other. */
     public void load(UserRepository users, GroupRepository groups, TicketRepository tickets,
-                     AttractionRepository attractions) {
+                     AttractionRepository attractions, PassRepository passes) {
         malformedLineCount = 0;
         loadGroups(users, groups);
         loadTickets(users, groups, tickets);
         loadAttractions(attractions);
+        loadPasses(tickets, passes);
     }
 
-    /** Replaces the three files with the current groups, tickets and attractions. */
-    public void save(GroupRepository groups, TicketRepository tickets, AttractionRepository attractions) {
+    /** Replaces the four files with the current groups, tickets, attractions and passes. */
+    public void save(GroupRepository groups, TicketRepository tickets, AttractionRepository attractions,
+                     PassRepository passes) {
         List<String> groupLines = new ArrayList<>();
         for (Group g : groups.findAll()) {
             List<String> dnis = g.getMembers().stream().map(User::getDni).toList();
@@ -93,6 +103,11 @@ public class ParkFileStore {
         write(GROUPS_FILE, groupLines);
         write(TICKETS_FILE, ticketLines);
         write(ATTRACTIONS_FILE, attractionLines);
+        List<String> passLines = passes.findAll().stream()
+                .map(p -> String.join(SEP, p instanceof SpecialPass ? SPECIAL_PASS : SPEED_PASS, p.getId(),
+                        p.getTicket().getId(), p.getPrice().toPlainString(), Boolean.toString(p.isConsumed())))
+                .toList();
+        write(PASSES_FILE, passLines);
     }
 
     private void loadGroups(UserRepository users, GroupRepository groups) {
@@ -181,6 +196,40 @@ public class ParkFileStore {
                 attractions.add(type.create(f[0], f[1], capacity));
             }
         }
+    }
+
+    private void loadPasses(TicketRepository tickets, PassRepository passes) {
+        for (String[] f : rows(PASSES_FILE)) {
+            Pass pass = f.length == 5 && !passes.exists(f[1]) ? pass(f, tickets, passes) : null;
+            if (pass == null) {
+                malformedLineCount++;
+            } else {
+                passes.add(pass);
+            }
+        }
+    }
+
+    /** The pass described by a stored line, or {@code null} when the line cannot be reconstructed consistently. */
+    private static Pass pass(String[] f, TicketRepository tickets, PassRepository passes) {
+        BigDecimal price = price(f[3]);
+        boolean consumed = Boolean.parseBoolean(f[4]);
+        boolean validState = consumed || "false".equals(f[4]);
+        if (f[1].isEmpty() || price == null || !validState
+                || !(tickets.findById(f[2]) instanceof IndividualTicket ticket)) {
+            return null;
+        }
+        Pass pass;
+        if (SPEED_PASS.equals(f[0])) {
+            pass = new SpeedPass(f[1], ticket, price);
+        } else if (SPECIAL_PASS.equals(f[0]) && passes.specialPassOf(ticket) == null) {
+            pass = new SpecialPass(f[1], ticket, price);
+        } else {
+            return null;
+        }
+        if (consumed) {
+            pass.consume();
+        }
+        return pass;
     }
 
     private List<String[]> rows(String fileName) {

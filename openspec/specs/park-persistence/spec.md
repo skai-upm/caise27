@@ -6,7 +6,7 @@ Preserves the park's groups, tickets and attractions between executions in text 
 ## Requirements
 
 ### Requirement: Park state persisted between executions
-In addition to users, the system SHALL store in text files, and reconstruct at start-up, groups with their users, individual tickets with their user, group tickets with their constituent individual tickets and (while it exists) the purchasing group, and attractions with their identifier, name, capacity and type; a stored attraction without a type (data written by Delivery 2) SHALL be loaded as a `GENERAL` attraction. Changes SHALL be saved after each successful command. Automatic Java object serialization, databases, persistence frameworks and external libraries MUST NOT be used.
+In addition to users, the system SHALL store in text files, and reconstruct at start-up, groups with their users, individual tickets with their user, group tickets with their constituent individual tickets and (while it exists) the purchasing group, attractions with their identifier, name, capacity and type, and SpeedPasses and Special Passes with their identifier, the individual ticket they belong to, their stored price and their consumed or unconsumed state; a stored attraction without a type (data written by Delivery 2) SHALL be loaded as a `GENERAL` attraction. Changes SHALL be saved after each successful command. Consumed passes SHALL remain persisted while their ticket exists, and valid ticket deletions SHALL apply the cascading deletion of passes. The collection of users inside attractions SHALL NOT be persisted. Automatic Java object serialization, databases, persistence frameworks and external libraries (other than the authorized BCrypt dependency) MUST NOT be used.
 
 #### Scenario: Groups and members restored
 - **WHEN** group `G01` with members Ana and Pedro exists, the application ends and starts again
@@ -37,6 +37,20 @@ In addition to users, the system SHALL store in text files, and reconstruct at s
 - **WHEN** the attractions file contains the line `A01;Dragon Rojo;20`
 - **THEN** after start-up attraction `A01` exists with type `GENERAL` and capacity 20
 
+#### Scenario: Passes restored with ticket, price and state
+- **GIVEN** ticket `T001` (40.00 EUR) with SpeedPasses `SP02:1` (consumed) and `SP02:2` (unconsumed) and Special Pass `PE01` (consumed), and the system price later changed
+- **WHEN** the application restarts
+- **THEN** `SP02:1` and `SP02:2` belong to `T001`, cost `8.00` EUR, and keep their consumed and unconsumed states
+- **AND** `PE01` belongs to `T001`, costs `40.00` EUR and is consumed, so a new Special Pass for `T001` is still rejected
+
+#### Scenario: Refunded and cascaded passes are not restored
+- **WHEN** a SpeedPass is refunded and a future ticket with passes is deleted, and the application restarts
+- **THEN** neither the refunded pass nor the passes of the deleted ticket exist
+
+#### Scenario: Malformed pass line ignored
+- **WHEN** the passes file contains a line whose ticket does not exist, whose price or state is invalid, or a second Special Pass for the same ticket
+- **THEN** that line is ignored and reported in the warning, and the other passes are loaded
+
 ### Requirement: Historical tickets reconstructable after deletions
 Tickets SHALL retain the minimum information needed to reconstruct them as fiscal records even if their user or purchasing group no longer exists: identifier, date, price, holder identity (DNI, email, first name, surnames) and, for group tickets, the composition. A group ticket whose group was deleted SHALL be restored with no group reference.
 
@@ -49,11 +63,11 @@ Tickets SHALL retain the minimum information needed to reconstruct them as fisca
 - **THEN** `TG01` is restored with its date, price and composition and with no group reference
 
 ### Requirement: Temporary persistence mode
-When `--fly` is the first argument, the application SHALL create a new directory `tmp/<yyyyMMdd_HHmmss>/` (with a suffix if that name exists), and every repository (users, groups, tickets, attractions) SHALL use only files inside it, selected by path configuration and not by alternative repository implementations. When execution ends — through `EXIT` or because standard input or the command file ends — that directory and all its files SHALL be deleted. `--fly` MAY be followed by a command file path; without `--fly`, the normal persistent files are used as before.
+When `--fly` is the first argument, the application SHALL create a new directory `tmp/<yyyyMMdd_HHmmss>/` (with a suffix if that name exists), and every repository (users, groups, tickets, attractions and passes) SHALL use only files inside it, with the same repositories and persistence mechanisms as normal mode, selected by path configuration and not by alternative repository implementations. When execution ends — through `EXIT` or because standard input or the command file ends — that directory and all its files SHALL be deleted. `--fly` MAY be followed by a command file path; without `--fly`, the normal persistent files are used as before.
 
 #### Scenario: Fly mode leaves normal data untouched
 - **WHEN** `java -jar target/amusement-park.jar --fly input.txt` runs a file that creates users, groups and tickets
-- **THEN** the normal `users.txt`, `groups.txt`, `tickets.txt` and `attractions.txt` are unchanged
+- **THEN** the normal `users.txt`, `groups.txt`, `tickets.txt`, `attractions.txt` and `passes.txt` are unchanged
 - **AND** after the run no `tmp/<timestamp>/` directory remains
 
 #### Scenario: Fly mode interactive with EXIT

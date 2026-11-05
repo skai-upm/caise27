@@ -38,7 +38,8 @@ public final class ParkRepositories {
     /** Repositories loaded from, and saved to, the given park file store. */
     public static ParkRepositories fileBacked(UserRepository users, ParkFileStore store) {
         ParkRepositories repositories = new ParkRepositories(users, Objects.requireNonNull(store));
-        store.load(users, repositories.groups, repositories.tickets, repositories.attractions);
+        store.load(users, repositories.groups, repositories.tickets, repositories.attractions,
+                repositories.passes);
         return repositories;
     }
 
@@ -58,15 +59,15 @@ public final class ParkRepositories {
         return attractions;
     }
 
-    /** Passes of the execution; they are kept in memory (file persistence of passes arrives with F3-C09). */
+    /** SpeedPasses and Special Passes of the execution. */
     public PassRepository getPasses() {
         return passes;
     }
 
-    /** Saves groups, tickets and attractions when the configuration is backed by files. */
+    /** Saves groups, tickets, attractions and passes when the configuration is backed by files. */
     public void save() {
         if (store != null) {
-            store.save(groups, tickets, attractions);
+            store.save(groups, tickets, attractions, passes);
         }
     }
 

@@ -1,5 +1,5 @@
 @startuml model
-' Amusement Park - class model (layered: presentation, business, persistence).
+' Amusement Park - class model of the final Delivery 3 design (layered: presentation, business, persistence).
 ' Only relevant attributes are shown; methods and constructors are omitted.
 ' Association directions follow the fields that hold the references in the code.
 
@@ -291,5 +291,9 @@ GroupInvoiceBuilder --> "1" ParkController : park
 ' --- Persistence ---
 UserRepository "1" --> "0..1" UserFileStore : store
 StorageLocation ..> ParkFileStore : locates data for
+ParkFileStore ..> GroupRepository : loads/saves
+ParkFileStore ..> TicketRepository : loads/saves
+ParkFileStore ..> AttractionRepository : loads/saves
+ParkFileStore ..> PassRepository : loads/saves
 
 @enduml

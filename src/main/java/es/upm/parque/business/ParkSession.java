@@ -46,7 +46,7 @@ public final class ParkSession implements AutoCloseable {
             location.cleanUp();
             throw new InvalidDataException("cannot read the park data files in '" + dataDir.toAbsolutePath() + "' ("
                     + USERS_FILE + ", " + ParkFileStore.GROUPS_FILE + ", " + ParkFileStore.TICKETS_FILE + ", "
-                    + ParkFileStore.ATTRACTIONS_FILE + ")");
+                    + ParkFileStore.ATTRACTIONS_FILE + ", " + ParkFileStore.PASSES_FILE + ")");
         }
     }
 

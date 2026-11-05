@@ -86,7 +86,6 @@ Park rules in short:
   - A Special Pass costs the ticket's price. A ticket can have only one, even after it has been consumed.
   - Unconsumed passes of tickets dated after the current date can be refunded.
   - Deleting a ticket or group ticket also deletes its passes.
-  - Passes are kept in memory and are not saved to files yet; that comes with the Delivery 3 persistence milestone.
 - Invoices are generated on demand and never stored. A user invoice lists the user's own individual tickets; tickets that are part of a group ticket are excluded because the group ticket already includes them. A group invoice lists the group's tickets once, at their total price, and shows each ticket's composition as detail. Empty sections are left out.
 
 Successful commands answer with a line starting with `OK`. Rejected or unrecognised commands answer with a line starting with `ERROR` and do not change any data.
@@ -109,6 +108,7 @@ Data is stored in text files in the working directory:
 | `groups.txt` | `id;name;dni1,dni2,...` |
 | `tickets.txt` | `I;id;date;price;dni;email;firstName;surnames` and `G;id;date;group;component1,component2,...` |
 | `attractions.txt` | `id;name;capacity;type` (users inside are not stored, and attractions start empty; a line without a type is a `GENERAL` attraction) |
+| `passes.txt` | `S;id;ticket;price;consumed` for SpeedPasses and `P;id;ticket;price;consumed` for Special Passes (the stored price and the `true`/`false` consumed state are kept) |
 
 Passwords are checked against the validation rules and then stored only as BCrypt values, using the jBCrypt library. `USER DELETE` and `USER UPDATE` check the entered password against the stored value. Users files written by earlier versions with plain-text passwords are not migrated; those lines are ignored with a `WARNING`.
 
