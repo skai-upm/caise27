@@ -1,6 +1,7 @@
 package es.upm.amusementpark;
 
 import es.upm.amusementpark.cli.CommandProcessor;
+import es.upm.amusementpark.park.AttractionCommands;
 import es.upm.amusementpark.park.GroupCommands;
 import es.upm.amusementpark.park.ParkController;
 import es.upm.amusementpark.park.SystemCommands;
@@ -39,6 +40,7 @@ public final class App {
         SystemCommands.register(processor, park, out);
         GroupCommands.register(processor, park, out);
         TicketCommands.register(processor, park, out);
+        AttractionCommands.register(processor, park, out);
         if (args.length == 0) {
             process(processor, stdin, out, "standard input");
             return;

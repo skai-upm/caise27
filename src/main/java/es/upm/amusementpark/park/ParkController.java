@@ -27,6 +27,7 @@ public final class ParkController {
     private BigDecimal currentPrice;
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
+    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
     private UserDirectory userDirectory = UserDirectory.EMPTY;
     private final GroupTicketDates registeredGroupTicketDates = this::registeredGroupTicketDates;
     private GroupTicketDates groupTicketDates = registeredGroupTicketDates;
@@ -50,6 +51,7 @@ public final class ParkController {
         currentPrice = INITIAL_PRICE;
         groups.clear();
         tickets.clear();
+        attractions.clear();
         userDirectory = UserDirectory.EMPTY;
         groupTicketDates = registeredGroupTicketDates;
     }
@@ -347,5 +349,35 @@ public final class ParkController {
             tickets.remove(component.getId());
         }
         tickets.remove(id);
+    }
+
+    // ----- attractions -----
+
+    /**
+     * Creates an attraction with no occupants.
+     *
+     * @throws ParkException if a field is empty, the capacity is not positive or the identifier is used
+     */
+    public synchronized Attraction createAttraction(String id, String name, int capacity) {
+        if (isBlank(id) || isBlank(name)) {
+            throw new ParkException("Attraction identifier and name are required");
+        }
+        if (capacity <= 0) {
+            throw new ParkException("Capacity must be a positive whole number");
+        }
+        if (attractions.containsKey(id)) {
+            throw new ParkException("Attraction " + id + " already exists");
+        }
+        Attraction attraction = new Attraction(id, name, capacity);
+        attractions.put(id, attraction);
+        return attraction;
+    }
+
+    public synchronized Attraction findAttraction(String id) {
+        return attractions.get(id);
+    }
+
+    public synchronized Collection<Attraction> getAttractions() {
+        return Collections.unmodifiableCollection(attractions.values());
     }
 }
