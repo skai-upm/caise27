@@ -8,6 +8,7 @@ import es.upm.amusementpark.presentation.AttractionCommands;
 import es.upm.amusementpark.presentation.CommandProcessor;
 import es.upm.amusementpark.presentation.GroupCommands;
 import es.upm.amusementpark.presentation.InvoiceCommands;
+import es.upm.amusementpark.presentation.PassCommands;
 import es.upm.amusementpark.presentation.SystemCommands;
 import es.upm.amusementpark.presentation.TicketCommands;
 import es.upm.amusementpark.presentation.help.CommandCatalog;
@@ -121,6 +122,7 @@ public final class App {
         TicketCommands.register(processor, park, out);
         AttractionCommands.register(processor, park, out);
         InvoiceCommands.register(processor, park, out);
+        PassCommands.register(processor, park, out);
         CommandCatalog catalog = CommandCatalog.standard();
         HelpCommands.register(processor, new HelpGenerator(new SyntaxHelpFormatter(), catalog),
                 new HelpGenerator(new ExtendedHelpFormatter(), catalog), out);

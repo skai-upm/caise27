@@ -31,6 +31,7 @@ public final class ParkController {
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Pass> passes = new LinkedHashMap<>();
     private UserDirectory userDirectory = UserDirectory.EMPTY;
     private final GroupTicketDates registeredGroupTicketDates = this::registeredGroupTicketDates;
     private GroupTicketDates groupTicketDates = registeredGroupTicketDates;
@@ -57,6 +58,7 @@ public final class ParkController {
         groups.clear();
         tickets.clear();
         attractions.clear();
+        passes.clear();
         userDirectory = UserDirectory.EMPTY;
         groupTicketDates = registeredGroupTicketDates;
         repository = ParkRepository.NONE;
@@ -303,6 +305,7 @@ public final class ParkController {
         if (!ticket.isDeletableOn(currentDate)) {
             throw new ParkException("Ticket " + id + " is for today or a past date and must be kept");
         }
+        removePassesOf(individual);
         tickets.remove(id);
     }
 
@@ -394,6 +397,9 @@ public final class ParkController {
         }
         if (!groupTicket.isDeletableOn(currentDate)) {
             throw new ParkException("Group ticket " + id + " is for today or a past date and must be kept");
+        }
+        for (IndividualTicket component : groupTicket.getComponents()) {
+            removePassesOf(component);
         }
         for (IndividualTicket component : groupTicket.getComponents()) {
             tickets.remove(component.getId());
@@ -551,6 +557,12 @@ public final class ParkController {
                 builder.addIndividualTicket(single);
             }
         }
+        for (Pass pass : passes.values()) {
+            if (pass.getTicket().getUserEmail().equals(email)) {
+                builder.addPass(pass.getTypeName() + " " + pass.getId() + " for " + pass.getTicket().getId(),
+                        pass.getPrice());
+            }
+        }
         return builder.build();
     }
 
@@ -571,5 +583,135 @@ public final class ParkController {
             }
         }
         return builder.build();
+    }
+
+    // ----- passes -----
+
+    public synchronized Pass findPass(String id) {
+        return passes.get(id);
+    }
+
+    public synchronized Collection<Pass> getPasses() {
+        return Collections.unmodifiableCollection(passes.values());
+    }
+
+    /** @return the passes associated with an individual ticket (traversal; tickets hold no passes) */
+    public synchronized List<Pass> passesOf(IndividualTicket ticket) {
+        List<Pass> result = new ArrayList<>();
+        for (Pass pass : passes.values()) {
+            if (pass.getTicket() == ticket) {
+                result.add(pass);
+            }
+        }
+        return result;
+    }
+
+    private IndividualTicket ticketForPass(String ticketId) {
+        if (!(tickets.get(ticketId) instanceof IndividualTicket ticket)) {
+            throw new ParkException("Individual ticket " + ticketId + " does not exist");
+        }
+        if (ticket.getDate().isBefore(currentDate)) {
+            throw new ParkException("Ticket " + ticketId + " is for a past date");
+        }
+        return ticket;
+    }
+
+    private void ensurePassIdAvailable(String id) {
+        if (isBlank(id)) {
+            throw new ParkException("Pass identifier is required");
+        }
+        if (passes.containsKey(id)) {
+            throw new ParkException("Pass " + id + " already exists");
+        }
+    }
+
+    /**
+     * Buys 1 or 10 SpeedPasses identified {@code <purchaseId>:<n>}, all-or-nothing.
+     *
+     * @return the created passes
+     */
+    public synchronized List<SpeedPass> buySpeedPasses(String purchaseId, String ticketId, int quantity) {
+        if (quantity != 1 && quantity != 10) {
+            throw new ParkException("Quantity must be 1 or 10");
+        }
+        if (isBlank(purchaseId)) {
+            throw new ParkException("Purchase identifier is required");
+        }
+        IndividualTicket ticket = ticketForPass(ticketId);
+        List<SpeedPass> created = new ArrayList<>();
+        for (int n = 1; n <= quantity; n++) {
+            ensurePassIdAvailable(purchaseId + ":" + n);
+            created.add(new SpeedPass(purchaseId + ":" + n, ticket));
+        }
+        for (SpeedPass pass : created) {
+            passes.put(pass.getId(), pass);
+        }
+        return created;
+    }
+
+    /** Buys the Special Pass of an individual ticket (at most one per ticket, consumed or not). */
+    public synchronized SpecialPass buySpecialPass(String id, String ticketId) {
+        ensurePassIdAvailable(id);
+        IndividualTicket ticket = ticketForPass(ticketId);
+        for (Pass pass : passesOf(ticket)) {
+            if (pass instanceof SpecialPass) {
+                throw new ParkException("Ticket " + ticketId + " already has Special Pass " + pass.getId());
+            }
+        }
+        SpecialPass pass = new SpecialPass(id, ticket);
+        passes.put(id, pass);
+        return pass;
+    }
+
+    /**
+     * Refunds (deletes) an unconsumed pass of the given type whose ticket is dated strictly in the future.
+     */
+    public synchronized void refundPass(String id, Class<? extends Pass> type) {
+        Pass pass = passes.get(id);
+        if (!type.isInstance(pass)) {
+            throw new ParkException(typeName(type) + " " + id + " does not exist");
+        }
+        if (pass.isConsumed()) {
+            throw new ParkException("Pass " + id + " has been consumed and cannot be refunded");
+        }
+        if (!pass.getTicket().isDeletableOn(currentDate)) {
+            throw new ParkException("Pass " + id + " belongs to a ticket for today or a past date");
+        }
+        passes.remove(id);
+    }
+
+    private static String typeName(Class<? extends Pass> type) {
+        return type == SpecialPass.class ? "Special Pass" : type == SpeedPass.class ? "SpeedPass" : "Pass";
+    }
+
+    /** Marks a pass as consumed; it stays in the system as a purchase record. */
+    public synchronized void markPassConsumed(String id) {
+        Pass pass = passes.get(id);
+        if (pass == null) {
+            throw new ParkException("Pass " + id + " does not exist");
+        }
+        pass.markConsumed();
+    }
+
+    private void removePassesOf(IndividualTicket ticket) {
+        passes.values().removeIf(pass -> pass.getTicket() == ticket);
+    }
+
+    /**
+     * Rebuilds a persisted pass (used only by the persistence layer).
+     *
+     * @throws ParkException if the identifier is used or the ticket is not an individual ticket
+     */
+    public synchronized Pass restorePass(String id, String ticketId, boolean special, boolean consumed) {
+        ensurePassIdAvailable(id);
+        if (!(tickets.get(ticketId) instanceof IndividualTicket ticket)) {
+            throw new ParkException("Individual ticket " + ticketId + " does not exist");
+        }
+        Pass pass = special ? new SpecialPass(id, ticket) : new SpeedPass(id, ticket);
+        if (consumed) {
+            pass.markConsumed();
+        }
+        passes.put(id, pass);
+        return pass;
     }
 }

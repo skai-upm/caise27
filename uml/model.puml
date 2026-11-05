@@ -31,6 +31,8 @@ package es.upm.amusementpark.presentation {
   }
   class InvoiceCommands {
   }
+  class PassCommands {
+  }
 }
 
 package es.upm.amusementpark.business.invoice {
@@ -111,6 +113,14 @@ package es.upm.amusementpark.business {
   class GroupTicket {
     - groupId : String
   }
+  abstract class Pass {
+    - id : String
+    - consumed : boolean
+  }
+  class SpeedPass {
+  }
+  class SpecialPass {
+  }
   class Attraction {
     - id : String
     - name : String
@@ -133,6 +143,8 @@ package es.upm.amusementpark.persistence {
   }
   class AttractionRepository {
   }
+  class PassRepository {
+  }
 }
 
 ' ---- ticket hierarchy and composition ----
@@ -141,6 +153,16 @@ Ticket <|-- GroupTicket
 GroupTicket *-- "1..*" IndividualTicket : components
 IndividualTicket --> "0..1" GroupTicket : containingGroupTicket
 GroupTicket --> "0..1" Group : group
+
+' ---- passes ----
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+Pass --> "1" IndividualTicket : ticket
+ParkController --> "0..*" Pass : passes
+PassCommands ..> ParkController : uses
+PassCommands ..> CommandSupport : parses with
+ParkStorage *-- "1" PassRepository : passes
+PassRepository *-- "1" TextFile : file
 
 ' ---- central management ----
 ParkController --> "0..*" Group : groups

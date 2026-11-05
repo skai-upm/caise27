@@ -41,7 +41,7 @@ The command `TICKET CREATE;<identifier>;<email>;<date>` SHALL create a ticket fo
 - **THEN** `T001` still costs 40.00
 
 ### Requirement: Individual ticket deletion
-The command `TICKET DELETE;<identifier>` SHALL delete an individual ticket only when its date is strictly later than the current system date. Tickets dated today or earlier SHALL be kept as historical records and the deletion rejected; unknown identifiers SHALL be rejected. Individual tickets that are part of a group ticket SHALL NOT be deleted with `TICKET DELETE`; they are deleted only with their group ticket.
+The command `TICKET DELETE;<identifier>` SHALL delete an individual ticket only when its date is strictly later than the current system date. Tickets dated today or earlier SHALL be kept as historical records and the deletion rejected; unknown identifiers SHALL be rejected. Individual tickets that are part of a group ticket SHALL NOT be deleted with `TICKET DELETE`; they are deleted only with their group ticket. When a ticket is deleted, every SpeedPass and the Special Pass associated with it SHALL be deleted with it, even if they were bought in different operations.
 
 #### Scenario: Future ticket deleted
 - **GIVEN** the system date is 2027-04-15 and ticket `T001` is dated 2027-04-20
@@ -61,6 +61,11 @@ The command `TICKET DELETE;<identifier>` SHALL delete an individual ticket only 
 - **GIVEN** future group ticket `TG01` with component `TG01:12345678Z`
 - **WHEN** `TICKET DELETE;TG01:12345678Z` is processed
 - **THEN** an error is shown and the component still exists
+
+#### Scenario: Passes deleted with their ticket
+- **GIVEN** future ticket `T001` with SpeedPasses `SP01:1` and `SP02:1`, and Special Pass `PE01`
+- **WHEN** `TICKET DELETE;T001` is processed
+- **THEN** `T001`, `SP01:1`, `SP02:1` and `PE01` no longer exist
 
 ### Requirement: Active tickets block user deletion
 A ticket SHALL be active when its date is equal to or later than the current system date. Deleting a user SHALL be rejected while any active ticket is associated with that user, including individual tickets that make up group tickets, and while the user belongs to a group locked by an active group ticket. Historical tickets alone SHALL NOT block it. This locked state SHALL be derived from the tickets managed by the system and never stored on the user. When deletion is allowed, the user SHALL be removed from every group they belong to, and historical tickets SHALL be retained.
@@ -133,7 +138,7 @@ Each component ticket SHALL cost the current base price minus a discount that de
 - **THEN** the per-member prices are 40.00, 36.00, 36.00, 32.00, 32.00 and 20.00
 
 ### Requirement: Group ticket deletion
-The command `GROUPTICKET DELETE;<identifier>` SHALL delete a group ticket only when its date is strictly later than the current system date, together with all its component tickets. Today's and past group tickets SHALL be kept as historical records, and unknown identifiers SHALL be rejected.
+The command `GROUPTICKET DELETE;<identifier>` SHALL delete a group ticket only when its date is strictly later than the current system date, together with all its component tickets and every SpeedPass and Special Pass associated with those components. All checks SHALL happen before anything is removed, so the deletion is never partial. Today's and past group tickets SHALL be kept as historical records, and unknown identifiers SHALL be rejected.
 
 #### Scenario: Future group ticket deleted with its composition
 - **GIVEN** group ticket `TG01` dated after the current system date
@@ -144,6 +149,11 @@ The command `GROUPTICKET DELETE;<identifier>` SHALL delete a group ticket only w
 - **GIVEN** group ticket `TG01` dated on the current system date
 - **WHEN** `GROUPTICKET DELETE;TG01` is processed
 - **THEN** an error is shown and `TG01` still exists
+
+#### Scenario: Component passes deleted with the group ticket
+- **GIVEN** future group ticket `TG01`, whose component `TG01:12345678Z` has SpeedPass `SP05:1`
+- **WHEN** `GROUPTICKET DELETE;TG01` is processed
+- **THEN** `SP05:1`, the components and `TG01` no longer exist
 
 ### Requirement: Historical group tickets survive group deletion
 When a group is deleted, its group tickets SHALL be kept with their identifier, date, price and composition, and their reference to the group SHALL become empty.

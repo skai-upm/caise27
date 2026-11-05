@@ -19,13 +19,15 @@ public class ParkStorage implements ParkRepository {
     private final AttractionRepository attractions;
     private final GroupRepository groups;
     private final TicketRepository tickets;
+    private final PassRepository passes;
 
     public ParkStorage(Path directory, AttractionRepository attractions, GroupRepository groups,
-            TicketRepository tickets) {
+            TicketRepository tickets, PassRepository passes) {
         this.directory = Objects.requireNonNull(directory, "directory");
         this.attractions = Objects.requireNonNull(attractions, "attractions");
         this.groups = Objects.requireNonNull(groups, "groups");
         this.tickets = Objects.requireNonNull(tickets, "tickets");
+        this.passes = Objects.requireNonNull(passes, "passes");
     }
 
     /**
@@ -37,14 +39,15 @@ public class ParkStorage implements ParkRepository {
     public static ParkStorage inDirectory(Path directory) {
         return new ParkStorage(directory, new AttractionRepository(directory.resolve("attractions.txt")),
                 new GroupRepository(directory.resolve("groups.txt")),
-                new TicketRepository(directory.resolve("tickets.txt")));
+                new TicketRepository(directory.resolve("tickets.txt")),
+                new PassRepository(directory.resolve("passes.txt")));
     }
 
     public Path getDirectory() {
         return directory;
     }
 
-    /** Rebuilds attractions, groups, then tickets. */
+    /** Rebuilds attractions, groups, tickets, then passes. */
     @Override
     public List<String> load(ParkController park) {
         List<String> warnings = new ArrayList<>();
@@ -52,6 +55,7 @@ public class ParkStorage implements ParkRepository {
             attractions.load(park, warnings);
             groups.load(park, warnings);
             tickets.load(park, warnings);
+            passes.load(park, warnings);
         } catch (IOException e) {
             throw new RepositoryException("Cannot read persisted data from " + directory, e);
         }
@@ -64,6 +68,7 @@ public class ParkStorage implements ParkRepository {
             attractions.save(park);
             groups.save(park);
             tickets.save(park);
+            passes.save(park);
         } catch (IOException e) {
             throw new RepositoryException("Cannot save data to " + directory, e);
         }
