@@ -11,6 +11,8 @@ public class CommandProcessor {
     private static final String SEPARATOR = ";";
     private static final String USER_CREATE = "USER CREATE";
     private static final int USER_CREATE_ELEMENTS = 8;
+    private static final String USER_DELETE = "USER DELETE";
+    private static final int USER_DELETE_ELEMENTS = 3;
 
     private final UserService userService;
 
@@ -35,6 +37,9 @@ public class CommandProcessor {
             if (USER_CREATE.equals(parts[0])) {
                 return userCreate(parts);
             }
+            if (USER_DELETE.equals(parts[0])) {
+                return userDelete(parts);
+            }
             return "ERROR: unknown command '" + parts[0] + "'";
         } catch (UserOperationException e) {
             return "ERROR: " + e.getMessage();
@@ -47,5 +52,13 @@ public class CommandProcessor {
         }
         userService.createUser(p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
         return "USER CREATED";
+    }
+
+    private String userDelete(String[] p) {
+        if (p.length != USER_DELETE_ELEMENTS) {
+            return "ERROR: wrong number of arguments. Usage: USER DELETE;Email;Password";
+        }
+        userService.deleteUser(p[1], p[2]);
+        return "USER DELETED";
     }
 }

@@ -39,4 +39,13 @@ public class UserService {
         repository.add(user);
         return user;
     }
+
+    public void deleteUser(String email, String password) {
+        User user = repository.findByEmail(email)
+                .orElseThrow(() -> new UserOperationException("user not found"));
+        if (!user.getPassword().equals(password)) {
+            throw new UserOperationException("incorrect password");
+        }
+        repository.remove(user);
+    }
 }
