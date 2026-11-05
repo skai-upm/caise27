@@ -1,6 +1,8 @@
 package es.upm.amusementpark;
 
 import es.upm.amusementpark.cli.CommandProcessor;
+import es.upm.amusementpark.park.ParkController;
+import es.upm.amusementpark.park.SystemCommands;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,7 +31,10 @@ public final class App {
      * @param out output stream
      */
     public static void run(String[] args, BufferedReader stdin, PrintStream out) {
+        ParkController park = ParkController.getInstance();
+        park.reset();
         CommandProcessor processor = new CommandProcessor(out);
+        SystemCommands.register(processor, park, out);
         if (args.length == 0) {
             process(processor, stdin, out, "standard input");
             return;

@@ -37,6 +37,15 @@ class AppTest {
     }
 
     @Test
+    void newExecutionStartsWithInitialPrice() {
+        String out = run(new String[0], "SYSTEM PRICE;45.50\nEXIT\n");
+        assertTrue(out.contains("SYSTEM PRICE UPDATED: 45.50"));
+        run(new String[0], "EXIT\n");
+        assertEquals(new java.math.BigDecimal("40.00"),
+                es.upm.amusementpark.park.ParkController.getInstance().getCurrentPrice());
+    }
+
+    @Test
     void unreadableFileIsReportedInControlledManner() {
         String out = run(new String[] {tmp.resolve("missing.txt").toString()}, "");
         assertTrue(out.startsWith("ERROR: Cannot read command file:"));
