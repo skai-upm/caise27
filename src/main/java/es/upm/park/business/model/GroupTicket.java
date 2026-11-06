@@ -13,7 +13,7 @@ import java.util.Map;
  * sum of the composed tickets. The ticket refers to its group while the group
  * exists; the group does not refer to its tickets.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private final List<IndividualTicket> composition;
     private Group group;
@@ -78,6 +78,7 @@ public class GroupTicket extends Ticket {
         return composition.stream().map(IndividualTicket::getOwnerEmail).toList();
     }
 
+    @Override
     public List<IndividualTicket> getComposition() {
         return composition;
     }

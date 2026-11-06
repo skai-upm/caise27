@@ -13,7 +13,7 @@ class AttractionTest {
 
     @Test
     void newAttractionHasDataAndNoOccupants() {
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> attraction = new GeneralAttraction("A01", "Dragon Rojo", 20);
         assertEquals("A01", attraction.getId());
         assertEquals("Dragon Rojo", attraction.getName());
         assertEquals(20, attraction.getCapacity());
@@ -22,7 +22,7 @@ class AttractionTest {
 
     @Test
     void occupantsAreUniqueAndViewIsReadOnly() {
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> attraction = new GeneralAttraction("A01", "Dragon Rojo", 20);
         assertTrue(attraction.enter("ana@correo.com"));
         assertFalse(attraction.enter("ana@correo.com"));
         assertEquals(List.of("ana@correo.com"), List.copyOf(attraction.getOccupantEmails()));
@@ -33,6 +33,6 @@ class AttractionTest {
 
     @Test
     void capacityMustBePositive() {
-        assertThrows(IllegalArgumentException.class, () -> new Attraction("A02", "Torre", 0));
+        assertThrows(IllegalArgumentException.class, () -> new GeneralAttraction("A02", "Torre", 0));
     }
 }

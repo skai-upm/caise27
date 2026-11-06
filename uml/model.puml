@@ -26,12 +26,48 @@ package "es.upm.park.business.model" {
     - memberEmails : Set<String>
   }
 
-  class Attraction {
+  interface AccessTicket {
+  }
+  interface IndividualAccess {
+  }
+  interface GroupAccess {
+  }
+  AccessTicket <|-- IndividualAccess
+  AccessTicket <|-- GroupAccess
+  Ticket ..|> AccessTicket
+  IndividualTicket ..|> IndividualAccess
+  GroupTicket ..|> GroupAccess
+
+  abstract class Attraction<T extends AccessTicket> {
     - id : String
     - name : String
     - capacity : int
+    - accepted : Class<T>
     - occupantEmails : Set<String>
   }
+  class GeneralAttraction {
+  }
+  class IndividualAttraction {
+  }
+  class GroupAttraction {
+  }
+  class SpecialAttraction {
+  }
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
+  }
+  interface EntryRules {
+  }
+  Attraction <|-- GeneralAttraction : <T = AccessTicket>
+  Attraction <|-- IndividualAttraction : <T = IndividualAccess>
+  Attraction <|-- GroupAttraction : <T = GroupAccess>
+  IndividualAttraction <|-- SpecialAttraction
+  AttractionType ..> Attraction : creates
+  Attraction ..> EntryRules : uses on admit
+  Attraction ..> AccessTicket : admits T
 
   abstract class Pass {
     - id : String
@@ -99,6 +135,7 @@ package "es.upm.park.business.controller" {
   ParkController o--> "0..*" Group : groups
   ParkController o--> "0..*" Ticket : tickets
   ParkController o--> "0..*" Attraction : attractions
+  ParkController ..> EntryRules : provides
   ParkController o--> "0..*" Pass : passes
   ParkController --> "1" UserDirectory : users (injected)
   ParkController --> "1" ParkStorage : storage (injected)

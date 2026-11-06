@@ -80,7 +80,7 @@ Group discount on the base price of each member's ticket: fewer than 3 members 0
 
 Attraction commands:
 
-- `ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>` creates an attraction with a positive maximum capacity.
+- `ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>[;<Type>]` creates an attraction with a positive maximum capacity. The type is `GENERAL` (default, individual and group tickets), `INDIVIDUAL` (individual tickets only), `GROUP` (group tickets only) or `SPECIAL` (individual tickets with an unconsumed Special Pass). Types are generic attractions bounded by ticket access capabilities (`AccessTicket`, `IndividualAccess`, `GroupAccess`).
 - `ATTRACTION LIST;<AttractionIdentifier>` shows the emails of the users currently inside it (read-only).
 - `ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>` admits the ticket's user(s) when the ticket is dated exactly the current system date and the attraction has room for all of them. The date is checked only at entry.
 - With a group ticket, all its users enter together or nobody enters.

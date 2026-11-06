@@ -26,7 +26,7 @@ class AttractionCommandsTest {
     @Test
     void createAndListEmptyAttraction() {
         assertEquals("ATTRACTION CREATED", run("ATTRACTION CREATE;A01;Dragon Rojo;20"));
-        Attraction attraction = ParkController.getInstance().findAttraction("A01").orElseThrow();
+        Attraction<?> attraction = ParkController.getInstance().findAttraction("A01").orElseThrow();
         assertEquals("Dragon Rojo", attraction.getName());
         assertEquals(20, attraction.getCapacity());
         assertEquals("NO USERS IN A01", run("ATTRACTION LIST;A01"));
@@ -36,7 +36,7 @@ class AttractionCommandsTest {
     @Test
     void listShowsOccupantsWithoutChangingThem() {
         run("ATTRACTION CREATE;A01;Dragon Rojo;20");
-        Attraction attraction = ParkController.getInstance().findAttraction("A01").orElseThrow();
+        Attraction<?> attraction = ParkController.getInstance().findAttraction("A01").orElseThrow();
         attraction.enter("ana@correo.com");
         attraction.enter("pedro@correo.com");
         String out = run("ATTRACTION LIST;A01");

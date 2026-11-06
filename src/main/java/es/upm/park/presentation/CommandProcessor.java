@@ -5,6 +5,7 @@ import es.upm.park.business.controller.ParkController;
 import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.ParkException;
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.AttractionType;
 import es.upm.park.business.model.SpecialPass;
 import es.upm.park.business.model.SpeedPass;
 import es.upm.park.presentation.help.CommandCatalog;
@@ -83,10 +84,7 @@ public class CommandProcessor {
             park().deleteGroupTicket(a[0]);
             return "GROUP TICKET DELETED";
         }));
-        handlers.put("ATTRACTION CREATE", args -> withArgs(args, 3, "ATTRACTION CREATE;<identifier>;<name>;<capacity>", a -> {
-            park().createAttraction(a[0], a[1], parseCapacity(a[2]));
-            return "ATTRACTION CREATED";
-        }));
+        handlers.put("ATTRACTION CREATE", this::attractionCreate);
         handlers.put("ATTRACTION LIST", args -> withArgs(args, 1, "ATTRACTION LIST;<attraction>",
                 a -> listOccupants(park().requireAttraction(a[0]))));
         handlers.put("ATTRACTION ENTER", args -> withArgs(args, 2,
@@ -162,6 +160,15 @@ public class CommandProcessor {
         return parkController;
     }
 
+    private CommandResult attractionCreate(String[] args) {
+        if (args.length != 3 && args.length != 4) {
+            return error("Usage: ATTRACTION CREATE;<identifier>;<name>;<capacity>[;<type>]");
+        }
+        AttractionType type = args.length == 4 ? AttractionType.parse(args[3].trim()) : AttractionType.GENERAL;
+        park().createAttraction(args[0].trim(), args[1].trim(), parseCapacity(args[2].trim()), type);
+        return CommandResult.of("ATTRACTION CREATED");
+    }
+
     private static int parseQuantity(String text) {
         try {
             return Integer.parseInt(text);
@@ -178,7 +185,7 @@ public class CommandProcessor {
         }
     }
 
-    private static String listOccupants(Attraction attraction) {
+    private static String listOccupants(Attraction<?> attraction) {
         if (attraction.getOccupantEmails().isEmpty()) {
             return "NO USERS IN " + attraction.getId();
         }
@@ -189,10 +196,11 @@ public class CommandProcessor {
         return out.toString();
     }
 
-    private static String status(Attraction attraction) {
+    private static String status(Attraction<?> attraction) {
         int inside = attraction.getOccupantEmails().size();
         String users = inside == 0 ? "none" : String.join(", ", attraction.getOccupantEmails());
         return "ATTRACTION " + attraction.getId() + " - " + attraction.getName()
+                + " | TYPE: " + attraction.getType()
                 + " | CAPACITY: " + attraction.getCapacity()
                 + " | INSIDE: " + inside
                 + " | AVAILABLE: " + (attraction.getCapacity() - inside)

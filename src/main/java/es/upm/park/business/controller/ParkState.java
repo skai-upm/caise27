@@ -12,9 +12,9 @@ import java.util.List;
  * tickets (individual tickets bought on their own and group tickets); composed
  * tickets travel inside their group ticket. Attraction occupants are not part of it.
  */
-public record ParkState(List<Group> groups, List<Ticket> tickets, List<Attraction> attractions, List<Pass> passes) {
+public record ParkState(List<Group> groups, List<Ticket> tickets, List<Attraction<?>> attractions, List<Pass> passes) {
 
-    public ParkState(List<Group> groups, List<Ticket> tickets, List<Attraction> attractions) {
+    public ParkState(List<Group> groups, List<Ticket> tickets, List<Attraction<?>> attractions) {
         this(groups, tickets, attractions, List.of());
     }
 

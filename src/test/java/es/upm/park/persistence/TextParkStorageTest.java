@@ -2,6 +2,7 @@ package es.upm.park.persistence;
 
 import es.upm.park.business.controller.ParkState;
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.GeneralAttraction;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
@@ -64,7 +65,7 @@ class TextParkStorageTest {
                 Map.of("pedro@correo.com", "87654321X"));
         detached.detachGroup();
         IndividualTicket single = new IndividualTicket("T001", "ana@correo.com", DAY, new BigDecimal("40.00"));
-        Attraction attraction = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> attraction = new GeneralAttraction("A01", "Dragon Rojo", 20);
         attraction.enter("ana@correo.com");
 
         storage().save(new ParkState(List.of(group), List.of(linked, detached, single), List.of(attraction)));
@@ -89,7 +90,7 @@ class TextParkStorageTest {
         assertEquals("ana@correo.com", ((IndividualTicket) loadedSingle).getOwnerEmail());
         assertEquals(DAY, loadedSingle.getDate());
 
-        Attraction loadedAttraction = loaded.attractions().get(0);
+        Attraction<?> loadedAttraction = loaded.attractions().get(0);
         assertEquals("Dragon Rojo", loadedAttraction.getName());
         assertEquals(20, loadedAttraction.getCapacity());
         assertTrue(loadedAttraction.getOccupantEmails().isEmpty());
@@ -115,6 +116,17 @@ class TextParkStorageTest {
         assertTrue(loadedSpecial instanceof SpecialPass);
         assertTrue(loadedSpecial.isConsumed());
         assertSame(((GroupTicket) loaded.tickets().get(1)).getComposition().get(0), loadedSpecial.getTicket());
+    }
+
+    @Test
+    void attractionTypesRoundTripAndUntypedLinesAreGeneral() throws IOException {
+        storage().save(new ParkState(List.of(), List.of(),
+                List.of(es.upm.park.business.model.AttractionType.SPECIAL.create("A04", "Pasaje del Terror", 15))));
+        assertEquals(es.upm.park.business.model.AttractionType.SPECIAL, storage().load().attractions().get(0).getType());
+        Files.writeString(dir.resolve("attractions.txt"), "A01;Dragon Rojo;20\n");
+        Attraction<?> legacy = storage().load().attractions().get(0);
+        assertEquals(es.upm.park.business.model.AttractionType.GENERAL, legacy.getType());
+        assertEquals(20, legacy.getCapacity());
     }
 
     @Test

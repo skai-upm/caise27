@@ -9,7 +9,7 @@ import java.util.List;
  * keep references to their tickets. It may be bought on its own or be part of
  * the composition of a group ticket.
  */
-public class IndividualTicket extends Ticket {
+public class IndividualTicket extends Ticket implements IndividualAccess {
 
     private final String ownerEmail;
     private final boolean partOfGroupTicket;
@@ -29,6 +29,7 @@ public class IndividualTicket extends Ticket {
         return partOfGroupTicket;
     }
 
+    @Override
     public String getOwnerEmail() {
         return ownerEmail;
     }

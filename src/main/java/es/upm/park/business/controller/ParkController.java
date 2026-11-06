@@ -4,6 +4,8 @@ import es.upm.park.business.exception.BusinessRuleException;
 import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.NotFoundException;
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.AttractionType;
+import es.upm.park.business.model.EntryRules;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
@@ -36,7 +38,7 @@ public final class ParkController {
     private BigDecimal basePrice;
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
-    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
     private final Map<String, Pass> passes = new LinkedHashMap<>();
     private UserDirectory users;
     private ParkStorage storage = ParkStorage.NONE;
@@ -384,11 +386,15 @@ public final class ParkController {
 
     // ---- attractions -----------------------------------------------------------
 
-    public Optional<Attraction> findAttraction(String id) {
+    public Optional<Attraction<?>> findAttraction(String id) {
         return Optional.ofNullable(attractions.get(id));
     }
 
-    public Attraction createAttraction(String id, String name, int capacity) {
+    public Attraction<?> createAttraction(String id, String name, int capacity) {
+        return createAttraction(id, name, capacity, AttractionType.GENERAL);
+    }
+
+    public Attraction<?> createAttraction(String id, String name, int capacity, AttractionType type) {
         requireText(id, "The attraction identifier is required");
         requireText(name, "The attraction name is required");
         if (capacity <= 0) {
@@ -397,7 +403,7 @@ public final class ParkController {
         if (attractions.containsKey(id)) {
             throw new BusinessRuleException("An attraction with identifier " + id + " already exists");
         }
-        Attraction attraction = new Attraction(id, name, capacity);
+        Attraction<?> attraction = type.create(id, name, capacity);
         attractions.put(id, attraction);
         save();
         return attraction;
@@ -410,36 +416,27 @@ public final class ParkController {
      * @return the emails of the users who entered
      */
     public List<String> enterAttraction(String attractionId, String ticketId) {
-        Attraction attraction = requireAttraction(attractionId);
+        Attraction<?> attraction = requireAttraction(attractionId);
         Ticket ticket = findTicket(ticketId)
                 .orElseThrow(() -> new NotFoundException("No ticket with identifier " + ticketId));
-        if (!ticket.isValidOn(currentDate)) {
-            throw new BusinessRuleException("Ticket " + ticketId + " is not valid on " + currentDate);
-        }
-        List<String> entrants = ticket.admittedUsers();
-        for (String email : entrants) {
-            if (attraction.isInside(email)) {
-                throw new BusinessRuleException("User " + email + " is already inside attraction " + attractionId);
-            }
-        }
-        int free = attraction.getCapacity() - attraction.getOccupantEmails().size();
-        if (entrants.size() > free) {
-            throw new BusinessRuleException("Attraction " + attractionId + " has " + free + " free places for "
-                    + entrants.size() + " users");
-        }
-        entrants.forEach(attraction::enter);
-        return entrants;
+        return attraction.admit(ticket, currentDate, entryRules());
+    }
+
+    /** Park information used by attraction-specific entry rules. */
+    private EntryRules entryRules() {
+        return ticket -> passes.values().stream()
+                .anyMatch(pass -> pass instanceof SpecialPass && pass.getTicket() == ticket && !pass.isConsumed());
     }
 
     /** Removes a user who is inside an attraction, releasing their place. */
     public void exitAttraction(String attractionId, String email) {
-        Attraction attraction = requireAttraction(attractionId);
+        Attraction<?> attraction = requireAttraction(attractionId);
         if (!attraction.leave(email)) {
             throw new BusinessRuleException("User " + email + " is not inside attraction " + attractionId);
         }
     }
 
-    public Attraction requireAttraction(String id) {
+    public Attraction<?> requireAttraction(String id) {
         return findAttraction(id).orElseThrow(() -> new NotFoundException("No attraction with identifier " + id));
     }
 

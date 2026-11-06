@@ -6,7 +6,7 @@ Defines the park's attractions, each with a unique identifier, a name, a maximum
 ## Requirements
 
 ### Requirement: Create an attraction
-The system SHALL create an attraction with `ATTRACTION CREATE;Identifier;Name;Capacity` when the identifier and name are non-empty, the identifier is not used by another attraction, and the capacity is a positive whole number. The new attraction SHALL have no occupants. Otherwise it SHALL reject the command with an error message and create nothing.
+The system SHALL create an attraction with `ATTRACTION CREATE;Identifier;Name;Capacity;Type`, where Type is `GENERAL`, `INDIVIDUAL`, `GROUP` or `SPECIAL`, or with `ATTRACTION CREATE;Identifier;Name;Capacity`, which creates a `GENERAL` attraction. It SHALL do so when the identifier and name are non-empty, the identifier is not used by another attraction, and the capacity is a positive whole number. The new attraction SHALL have no occupants. Otherwise, including for an unknown type, it SHALL reject the command with an error message and create nothing.
 
 #### Scenario: Create attractions
 - **WHEN** `ATTRACTION CREATE;A01;Dragon Rojo;20` is processed
@@ -18,6 +18,15 @@ The system SHALL create an attraction with `ATTRACTION CREATE;Identifier;Name;Ca
 - **WHEN** `ATTRACTION CREATE;A01;Otra;5`, `ATTRACTION CREATE;A02;Torre;0`, `ATTRACTION CREATE;A02;Torre;-3`, `ATTRACTION CREATE;A02;Torre;doce`, `ATTRACTION CREATE;A02;;12` or `ATTRACTION CREATE;A02;Torre` is processed
 - **THEN** an error message is displayed
 - **AND** `A01` is unchanged and `A02` does not exist
+
+#### Scenario: Typed creation
+- **WHEN** `ATTRACTION CREATE;A02;Montana Rusa Individual;12;INDIVIDUAL`, `ATTRACTION CREATE;A03;Rafting Familiar;24;GROUP` and `ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL` are processed
+- **THEN** the three attractions exist with types INDIVIDUAL, GROUP and SPECIAL
+
+#### Scenario: Default and unknown type
+- **WHEN** `ATTRACTION CREATE;A01;Dragon Rojo;20` is processed
+- **THEN** `A01` is a GENERAL attraction
+- **AND** `ATTRACTION CREATE;A05;X;5;VIP` is rejected with an error message
 
 ### Requirement: Attraction occupants are referenced one way
 An attraction SHALL hold the collection of users currently inside it, each at most once. Users SHALL NOT hold any reference to the attraction they are in.
@@ -55,7 +64,7 @@ The system SHALL include `ATTRACTION CREATE;<identifier>;<name>;<capacity>` and 
 - **THEN** the output contains both ATTRACTION command syntaxes
 
 ### Requirement: Enter an attraction with an individual ticket
-The system SHALL, for `ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier` with an individual ticket, add the ticket's user to the attraction's occupants when the attraction and ticket exist, the ticket date equals the current system date, the user is not already inside, and the attraction has at least one free place. A confirmation SHALL be displayed. Otherwise it SHALL reject the entry with an error message and leave the occupants unchanged.
+The system SHALL, for `ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier` with an individual ticket at an attraction whose type accepts individual tickets, add the ticket's user to the attraction's occupants when the attraction and ticket exist, the ticket date equals the current system date, the user is not already inside, the attraction has at least one free place, and any additional condition of the attraction type is met. A confirmation SHALL be displayed. Otherwise it SHALL reject the entry with an error message and leave the occupants unchanged.
 
 #### Scenario: Valid ticket and free capacity
 - **GIVEN** system date 2027-04-15, attraction `A01` with capacity 20 and no occupants, and ticket `T001` for `ana@correo.com` dated 2027-04-15
@@ -101,7 +110,7 @@ The system SHALL include `ATTRACTION ENTER;<attraction>;<ticket>` in the output 
 - **THEN** the output contains `ATTRACTION ENTER;<attraction>;<ticket>`
 
 ### Requirement: Enter an attraction with a group ticket
-The system SHALL, for `ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier` with a group ticket, admit together every user associated with the individual tickets of its composition. It SHALL do so only when the group ticket's date equals the current system date, none of those users is already inside, and the attraction's free places are at least the number of those users. Entry SHALL be indivisible: if any condition fails, no user enters and an error message is displayed.
+The system SHALL, for `ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier` with a group ticket at an attraction whose type accepts group tickets, admit together every user associated with the individual tickets of its composition. It SHALL do so only when the group ticket's date equals the current system date, none of those users is already inside, and the attraction's free places are at least the number of those users. Entry SHALL be indivisible: if any condition fails, no user enters and an error message is displayed.
 
 #### Scenario: Whole group enters
 - **GIVEN** system date 2027-04-15, group ticket `TG01` dated 2027-04-15 composed for `ana@correo.com` and `pedro@correo.com`, and attraction `A01` with 20 free places
@@ -157,3 +166,48 @@ The system SHALL include `ATTRACTION EXIT;<attraction>;<email>` and `ATTRACTION 
 #### Scenario: HELP shows ATTRACTION EXIT and STATUS
 - **WHEN** `HELP` is processed
 - **THEN** the output contains both command syntaxes
+
+### Requirement: Attraction types restrict accepted tickets
+GENERAL attractions SHALL accept individual and group tickets. INDIVIDUAL and SPECIAL attractions SHALL accept individual tickets only. GROUP attractions SHALL accept group tickets only. Entry with a ticket kind that the attraction's type does not accept SHALL be rejected with an error message and no occupant change.
+
+#### Scenario: Group ticket at an individual attraction
+- **GIVEN** INDIVIDUAL attraction `A02` and a valid group ticket `TG01`
+- **WHEN** `ATTRACTION ENTER;A02;TG01` is processed
+- **THEN** an error message is displayed and nobody enters `A02`
+
+#### Scenario: Individual ticket at a group attraction
+- **GIVEN** GROUP attraction `A03` and a valid individual ticket `T001`
+- **WHEN** `ATTRACTION ENTER;A03;T001` is processed
+- **THEN** an error message is displayed and nobody enters `A03`
+
+#### Scenario: Accepted kinds enter normally
+- **WHEN** a valid individual ticket enters INDIVIDUAL attraction `A02` and a valid group ticket enters GROUP attraction `A03`
+- **THEN** both entries succeed
+
+### Requirement: Special attractions require a Special Pass
+A SPECIAL attraction SHALL admit an individual ticket only if that ticket has an unconsumed Special Pass. The pass SHALL be used automatically, without any extra option in the entry command.
+
+#### Scenario: No Special Pass
+- **GIVEN** SPECIAL attraction `A04` and a valid ticket `T001` without a Special Pass
+- **WHEN** `ATTRACTION ENTER;A04;T001` is processed
+- **THEN** an error message is displayed and nobody enters
+
+#### Scenario: With Special Pass
+- **GIVEN** ticket `T001` has unconsumed Special Pass `PE01`
+- **WHEN** `ATTRACTION ENTER;A04;T001` is processed
+- **THEN** the user enters `A04`
+
+### Requirement: Access capabilities restrict attractions by type parameter
+Ticket access capabilities SHALL be represented by interfaces that individual and group tickets implement. Each attraction type SHALL be a generic attraction bounded by the capability it accepts, and that bound SHALL determine which tickets its entry operation can handle. INDIVIDUAL and SPECIAL attractions SHALL use the same individual-ticket capability. The difference between them SHALL be the special attraction's own entry rule.
+
+#### Scenario: Type parameter restricts handling
+- **WHEN** a GROUP attraction is asked whether it can handle an individual ticket
+- **THEN** it reports that it cannot, because the ticket does not implement the group-access capability
+
+### Requirement: Attraction type in status and HELP
+`ATTRACTION STATUS` SHALL show the attraction's type, and `HELP` SHALL include `ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>`.
+
+#### Scenario: Status shows type
+- **GIVEN** SPECIAL attraction `A04`
+- **WHEN** `ATTRACTION STATUS;A04` is processed
+- **THEN** the output contains `TYPE: SPECIAL`

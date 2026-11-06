@@ -9,7 +9,7 @@ import java.util.List;
  * Common abstraction for every ticket type: a unique identifier, the single
  * date on which it is valid, and the price fixed when it was created.
  */
-public abstract class Ticket {
+public abstract class Ticket implements AccessTicket {
 
     private final String id;
     private final LocalDate date;
@@ -21,6 +21,7 @@ public abstract class Ticket {
         this.price = price;
     }
 
+    @Override
     public String getId() {
         return id;
     }
@@ -46,11 +47,13 @@ public abstract class Ticket {
     }
 
     /** A ticket is valid for access only on its own date. */
+    @Override
     public boolean isValidOn(LocalDate today) {
         return date.equals(today);
     }
 
     /** Emails of the users this ticket admits to an attraction. */
+    @Override
     public abstract List<String> admittedUsers();
 
     /** Only tickets dated strictly after the given day may be deleted. */
