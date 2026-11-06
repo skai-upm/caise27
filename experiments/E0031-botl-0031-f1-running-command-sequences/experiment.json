@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0031-botl-0031-f1-running-command-sequences",
+  "change": "botl-0031-f1-running-command-sequences",
+  "status": "archived",
+  "createdAt": "2026-11-06T11:13:19.899331+00:00",
+  "updatedAt": "2026-11-06T11:17:45.153847+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261106T111319Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261106T111319Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 622824,
+        "totalCost": 0.18317679999999825
+      }
+    },
+    {
+      "runId": "0002-apply-20261106T111426Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261106T111426Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 624102,
+        "totalCost": 0.16298619999999886
+      }
+    },
+    {
+      "runId": "0003-archive-20261106T111657Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261106T111657Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-06T11:17:45.100086+00:00"
+}

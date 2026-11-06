@@ -1,0 +1,73 @@
+{
+  "capturedAt": "2026-11-06T08:21:04.419388+00:00",
+  "agent": "claude-code",
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "c333cdfb-911a-4f81-8fd0-7a8d4f52310b",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 28,
+    "outputTokens": 9440,
+    "cacheCreationTokens": 66782,
+    "cacheReadTokens": 974716,
+    "totalTokens": 1050966,
+    "totalCost": 0.9181112
+  },
+  "git": {
+    "available": true,
+    "repo": "/Users/andreacimmino/Desktop/opendev/opus_5_setup_gpractices_multiple_gpt",
+    "head": "f0b5baa720dbf3ea5d8c4f89dffbc0a344f63871",
+    "dirty": true,
+    "statusPorcelain": [
+      "?? .DS_Store",
+      "?? .botl/",
+      "?? experiments/",
+      "?? openspec/changes/botl-0001-f1-project-initialization/"
+    ]
+  },
+  "artifacts": {
+    "available": true,
+    "files": 5,
+    "lines": 118,
+    "words": 1009,
+    "requirements": 3,
+    "scenarios": 6,
+    "tasks": 5,
+    "shallStatements": 3
+  },
+  "projectProfile": {
+    "kind": "unknown",
+    "modules": []
+  },
+  "codeQuality": {
+    "common": {
+      "sonar": {
+        "available": false,
+        "skipped": true
+      }
+    },
+    "languageSpecific": {
+      "profile": {
+        "kind": "unknown",
+        "modules": []
+      },
+      "modules": []
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "radon": {
+      "available": false
+    }
+  },
+  "sonar": {
+    "available": false,
+    "skipped": true
+  },
+  "radon": {
+    "available": false
+  }
+}
