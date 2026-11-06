@@ -75,4 +75,20 @@ class ParkControllerPersistenceTest {
         assertTrue(park.getGroupService().find("G01").getMemberDnis().isEmpty());
         assertThrows(ParkException.class, () -> park.getUserService().authenticate("pedro@correo.com", "Otra2#"));
     }
+
+    @Test
+    void groupMembersAreTheLoadedUserObjects() {
+        populate();
+        park.start(dir, DAY);
+        es.upm.park.model.User ana = park.getUserService().authenticate("ana@correo.com", "Clave1!");
+        assertSame(ana, park.getGroupService().find("G01").getMembers().get(0));
+    }
+
+    @Test
+    void groupMemberFollowsUserUpdateWithoutRelinking() {
+        populate();
+        es.upm.park.model.User ana = park.getUserService().update("ana@correo.com", "Clave1!", "EMAIL", "ana.nueva@correo.com");
+        assertSame(ana, park.getGroupService().find("G01").getMembers().get(0));
+        assertEquals("ana.nueva@correo.com", park.getGroupService().find("G01").getMembers().get(0).getEmail());
+    }
 }

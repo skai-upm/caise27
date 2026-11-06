@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -28,8 +27,6 @@ class UmlModelTest {
 
     private static final String[] PACKAGES = {
         "es.upm.park.model.", "es.upm.park.controller.", "es.upm.park.service.", "es.upm.park.repository."};
-    /** Associations the code realises through the target's identifier. */
-    private static final Map<String, String> BY_IDENTIFIER = Map.of("Group.memberDnis", "User");
 
     private static List<String> lines;
 
@@ -111,10 +108,6 @@ class UmlModelTest {
             String target = targetPart.substring(targetPart.lastIndexOf(' ') + 1);
             String fieldName = "composition".equals(label) ? "composition" : label;
             Field field = field(type(source), fieldName, edge);
-            if (BY_IDENTIFIER.containsKey(source + "." + fieldName)) {
-                assertEquals(target, BY_IDENTIFIER.get(source + "." + fieldName), edge);
-                continue;
-            }
             assertEquals(type(target), elementType(field.getGenericType()), edge);
         }
     }

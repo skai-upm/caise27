@@ -39,7 +39,7 @@ public class GroupService {
     public void addUser(String id, String email) {
         Group group = modifiableGroup(id);
         User user = user(email);
-        if (!group.addMember(user.getDni())) {
+        if (!group.addMember(user)) {
             throw new GroupException("user " + email + " already in group " + id);
         }
         groups.save();
@@ -48,7 +48,7 @@ public class GroupService {
     public void removeUser(String id, String email) {
         Group group = modifiableGroup(id);
         User user = user(email);
-        if (!group.removeMember(user.getDni())) {
+        if (!group.removeMember(user)) {
             throw new GroupException("user " + email + " not in group " + id);
         }
         groups.save();
@@ -56,7 +56,7 @@ public class GroupService {
 
     /** Removes a user from every group (used when the user is deleted). */
     public void removeFromAllGroups(User user) {
-        groupsOf(user).forEach(group -> group.removeMember(user.getDni()));
+        groupsOf(user).forEach(group -> group.removeMember(user));
         groups.save();
     }
 
@@ -66,7 +66,7 @@ public class GroupService {
 
     /** Groups the user currently belongs to, found by traversing groups. */
     public List<Group> groupsOf(User user) {
-        return groups.findAll().stream().filter(g -> g.contains(user.getDni())).toList();
+        return groups.findAll().stream().filter(g -> g.contains(user)).toList();
     }
 
     /** Whether the group currently has an active group ticket. */

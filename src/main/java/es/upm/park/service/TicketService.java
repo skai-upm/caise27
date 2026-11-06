@@ -66,17 +66,16 @@ public class TicketService {
      */
     public GroupTicket createGroupTicket(String id, Group group, LocalDate date) {
         checkNewId(id);
-        if (group.getMemberDnis().isEmpty()) {
+        if (group.getMembers().isEmpty()) {
             throw new TicketException("group " + group.getId() + " is empty");
         }
         checkNotPast(date);
-        List<User> members = new ArrayList<>();
-        for (String dni : group.getMemberDnis()) {
-            String constituent = GroupTicket.constituentId(id, dni);
+        List<User> members = new ArrayList<>(group.getMembers());
+        for (User member : members) {
+            String constituent = GroupTicket.constituentId(id, member.getDni());
             if (tickets.existsId(constituent)) {
                 throw new TicketException("ticket identifier " + constituent + " already exists");
             }
-            members.add(users.findByDni(dni).orElseThrow(() -> new UserException("no user with DNI " + dni)));
         }
         GroupTicket ticket = new GroupTicket(id, date, basePrice.get(), group, members);
         tickets.add(ticket);

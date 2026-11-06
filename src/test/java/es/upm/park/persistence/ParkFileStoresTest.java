@@ -37,13 +37,13 @@ class ParkFileStoresTest {
     @Test
     void groupsRoundTrip() {
         Group g = new Group("G01", "Familia, Garcia");
-        g.addMember("12345678Z");
-        g.addMember("87654321X");
+        g.addMember(ana);
+        g.addMember(pedro);
         GroupFileStore store = new GroupFileStore(dir.resolve("groups.txt"));
         store.save(List.of(g, new Group("G02", "Vacio")));
-        List<Group> loaded = store.load();
+        List<Group> loaded = store.load(dni -> dni.equals(ana.getDni()) ? Optional.of(ana) : Optional.empty());
         assertEquals("Familia, Garcia", loaded.get(0).getName());
-        assertEquals(List.of("12345678Z", "87654321X"), loaded.get(0).getMemberDnis());
+        assertEquals(List.of(ana), loaded.get(0).getMembers());
         assertTrue(loaded.get(1).getMemberDnis().isEmpty());
     }
 
@@ -65,8 +65,8 @@ class ParkFileStoresTest {
     @Test
     void ticketsRoundTripWithLiveAndDeletedUsersAndGroups() {
         Group g = new Group("G01", "F");
-        g.addMember(ana.getDni());
-        g.addMember(pedro.getDni());
+        g.addMember(ana);
+        g.addMember(pedro);
         IndividualTicket t1 = new IndividualTicket("T001", day, new BigDecimal("45.50"), ana);
         GroupTicket tg1 = new GroupTicket("TG01", day, new BigDecimal("40.00"), g, List.of(ana, pedro));
         GroupTicket tg2 = new GroupTicket("TG02", day, new BigDecimal("40.00"), g, List.of(ana));

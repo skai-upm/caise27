@@ -262,4 +262,64 @@ class MainTest {
         assertTrue(tmpIsEmpty());
         assertTrue(Files.notExists(usersFile));
     }
+
+    private static final List<String> DELIVERY_2 = List.of(
+            ANA, PEDRO,
+            "USER CREATE;Luis;Martin;00000000T;luis@correo.com;Clave1!;600000000;1111222233334444",
+            "SYSTEM DATE;2027-04-15",
+            "SYSTEM PRICE;45.50",
+            "GROUP CREATE;G01;Familia Garcia",
+            "GROUP ADD;G01;ana@correo.com",
+            "GROUP ADD;G01;pedro@correo.com",
+            "GROUP ADD;G01;luis@correo.com",
+            "TICKET CREATE;T001;ana@correo.com;2027-04-15",
+            "GROUPTICKET CREATE;TG01;G01;2027-04-15",
+            "GROUP REMOVE;G01;luis@correo.com",
+            "ATTRACTION CREATE;A01;Dragon Rojo;20",
+            "ATTRACTION CREATE;A02;Torre del Cielo;2",
+            "ATTRACTION ENTER;A02;TG01",
+            "ATTRACTION ENTER;A01;TG01",
+            "ATTRACTION EXIT;A01;ana@correo.com",
+            "ATTRACTION ENTER;A02;T001",
+            "ATTRACTION LIST;A01",
+            "ATTRACTION STATUS;A02",
+            "TICKET DELETE;T001",
+            "USER DELETE;luis@correo.com;Clave1!",
+            "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
+            "HELP",
+            "EXIT",
+            "USER CREATE;Nadie;X;87654321X;n@correo.com;Clave1!;6;1234567890123456");
+
+    @Test
+    void deliveryTwoFileGivesSameResultsWithAndWithoutFly() throws Exception {
+        Path input = dir.resolve("input_fase2.txt");
+        Files.write(input, DELIVERY_2);
+        String fly = run("", "--fly", input.toString());
+        assertTrue(tmpIsEmpty());
+        assertTrue(Files.notExists(usersFile));
+        String normal = run("", input.toString());
+        assertEquals(fly, normal);
+        for (String expected : new String[] {
+            "Group ticket created: TG01 total 122.85",
+            "Error: group G01 has an active group ticket",
+            "Error: attraction A02 does not have capacity for 3 users",
+            "Entered A01: ana@correo.com, pedro@correo.com, luis@correo.com",
+            "Exited A01: ana@correo.com",
+            "Entered A02: ana@correo.com",
+            "Users in A01:\npedro@correo.com\nluis@correo.com",
+            "Attraction A02 - Torre del Cielo\nCapacity: 2\nInside: 1\nAvailable: 1\nUsers: ana@correo.com",
+            "Error: ticket T001 cannot be deleted: it is not dated after 2027-04-15",
+            "Error: user luis@correo.com has an active ticket",
+            "User updated: 12345678Z PHONE"}) {
+            assertTrue(normal.contains(expected), expected);
+        }
+        for (String command : new String[] {"USER CREATE;", "USER DELETE;", "USER UPDATE;", "SYSTEM DATE;", "SYSTEM PRICE;",
+            "GROUP CREATE;", "GROUP ADD;", "GROUP REMOVE;", "GROUP DELETE;", "TICKET CREATE;", "TICKET DELETE;",
+            "GROUPTICKET CREATE;", "GROUPTICKET DELETE;", "ATTRACTION CREATE;", "ATTRACTION ENTER;", "ATTRACTION EXIT;",
+            "ATTRACTION LIST;", "ATTRACTION STATUS;", "  HELP", "  EXIT"}) {
+            assertTrue(normal.contains(command), command);
+        }
+        assertTrue(normal.endsWith("Bye"));
+        assertTrue(Files.readString(dir.resolve("groups.txt")).startsWith("G01;Familia Garcia;12345678Z,87654321X,00000000T"));
+    }
 }

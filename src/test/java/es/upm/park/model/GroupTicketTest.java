@@ -30,7 +30,7 @@ class GroupTicketTest {
     private static GroupTicket ticket(int members) {
         Group g = new Group("G01", "F");
         List<User> us = users(members);
-        us.forEach(u -> g.addMember(u.getDni()));
+        us.forEach(g::addMember);
         return new GroupTicket("TG01", DAY, FORTY, g, us);
     }
 
@@ -72,7 +72,7 @@ class GroupTicketTest {
         assertFalse(t.findConstituent("TG01:nope").isPresent());
         assertEquals("G01", t.getGroup().getId());
         Group g = t.getGroup();
-        g.addMember("99999999R");
+        g.addMember(new User("N", "S", "99999999R", "n@correo.com", "Clave1!", "6", "1234567890123456"));
         assertEquals(2, t.getComposition().size());
         t.detachGroup();
         assertNull(t.getGroup());

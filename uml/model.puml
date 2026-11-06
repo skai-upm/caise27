@@ -28,7 +28,6 @@ package es.upm.park.model {
   class Group {
     - id : String {readOnly}
     - name : String
-    - memberDnis : List<String>
   }
 
   abstract class Ticket {
@@ -86,7 +85,7 @@ GroupTicket ..> GroupDiscount : discount by size
 ' --- directed relationships among model elements (users hold no references)
 IndividualTicket --> "1" User : user
 GroupTicket --> "0..1" Group : group
-Group --> "0..*" User : memberDnis
+Group --> "0..*" User : members
 Attraction --> "0..*" User : occupants
 User ..> UserField : modifiable fields
 
@@ -107,10 +106,6 @@ GroupRepository --> "0..*" Group : groups
 TicketRepository --> "0..*" Ticket : tickets
 AttractionRepository --> "0..*" Attraction : attractions
 
-note right of Group
-  members are referenced by
-  their immutable DNI
-end note
 note bottom of GroupTicket
   group is cleared when the group is deleted;
   groupId keeps the historical record

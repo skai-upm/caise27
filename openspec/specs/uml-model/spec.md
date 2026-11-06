@@ -25,7 +25,7 @@ The diagram SHALL represent the ticket hierarchy (an abstract ticket specialized
 - **THEN** each `IndividualTicket` references exactly one `User`, each `GroupTicket` references zero or one `Group`, each `Group` references zero or more `User`, and each `Attraction` references zero or more occupant `User`, all directed away from `User`
 
 ### Requirement: Diagram consistent with the code
-Every class, enumeration and inheritance relationship in the diagram SHALL exist in the code with the same name, kind and supertype, and every association drawn MUST correspond to a field of the source class whose type matches the target (directly or as a collection element, or by the target's identifier where the code references it that way).
+Every class, enumeration and inheritance relationship in the diagram SHALL exist in the code with the same name, kind and supertype, and every association drawn MUST correspond to a field of the source class whose type matches the target directly or as a collection element.
 
 #### Scenario: Automated consistency check
 - **WHEN** the test suite runs

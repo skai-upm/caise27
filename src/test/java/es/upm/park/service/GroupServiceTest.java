@@ -64,7 +64,7 @@ class GroupServiceTest {
         service.create("G01", "F");
         service.addUser("G01", "ana@correo.com");
         service.removeUser("G01", "ana@correo.com");
-        assertFalse(service.find("G01").contains("12345678Z"));
+        assertFalse(service.find("G01").getMemberDnis().contains("12345678Z"));
         assertRejected("user pedro@correo.com not in group G01", () -> service.removeUser("G01", "pedro@correo.com"));
     }
 

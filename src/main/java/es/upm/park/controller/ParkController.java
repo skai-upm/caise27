@@ -73,7 +73,8 @@ public final class ParkController {
      */
     public void start(Path dataDir, LocalDate today) {
         UserRepository users = new UserRepository(new UserFileStore(dataDir.resolve(USERS_FILE)));
-        GroupRepository groups = new GroupRepository(new GroupFileStore(dataDir.resolve(GROUPS_FILE)));
+        GroupRepository groups = new GroupRepository(new GroupFileStore(dataDir.resolve(GROUPS_FILE)),
+                users::findByDni);
         AttractionRepository attractions =
                 new AttractionRepository(new AttractionFileStore(dataDir.resolve(ATTRACTIONS_FILE)));
         TicketRepository tickets = new TicketRepository(new TicketFileStore(dataDir.resolve(TICKETS_FILE)),

@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import es.upm.park.model.Group;
+import es.upm.park.model.User;
 import es.upm.park.persistence.GroupFileStore;
 
 /**
@@ -21,9 +23,10 @@ public class GroupRepository {
         this.store = null;
     }
 
-    public GroupRepository(GroupFileStore store) {
+    /** Loads stored groups, linking members to the existing users. */
+    public GroupRepository(GroupFileStore store, Function<String, Optional<User>> userByDni) {
         this.store = store;
-        groups.addAll(store.load());
+        groups.addAll(store.load(userByDni));
     }
 
     /** Adds a group, writing the file first when persistent. */

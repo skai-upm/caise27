@@ -3,11 +3,15 @@ package es.upm.park.persistence;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 import es.upm.park.model.Group;
+import es.upm.park.model.User;
 
 /**
- * Stores groups as {@code id;name;dni1,dni2,...} lines.
+ * Stores groups as {@code id;name;dni1,dni2,...} lines; members are linked
+ * back to their user objects when loaded.
  */
 public class GroupFileStore {
 
@@ -20,7 +24,8 @@ public class GroupFileStore {
         this.file = file;
     }
 
-    public List<Group> load() {
+    /** Rebuilds the groups; DNIs of users that no longer exist are dropped. */
+    public List<Group> load(Function<String, Optional<User>> userByDni) {
         List<Group> groups = new ArrayList<>();
         for (String line : TextFile.read(file)) {
             String[] f = TextFile.fields(line);
@@ -28,7 +33,7 @@ public class GroupFileStore {
                 Group group = new Group(f[0], f[1]);
                 for (String dni : f[2].split(MEMBER_SEPARATOR)) {
                     if (!dni.isEmpty()) {
-                        group.addMember(dni);
+                        userByDni.apply(dni).ifPresent(group::addMember);
                     }
                 }
                 groups.add(group);
