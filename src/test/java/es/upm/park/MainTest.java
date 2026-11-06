@@ -58,8 +58,35 @@ class MainTest {
     }
 
     @Test
-    void startsWithFileArgument() {
-        assertEquals(Main.BANNER, run("", "input.txt"));
+    void missingCommandFileIsReportedInAControlledWay() {
+        Path missing = dir.resolve("missing.txt");
+        assertEquals(Main.BANNER + "\nError: cannot read command file " + missing, run("", missing.toString()));
+    }
+
+    @Test
+    void directoryAsCommandFileIsReported() {
+        assertEquals(Main.BANNER + "\nError: cannot read command file " + dir, run("", dir.toString()));
+    }
+
+    @Test
+    void commandFileIsProcessedInOrderWithoutReadingStandardInput() throws Exception {
+        Path commands = dir.resolve("input.txt");
+        Files.write(commands, List.of(ANA, "", "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999"));
+        String out = run("USER DELETE;ana@correo.com;Clave1!\n", commands.toString());
+        assertEquals(Main.BANNER + "\nUser created: 12345678Z\nUser updated: 12345678Z PHONE", out);
+        assertEquals("699999999", Files.readAllLines(usersFile).get(0).split(";")[5]);
+    }
+
+    @Test
+    void sameOutputAndEffectsFromFileAndStandardInput() throws Exception {
+        String script = ANA + "\nFOO\nUSER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria\nUSER DELETE;x@y.com;Clave1!\n";
+        String fromStdin = run(script);
+        List<String> storedFromStdin = Files.readAllLines(usersFile);
+        Files.delete(usersFile);
+        Path commands = dir.resolve("same.txt");
+        Files.writeString(commands, script);
+        assertEquals(fromStdin, run("", commands.toString()));
+        assertEquals(storedFromStdin, Files.readAllLines(usersFile));
     }
 
     @Test
