@@ -11,6 +11,7 @@ import es.upm.park.business.model.User;
 import es.upm.park.persistence.repository.ParkRepositories;
 import es.upm.park.persistence.repository.UserRepository;
 import es.upm.park.business.service.AttractionService;
+import es.upm.park.business.service.BCryptPasswordHasher;
 import es.upm.park.business.service.GroupException;
 import es.upm.park.business.invoice.TextInvoiceBuilder;
 import es.upm.park.business.service.GroupService;
@@ -63,7 +64,7 @@ public final class ParkController {
      * collaborations, resets the date to {@code today} and the price to 40.00.
      */
     public void start(ParkRepositories repositories, LocalDate today) {
-        this.userService = UserService.getInstance().configure(repositories.users());
+        this.userService = UserService.getInstance().configure(repositories.users(), new BCryptPasswordHasher());
         this.ticketService = TicketService.getInstance().configure(repositories.tickets(), repositories.users(),
                 this::getCurrentDate, this::getBasePrice);
         TicketService tickets = this.ticketService;

@@ -25,11 +25,11 @@ Built from a clean checkout with `mvn package`, the JAR SHALL execute the source
 - **THEN** each incorrect line yields an error message, valid lines take effect, and the application ends normally
 
 ### Requirement: Delivery 1 technical restrictions
-The production code SHALL use only the Java standard library, with no databases, frameworks, external libraries, regular expressions or encryption mechanisms, and commands MUST be interpreted with basic String operations and `split`.
+The production code SHALL use only the Java standard library plus, from Delivery 3 on, the BCrypt library mandated for password protection (`org.mindrot:jbcrypt`), with no databases, frameworks, other external libraries or regular expressions, and commands MUST be interpreted with basic String operations and `split`.
 
 #### Scenario: No external runtime dependencies
 - **WHEN** the Maven project's dependencies are inspected
-- **THEN** only test-scoped dependencies are declared
+- **THEN** the only non-test dependency is `org.mindrot:jbcrypt`
 
 #### Scenario: No regular expressions
 - **WHEN** the production sources are inspected

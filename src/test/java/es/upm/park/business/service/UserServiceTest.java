@@ -3,6 +3,7 @@ package es.upm.park.business.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,8 @@ import es.upm.park.business.model.User;
 import es.upm.park.persistence.repository.UserRepository;
 
 class UserServiceTest {
+
+    private static final PasswordHasher HASHER = new BCryptPasswordHasher(4);
 
     private UserRepository repo;
     private UserService service;
@@ -40,7 +43,7 @@ class UserServiceTest {
         assertEquals("Ana", user.getFirstName());
         assertEquals("Garcia Lopez", user.getSurnames());
         assertEquals("ana@correo.com", user.getEmail());
-        assertEquals("Clave1!", user.getPassword());
+        assertTrue(HASHER.matches("Clave1!", user.getPassword()));
         assertEquals("612345678", user.getTelephone());
         assertEquals("1234567890123456", user.getCardNumber());
     }
@@ -87,7 +90,7 @@ class UserServiceTest {
         User ana = createAna();
         assertRejected("incorrect password", () -> service.delete("ana@correo.com", "Otra2#"));
         assertSame(ana, repo.findAll().get(0));
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(HASHER.matches("Clave1!", ana.getPassword()));
     }
 
     @Test
@@ -104,7 +107,7 @@ class UserServiceTest {
         assertEquals("699", service.update("ana@correo.com", "Clave1!", "PHONE", "699").getTelephone());
         assertEquals("9999888877776666",
                 service.update("ana@correo.com", "Clave1!", "CARD", "9999888877776666").getCardNumber());
-        assertEquals("Nueva2#", service.update("ana@correo.com", "Clave1!", "PASSWORD", "Nueva2#").getPassword());
+        assertTrue(HASHER.matches("Nueva2#", service.update("ana@correo.com", "Clave1!", "PASSWORD", "Nueva2#").getPassword()));
         User u = service.update("ana@correo.com", "Nueva2#", "EMAIL", "ana.nueva@correo.com");
         assertEquals("12345678Z", u.getDni());
         assertSame(u, repo.findByEmail("ana.nueva@correo.com").orElseThrow());
@@ -141,7 +144,7 @@ class UserServiceTest {
         assertRejected("invalid card number", () -> service.update("ana@correo.com", "Clave1!", "CARD", "123456789012345"));
         assertSame(ana, repo.findByDni("12345678Z").orElseThrow());
         assertEquals("ana@correo.com", ana.getEmail());
-        assertEquals("Clave1!", ana.getPassword());
+        assertTrue(HASHER.matches("Clave1!", ana.getPassword()));
         assertEquals("1234567890123456", ana.getCardNumber());
     }
 }

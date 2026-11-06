@@ -55,6 +55,24 @@ class MainTest {
         return out.toString(StandardCharsets.UTF_8).replace("\r\n", "\n").trim();
     }
 
+    /** Users file lines with the BCrypt password field replaced by {@code <hash>}. */
+    private List<String> storedUsers() throws java.io.IOException {
+        return Files.readAllLines(usersFile).stream().map(MainTest::maskHash).toList();
+    }
+
+    private static String maskHash(String line) {
+        String[] f = line.split(";", -1);
+        assertTrue(f[4].startsWith("$2a$"), "password not protected: " + line);
+        f[4] = "<hash>";
+        return String.join(";", f);
+    }
+
+    private static String withHash(String line) {
+        String[] f = line.split(";", -1);
+        f[4] = "<hash>";
+        return String.join(";", f);
+    }
+
     @Test
     void startsWithoutArguments() {
         assertEquals(Main.BANNER, run(""));
@@ -84,12 +102,12 @@ class MainTest {
     void sameOutputAndEffectsFromFileAndStandardInput() throws Exception {
         String script = ANA + "\nFOO\nUSER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria\nUSER DELETE;x@y.com;Clave1!\n";
         String fromStdin = run(script);
-        List<String> storedFromStdin = Files.readAllLines(usersFile);
+        List<String> storedFromStdin = storedUsers();
         Files.delete(usersFile);
         Path commands = dir.resolve("same.txt");
         Files.writeString(commands, script);
         assertEquals(fromStdin, run("", commands.toString()));
-        assertEquals(storedFromStdin, Files.readAllLines(usersFile));
+        assertEquals(storedFromStdin, storedUsers());
     }
 
     @Test
@@ -109,7 +127,7 @@ class MainTest {
     @Test
     void usersSurviveRestart() throws Exception {
         assertEquals(Main.BANNER + "\nUser created: 12345678Z", run(ANA + "\n"));
-        assertEquals(List.of(ANA.substring("USER CREATE;".length())), Files.readAllLines(usersFile));
+        assertEquals(List.of(withHash(ANA.substring("USER CREATE;".length()))), storedUsers());
         assertEquals(Main.BANNER + "\nError: a user with DNI 12345678Z already exists", run(ANA + "\n"));
         assertEquals(1, Files.readAllLines(usersFile).size());
     }
@@ -117,11 +135,11 @@ class MainTest {
     @Test
     void updatesSurviveRestart() throws Exception {
         run(ANA + "\nUSER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria\n");
-        assertEquals(List.of("Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
-                Files.readAllLines(usersFile));
+        assertEquals(List.of("Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;<hash>;612345678;1234567890123456"),
+                storedUsers());
         assertEquals(Main.BANNER + "\nUser updated: 12345678Z PHONE", run("USER UPDATE;ana@correo.com;Clave1!;PHONE;699\n"));
-        assertEquals("Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699;1234567890123456",
-                Files.readAllLines(usersFile).get(0));
+        assertEquals("Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;<hash>;699;1234567890123456",
+                storedUsers().get(0));
     }
 
     @Test
@@ -161,15 +179,15 @@ class MainTest {
         Path input = dir.resolve("input.txt");
         Files.write(input, SECTION_16);
         String fromFile = run("", input.toString());
-        List<String> storedFromFile = Files.readAllLines(usersFile);
-        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456"),
+        List<String> storedFromFile = storedUsers();
+        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;<hash>;699999999;1234567890123456"),
                 storedFromFile);
         assertTrue(fromFile.contains("User created: 87654321X\nUser updated: 12345678Z PHONE\n"
                 + "User updated: 12345678Z EMAIL\nUser deleted: pedro@correo.com\nAvailable commands:"));
         assertTrue(fromFile.endsWith("EXIT\nBye"));
         Files.delete(usersFile);
         assertEquals(fromFile, run(String.join("\n", SECTION_16) + "\n"));
-        assertEquals(storedFromFile, Files.readAllLines(usersFile));
+        assertEquals(storedFromFile, storedUsers());
     }
 
     @Test

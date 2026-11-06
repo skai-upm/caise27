@@ -15,6 +15,7 @@ public class UserService {
     private static final UserService INSTANCE = new UserService();
 
     private UserRepository repository;
+    private PasswordHasher hasher;
 
     private UserService() {
     }
@@ -30,7 +31,17 @@ public class UserService {
      * @return this controller
      */
     public UserService configure(UserRepository repository) {
+        return configure(repository, new BCryptPasswordHasher());
+    }
+
+    /**
+     * Injects the user repository and the password protection behavior.
+     *
+     * @return this controller
+     */
+    public UserService configure(UserRepository repository, PasswordHasher hasher) {
         this.repository = repository;
+        this.hasher = hasher;
         return this;
     }
 
@@ -60,7 +71,7 @@ public class UserService {
         if (repository.existsByEmail(email)) {
             throw new UserException("a user with email " + email + " already exists");
         }
-        User user = new User(firstName, surnames, dni, email, password, telephone, cardNumber);
+        User user = new User(firstName, surnames, dni, email, hasher.hash(password), telephone, cardNumber);
         repository.add(user);
         return user;
     }
@@ -112,7 +123,8 @@ public class UserService {
                 if (!UserValidator.isValidPassword(value)) {
                     throw new UserException("invalid password");
                 }
-                yield u -> u.setPassword(value);
+                String protectedPassword = hasher.hash(value);
+                yield u -> u.setPassword(protectedPassword);
             }
             case CARD -> {
                 if (!UserValidator.isValidCardNumber(value)) {
@@ -131,7 +143,7 @@ public class UserService {
     public User authenticate(String email, String password) {
         User user = repository.findByEmail(email)
                 .orElseThrow(() -> new UserException("no user with email " + email));
-        if (!user.getPassword().equals(password)) {
+        if (!hasher.matches(password, user.getPassword())) {
             throw new UserException("incorrect password");
         }
         return user;
