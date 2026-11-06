@@ -26,7 +26,8 @@ import org.junit.jupiter.api.Test;
 class UmlModelTest {
 
     private static final String[] PACKAGES = {
-        "es.upm.park.business.model.", "es.upm.park.business.controller.", "es.upm.park.business.service.", "es.upm.park.persistence.repository."};
+        "es.upm.park.business.model.", "es.upm.park.business.controller.", "es.upm.park.business.service.",
+        "es.upm.park.business.invoice.", "es.upm.park.persistence.repository.", "es.upm.park.presentation.help."};
 
     private static List<String> lines;
 
@@ -80,7 +81,7 @@ class UmlModelTest {
                 checked++;
             }
         }
-        assertEquals(25, checked, "classes checked");
+        assertEquals(43, checked, "classes checked");
     }
 
     @Test
@@ -98,7 +99,7 @@ class UmlModelTest {
             }
         }
         List<String> realizations = lines.stream().filter(l -> l.contains("<|..")).toList();
-        assertEquals(3, realizations.size());
+        assertTrue(realizations.size() >= 7, "realizations: " + realizations.size());
         for (String edge : realizations) {
             String[] parts = edge.split("<\\|\\.\\.");
             Class<?> contract = type(parts[0].trim());
@@ -118,7 +119,7 @@ class UmlModelTest {
         assertTrue(edges.size() >= 20, "too few associations: " + edges.size());
         for (String edge : edges) {
             String[] sides = edge.split(" --> | \\*-- ");
-            String source = sides[0].trim();
+            String source = sides[0].trim().split("\\s+")[0];
             String rest = sides[1];
             String label = rest.substring(rest.indexOf(':') + 1).trim();
             String targetPart = rest.substring(0, rest.indexOf(':')).trim();
@@ -140,11 +141,14 @@ class UmlModelTest {
     }
 
     private static Field field(Class<?> owner, String name, String edge) {
-        try {
-            return owner.getDeclaredField(name);
-        } catch (NoSuchFieldException e) {
-            return fail("association without matching field: " + edge);
+        for (Class<?> c = owner; c != null; c = c.getSuperclass()) {
+            try {
+                return c.getDeclaredField(name);
+            } catch (NoSuchFieldException e) {
+                // look in the superclass
+            }
         }
+        return fail("association without matching field: " + edge);
     }
 
     private static Class<?> elementType(Type type) {

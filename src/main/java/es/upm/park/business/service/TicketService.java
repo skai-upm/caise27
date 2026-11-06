@@ -82,9 +82,7 @@ public class TicketService {
      * constituent.
      */
     public IndividualTicket findIndividual(String id) {
-        return tickets.findById(id).filter(IndividualTicket.class::isInstance).map(IndividualTicket.class::cast)
-                .or(() -> groupTickets().flatMap(g -> g.findConstituent(id).stream()).findFirst())
-                .orElseThrow(() -> new TicketException("no individual ticket " + id));
+        return tickets.findIndividual(id).orElseThrow(() -> new TicketException("no individual ticket " + id));
     }
 
     /**

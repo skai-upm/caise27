@@ -1,5 +1,5 @@
 @startuml
-title Amusement Park - class model (layered)
+title Amusement Park - Delivery 3 class model
 
 skinparam classAttributeIconSize 0
 hide empty methods
@@ -75,6 +75,18 @@ package es.upm.park.business.model {
   class SpecialAttraction {
   }
 
+  abstract class Pass {
+    - id : String
+    - price : BigDecimal
+    - consumed : boolean
+  }
+
+  class SpeedPass {
+  }
+
+  class SpecialPass {
+  }
+
   enum AttractionType {
     GENERAL
     INDIVIDUAL
@@ -91,11 +103,33 @@ package es.upm.park.business.controller {
   }
 }
 
+package es.upm.park.business.invoice {
+  interface InvoiceBuilder
+  class TextInvoiceBuilder
+  class Invoice {
+    - type : String
+    - total : BigDecimal
+  }
+  class InvoiceSection
+  class InvoiceLine
+}
+
 package es.upm.park.business.service {
   class UserService <<singleton>>
   class GroupService <<singleton>>
   class TicketService <<singleton>>
   class AttractionService <<singleton>>
+  class PassService <<singleton>>
+  class InvoiceService <<singleton>>
+  interface PasswordHasher
+  class BCryptPasswordHasher
+}
+
+package es.upm.park.presentation.help {
+  interface HelpFormatter
+  class SyntaxHelpFormatter
+  class ExtendedHelpFormatter
+  class HelpGenerator
 }
 
 package es.upm.park.persistence.repository {
@@ -103,6 +137,8 @@ package es.upm.park.persistence.repository {
   class GroupRepository
   class TicketRepository
   class AttractionRepository
+  class PassRepository
+  class ParkRepositories
 }
 
 ' --- ticket hierarchy and composition
@@ -125,6 +161,39 @@ GeneralAttraction ..> Admission : T = Admission
 IndividualAttraction ..> IndividualAccess : T = IndividualAccess
 GroupAttraction ..> GroupAccess : T = GroupAccess
 Attraction ..> AttractionType : type
+
+' --- passes bought for individual tickets (personal purchases)
+Pass <|-- SpeedPass
+Pass <|-- SpecialPass
+SpeedPass "0..*" --> "1" IndividualTicket : ticket
+SpecialPass "0..1" --> "1" IndividualTicket : ticket
+SpecialAttraction ..> SpecialPass : consumes on entry
+
+' --- invoice generation with Builder (InvoiceService is the director)
+InvoiceBuilder <|.. TextInvoiceBuilder
+TextInvoiceBuilder ..> Invoice : builds
+Invoice *-- "0..*" InvoiceSection : sections
+InvoiceSection *-- "1..*" InvoiceLine : lines
+InvoiceService --> "1" InvoiceBuilder : builder
+InvoiceService --> "1" PassRepository : passes
+
+' --- dependency injection (configured at initialization)
+PasswordHasher <|.. BCryptPasswordHasher
+UserService --> "1" PasswordHasher : hasher
+PassService --> "1" PassRepository : passes
+PassService --> "1" TicketService : tickets
+ParkController --> "1" PassService : passService
+ParkController --> "1" InvoiceService : invoiceService
+ParkController ..> ParkRepositories : injects at start
+ParkRepositories --> "1" UserRepository : users
+ParkRepositories --> "1" GroupRepository : groups
+ParkRepositories --> "1" TicketRepository : tickets
+ParkRepositories --> "1" AttractionRepository : attractions
+ParkRepositories --> "1" PassRepository : passes
+PassRepository --> "0..*" Pass : passes
+HelpFormatter <|.. SyntaxHelpFormatter
+HelpFormatter <|.. ExtendedHelpFormatter
+HelpGenerator --> "1" HelpFormatter : formatter
 
 ' --- directed relationships among model elements (users hold no references)
 IndividualTicket --> "1" User : user

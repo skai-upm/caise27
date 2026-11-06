@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import es.upm.park.business.model.Group;
+import es.upm.park.business.model.GroupTicket;
+import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.model.Ticket;
 import es.upm.park.business.model.User;
 import es.upm.park.persistence.TicketFileStore;
@@ -55,6 +57,13 @@ public class TicketRepository {
     /** Writes the current tickets after an in-place change (detached group). */
     public void save() {
         persist(tickets);
+    }
+
+    /** An individual ticket bought directly or as a group-ticket constituent. */
+    public Optional<IndividualTicket> findIndividual(String id) {
+        return findById(id).filter(IndividualTicket.class::isInstance).map(IndividualTicket.class::cast)
+                .or(() -> tickets.stream().filter(GroupTicket.class::isInstance).map(GroupTicket.class::cast)
+                        .flatMap(g -> g.findConstituent(id).stream()).findFirst());
     }
 
     public Optional<Ticket> findById(String id) {

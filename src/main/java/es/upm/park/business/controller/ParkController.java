@@ -170,8 +170,12 @@ public final class ParkController {
      */
     public AccessResult enterAttraction(String attractionId, String ticketId, boolean speed) {
         attractionService.find(attractionId);
-        return attractionService.enter(attractionId, ticketService.findForAccess(ticketId), currentDate,
-                passService::passesOf, speed);
+        AccessResult result = attractionService.enter(attractionId, ticketService.findForAccess(ticketId),
+                currentDate, passService::passesOf, speed);
+        if (!result.consumed().isEmpty()) {
+            passService.recordConsumption();
+        }
+        return result;
     }
 
     public LocalDate getCurrentDate() {

@@ -93,6 +93,11 @@ public class PassService {
         }
     }
 
+    /** Persists the consumed state of passes after a successful entry. */
+    public void recordConsumption() {
+        passes.save();
+    }
+
     public List<Pass> passesOf(IndividualAccess ticket) {
         return passes.findByTicket(ticket);
     }

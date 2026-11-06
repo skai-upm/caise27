@@ -348,4 +348,14 @@ class MainTest {
         assertEquals(String.join("\n", Main.BANNER, "Error: unknown command 'NOT A COMMAND'", "Error: no group G99",
                 "User created: 12345678Z"), run("", input.toString()));
     }
+
+    @Test
+    void flyModeKeepsPassesInsideTheTemporaryDirectory() throws Exception {
+        run(ANA + "\nTICKET CREATE;T001;ana@correo.com;2099-01-01\nSPEEDPASS CREATE;SP01;T001;1\n");
+        String permanent = Files.readString(dir.resolve("passes.txt"));
+        String out = run("TICKET CREATE;T002;ana@correo.com;2099-01-01\nSPEEDPASS CREATE;SP02;T002;10\nEXIT\n", "--fly");
+        assertTrue(out.contains("Error: no user with email ana@correo.com"));
+        assertEquals(permanent, Files.readString(dir.resolve("passes.txt")));
+        assertTrue(tmpIsEmpty());
+    }
 }

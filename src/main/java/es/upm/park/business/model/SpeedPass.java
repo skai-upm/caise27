@@ -13,6 +13,15 @@ public class SpeedPass extends Pass {
         super(id, ticket);
     }
 
+    private SpeedPass(String id, IndividualTicket ticket, BigDecimal price, boolean consumed) {
+        super(id, ticket, price, consumed);
+    }
+
+    /** Rebuilds a stored SpeedPass. */
+    public static SpeedPass restore(String id, IndividualTicket ticket, BigDecimal price, boolean consumed) {
+        return new SpeedPass(id, ticket, price, consumed);
+    }
+
     @Override
     protected BigDecimal priceFactor() {
         return FACTOR;
