@@ -1,0 +1,158 @@
+@startuml model
+title Amusement Park - class model (Delivery 2)
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package "es.upm.park.model" {
+  abstract class Ticket {
+    - id : String
+    - date : LocalDate
+    - price : BigDecimal
+  }
+
+  class IndividualTicket {
+    - ownerEmail : String
+    - partOfGroupTicket : boolean
+  }
+
+  class GroupTicket {
+    - composition : List<IndividualTicket>
+    - group : Group [0..1]
+  }
+
+  class Group {
+    - id : String
+    - name : String
+    - memberEmails : Set<String>
+  }
+
+  class Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+    - occupantEmails : Set<String>
+  }
+
+  Ticket <|-- IndividualTicket
+  Ticket <|-- GroupTicket
+  GroupTicket *--> "1..*" IndividualTicket : composition
+  GroupTicket --> "0..1" Group : purchaser
+
+  note as UsersNote
+    Users are referenced by email:
+    Group.memberEmails (0..*), IndividualTicket.ownerEmail (1),
+    Attraction.occupantEmails (0..capacity).
+    Users keep no references to groups, tickets or attractions;
+    a user's tickets are found by traversing the park's tickets.
+  end note
+  UsersNote .. Group
+  UsersNote .. IndividualTicket
+  UsersNote .. Attraction
+}
+
+package "es.upm.park.controller" {
+  class ParkController <<singleton>> {
+    - {static} INSTANCE : ParkController
+    - currentDate : LocalDate
+    - basePrice : BigDecimal
+    - groups : Map<String, Group>
+    - tickets : Map<String, Ticket>
+    - attractions : Map<String, Attraction>
+    - users : UserDirectory
+    - storage : ParkStorage
+  }
+
+  interface UserDirectory {
+  }
+
+  interface ParkStorage {
+  }
+
+  class ParkState <<record>> {
+    groups : List<Group>
+    tickets : List<Ticket>
+    attractions : List<Attraction>
+  }
+
+  class ParkException {
+  }
+
+  ParkController --> "1" ParkController : INSTANCE
+  ParkController o--> "0..*" Group : groups
+  ParkController o--> "0..*" Ticket : tickets
+  ParkController o--> "0..*" Attraction : attractions
+  ParkController --> "1" UserDirectory : users
+  ParkController --> "1" ParkStorage : storage
+  ParkStorage ..> ParkState : loads / saves
+  ParkException --|> RuntimeException
+}
+
+package "es.upm.park.persistence" {
+  class TextParkStorage {
+    - groups : GroupRepository
+    - tickets : TicketRepository
+    - attractions : AttractionRepository
+  }
+
+  class GroupRepository {
+    - file : Path
+    - warnings : PrintStream
+  }
+
+  class TicketRepository {
+    - file : Path
+    - warnings : PrintStream
+  }
+
+  class AttractionRepository {
+    - file : Path
+    - warnings : PrintStream
+  }
+
+  class StoragePaths <<record>> {
+    directory : Path
+  }
+
+  class TextFile <<utility>> {
+  }
+
+  TextParkStorage ..|> ParkStorage
+  TextParkStorage *--> "1" GroupRepository
+  TextParkStorage *--> "1" TicketRepository
+  TextParkStorage *--> "1" AttractionRepository
+  TextParkStorage ..> StoragePaths : configured by
+  GroupRepository ..> TextFile
+  TicketRepository ..> TextFile
+  AttractionRepository ..> TextFile
+}
+
+package "es.upm.park.command" {
+  class CommandRunner {
+    - processor : CommandProcessor
+    - out : PrintStream
+  }
+
+  class CommandProcessor {
+    - handlers : Map<String, Function>
+  }
+
+  class CommandResult <<record>> {
+    output : String
+    terminate : boolean
+  }
+
+  CommandRunner --> "1" CommandProcessor
+  CommandProcessor ..> CommandResult : creates
+  CommandProcessor ..> ParkController : uses
+}
+
+package "es.upm.park" {
+  class App {
+  }
+  App ..> CommandRunner
+  App ..> TextParkStorage
+  App ..> ParkController
+}
+
+class RuntimeException
+@enduml

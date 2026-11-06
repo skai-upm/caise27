@@ -89,3 +89,7 @@ Attraction commands:
 ## Persistence
 
 Groups, tickets (including group tickets and their composition) and attractions are stored as text files in `data/` and reloaded at startup. Attractions always start empty. Historical tickets are kept even after their user or group is deleted. With `--fly`, all files go to a new `tmp/<yyyyMMdd_HHmmss>/` directory, which is deleted when the execution ends.
+
+## Design model
+
+The PlantUML class model is in [`uml/model.puml`](uml/model.puml). `UmlModelConsistencyTest` fails if a type of the model, controller or persistence packages is missing from it.
