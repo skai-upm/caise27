@@ -1,11 +1,13 @@
 package es.upm.park.command;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import es.upm.park.controller.Dates;
 import es.upm.park.controller.ParkController;
 import es.upm.park.model.UserField;
 import es.upm.park.persistence.PersistenceException;
@@ -28,6 +30,8 @@ public class CommandProcessor {
             "  GROUP ADD;<id>;<email>",
             "  GROUP REMOVE;<id>;<email>",
             "  GROUP DELETE;<id>",
+            "  TICKET CREATE;<id>;<email>;<yyyy-MM-dd>",
+            "  TICKET DELETE;<id>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<price>",
             "  HELP",
@@ -50,6 +54,8 @@ public class CommandProcessor {
         commands.put("GROUP ADD", new Command(2, this::addToGroup));
         commands.put("GROUP REMOVE", new Command(2, this::removeFromGroup));
         commands.put("GROUP DELETE", new Command(1, this::deleteGroup));
+        commands.put("TICKET CREATE", new Command(3, this::createTicket));
+        commands.put("TICKET DELETE", new Command(1, this::deleteTicket));
         commands.put("SYSTEM DATE", new Command(1, f -> "System date set to " + park.setCurrentDate(f[0])));
         commands.put("SYSTEM PRICE", new Command(1,
                 f -> "System price set to " + park.setBasePrice(f[0]).toPlainString()));
@@ -98,7 +104,7 @@ public class CommandProcessor {
     }
 
     private String deleteUser(String[] f) {
-        park.getUserService().delete(f[0], f[1]);
+        park.deleteUser(f[0], f[1]);
         return "User deleted: " + f[0];
     }
 
@@ -124,6 +130,16 @@ public class CommandProcessor {
     private String deleteGroup(String[] f) {
         park.getGroupService().delete(f[0]);
         return "Group deleted: " + f[0];
+    }
+
+    private String createTicket(String[] f) {
+        BigDecimal price = park.getTicketService().createIndividual(f[0], f[1], Dates.parse(f[2])).getPrice();
+        return "Ticket created: " + f[0] + " price " + price.toPlainString();
+    }
+
+    private String deleteTicket(String[] f) {
+        park.getTicketService().deleteIndividual(f[0]);
+        return "Ticket deleted: " + f[0];
     }
 
     private String exit(String[] f) {

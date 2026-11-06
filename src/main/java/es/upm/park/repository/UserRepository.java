@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import es.upm.park.model.User;
 import es.upm.park.persistence.UserFileStore;
@@ -51,14 +52,17 @@ public class UserRepository {
     }
 
     /**
-     * Replaces a stored user by its updated copy. When persistent, the file is
-     * written first so that a failed write leaves the repository unchanged.
+     * Changes a stored user in place. When persistent, the change is first
+     * applied to a copy and written, so a failed write leaves the user
+     * unchanged; the same object keeps representing the user.
      */
-    public void replace(User old, User updated) {
+    public void update(User user, Consumer<User> change) {
+        User changed = user.copy();
+        change.accept(changed);
         List<User> snapshot = new ArrayList<>(users);
-        snapshot.set(snapshot.indexOf(old), updated);
+        snapshot.set(snapshot.indexOf(user), changed);
         persist(snapshot);
-        users.set(users.indexOf(old), updated);
+        change.accept(user);
     }
 
     public Optional<User> findByEmail(String email) {

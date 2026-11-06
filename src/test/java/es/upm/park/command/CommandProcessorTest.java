@@ -208,4 +208,18 @@ class CommandProcessorTest {
         assertEquals("Error: no group G01", processor.process("GROUP DELETE;G01"));
         assertTrue(processor.process("HELP").contains("GROUP REMOVE;<id>;<email>"));
     }
+
+    @Test
+    void ticketCommandsShowPriceAndRespectDates() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-01");
+        processor.process("SYSTEM PRICE;45.50");
+        assertEquals("Ticket created: T001 price 45.50", processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15"));
+        assertEquals("Error: ticket T001 already exists", processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15"));
+        assertEquals("Error: invalid date 2027-13-01", processor.process("TICKET CREATE;T002;ana@correo.com;2027-13-01"));
+        assertEquals("Error: user ana@correo.com has an active ticket", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals("Ticket deleted: T001", processor.process("TICKET DELETE;T001"));
+        assertEquals("User deleted: ana@correo.com", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(processor.process("HELP").contains("TICKET CREATE;<id>;<email>;<yyyy-MM-dd>"));
+    }
 }

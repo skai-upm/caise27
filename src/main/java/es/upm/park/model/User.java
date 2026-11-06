@@ -77,6 +77,13 @@ public class User {
     }
 
     /**
+     * Returns an independent copy holding the same attribute values.
+     */
+    public User copy() {
+        return new User(firstName, surnames, dni, email, password, telephone, cardNumber);
+    }
+
+    /**
      * Whether this user's data satisfies the validation rules.
      *
      * @return true when DNI, email, password and card number are valid

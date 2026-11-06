@@ -1,5 +1,6 @@
 package es.upm.park.service;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 import es.upm.park.model.Group;
@@ -53,6 +54,11 @@ public class GroupService {
 
     public void delete(String id) {
         groups.remove(modifiableGroup(id));
+    }
+
+    /** Groups the user currently belongs to, found by traversing groups. */
+    public List<Group> groupsOf(User user) {
+        return groups.findAll().stream().filter(g -> g.contains(user.getDni())).toList();
     }
 
     /** Whether the group currently has an active group ticket. */

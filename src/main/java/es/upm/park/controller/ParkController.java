@@ -3,14 +3,17 @@ package es.upm.park.controller;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 
+import es.upm.park.model.Group;
+import es.upm.park.model.User;
 import es.upm.park.repository.GroupRepository;
+import es.upm.park.repository.TicketRepository;
 import es.upm.park.repository.UserRepository;
+import es.upm.park.service.GroupException;
 import es.upm.park.service.GroupService;
-import es.upm.park.service.UserException;
+import es.upm.park.service.ParkException;
+import es.upm.park.service.TicketException;
+import es.upm.park.service.TicketService;
 import es.upm.park.service.UserService;
 
 /**
@@ -21,8 +24,6 @@ import es.upm.park.service.UserService;
 public final class ParkController {
 
     public static final BigDecimal INITIAL_PRICE = new BigDecimal("40.00");
-    private static final DateTimeFormatter DATE_FORMAT =
-            DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
     private static final int PRICE_DECIMALS = 2;
 
     private static final ParkController INSTANCE = new ParkController();
@@ -31,6 +32,7 @@ public final class ParkController {
     private BigDecimal basePrice = INITIAL_PRICE;
     private UserService userService;
     private GroupService groupService;
+    private TicketService ticketService;
 
     private ParkController() {
         start(new UserRepository(), LocalDate.now());
@@ -48,6 +50,7 @@ public final class ParkController {
     public void start(UserRepository users, LocalDate today) {
         this.userService = new UserService(users);
         this.groupService = new GroupService(new GroupRepository(), users, group -> false);
+        this.ticketService = new TicketService(new TicketRepository(), users, this::getCurrentDate, this::getBasePrice);
         this.currentDate = today;
         this.basePrice = INITIAL_PRICE;
     }
@@ -58,6 +61,32 @@ public final class ParkController {
 
     public GroupService getGroupService() {
         return groupService;
+    }
+
+    public TicketService getTicketService() {
+        return ticketService;
+    }
+
+    /**
+     * Deletes a user after checking credentials, active tickets and locked
+     * groups; the user is also removed from every group it belongs to.
+     *
+     * @throws ParkException when the deletion is not allowed
+     */
+    public User deleteUser(String email, String password) {
+        User user = userService.authenticate(email, password);
+        if (ticketService.hasActiveTicket(user)) {
+            throw new TicketException("user " + email + " has an active ticket");
+        }
+        for (Group group : groupService.groupsOf(user)) {
+            if (groupService.isLocked(group)) {
+                throw new GroupException("user " + email + " belongs to group " + group.getId()
+                        + " which has an active group ticket");
+            }
+        }
+        userService.remove(user);
+        groupService.groupsOf(user).forEach(group -> group.removeMember(user.getDni()));
+        return user;
     }
 
     public LocalDate getCurrentDate() {
@@ -71,30 +100,26 @@ public final class ParkController {
     /**
      * Replaces the current date with a strict {@code yyyy-MM-dd} value.
      *
-     * @throws UserException when the text is not a valid date
+     * @throws ParkException when the text is not a valid date
      */
     public LocalDate setCurrentDate(String text) {
-        try {
-            currentDate = LocalDate.parse(text, DATE_FORMAT);
-            return currentDate;
-        } catch (DateTimeParseException | NullPointerException e) {
-            throw new UserException("invalid date " + text);
-        }
+        currentDate = Dates.parse(text);
+        return currentDate;
     }
 
     /**
      * Replaces the base ticket price with a positive amount of at most two
      * decimals.
      *
-     * @throws UserException when the text is not a valid positive amount
+     * @throws ParkException when the text is not a valid positive amount
      */
     public BigDecimal setBasePrice(String text) {
         if (!isMoney(text)) {
-            throw new UserException("invalid price " + text);
+            throw new ParkException("invalid price " + text);
         }
         BigDecimal price = new BigDecimal(text).setScale(PRICE_DECIMALS, RoundingMode.UNNECESSARY);
         if (price.signum() <= 0) {
-            throw new UserException("invalid price " + text);
+            throw new ParkException("invalid price " + text);
         }
         basePrice = price;
         return basePrice;

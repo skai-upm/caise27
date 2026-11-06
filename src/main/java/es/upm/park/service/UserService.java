@@ -1,5 +1,7 @@
 package es.upm.park.service;
 
+import java.util.function.Consumer;
+
 import es.upm.park.model.User;
 import es.upm.park.model.UserField;
 import es.upm.park.model.UserValidator;
@@ -54,7 +56,7 @@ public class UserService {
      */
     public User delete(String email, String password) {
         User user = authenticate(email, password);
-        repository.remove(user);
+        remove(user);
         return user;
     }
 
@@ -72,11 +74,15 @@ public class UserService {
         if (field == null) {
             throw new UserException("field " + fieldName + " cannot be modified");
         }
-        User updated = copy(user);
-        switch (field) {
-            case NAME -> updated.setFirstName(value);
-            case SURNAME -> updated.setSurnames(value);
-            case PHONE -> updated.setTelephone(value);
+        repository.update(user, change(user, field, value));
+        return user;
+    }
+
+    private Consumer<User> change(User user, UserField field, String value) {
+        return switch (field) {
+            case NAME -> u -> u.setFirstName(value);
+            case SURNAME -> u -> u.setSurnames(value);
+            case PHONE -> u -> u.setTelephone(value);
             case EMAIL -> {
                 if (!UserValidator.isValidEmail(value)) {
                     throw new UserException("invalid email");
@@ -84,26 +90,29 @@ public class UserService {
                 repository.findByEmail(value).filter(other -> other != user).ifPresent(other -> {
                     throw new UserException("a user with email " + value + " already exists");
                 });
-                updated.setEmail(value);
+                yield u -> u.setEmail(value);
             }
             case PASSWORD -> {
                 if (!UserValidator.isValidPassword(value)) {
                     throw new UserException("invalid password");
                 }
-                updated.setPassword(value);
+                yield u -> u.setPassword(value);
             }
             case CARD -> {
                 if (!UserValidator.isValidCardNumber(value)) {
                     throw new UserException("invalid card number");
                 }
-                updated.setCardNumber(value);
+                yield u -> u.setCardNumber(value);
             }
-        }
-        repository.replace(user, updated);
-        return updated;
+        };
     }
 
-    private User authenticate(String email, String password) {
+    /**
+     * Returns the user with that email if the password matches.
+     *
+     * @throws UserException when no user has that email or the password is incorrect
+     */
+    public User authenticate(String email, String password) {
         User user = repository.findByEmail(email)
                 .orElseThrow(() -> new UserException("no user with email " + email));
         if (!user.getPassword().equals(password)) {
@@ -112,8 +121,8 @@ public class UserService {
         return user;
     }
 
-    private static User copy(User u) {
-        return new User(u.getFirstName(), u.getSurnames(), u.getDni(), u.getEmail(),
-                u.getPassword(), u.getTelephone(), u.getCardNumber());
+    /** Removes an already authorized user from the stored users. */
+    public void remove(User user) {
+        repository.remove(user);
     }
 }

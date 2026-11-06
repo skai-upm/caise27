@@ -85,9 +85,9 @@ class UserRepositoryTest {
         Path file = dir.resolve("users.txt");
         UserRepository repo = new UserRepository(new UserFileStore(file));
         repo.add(ana);
-        User changed = new User("Ana Maria", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
-        repo.replace(ana, changed);
-        assertSame(changed, repo.findByDni("12345678Z").orElseThrow());
+        repo.update(ana, u -> u.setFirstName("Ana Maria"));
+        assertSame(ana, repo.findByDni("12345678Z").orElseThrow());
+        assertEquals("Ana Maria", ana.getFirstName());
         assertEquals("Ana Maria", new UserRepository(new UserFileStore(file)).findAll().get(0).getFirstName());
     }
 
@@ -98,8 +98,8 @@ class UserRepositoryTest {
         repo.add(ana);
         Files.delete(file);
         Files.createDirectory(file);
-        User changed = new User("X", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
-        assertThrows(PersistenceException.class, () -> repo.replace(ana, changed));
+        assertThrows(PersistenceException.class, () -> repo.update(ana, u -> u.setFirstName("X")));
         assertSame(ana, repo.findAll().get(0));
+        assertEquals("Ana", ana.getFirstName());
     }
 }

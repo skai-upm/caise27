@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import es.upm.park.repository.UserRepository;
-import es.upm.park.service.UserException;
+import es.upm.park.service.ParkException;
 
 class ParkControllerTest {
 
@@ -50,9 +50,9 @@ class ParkControllerTest {
 
     @Test
     void rejectsInvalidValuesWithoutChange() {
-        assertThrows(UserException.class, () -> park.setCurrentDate(null));
-        assertThrows(UserException.class, () -> park.setBasePrice(null));
-        assertThrows(UserException.class, () -> park.setBasePrice("00"));
+        assertThrows(ParkException.class, () -> park.setCurrentDate(null));
+        assertThrows(ParkException.class, () -> park.setBasePrice(null));
+        assertThrows(ParkException.class, () -> park.setBasePrice("00"));
         assertEquals(LocalDate.of(2026, 1, 2), park.getCurrentDate());
         assertEquals(new BigDecimal("40.00"), park.getBasePrice());
     }
