@@ -1,0 +1,118 @@
+@startuml
+title Amusement Park - Phase 2 class model
+
+skinparam classAttributeIconSize 0
+hide empty methods
+
+package es.upm.park.model {
+
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - telephone : String
+    - cardNumber : String
+  }
+
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+
+  class Group {
+    - id : String {readOnly}
+    - name : String
+    - memberDnis : List<String>
+  }
+
+  abstract class Ticket {
+    - id : String
+    - date : LocalDate
+    - basePrice : BigDecimal
+    - discount : BigDecimal
+  }
+
+  class IndividualTicket {
+  }
+
+  class GroupTicket {
+    - groupId : String
+  }
+
+  class GroupDiscount <<utility>> {
+  }
+
+  class Attraction {
+    - id : String
+    - name : String
+    - capacity : int
+  }
+}
+
+package es.upm.park.controller {
+  class ParkController <<singleton>> {
+    - {static} INSTANCE : ParkController
+    - currentDate : LocalDate
+    - basePrice : BigDecimal
+  }
+}
+
+package es.upm.park.service {
+  class UserService
+  class GroupService
+  class TicketService
+  class AttractionService
+}
+
+package es.upm.park.repository {
+  class UserRepository
+  class GroupRepository
+  class TicketRepository
+  class AttractionRepository
+}
+
+' --- ticket hierarchy and composition
+Ticket <|-- IndividualTicket
+Ticket <|-- GroupTicket
+GroupTicket *-- "1..*" IndividualTicket : composition
+GroupTicket ..> GroupDiscount : discount by size
+
+' --- directed relationships among model elements (users hold no references)
+IndividualTicket --> "1" User : user
+GroupTicket --> "0..1" Group : group
+Group --> "0..*" User : memberDnis
+Attraction --> "0..*" User : occupants
+User ..> UserField : modifiable fields
+
+' --- central management (single instance) and the elements it coordinates
+ParkController --> "1" ParkController : INSTANCE
+ParkController --> "1" UserService : userService
+ParkController --> "1" GroupService : groupService
+ParkController --> "1" TicketService : ticketService
+ParkController --> "1" AttractionService : attractionService
+UserService --> "1" UserRepository : repository
+GroupService --> "1" GroupRepository : groups
+GroupService --> "1" UserRepository : users
+TicketService --> "1" TicketRepository : tickets
+TicketService --> "1" UserRepository : users
+AttractionService --> "1" AttractionRepository : attractions
+UserRepository --> "0..*" User : users
+GroupRepository --> "0..*" Group : groups
+TicketRepository --> "0..*" Ticket : tickets
+AttractionRepository --> "0..*" Attraction : attractions
+
+note right of Group
+  members are referenced by
+  their immutable DNI
+end note
+note bottom of GroupTicket
+  group is cleared when the group is deleted;
+  groupId keeps the historical record
+end note
+@enduml
