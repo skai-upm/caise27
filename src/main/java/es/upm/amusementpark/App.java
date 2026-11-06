@@ -11,6 +11,7 @@ import es.upm.amusementpark.presentation.InvoiceCommands;
 import es.upm.amusementpark.presentation.PassCommands;
 import es.upm.amusementpark.presentation.SystemCommands;
 import es.upm.amusementpark.presentation.TicketCommands;
+import es.upm.amusementpark.presentation.UserCommands;
 import es.upm.amusementpark.presentation.help.CommandCatalog;
 import es.upm.amusementpark.presentation.help.ExtendedHelpFormatter;
 import es.upm.amusementpark.presentation.help.HelpCommands;
@@ -117,6 +118,7 @@ public final class App {
      * @param out output stream
      */
     public static void registerCommands(CommandProcessor processor, ParkController park, PrintStream out) {
+        UserCommands.register(processor, park, out);
         SystemCommands.register(processor, park, out);
         GroupCommands.register(processor, park, out);
         TicketCommands.register(processor, park, out);

@@ -32,7 +32,20 @@ public final class ParkController {
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction<?>> attractions = new LinkedHashMap<>();
     private final Map<String, Pass> passes = new LinkedHashMap<>();
-    private UserDirectory userDirectory = UserDirectory.EMPTY;
+    private final Map<String, User> users = new LinkedHashMap<>();
+    private final UserDirectory registeredUsers = new UserDirectory() {
+        @Override
+        public boolean exists(String email) {
+            return users.containsKey(email);
+        }
+
+        @Override
+        public String dniOf(String email) {
+            User user = users.get(email);
+            return user == null ? null : user.getDni();
+        }
+    };
+    private UserDirectory userDirectory = registeredUsers;
     private final GroupTicketDates registeredGroupTicketDates = this::registeredGroupTicketDates;
     private GroupTicketDates groupTicketDates = registeredGroupTicketDates;
     private ParkRepository repository = ParkRepository.NONE;
@@ -59,7 +72,8 @@ public final class ParkController {
         tickets.clear();
         attractions.clear();
         passes.clear();
-        userDirectory = UserDirectory.EMPTY;
+        users.clear();
+        userDirectory = registeredUsers;
         groupTicketDates = registeredGroupTicketDates;
         repository = ParkRepository.NONE;
         passwordHasher = new BCryptPasswordHasher();
@@ -757,5 +771,40 @@ public final class ParkController {
         }
         passes.put(id, pass);
         return pass;
+    }
+
+    // ----- users -----
+
+    /**
+     * Registers a new user: validates the data, checks DNI and e-mail uniqueness, protects the password and stores
+     * the user.
+     *
+     * @throws ParkException if the data is invalid or the DNI or e-mail already exists
+     */
+    public synchronized User registerUser(String firstName, String surnames, String dni, String email,
+            String password, String phone, String card) {
+        if (isBlank(firstName) || isBlank(surnames) || isBlank(phone)) {
+            throw new ParkException("First name, surnames and phone are required");
+        }
+        UserValidator.validate(dni, email, password, card);
+        for (User user : users.values()) {
+            if (user.getDni().equals(dni)) {
+                throw new ParkException("User with DNI " + dni + " already exists");
+            }
+        }
+        if (users.containsKey(email)) {
+            throw new ParkException("User with email " + email + " already exists");
+        }
+        User user = new User(firstName, surnames, dni, email, protectPassword(password), phone, card);
+        users.put(email, user);
+        return user;
+    }
+
+    public synchronized User findUser(String email) {
+        return users.get(email);
+    }
+
+    public synchronized Collection<User> getUsers() {
+        return Collections.unmodifiableCollection(users.values());
     }
 }

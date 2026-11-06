@@ -33,6 +33,8 @@ package es.upm.amusementpark.presentation {
   }
   class PassCommands {
   }
+  class UserCommands {
+  }
 }
 
 package es.upm.amusementpark.business.invoice {
@@ -210,6 +212,9 @@ AttractionType ..> Attraction : creates
 ParkController ..> PassLookup : provides passesOfTicket
 
 UserValidator ..> ParkException : throws
+ParkController --> "0..*" User : users (registry)
+ParkController ..> UserValidator : validates with
+UserCommands ..> ParkController : uses
 
 ' ---- passes ----
 Pass <|-- SpeedPass
