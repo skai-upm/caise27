@@ -51,7 +51,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>es.upm.park.Main</mainClass>
+              <mainClass>es.upm.park.presentation.Main</mainClass>
             </manifest>
           </archive>
         </configuration>

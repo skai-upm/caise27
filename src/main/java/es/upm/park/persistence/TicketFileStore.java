@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import es.upm.park.model.Group;
-import es.upm.park.model.GroupTicket;
-import es.upm.park.model.IndividualTicket;
-import es.upm.park.model.Ticket;
-import es.upm.park.model.User;
+import es.upm.park.business.model.Group;
+import es.upm.park.business.model.GroupTicket;
+import es.upm.park.business.model.IndividualTicket;
+import es.upm.park.business.model.Ticket;
+import es.upm.park.business.model.User;
 
 /**
  * Stores tickets in text lines:

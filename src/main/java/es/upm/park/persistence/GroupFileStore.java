@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import es.upm.park.model.Group;
-import es.upm.park.model.User;
+import es.upm.park.business.model.Group;
+import es.upm.park.business.model.User;
 
 /**
  * Stores groups as {@code id;name;dni1,dni2,...} lines; members are linked

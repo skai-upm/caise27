@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 class UmlModelTest {
 
     private static final String[] PACKAGES = {
-        "es.upm.park.model.", "es.upm.park.controller.", "es.upm.park.service.", "es.upm.park.repository."};
+        "es.upm.park.business.model.", "es.upm.park.business.controller.", "es.upm.park.business.service.", "es.upm.park.persistence.repository."};
 
     private static List<String> lines;
 

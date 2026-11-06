@@ -1,10 +1,10 @@
 @startuml
-title Amusement Park - Phase 2 class model
+title Amusement Park - class model (layered)
 
 skinparam classAttributeIconSize 0
 hide empty methods
 
-package es.upm.park.model {
+package es.upm.park.business.model {
 
   class User {
     - firstName : String
@@ -54,7 +54,7 @@ package es.upm.park.model {
   }
 }
 
-package es.upm.park.controller {
+package es.upm.park.business.controller {
   class ParkController <<singleton>> {
     - {static} INSTANCE : ParkController
     - currentDate : LocalDate
@@ -62,14 +62,14 @@ package es.upm.park.controller {
   }
 }
 
-package es.upm.park.service {
+package es.upm.park.business.service {
   class UserService
   class GroupService
   class TicketService
   class AttractionService
 }
 
-package es.upm.park.repository {
+package es.upm.park.persistence.repository {
   class UserRepository
   class GroupRepository
   class TicketRepository

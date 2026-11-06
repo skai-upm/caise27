@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import es.upm.park.model.User;
+import es.upm.park.business.model.User;
 
 /**
  * Reads and writes users in a text file: one user per line, attributes

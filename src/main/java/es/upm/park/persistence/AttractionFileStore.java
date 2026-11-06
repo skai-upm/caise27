@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import es.upm.park.model.Attraction;
+import es.upm.park.business.model.Attraction;
 
 /**
  * Stores attractions as {@code id;name;capacity} lines. Occupants are not
