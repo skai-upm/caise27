@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0011-botl-0014-adding-individual-tickets",
+  "change": "botl-0014-adding-individual-tickets",
+  "status": "archived",
+  "createdAt": "2026-11-06T14:19:03.952009+00:00",
+  "updatedAt": "2026-11-06T14:25:48.944027+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261106T141903Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261106T141903Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 302521,
+        "totalCost": 0.2180231999999993
+      }
+    },
+    {
+      "runId": "0002-apply-20261106T142050Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261106T142050Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1264280,
+        "totalCost": 0.6132445999999998
+      }
+    },
+    {
+      "runId": "0003-archive-20261106T142508Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261106T142508Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-06T14:25:48.883909+00:00"
+}
