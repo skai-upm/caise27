@@ -2,6 +2,9 @@ package es.upm.park;
 
 import es.upm.park.business.controller.InvoiceController;
 import es.upm.park.business.controller.ParkController;
+import es.upm.park.business.security.BCryptPasswordHasher;
+import es.upm.park.business.security.PasswordPolicy;
+import es.upm.park.business.security.PasswordService;
 import es.upm.park.persistence.AttractionRepository;
 import es.upm.park.persistence.GroupRepository;
 import es.upm.park.persistence.StoragePaths;
@@ -25,7 +28,8 @@ public final class AppConfiguration {
 
     /** The configured objects of one execution. */
     public record Configured(TextParkStorage storage, GroupRepository groups, TicketRepository tickets,
-                             AttractionRepository attractions, CommandProcessor processor) {
+                             AttractionRepository attractions, PasswordService passwords,
+                             CommandProcessor processor) {
     }
 
     private AppConfiguration() {
@@ -43,10 +47,12 @@ public final class AppConfiguration {
         InvoiceController invoices = InvoiceController.getInstance();
         invoices.setParkController(park);
 
+        PasswordService passwords = new PasswordService(new BCryptPasswordHasher(), PasswordPolicy.notBlank());
+
         HelpGenerator help = new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter());
         HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter());
 
-        return new Configured(storage, groups, tickets, attractions,
+        return new Configured(storage, groups, tickets, attractions, passwords,
                 new CommandProcessor(park, invoices, help, extendedHelp));
     }
 }

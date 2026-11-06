@@ -46,6 +46,15 @@ class AppConfigurationTest {
     }
 
     @Test
+    void passwordServiceIsConfiguredWithBCrypt() {
+        AppConfiguration.Configured configured = AppConfiguration.configure(base.resolve("data"),
+                new PrintStream(new ByteArrayOutputStream()));
+        String stored = configured.passwords().protect("Clave1!");
+        assertTrue(stored.startsWith("$2a$"));
+        assertTrue(configured.passwords().verify("Clave1!", stored));
+    }
+
+    @Test
     void controllersAreWiredByTheConfiguration() {
         InvoiceController.getInstance().setParkController(null);
         AppConfiguration.Configured configured = AppConfiguration.configure(base.resolve("data"),

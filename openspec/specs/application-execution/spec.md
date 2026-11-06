@@ -6,7 +6,7 @@ Defines how the Amusement Park application is packaged and launched: an executab
 ## Requirements
 
 ### Requirement: Executable JAR built with Maven
-The project SHALL produce, with `mvn package` from a clean checkout, an executable JAR at `target/amusement-park.jar` that starts the application with `java -jar` and needs no IDE, extra classpath or other configuration.
+The project SHALL produce, with `mvn package` from a clean checkout, an executable JAR at `target/amusement-park.jar` that starts the application with `java -jar` and needs no IDE, extra classpath or other configuration. Its only third-party runtime library SHALL be the BCrypt library used for password protection, bundled inside the JAR.
 
 #### Scenario: Package and run the JAR
 - **GIVEN** a clean checkout with JDK 21+ and Maven
@@ -16,7 +16,11 @@ The project SHALL produce, with `mvn package` from a clean checkout, an executab
 #### Scenario: Runtime uses only the Java standard library
 - **GIVEN** the project's dependency declarations
 - **WHEN** the runtime classpath is resolved
-- **THEN** it contains no third-party libraries (test-only dependencies are allowed)
+- **THEN** it contains no third-party libraries other than `org.mindrot:jbcrypt` (test-only dependencies are allowed)
+
+#### Scenario: BCrypt bundled in the JAR
+- **WHEN** the contents of `target/amusement-park.jar` are listed
+- **THEN** they include the `org/mindrot/jbcrypt/BCrypt.class` class
 
 ### Requirement: Interactive mode
 The application SHALL, when started without arguments, read commands from standard input one line at a time and keep waiting for the next command after processing each one, until EXIT or end of input.

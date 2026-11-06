@@ -109,6 +109,23 @@ package "es.upm.park.business.exception" {
 
 ParkController ..> ParkException : throws
 
+package "es.upm.park.business.security" {
+  class PasswordService {
+    - hasher : PasswordHasher
+    - policy : PasswordPolicy
+  }
+  interface PasswordHasher {
+  }
+  class BCryptPasswordHasher {
+  }
+  interface PasswordPolicy {
+  }
+  PasswordService --> "1" PasswordHasher : injected
+  PasswordService --> "1" PasswordPolicy : injected
+  BCryptPasswordHasher ..|> PasswordHasher
+  BCryptPasswordHasher ..> "org.mindrot.jbcrypt.BCrypt" : uses
+}
+
 package "es.upm.park.business.invoice" {
   class Invoice {
     - title : String
@@ -235,6 +252,7 @@ package "es.upm.park" {
   AppConfiguration ..> ParkController : injects storage
   AppConfiguration ..> InvoiceController : injects park
   AppConfiguration ..> CommandProcessor : creates
+  AppConfiguration ..> PasswordService : creates with BCrypt
   AppConfiguration ..> HelpGenerator : creates with formatter
 }
 

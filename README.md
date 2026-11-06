@@ -19,7 +19,7 @@ mvn clean test
 mvn package
 ```
 
-This produces the executable JAR `target/amusement-park.jar`. It uses only the Java standard library at runtime.
+This produces the executable JAR `target/amusement-park.jar`. Its only third-party runtime library is jBCrypt (`org.mindrot:jbcrypt:0.4`), which `maven-shade-plugin` bundles into the JAR so that `java -jar` needs no extra classpath.
 
 ## Running
 
@@ -128,3 +128,7 @@ The code is organized in layers under `es.upm.park`:
 Controllers with an execution-wide responsibility (`ParkController`, `InvoiceController`) are singletons. Repositories are not: each configuration creates its own.
 
 Presentation never uses persistence, and business uses neither (`LayeredArchitectureTest`). Every abnormal situation is an exception, which the presentation layer reports as `ERROR:` before continuing with the next command.
+
+## Passwords
+
+User passwords are never stored in plain text. `business.security.PasswordService` validates a new or changed password, protects it with BCrypt (salted, `$2a$...`) before it is stored, and verifies entered passwords against the stored value. The hashing algorithm and the validation policy are injected by `AppConfiguration`.

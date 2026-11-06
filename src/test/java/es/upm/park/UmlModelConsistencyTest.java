@@ -17,7 +17,8 @@ class UmlModelConsistencyTest {
 
     private static final Path UML = Path.of("uml", "model.puml");
     private static final Path SOURCES = Path.of("src", "main", "java", "es", "upm", "park");
-    private static final String[] PACKAGES = {"business/model", "business/controller", "business/exception", "business/invoice", "persistence"};
+    private static final String[] PACKAGES = {"business/model", "business/controller", "business/exception", "business/invoice", "business/security",
+        "persistence"};
 
     static List<String> missingTypes(String diagram, List<String> typeNames) {
         List<String> missing = new ArrayList<>();
