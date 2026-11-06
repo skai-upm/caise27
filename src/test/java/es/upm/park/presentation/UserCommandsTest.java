@@ -50,6 +50,20 @@ class UserCommandsTest {
     }
 
     @Test
+    void updateUserCommand() {
+        run(ANA);
+        assertEquals("USER UPDATED", run("USER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria"));
+        assertEquals("USER UPDATED", run("USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com"));
+        assertEquals("USER UPDATED", run("USER UPDATE;ana.nueva@correo.com;Clave1!;PASSWORD;Nueva2#"));
+        assertEquals("USER UPDATED", run("USER UPDATE;ana.nueva@correo.com;Nueva2#;CARD;9999888877776666"));
+        for (String line : new String[] {"USER UPDATE;ana.nueva@correo.com;Nueva2#;DNI;87654321X",
+                "USER UPDATE;ana.nueva@correo.com;Nueva2#;AGE;30", "USER UPDATE;ana.nueva@correo.com;Clave1!;NAME;X",
+                "USER UPDATE;ana@correo.com;Clave1!;NAME;X", "USER UPDATE;ana.nueva@correo.com;Nueva2#;NAME"}) {
+            assertTrue(run(line).startsWith("ERROR"), line);
+        }
+    }
+
+    @Test
     void errorsAddNoUser() {
         run(ANA);
         for (String line : new String[] {ANA,

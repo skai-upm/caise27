@@ -9,6 +9,7 @@ import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.AttractionType;
 import es.upm.park.business.model.EntryResult;
 import es.upm.park.business.model.SpecialPass;
+import es.upm.park.business.model.UserField;
 import es.upm.park.business.model.SpeedPass;
 import es.upm.park.presentation.help.CommandCatalog;
 import es.upm.park.presentation.help.ExtendedHelpFormatter;
@@ -66,6 +67,11 @@ public class CommandProcessor {
             userController.deleteUser(a[0], a[1]);
             return "USER DELETED";
         }));
+        handlers.put("USER UPDATE", args -> withArgs(args, 4, "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
+                a -> {
+                    userController.updateUser(a[0], a[1], UserField.parse(a[2]), a[3]);
+                    return "USER UPDATED";
+                }));
         handlers.put("SYSTEM DATE", this::systemDate);
         handlers.put("SYSTEM PRICE", this::systemPrice);
         handlers.put("GROUP CREATE", args -> withArgs(args, 2, "GROUP CREATE;<Identifier>;<Name>", a -> {

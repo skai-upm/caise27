@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class IndividualTicket extends Ticket implements IndividualAccess {
 
-    private final String ownerEmail;
+    private String ownerEmail;
     private final boolean partOfGroupTicket;
 
     public IndividualTicket(String id, String ownerEmail, LocalDate date, BigDecimal price) {
@@ -32,6 +32,11 @@ public class IndividualTicket extends Ticket implements IndividualAccess {
     @Override
     public String getOwnerEmail() {
         return ownerEmail;
+    }
+
+    /** Points the ticket at its owner's new email (the same user, renamed). */
+    public void reassignOwner(String newEmail) {
+        this.ownerEmail = newEmail;
     }
 
     @Override

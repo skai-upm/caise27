@@ -104,6 +104,16 @@ package "es.upm.park.business.model" {
     - card : String
   }
 
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
+  UserField ..> User : modifiable fields
+
   note as UsersNote
     Users are referenced by email:
     Group.memberEmails (0..*), IndividualTicket.ownerEmail (1),

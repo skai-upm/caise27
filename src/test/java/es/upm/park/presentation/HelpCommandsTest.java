@@ -36,7 +36,6 @@ class HelpCommandsTest {
         assertTrue(catalogKeywords.containsAll(handled), "every handler is documented");
         Set<String> pending = new TreeSet<>(catalogKeywords);
         pending.removeAll(handled);
-        // USER UPDATE is mandated in HELP but implemented by a later user milestone.
-        assertEquals(Set.of("USER UPDATE"), pending);
+        assertEquals(Set.of(), pending, "every documented command has a handler");
     }
 }

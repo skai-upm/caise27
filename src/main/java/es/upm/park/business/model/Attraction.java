@@ -131,6 +131,17 @@ public abstract class Attraction<T extends AccessTicket> {
         return occupantEmails.add(email);
     }
 
+    /** Replaces an occupant's email keeping the entry order (used when a user changes email). */
+    public void replaceOccupant(String oldEmail, String newEmail) {
+        if (!occupantEmails.contains(oldEmail)) {
+            return;
+        }
+        List<String> order = new ArrayList<>(occupantEmails);
+        order.set(order.indexOf(oldEmail), newEmail);
+        occupantEmails.clear();
+        occupantEmails.addAll(order);
+    }
+
     /** @return true if the user was inside and left */
     public boolean leave(String email) {
         return occupantEmails.remove(email);

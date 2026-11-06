@@ -35,6 +35,15 @@ public class UserRegistry implements UserDirectory {
         return usersByEmail.values().stream().filter(user -> user.getDni().equals(dni)).findFirst();
     }
 
+    /** Changes the email of a stored user, keeping the same user object. */
+    public void rename(String oldEmail, String newEmail) {
+        User user = usersByEmail.remove(oldEmail);
+        if (user != null) {
+            user.setEmail(newEmail);
+            usersByEmail.put(newEmail, user);
+        }
+    }
+
     public void remove(String email) {
         usersByEmail.remove(email);
     }

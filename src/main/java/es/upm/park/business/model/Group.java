@@ -40,6 +40,17 @@ public class Group {
         return memberEmails.add(email);
     }
 
+    /** Replaces a member's email keeping the member order (used when a user changes email). */
+    public void replaceMember(String oldEmail, String newEmail) {
+        if (!memberEmails.contains(oldEmail)) {
+            return;
+        }
+        java.util.List<String> order = new java.util.ArrayList<>(memberEmails);
+        order.set(order.indexOf(oldEmail), newEmail);
+        memberEmails.clear();
+        memberEmails.addAll(order);
+    }
+
     /** @return true if the user was removed, false if not a member */
     public boolean removeMember(String email) {
         return memberEmails.remove(email);

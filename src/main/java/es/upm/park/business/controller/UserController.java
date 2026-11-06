@@ -3,6 +3,7 @@ package es.upm.park.business.controller;
 import es.upm.park.business.exception.BusinessRuleException;
 import es.upm.park.business.exception.NotFoundException;
 import es.upm.park.business.model.User;
+import es.upm.park.business.model.UserField;
 import es.upm.park.business.security.PasswordService;
 import es.upm.park.business.validation.UserValidator;
 
@@ -68,17 +69,67 @@ public final class UserController {
      */
     public void deleteUser(String email, String rawPassword) {
         requireConfigured();
-        if (park == null) {
-            throw new IllegalStateException("UserController is not configured with a ParkController");
+        requirePark();
+        authenticate(email, rawPassword);
+        park.deleteUserReferences(email);
+        registry.remove(email);
+        save();
+    }
+
+    /**
+     * Changes one field of a user identified by email and password. The new value
+     * must satisfy the creation rules; the DNI cannot be changed. An email change
+     * moves the user's park records to the new email.
+     */
+    public void updateUser(String email, String rawPassword, UserField field, String value) {
+        requireConfigured();
+        User user = authenticate(email, rawPassword);
+        switch (field) {
+            case NAME -> {
+                UserValidator.requireText(value, "first name");
+                user.setFirstName(value);
+            }
+            case SURNAME -> {
+                UserValidator.requireText(value, "surnames");
+                user.setSurnames(value);
+            }
+            case PHONE -> {
+                UserValidator.requireText(value, "phone");
+                user.setPhone(value);
+            }
+            case CARD -> {
+                UserValidator.requireValidCard(value);
+                user.setCard(value);
+            }
+            case PASSWORD -> user.setPassword(passwords.protect(value));
+            case EMAIL -> changeEmail(email, value);
         }
+        save();
+    }
+
+    private void changeEmail(String oldEmail, String newEmail) {
+        UserValidator.requireValidEmail(newEmail);
+        if (registry.findByEmail(newEmail).isPresent()) {
+            throw new BusinessRuleException("A user with email " + newEmail + " already exists");
+        }
+        requirePark();
+        registry.rename(oldEmail, newEmail);
+        park.changeUserEmail(oldEmail, newEmail);
+    }
+
+    private User authenticate(String email, String rawPassword) {
         User user = registry.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("No registered user with email " + email));
         if (!passwords.verify(rawPassword, user.getPassword())) {
             throw new BusinessRuleException("Incorrect password for user " + email);
         }
-        park.deleteUserReferences(email);
-        registry.remove(email);
-        save();
+        return user;
+    }
+
+    private void requirePark() {
+        if (park == null) {
+            throw new IllegalStateException("UserController is not configured with a ParkController");
+        }
     }
 
     private void save() {

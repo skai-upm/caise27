@@ -75,6 +75,18 @@ class UserPersistenceTest {
     }
 
     @Test
+    void updatesArePersisted() throws IOException {
+        run(ANA + "\nUSER UPDATE;ana@correo.com;Clave1!;PHONE;699999999\n"
+                + "USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com\nEXIT\n");
+        String file = Files.readString(base.resolve("data").resolve("users.txt"));
+        assertTrue(file.contains("ana.nueva@correo.com") && file.contains("699999999"), file);
+        assertFalse(file.contains("ana@correo.com;"));
+        ParkControllerTestSupport.reset();
+        String out = run("USER UPDATE;ana.nueva@correo.com;Clave1!;NAME;Ana Maria\nEXIT\n");
+        assertTrue(out.contains("USER UPDATED"), out);
+    }
+
+    @Test
     void flyRunIsolatesUsers() throws IOException {
         run(ANA + "\nEXIT\n");
         String before = Files.readString(base.resolve("data").resolve("users.txt"));

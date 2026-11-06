@@ -477,6 +477,18 @@ public final class ParkController {
 
     // ---- users ---------------------------------------------------------------
 
+    /** Moves every park record of a user (groups, tickets, occupancy) to their new email. */
+    public void changeUserEmail(String oldEmail, String newEmail) {
+        groups.values().forEach(group -> group.replaceMember(oldEmail, newEmail));
+        tickets.values().stream()
+                .filter(IndividualTicket.class::isInstance)
+                .map(IndividualTicket.class::cast)
+                .filter(ticket -> ticket.getOwnerEmail().equals(oldEmail))
+                .forEach(ticket -> ticket.reassignOwner(newEmail));
+        attractions.values().forEach(attraction -> attraction.replaceOccupant(oldEmail, newEmail));
+        save();
+    }
+
     /**
      * Checks that a user can be deleted and, if so, removes them from every group.
      * Rejected when the user has an active ticket or belongs to a locked group;
