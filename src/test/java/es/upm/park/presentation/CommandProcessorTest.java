@@ -9,7 +9,7 @@ class CommandProcessorTest {
 
     private final CommandProcessor processor = new CommandProcessor();
 
-    private static final String[] DELIVERY_2_SYNTAX = {
+    private static final String[] MANDATED_SYNTAX = {
         "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
         "USER DELETE;<Email>;<Password>",
         "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
@@ -29,7 +29,16 @@ class CommandProcessorTest {
         "ATTRACTION LIST;<attraction>",
         "ATTRACTION STATUS;<attractionIdentifier>",
         "HELP",
-        "EXIT"
+        "EXIT",
+        "ATTRACTION CREATE;<identifier>;<name>;<capacity>;<type>",
+        "ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
+        "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>",
+        "SPEEDPASS DELETE;<speedPassIdentifier>",
+        "SPECIALPASS CREATE;<identifier>;<individualTicket>",
+        "SPECIALPASS DELETE;<specialPassIdentifier>",
+        "INVOICE CREATE;USER;<email>",
+        "INVOICE CREATE;GROUP;<groupIdentifier>",
+        "HELP EXTENDED"
     };
 
     @Test
@@ -37,7 +46,7 @@ class CommandProcessorTest {
         CommandResult result = processor.process("HELP");
         assertFalse(result.terminate());
         java.util.List<String> lines = java.util.List.of(result.output().split(System.lineSeparator()));
-        for (String syntax : DELIVERY_2_SYNTAX) {
+        for (String syntax : MANDATED_SYNTAX) {
             assertTrue(lines.contains(syntax), syntax);
         }
     }

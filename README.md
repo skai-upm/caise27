@@ -145,3 +145,21 @@ A user (`business.model.User`) has a first name, surnames, DNI, email, password 
 ## Passwords
 
 User passwords are never stored in plain text. `business.security.PasswordService` validates a new or changed password, protects it with BCrypt (salted, `$2a$...`) before it is stored, and verifies entered passwords against the stored value. The hashing algorithm and the validation policy are injected by `AppConfiguration`.
+
+## Delivery 3 example session
+
+```text
+SYSTEM DATE;2027-04-15
+ATTRACTION CREATE;A02;Montana Rusa Individual;12;INDIVIDUAL
+ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL
+TICKET CREATE;T001;ana@correo.com;2027-04-15
+SPEEDPASS CREATE;SP01;T001;10
+SPECIALPASS CREATE;PE01;T001
+ATTRACTION ENTER;A02;T001;SPEED
+ATTRACTION ENTER;A04;T001
+INVOICE CREATE;USER;ana@correo.com
+HELP EXTENDED
+EXIT
+```
+
+Run it with `java -jar target/amusement-park.jar --fly input_fase3.txt`. Ticket owners must be registered users.
