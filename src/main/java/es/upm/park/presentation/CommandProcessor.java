@@ -5,6 +5,10 @@ import es.upm.park.business.controller.ParkController;
 import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.ParkException;
 import es.upm.park.business.model.Attraction;
+import es.upm.park.presentation.help.CommandCatalog;
+import es.upm.park.presentation.help.ExtendedHelpFormatter;
+import es.upm.park.presentation.help.HelpGenerator;
+import es.upm.park.presentation.help.SyntaxHelpFormatter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,48 +25,30 @@ import java.util.function.Function;
  */
 public class CommandProcessor {
 
-    /** Command syntax shown by HELP, exactly as mandated for Delivery 2. */
-    static final String HELP_TEXT = String.join(System.lineSeparator(),
-            "Available commands:",
-            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
-            "USER DELETE;<Email>;<Password>",
-            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
-            "SYSTEM DATE;<yyyy-MM-dd>",
-            "SYSTEM PRICE;<Price>",
-            "GROUP CREATE;<Identifier>;<Name>",
-            "GROUP ADD;<Identifier>;<Email>",
-            "GROUP REMOVE;<Identifier>;<Email>",
-            "GROUP DELETE;<Identifier>",
-            "TICKET CREATE;<identifier>;<email>;<date>",
-            "TICKET DELETE;<identifier>",
-            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
-            "GROUPTICKET DELETE;<identifier>",
-            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
-            "ATTRACTION ENTER;<attraction>;<ticket>",
-            "ATTRACTION EXIT;<attraction>;<email>",
-            "ATTRACTION LIST;<attraction>",
-            "ATTRACTION STATUS;<attractionIdentifier>",
-            "INVOICE CREATE;USER;<email>",
-            "INVOICE CREATE;GROUP;<groupIdentifier>",
-            "HELP",
-            "EXIT");
-
     static final String EXIT_TEXT = "Exiting the application.";
 
     private final Map<String, Function<String[], CommandResult>> handlers = new LinkedHashMap<>();
     private final ParkController parkController;
     private final InvoiceController invoiceController;
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
 
-    /** Uses the execution's controller instances. */
+    /** Uses the execution's controller instances and the standard help formats. */
     public CommandProcessor() {
-        this(ParkController.getInstance(), InvoiceController.getInstance());
+        this(ParkController.getInstance(), InvoiceController.getInstance(),
+                new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter()),
+                new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter()));
     }
 
-    /** Uses the controllers injected by the application configuration. */
-    public CommandProcessor(ParkController parkController, InvoiceController invoiceController) {
+    /** Uses the controllers and help generators injected by the application configuration. */
+    public CommandProcessor(ParkController parkController, InvoiceController invoiceController,
+                            HelpGenerator help, HelpGenerator extendedHelp) {
         this.parkController = parkController;
         this.invoiceController = invoiceController;
-        handlers.put("HELP", args -> CommandResult.of(HELP_TEXT));
+        this.help = help;
+        this.extendedHelp = extendedHelp;
+        handlers.put("HELP", args -> CommandResult.of(help.generate()));
+        handlers.put("HELP EXTENDED", args -> CommandResult.of(extendedHelp.generate()));
         handlers.put("EXIT", args -> CommandResult.exit(EXIT_TEXT));
         handlers.put("SYSTEM DATE", this::systemDate);
         handlers.put("SYSTEM PRICE", this::systemPrice);
@@ -116,6 +102,11 @@ public class CommandProcessor {
                 }));
         handlers.put("ATTRACTION STATUS", args -> withArgs(args, 1, "ATTRACTION STATUS;<attractionIdentifier>",
                 a -> status(park().requireAttraction(a[0]))));
+    }
+
+    /** Keywords of the commands this processor can execute. */
+    java.util.Set<String> handledCommands() {
+        return java.util.Collections.unmodifiableSet(handlers.keySet());
     }
 
     public CommandResult process(String line) {

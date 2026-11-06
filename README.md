@@ -47,6 +47,7 @@ Blank lines are ignored. Unknown commands and commands that fail are reported wi
 General commands:
 
 - `HELP` lists the available commands and their syntax.
+- `HELP EXTENDED` lists every command with its syntax and a short explanation of its purpose. Help text is produced by a `HelpGenerator` with an injected `HelpFormatter`, so new help formats can be added without touching command processing.
 - `EXIT` ends the application. No command after `EXIT` is executed, including later lines of a command file.
 
 System commands (park-wide settings for the current execution):

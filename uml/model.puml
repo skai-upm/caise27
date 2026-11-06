@@ -190,9 +190,34 @@ package "es.upm.park.presentation" {
 
   CommandRunner --> "1" CommandProcessor
   CommandProcessor ..> CommandResult : creates
+  CommandProcessor --> "2" HelpGenerator : help, extendedHelp (injected)
   CommandProcessor --> "1" ParkController : injected
   CommandProcessor --> "1" InvoiceController : injected
   CommandProcessor ..> ParkException : reports
+}
+
+package "es.upm.park.presentation.help" {
+  class HelpGenerator {
+    - commands : List<CommandDescription>
+    - formatter : HelpFormatter
+  }
+  interface HelpFormatter {
+  }
+  class SyntaxHelpFormatter {
+  }
+  class ExtendedHelpFormatter {
+  }
+  class CommandDescription <<record>> {
+    syntax : String
+    purpose : String
+  }
+  class CommandCatalog <<utility>> {
+  }
+  HelpGenerator --> "1" HelpFormatter : formatter (injected)
+  HelpGenerator o--> "*" CommandDescription
+  SyntaxHelpFormatter ..|> HelpFormatter
+  ExtendedHelpFormatter ..|> HelpFormatter
+  CommandCatalog ..> CommandDescription : provides
 }
 
 package "es.upm.park" {
@@ -210,6 +235,7 @@ package "es.upm.park" {
   AppConfiguration ..> ParkController : injects storage
   AppConfiguration ..> InvoiceController : injects park
   AppConfiguration ..> CommandProcessor : creates
+  AppConfiguration ..> HelpGenerator : creates with formatter
 }
 
 class RuntimeException

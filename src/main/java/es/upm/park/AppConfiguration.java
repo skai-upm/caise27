@@ -8,6 +8,10 @@ import es.upm.park.persistence.StoragePaths;
 import es.upm.park.persistence.TextParkStorage;
 import es.upm.park.persistence.TicketRepository;
 import es.upm.park.presentation.CommandProcessor;
+import es.upm.park.presentation.help.CommandCatalog;
+import es.upm.park.presentation.help.ExtendedHelpFormatter;
+import es.upm.park.presentation.help.HelpGenerator;
+import es.upm.park.presentation.help.SyntaxHelpFormatter;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -39,6 +43,10 @@ public final class AppConfiguration {
         InvoiceController invoices = InvoiceController.getInstance();
         invoices.setParkController(park);
 
-        return new Configured(storage, groups, tickets, attractions, new CommandProcessor(park, invoices));
+        HelpGenerator help = new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter());
+        HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter());
+
+        return new Configured(storage, groups, tickets, attractions,
+                new CommandProcessor(park, invoices, help, extendedHelp));
     }
 }
