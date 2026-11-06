@@ -102,7 +102,18 @@ public final class App {
             process(processor, stdin, out, "standard input");
             return;
         }
-        try (BufferedReader file = Files.newBufferedReader(Path.of(commandFile), StandardCharsets.UTF_8)) {
+        Path commandPath;
+        try {
+            commandPath = Path.of(commandFile);
+        } catch (RuntimeException e) {
+            out.println("ERROR: Cannot read command file: " + commandFile);
+            return;
+        }
+        if (!Files.isRegularFile(commandPath) || !Files.isReadable(commandPath)) {
+            out.println("ERROR: Cannot read command file: " + commandFile);
+            return;
+        }
+        try (BufferedReader file = Files.newBufferedReader(commandPath, StandardCharsets.UTF_8)) {
             process(processor, file, out, commandFile);
         } catch (IOException | RuntimeException e) {
             out.println("ERROR: Cannot read command file: " + commandFile);
