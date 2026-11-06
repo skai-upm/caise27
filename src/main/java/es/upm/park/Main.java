@@ -71,6 +71,9 @@ public final class Main {
             if (result != null) {
                 out.println(result);
             }
+            if (processor.isExitRequested()) {
+                return;
+            }
         }
     }
 }

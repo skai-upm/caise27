@@ -1,7 +1,9 @@
 package es.upm.park.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import java.nio.file.Files;
@@ -105,5 +107,35 @@ class CommandProcessorTest {
         assertEquals("Error: USER UPDATE expects 4 fields", processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME"));
         assertEquals("Error: field DNI cannot be modified",
                 processor.process("USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X"));
+    }
+
+    @Test
+    void helpListsEveryCommandSyntax() {
+        processor.process(ANA);
+        String help = processor.process("HELP");
+        for (String syntax : new String[] {
+            "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
+            "USER DELETE;<email>;<password>",
+            "USER UPDATE;<email>;<password>;<field>;<value>",
+            "NAME, SURNAME, EMAIL, PASSWORD, PHONE, CARD",
+            "HELP", "EXIT"}) {
+            assertTrue(help.contains(syntax), syntax);
+        }
+        assertEquals(1, repo.findAll().size());
+        assertFalse(processor.isExitRequested());
+    }
+
+    @Test
+    void exitRequestsTermination() {
+        assertFalse(processor.isExitRequested());
+        assertEquals("Bye", processor.process("EXIT"));
+        assertTrue(processor.isExitRequested());
+    }
+
+    @Test
+    void helpAndExitRejectFields() {
+        assertEquals("Error: EXIT expects 0 fields", processor.process("EXIT;now"));
+        assertFalse(processor.isExitRequested());
+        assertEquals("Error: HELP expects 0 fields", processor.process("HELP;me"));
     }
 }

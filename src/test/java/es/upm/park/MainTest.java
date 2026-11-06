@@ -1,6 +1,7 @@
 package es.upm.park;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -119,5 +120,28 @@ class MainTest {
         assertEquals(Main.BANNER + "\nUser updated: 12345678Z PHONE", run("USER UPDATE;ana@correo.com;Clave1!;PHONE;699\n"));
         assertEquals("Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699;1234567890123456",
                 Files.readAllLines(usersFile).get(0));
+    }
+
+    @Test
+    void noCommandRunsAfterExitInFileMode() throws Exception {
+        Path commands = dir.resolve("exit.txt");
+        Files.write(commands, List.of(ANA, "EXIT",
+                "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654"));
+        assertEquals(Main.BANNER + "\nUser created: 12345678Z\nBye", run("", commands.toString()));
+        assertEquals(1, Files.readAllLines(usersFile).size());
+    }
+
+    @Test
+    void noCommandRunsAfterExitInInteractiveMode() {
+        assertEquals(Main.BANNER + "\nBye", run("EXIT\nHELP\n"));
+    }
+
+    @Test
+    void helpIsIdenticalInBothModes() throws Exception {
+        Path commands = dir.resolve("help.txt");
+        Files.write(commands, List.of("HELP"));
+        String fromStdin = run("HELP\n");
+        assertTrue(fromStdin.contains("USER DELETE;<email>;<password>"));
+        assertEquals(fromStdin, run("", commands.toString()));
     }
 }
