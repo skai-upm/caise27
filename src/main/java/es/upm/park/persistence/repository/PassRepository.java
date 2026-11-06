@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import es.upm.park.business.model.IndividualTicket;
+import es.upm.park.business.model.IndividualAccess;
 import es.upm.park.business.model.Pass;
 
 /**
@@ -31,7 +31,7 @@ public class PassRepository {
         return passes.stream().filter(p -> p.getId().equals(id)).findFirst();
     }
 
-    public List<Pass> findByTicket(IndividualTicket ticket) {
+    public List<Pass> findByTicket(IndividualAccess ticket) {
         return passes.stream().filter(p -> p.getTicket() == ticket).toList();
     }
 

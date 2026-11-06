@@ -47,10 +47,39 @@ package es.upm.park.business.model {
   class GroupDiscount <<utility>> {
   }
 
-  class Attraction {
+  interface Admission {
+  }
+
+  interface IndividualAccess {
+  }
+
+  interface GroupAccess {
+  }
+
+  abstract class Attraction<T extends Admission> {
     - id : String
     - name : String
     - capacity : int
+    - accepted : Class<T>
+  }
+
+  class GeneralAttraction {
+  }
+
+  class IndividualAttraction {
+  }
+
+  class GroupAttraction {
+  }
+
+  class SpecialAttraction {
+  }
+
+  enum AttractionType {
+    GENERAL
+    INDIVIDUAL
+    GROUP
+    SPECIAL
   }
 }
 
@@ -81,6 +110,21 @@ Ticket <|-- IndividualTicket
 Ticket <|-- GroupTicket
 GroupTicket *-- "1..*" IndividualTicket : composition
 GroupTicket ..> GroupDiscount : discount by size
+
+' --- ticket access capabilities and generic attractions (bound = accepted tickets)
+Admission <|.. Ticket
+IndividualAccess <|.. IndividualTicket
+GroupAccess <|.. GroupTicket
+Admission <|-- IndividualAccess
+Admission <|-- GroupAccess
+Attraction <|-- GeneralAttraction
+Attraction <|-- IndividualAttraction
+Attraction <|-- GroupAttraction
+IndividualAttraction <|-- SpecialAttraction
+GeneralAttraction ..> Admission : T = Admission
+IndividualAttraction ..> IndividualAccess : T = IndividualAccess
+GroupAttraction ..> GroupAccess : T = GroupAccess
+Attraction ..> AttractionType : type
 
 ' --- directed relationships among model elements (users hold no references)
 IndividualTicket --> "1" User : user

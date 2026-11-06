@@ -3,22 +3,47 @@ package es.upm.park.business.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A park attraction with a maximum capacity and the users currently inside.
- * Only the attraction references its occupants; users know nothing of it.
+ * The type parameter is the ticket capability the attraction accepts: only
+ * tickets implementing {@code T} are admissible, and the attraction works on
+ * them through {@code T}'s operations. Only the attraction references its
+ * occupants; users know nothing of it.
+ *
+ * @param <T> accepted ticket capability
  */
-public class Attraction {
+public abstract class Attraction<T extends Admission> {
 
     private final String id;
     private final String name;
     private final int capacity;
+    private final Class<T> accepted;
     private final List<User> occupants = new ArrayList<>();
 
-    public Attraction(String id, String name, int capacity) {
+    protected Attraction(String id, String name, int capacity, Class<T> accepted) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
+        this.accepted = accepted;
+    }
+
+    public abstract AttractionType getType();
+
+    /** The ticket as this attraction's capability, if it implements it. */
+    public Optional<T> admissible(Admission ticket) {
+        return accepted.isInstance(ticket) ? Optional.of(accepted.cast(ticket)) : Optional.empty();
+    }
+
+    /** Users that enter with the ticket. */
+    public List<User> holdersOf(T ticket) {
+        return ticket.holders();
+    }
+
+    /** Reason why the ticket cannot enter beyond type and capacity, if any. */
+    public Optional<String> missingRequirement(T ticket, PassLookup passes) {
+        return Optional.empty();
     }
 
     public String getId() {

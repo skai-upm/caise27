@@ -41,7 +41,7 @@ class ParkControllerAccessTest {
         assertEquals(message, e.getMessage());
     }
 
-    private Attraction attraction(String id) {
+    private Attraction<?> attraction(String id) {
         return park.getAttractionService().find(id);
     }
 

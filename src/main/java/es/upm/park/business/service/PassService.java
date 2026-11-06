@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+import es.upm.park.business.model.IndividualAccess;
 import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.model.Pass;
 import es.upm.park.business.model.SpecialPass;
@@ -92,7 +93,7 @@ public class PassService {
         }
     }
 
-    public List<Pass> passesOf(IndividualTicket ticket) {
+    public List<Pass> passesOf(IndividualAccess ticket) {
         return passes.findByTicket(ticket);
     }
 

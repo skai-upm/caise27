@@ -9,6 +9,7 @@ import java.util.function.Function;
 
 import es.upm.park.business.controller.Dates;
 import es.upm.park.business.controller.ParkController;
+import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.SpecialPass;
 import es.upm.park.business.model.SpeedPass;
 import es.upm.park.business.model.User;
@@ -29,7 +30,19 @@ public class CommandProcessor {
     static final String BYE = "Bye";
 
     /** A command handler: expected number of fields and the action on them. */
-    private record Command(int fields, Function<String[], String> action) {
+    private record Command(int minFields, int maxFields, Function<String[], String> action) {
+
+        Command(int fields, Function<String[], String> action) {
+            this(fields, fields, action);
+        }
+
+        boolean accepts(int fields) {
+            return fields >= minFields && fields <= maxFields;
+        }
+
+        String expected() {
+            return minFields == maxFields ? String.valueOf(minFields) : minFields + " to " + maxFields;
+        }
     }
 
     private final ParkController park;
@@ -66,7 +79,7 @@ public class CommandProcessor {
         commands.put("SPECIALPASS CREATE", new Command(2, this::buySpecialPass));
         commands.put("SPECIALPASS DELETE", new Command(1,
                 f -> "Special pass refunded: " + park.getPassService().refundSpecialPass(f[0]).getId()));
-        commands.put("ATTRACTION CREATE", new Command(3, this::createAttraction));
+        commands.put("ATTRACTION CREATE", new Command(3, 4, this::createAttraction));
         commands.put("ATTRACTION LIST", new Command(1, this::listAttraction));
         commands.put("ATTRACTION ENTER", new Command(2, this::enterAttraction));
         commands.put("ATTRACTION EXIT", new Command(2,
@@ -96,8 +109,8 @@ public class CommandProcessor {
         if (command == null) {
             return error("unknown command '" + name + "'");
         }
-        if (parts.length != command.fields() + 1) {
-            return error(name + " expects " + command.fields() + " fields");
+        if (!command.accepts(parts.length - 1)) {
+            return error(name + " expects " + command.expected() + " fields");
         }
         try {
             return command.action().apply(Arrays.copyOfRange(parts, 1, parts.length));
@@ -183,7 +196,10 @@ public class CommandProcessor {
     }
 
     private String createAttraction(String[] f) {
-        return "Attraction created: " + park.getAttractionService().create(f[0], f[1], f[2]).getId();
+        Attraction<?> attraction = f.length == 4
+                ? park.getAttractionService().create(f[0], f[1], f[2], f[3])
+                : park.getAttractionService().create(f[0], f[1], f[2]);
+        return "Attraction created: " + attraction.getId();
     }
 
     private String listAttraction(String[] f) {

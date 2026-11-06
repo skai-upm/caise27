@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import es.upm.park.business.model.AttractionType;
 import es.upm.park.business.model.UserField;
 
 /**
@@ -36,7 +37,10 @@ public final class CommandCatalog {
             CommandInfo.of("SPECIALPASS CREATE;<id>;<ticket>",
                     "Buys the single Special Pass of an individual ticket, at the ticket's price."),
             CommandInfo.of("SPECIALPASS DELETE;<id>", "Refunds an unconsumed Special Pass of a ticket dated after today."),
-            CommandInfo.of("ATTRACTION CREATE;<id>;<name>;<capacity>", "Creates an attraction with a maximum capacity."),
+            CommandInfo.of("ATTRACTION CREATE;<id>;<name>;<capacity>[;<type>]",
+                    "Creates an attraction with a maximum capacity and access type.",
+                    "<type>: " + Arrays.stream(AttractionType.values()).map(Enum::name)
+                            .collect(Collectors.joining(", ")) + " (default GENERAL)"),
             CommandInfo.of("ATTRACTION LIST;<id>", "Lists the emails of the users inside an attraction."),
             CommandInfo.of("ATTRACTION ENTER;<attraction>;<ticket>",
                     "Lets the users of a ticket valid today into an attraction, all or none."),

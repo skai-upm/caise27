@@ -33,7 +33,7 @@ class AttractionServiceTest {
 
     @Test
     void createsAndListsAttractions() {
-        Attraction a = service.create("A01", "Dragon Rojo", "20");
+        Attraction<?> a = service.create("A01", "Dragon Rojo", "20");
         assertEquals(20, a.getCapacity());
         assertTrue(service.occupantEmails("A01").isEmpty());
         a.enter(new User("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456"));

@@ -5,14 +5,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.AttractionType;
 
 /**
- * Stores attractions as {@code id;name;capacity} lines. Occupants are not
- * stored: attractions always start empty.
+ * Stores attractions as {@code id;name;capacity;type} lines (Delivery 2
+ * lines without type load as GENERAL). Occupants are not stored:
+ * attractions always start empty.
  */
 public class AttractionFileStore {
 
-    private static final int FIELDS = 3;
+    private static final int LEGACY_FIELDS = 3;
+    private static final int FIELDS = 4;
 
     private final Path file;
 
@@ -20,21 +23,24 @@ public class AttractionFileStore {
         this.file = file;
     }
 
-    public List<Attraction> load() {
-        List<Attraction> attractions = new ArrayList<>();
+    public List<Attraction<?>> load() {
+        List<Attraction<?>> attractions = new ArrayList<>();
         for (String line : TextFile.read(file)) {
             String[] f = TextFile.fields(line);
-            if (f.length == FIELDS && !f[0].isEmpty() && isPositiveNumber(f[2])) {
-                attractions.add(new Attraction(f[0], f[1], Integer.parseInt(f[2])));
+            boolean shape = (f.length == LEGACY_FIELDS || f.length == FIELDS) && !f[0].isEmpty();
+            AttractionType type = f.length == FIELDS ? AttractionType.fromName(f[3]) : AttractionType.GENERAL;
+            if (shape && type != null && isPositiveNumber(f[2])) {
+                attractions.add(type.create(f[0], f[1], Integer.parseInt(f[2])));
             }
         }
         return attractions;
     }
 
-    public void save(List<Attraction> attractions) {
+    public void save(List<Attraction<?>> attractions) {
         List<String> lines = new ArrayList<>();
-        for (Attraction a : attractions) {
-            lines.add(String.join(TextFile.SEPARATOR, a.getId(), a.getName(), String.valueOf(a.getCapacity())));
+        for (Attraction<?> a : attractions) {
+            lines.add(String.join(TextFile.SEPARATOR, a.getId(), a.getName(), String.valueOf(a.getCapacity()),
+                    a.getType().name()));
         }
         TextFile.write(file, lines);
     }

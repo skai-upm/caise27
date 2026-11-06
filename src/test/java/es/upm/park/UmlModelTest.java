@@ -72,21 +72,38 @@ class UmlModelTest {
                 Class<?> c = type(firstWordAfter(line, "class"));
                 assertFalse(c.isEnum() || c.isInterface() || Modifier.isAbstract(c.getModifiers()), line);
                 checked++;
+            } else if (line.startsWith("interface ")) {
+                assertTrue(type(firstWordAfter(line, "interface")).isInterface(), line);
+                checked++;
             } else if (line.startsWith("enum ")) {
                 assertTrue(type(firstWordAfter(line, "enum")).isEnum(), line);
                 checked++;
             }
         }
-        assertEquals(17, checked, "classes checked");
+        assertEquals(25, checked, "classes checked");
     }
 
     @Test
     void inheritanceMatches() {
         List<String> edges = lines.stream().filter(l -> l.contains("<|--")).toList();
-        assertEquals(2, edges.size());
+        assertTrue(edges.size() >= 7, "inheritance edges: " + edges.size());
         for (String edge : edges) {
             String[] parts = edge.split("<\\|--");
-            assertEquals(type(parts[0].trim()), type(parts[1].trim()).getSuperclass(), edge);
+            Class<?> parent = type(parts[0].trim());
+            Class<?> child = type(parts[1].trim());
+            if (child.isInterface()) {
+                assertTrue(List.of(child.getInterfaces()).contains(parent), edge);
+            } else {
+                assertEquals(parent, child.getSuperclass(), edge);
+            }
+        }
+        List<String> realizations = lines.stream().filter(l -> l.contains("<|..")).toList();
+        assertEquals(3, realizations.size());
+        for (String edge : realizations) {
+            String[] parts = edge.split("<\\|\\.\\.");
+            Class<?> contract = type(parts[0].trim());
+            assertTrue(contract.isInterface(), edge);
+            assertTrue(List.of(type(parts[1].trim()).getInterfaces()).contains(contract), edge);
         }
     }
 
@@ -132,7 +149,8 @@ class UmlModelTest {
 
     private static Class<?> elementType(Type type) {
         if (type instanceof ParameterizedType p) {
-            return (Class<?>) p.getActualTypeArguments()[0];
+            Type argument = p.getActualTypeArguments()[0];
+            return (Class<?>) (argument instanceof ParameterizedType nested ? nested.getRawType() : argument);
         }
         return (Class<?>) type;
     }

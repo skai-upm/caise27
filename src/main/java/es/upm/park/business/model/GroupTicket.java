@@ -11,7 +11,7 @@ import java.util.Optional;
  * time, with identifier {@code <groupTicketId>:<dni>}. The composition never
  * changes; the group reference is cleared if the group is deleted.
  */
-public class GroupTicket extends Ticket {
+public class GroupTicket extends Ticket implements GroupAccess {
 
     private Group group;
     private final String groupId;

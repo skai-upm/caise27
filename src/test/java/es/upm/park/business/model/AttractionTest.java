@@ -16,7 +16,7 @@ class AttractionTest {
 
     @Test
     void newAttractionExposesDataAndIsEmpty() {
-        Attraction a = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> a = new GeneralAttraction("A01", "Dragon Rojo", 20);
         assertEquals("A01", a.getId());
         assertEquals("Dragon Rojo", a.getName());
         assertEquals(20, a.getCapacity());
@@ -26,7 +26,7 @@ class AttractionTest {
 
     @Test
     void occupantsRespectCapacityAndUniqueness() {
-        Attraction a = new Attraction("A01", "X", 1);
+        Attraction<?> a = new GeneralAttraction("A01", "X", 1);
         assertTrue(a.enter(ana));
         assertFalse(a.enter(ana));
         assertTrue(a.isFull());

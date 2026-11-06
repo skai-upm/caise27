@@ -10,7 +10,7 @@ import java.util.List;
  * a date of use and a price obtained from a base price and a discount.
  * Whether a ticket is active is derived from its date and the current date.
  */
-public abstract class Ticket {
+public abstract class Ticket implements Admission {
 
     private final String id;
     private final LocalDate date;

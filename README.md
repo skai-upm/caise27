@@ -40,7 +40,7 @@ SPEEDPASS CREATE;<purchase>;<ticket>;<quantity>
 SPEEDPASS DELETE;<pass>
 SPECIALPASS CREATE;<id>;<ticket>
 SPECIALPASS DELETE;<id>
-ATTRACTION CREATE;<id>;<name>;<capacity>
+ATTRACTION CREATE;<id>;<name>;<capacity>[;<type>]   (type: GENERAL, INDIVIDUAL, GROUP, SPECIAL; default GENERAL)
 ATTRACTION LIST;<id>
 ATTRACTION ENTER;<attraction>;<ticket>
 ATTRACTION EXIT;<attraction>;<email>

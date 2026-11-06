@@ -14,7 +14,7 @@ import es.upm.park.persistence.AttractionFileStore;
  */
 public class AttractionRepository {
 
-    private final List<Attraction> attractions = new ArrayList<>();
+    private final List<Attraction<?>> attractions = new ArrayList<>();
     private final AttractionFileStore store;
 
     public AttractionRepository() {
@@ -27,8 +27,8 @@ public class AttractionRepository {
     }
 
     /** Adds an attraction, writing the file first when persistent. */
-    public void add(Attraction attraction) {
-        List<Attraction> snapshot = new ArrayList<>(attractions);
+    public void add(Attraction<?> attraction) {
+        List<Attraction<?>> snapshot = new ArrayList<>(attractions);
         snapshot.add(attraction);
         if (store != null) {
             store.save(snapshot);
@@ -36,11 +36,11 @@ public class AttractionRepository {
         attractions.add(attraction);
     }
 
-    public Optional<Attraction> findById(String id) {
+    public Optional<Attraction<?>> findById(String id) {
         return attractions.stream().filter(a -> a.getId().equals(id)).findFirst();
     }
 
-    public List<Attraction> findAll() {
+    public List<Attraction<?>> findAll() {
         return Collections.unmodifiableList(attractions);
     }
 }

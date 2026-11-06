@@ -317,4 +317,15 @@ class CommandProcessorTest {
         assertEquals("Error: no speed pass SP01:1", processor.process("SPEEDPASS DELETE;SP01:1"));
         assertTrue(processor.process("HELP").contains("SPECIALPASS CREATE;<id>;<ticket>"));
     }
+
+    @Test
+    void attractionCreateWithOptionalType() {
+        assertEquals("Attraction created: A01", processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20"));
+        assertEquals("Attraction created: A04", processor.process("ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL"));
+        assertEquals("Error: invalid attraction type VIP", processor.process("ATTRACTION CREATE;A05;X;10;VIP"));
+        assertEquals("Error: ATTRACTION CREATE expects 3 to 4 fields", processor.process("ATTRACTION CREATE;A06;X"));
+        assertEquals(es.upm.park.business.model.AttractionType.GENERAL,
+                ParkController.getInstance().getAttractionService().find("A01").getType());
+        assertTrue(processor.process("HELP").contains("ATTRACTION CREATE;<id>;<name>;<capacity>[;<type>]"));
+    }
 }

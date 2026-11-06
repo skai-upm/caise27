@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.GeneralAttraction;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
@@ -49,14 +50,14 @@ class ParkFileStoresTest {
 
     @Test
     void attractionsRoundTripWithoutOccupants() throws Exception {
-        Attraction a = new Attraction("A01", "Dragon Rojo", 20);
+        Attraction<?> a = new GeneralAttraction("A01", "Dragon Rojo", 20);
         a.enter(ana);
         Path file = dir.resolve("attractions.txt");
         AttractionFileStore store = new AttractionFileStore(file);
         store.save(List.of(a));
-        assertEquals(List.of("A01;Dragon Rojo;20"), Files.readAllLines(file));
+        assertEquals(List.of("A01;Dragon Rojo;20;GENERAL"), Files.readAllLines(file));
         Files.write(file, List.of("A01;Dragon Rojo;20", "bad;line", "A02;X;0", "A03;Y;abc"));
-        List<Attraction> loaded = store.load();
+        List<Attraction<?>> loaded = store.load();
         assertEquals(1, loaded.size());
         assertEquals(20, loaded.get(0).getCapacity());
         assertTrue(loaded.get(0).getOccupants().isEmpty());
