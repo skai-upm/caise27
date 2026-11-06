@@ -82,4 +82,20 @@ class UmlModelConsistencyTest {
             assertTrue(diagram.contains("package \"" + pkg + "\""), pkg);
         }
     }
+
+    @Test
+    void diagramRepresentsDelivery3Design() throws IOException {
+        String diagram = Files.readString(UML, StandardCharsets.UTF_8);
+        for (String element : new String[] {
+                "interface AccessTicket", "interface IndividualAccess", "interface GroupAccess",
+                "abstract class Attraction<T extends AccessTicket>",
+                "Attraction <|-- GeneralAttraction", "Attraction <|-- IndividualAttraction",
+                "Attraction <|-- GroupAttraction", "IndividualAttraction <|-- SpecialAttraction",
+                "SpeedPass \"0..*\" --> \"1\" IndividualTicket", "SpecialPass \"0..1\" --> \"1\" IndividualTicket",
+                "abstract class InvoiceBuilder<B>", "InvoiceBuilder <|-- UserInvoiceBuilder",
+                "InvoiceBuilder <|-- GroupInvoiceBuilder", "class ParkController <<singleton>>",
+                "class InvoiceController <<singleton>>", "(injected)"}) {
+            assertTrue(diagram.contains(element), element);
+        }
+    }
 }

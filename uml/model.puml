@@ -1,5 +1,5 @@
 @startuml model
-title Amusement Park - class model (layered)
+title Amusement Park - class model (Delivery 3)
 hide empty methods
 skinparam classAttributeIconSize 0
 
@@ -86,7 +86,8 @@ package "es.upm.park.business.model" {
   }
   Pass <|-- SpeedPass
   Pass <|-- SpecialPass
-  Pass --> "1" IndividualTicket : ticket
+  SpeedPass "0..*" --> "1" IndividualTicket : ticket
+  SpecialPass "0..1" --> "1" IndividualTicket : ticket
 
   Ticket <|-- IndividualTicket
   Ticket <|-- GroupTicket
