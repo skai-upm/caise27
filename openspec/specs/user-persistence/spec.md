@@ -20,7 +20,7 @@ Users SHALL be stored in a text file with one user per line and the attributes s
 - **THEN** the file content is unchanged
 
 ### Requirement: Users loaded at start-up
-When the application starts it SHALL load every stored user from the user file, mapping each attribute to its field by position; if the file does not exist the application MUST start with no users and without error.
+When the application starts it SHALL load every stored user from the user file, mapping each attribute to its field by position; if the file does not exist the application MUST start with no users and without error. If the user file exists but cannot be read, the application MUST print an error message and end normally without processing commands and without modifying the file.
 
 #### Scenario: Users recovered after restart
 - **GIVEN** users were created in a previous run
@@ -41,6 +41,11 @@ When the application starts it SHALL load every stored user from the user file, 
 - **GIVEN** a user file containing a valid line and a line without exactly seven `;`-separated fields
 - **WHEN** the users are loaded
 - **THEN** the valid user is loaded, the malformed line is skipped, and the application still starts
+
+#### Scenario: Unreadable user file
+- **GIVEN** the user file path exists but cannot be read (for example, it is a directory)
+- **WHEN** the application starts with commands on its input
+- **THEN** an error message about loading users is printed, no command is processed, no stack trace is shown, and the process ends normally
 
 ### Requirement: Persistence kept apart from user and entry point
 Reading and writing the user file SHALL be implemented in a component separate from the user representation and the application entry point, without databases, persistence frameworks or external libraries.

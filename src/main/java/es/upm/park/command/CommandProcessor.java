@@ -69,6 +69,8 @@ public class CommandProcessor {
             return error("unknown command '" + name + "'");
         } catch (UserException | PersistenceException e) {
             return error(e.getMessage());
+        } catch (RuntimeException e) {
+            return error("command could not be processed");
         }
     }
 

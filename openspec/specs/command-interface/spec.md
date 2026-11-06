@@ -28,7 +28,7 @@ A command line SHALL consist of the command name followed by its fields, all sep
 - **THEN** the command `USER CREATE` is executed with the seven fields `Ana`, `Garcia Lopez`, `12345678Z`, `ana@correo.com`, `Clave1!`, `612345678`, `1234567890123456`
 
 ### Requirement: Incorrect commands do not terminate the application
-An unknown command or a command with the wrong number of fields SHALL produce an error message and MUST NOT terminate the application nor change any stored data; processing continues with the next line.
+An unknown command, a command with the wrong number of fields, or a line whose processing fails unexpectedly SHALL produce an error message and MUST NOT terminate the application nor change any stored data; processing continues with the next line.
 
 #### Scenario: Unknown command
 - **GIVEN** the line `FOO BAR;1`
@@ -39,6 +39,11 @@ An unknown command or a command with the wrong number of fields SHALL produce an
 - **GIVEN** the line `USER CREATE;Ana;Garcia Lopez`
 - **WHEN** it is processed
 - **THEN** an error message reporting the wrong number of fields is printed and no user is added
+
+#### Scenario: Unexpected processing failure
+- **GIVEN** a line whose processing raises an unexpected internal error
+- **WHEN** it is processed
+- **THEN** an error message is printed and the next line is still processed
 
 ### Requirement: Command file input
 When started with a first argument, the application SHALL treat it as the path of a text file with one command per line, process the commands in the order they appear, ignore blank lines and not read standard input.

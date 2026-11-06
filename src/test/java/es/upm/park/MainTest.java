@@ -144,4 +144,64 @@ class MainTest {
         assertTrue(fromStdin.contains("USER DELETE;<email>;<password>"));
         assertEquals(fromStdin, run("", commands.toString()));
     }
+
+    private static final List<String> SECTION_16 = List.of(
+            ANA,
+            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654",
+            "USER UPDATE;ana@correo.com;Clave1!;PHONE;699999999",
+            "USER UPDATE;ana@correo.com;Clave1!;EMAIL;ana.nueva@correo.com",
+            "USER DELETE;pedro@correo.com;Otra2#",
+            "HELP",
+            "EXIT");
+
+    @Test
+    void deliveryOneSequenceIsEquivalentInBothModes() throws Exception {
+        Path input = dir.resolve("input.txt");
+        Files.write(input, SECTION_16);
+        String fromFile = run("", input.toString());
+        List<String> storedFromFile = Files.readAllLines(usersFile);
+        assertEquals(List.of("Ana;Garcia Lopez;12345678Z;ana.nueva@correo.com;Clave1!;699999999;1234567890123456"),
+                storedFromFile);
+        assertTrue(fromFile.contains("User created: 87654321X\nUser updated: 12345678Z PHONE\n"
+                + "User updated: 12345678Z EMAIL\nUser deleted: pedro@correo.com\nAvailable commands:"));
+        assertTrue(fromFile.endsWith("EXIT\nBye"));
+        Files.delete(usersFile);
+        assertEquals(fromFile, run(String.join("\n", SECTION_16) + "\n"));
+        assertEquals(storedFromFile, Files.readAllLines(usersFile));
+    }
+
+    @Test
+    void incorrectLinesAreReportedAndValidOnesApplied() throws Exception {
+        Path input = dir.resolve("mixed.txt");
+        Files.write(input, List.of(
+                "USER CREATE;Ana;Garcia Lopez;12345678A;ana@correo.com;Clave1!;612345678;1234567890123456",
+                ANA,
+                ANA,
+                "USER DELETE;ana@correo.com;wrong",
+                "USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X",
+                "NOPE",
+                ";;;",
+                "USER UPDATE;ana@correo.com;Clave1!;PHONE",
+                "USER UPDATE;ana@correo.com;Clave1!;PHONE;611"));
+        String out = run("", input.toString());
+        assertEquals(String.join("\n", Main.BANNER,
+                "Error: invalid DNI",
+                "User created: 12345678Z",
+                "Error: a user with DNI 12345678Z already exists",
+                "Error: incorrect password",
+                "Error: field DNI cannot be modified",
+                "Error: unknown command 'NOPE'",
+                "Error: unknown command ''",
+                "Error: USER UPDATE expects 4 fields",
+                "User updated: 12345678Z PHONE"), out);
+        assertEquals("611", Files.readAllLines(usersFile).get(0).split(";")[5]);
+    }
+
+    @Test
+    void unreadableUsersFileStopsInAControlledWay() throws Exception {
+        Files.createDirectory(usersFile);
+        String out = run(ANA + "\n");
+        assertEquals(Main.BANNER + "\nError: cannot load users: cannot read " + usersFile, out);
+        assertTrue(Files.isDirectory(usersFile));
+    }
 }

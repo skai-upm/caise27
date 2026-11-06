@@ -138,4 +138,17 @@ class CommandProcessorTest {
         assertFalse(processor.isExitRequested());
         assertEquals("Error: HELP expects 0 fields", processor.process("HELP;me"));
     }
+
+    @Test
+    void unexpectedFailureBecomesErrorMessage() {
+        UserService failing = new UserService(repo) {
+            @Override
+            public es.upm.park.model.User delete(String email, String password) {
+                throw new IllegalStateException("boom");
+            }
+        };
+        CommandProcessor p = new CommandProcessor(failing);
+        assertEquals("Error: command could not be processed", p.process("USER DELETE;a@b.com;x"));
+        assertEquals("User created: 12345678Z", p.process(ANA));
+    }
 }
