@@ -40,9 +40,11 @@ SPEEDPASS CREATE;<purchase>;<ticket>;<quantity>
 SPEEDPASS DELETE;<pass>
 SPECIALPASS CREATE;<id>;<ticket>
 SPECIALPASS DELETE;<id>
-ATTRACTION CREATE;<id>;<name>;<capacity>[;<type>]   (type: GENERAL, INDIVIDUAL, GROUP, SPECIAL; default GENERAL)
+ATTRACTION CREATE;<id>;<name>;<capacity>
+ATTRACTION CREATE;<id>;<name>;<capacity>;<type>   (type: GENERAL, INDIVIDUAL, GROUP, SPECIAL)
 ATTRACTION LIST;<id>
-ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]
+ATTRACTION ENTER;<attraction>;<ticket>
+ATTRACTION ENTER;<attraction>;<ticket>;SPEED
 ATTRACTION EXIT;<attraction>;<email>
 ATTRACTION STATUS;<id>
 INVOICE CREATE;USER;<email>
@@ -59,3 +61,9 @@ Incorrect commands print an `Error: ...` message and processing continues; `EXIT
 ## Design
 
 The class model is documented in [`uml/model.puml`](uml/model.puml) (PlantUML).
+
+- Layers: `presentation` (entry point, command processing, help), `business` (model, invoice builder, controllers), `persistence` (text-file stores, repositories).
+- Controllers are singletons; repositories are created at start-up (`ParkRepositories`, normal or `--fly` directory) and injected.
+- Passwords are stored as BCrypt hashes (jBCrypt, bundled into the JAR).
+- Attractions are generic over ticket access interfaces (`GENERAL`, `INDIVIDUAL`, `GROUP`, `SPECIAL`).
+- Data files: `users.txt`, `groups.txt`, `tickets.txt`, `attractions.txt`, `passes.txt`.

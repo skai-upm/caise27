@@ -358,4 +358,82 @@ class MainTest {
         assertEquals(permanent, Files.readString(dir.resolve("passes.txt")));
         assertTrue(tmpIsEmpty());
     }
+
+    private static final List<String> DELIVERY_3 = List.of(
+            ANA, PEDRO,
+            "USER CREATE;Luis;Martin;00000000T;luis@correo.com;Clave1!;600000000;1111222233334444",
+            "SYSTEM DATE;2027-04-15",
+            "ATTRACTION CREATE;A01;Dragon Rojo;20;GENERAL",
+            "ATTRACTION CREATE;A02;Montana Rusa Individual;12;INDIVIDUAL",
+            "ATTRACTION CREATE;A03;Rafting Familiar;24;GROUP",
+            "ATTRACTION CREATE;A04;Pasaje del Terror;15;SPECIAL",
+            "ATTRACTION CREATE;A05;Clasica;10",
+            "GROUP CREATE;G01;Familia Garcia",
+            "GROUP ADD;G01;ana@correo.com",
+            "GROUP ADD;G01;pedro@correo.com",
+            "GROUP ADD;G01;luis@correo.com",
+            "TICKET CREATE;T001;ana@correo.com;2027-04-15",
+            "TICKET CREATE;T002;pedro@correo.com;2027-04-20",
+            "GROUPTICKET CREATE;TG01;G01;2027-04-15",
+            "SPEEDPASS CREATE;SP01;T001;10",
+            "SPECIALPASS CREATE;PE01;T001",
+            "SPECIALPASS CREATE;PE02;T001",
+            "SPEEDPASS CREATE;SPA;TG01:12345678Z;1",
+            "SPEEDPASS CREATE;SPB;TG01:87654321X;1",
+            "ATTRACTION ENTER;A03;TG01;SPEED",
+            "SPEEDPASS CREATE;SPC;TG01:00000000T;1",
+            "ATTRACTION ENTER;A03;TG01;SPEED",
+            "ATTRACTION ENTER;A02;TG01",
+            "ATTRACTION ENTER;A02;T001;SPEED",
+            "ATTRACTION ENTER;A04;T001;SPEED",
+            "ATTRACTION ENTER;A04;T001",
+            "ATTRACTION STATUS;A04",
+            "SPEEDPASS DELETE;SP01:1",
+            "SPECIALPASS CREATE;PE03;T002",
+            "SPECIALPASS DELETE;PE03",
+            "TICKET DELETE;T002",
+            "INVOICE CREATE;USER;ana@correo.com",
+            "INVOICE CREATE;GROUP;G01",
+            "USER UPDATE;ana@correo.com;Clave1!;PASSWORD;Nueva2#",
+            "USER DELETE;ana@correo.com;Clave1!",
+            "HELP EXTENDED",
+            "EXIT");
+
+    @Test
+    void deliveryThreeFileGivesSameResultsWithAndWithoutFly() throws Exception {
+        Path input = dir.resolve("input_fase3.txt");
+        Files.write(input, DELIVERY_3);
+        String fly = run("", "--fly", input.toString());
+        assertTrue(tmpIsEmpty());
+        assertTrue(Files.notExists(dir.resolve("passes.txt")));
+        String normal = run("", input.toString());
+        assertEquals(fly, normal);
+        for (String expected : new String[] {
+            "Attraction created: A05",
+            "Group ticket created: TG01 total 108.00",
+            "SpeedPasses created: SP01:1..SP01:10 total 80.00",
+            "Special pass created: PE01 price 40.00",
+            "Error: ticket T001 already has a special pass",
+            "Error: ticket TG01:00000000T has no unconsumed SpeedPass",
+            "Entered A03: ana@correo.com, pedro@correo.com, luis@correo.com; consumed SPA:1, SPB:1, SPC:1",
+            "Error: attraction A02 (INDIVIDUAL) does not accept ticket TG01",
+            "Entered A02: ana@correo.com; consumed SP01:1",
+            "Error: attraction A04 (SPECIAL) does not accept SpeedPasses",
+            "Entered A04: ana@correo.com; consumed PE01",
+            "Users: ana@correo.com",
+            "Error: speed pass SP01:1 has been consumed",
+            "Special pass refunded: PE03",
+            "Ticket deleted: T002",
+            "Special pass PE01 (ticket T001)  40.00",
+            "Group ticket TG01 (2027-04-15, 3 members)  108.00",
+            "User updated: 12345678Z PASSWORD",
+            "Error: incorrect password",
+            "  ATTRACTION ENTER;<attraction>;<ticket>;SPEED",
+            "  HELP EXTENDED"}) {
+            assertTrue(normal.contains(expected), expected);
+        }
+        assertTrue(normal.endsWith("Bye"));
+        assertTrue(Files.readString(dir.resolve("passes.txt")).contains("SPECIAL;PE01;T001;40.00;true"));
+        assertTrue(Files.readString(dir.resolve("attractions.txt")).contains("A04;Pasaje del Terror;15;SPECIAL"));
+    }
 }

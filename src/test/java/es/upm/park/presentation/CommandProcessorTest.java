@@ -326,7 +326,7 @@ class CommandProcessorTest {
         assertEquals("Error: ATTRACTION CREATE expects 3 to 4 fields", processor.process("ATTRACTION CREATE;A06;X"));
         assertEquals(es.upm.park.business.model.AttractionType.GENERAL,
                 ParkController.getInstance().getAttractionService().find("A01").getType());
-        assertTrue(processor.process("HELP").contains("ATTRACTION CREATE;<id>;<name>;<capacity>[;<type>]"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION CREATE;<id>;<name>;<capacity>;<type>"));
     }
 
     @Test
@@ -342,6 +342,6 @@ class CommandProcessorTest {
         assertEquals("Entered A01: ana@correo.com; consumed SP01:1", processor.process("ATTRACTION ENTER;A01;T001;SPEED"));
         assertEquals("Entered A04: ana@correo.com; consumed PE01", processor.process("ATTRACTION ENTER;A04;T001"));
         assertEquals("Error: ATTRACTION ENTER expects 2 to 3 fields", processor.process("ATTRACTION ENTER;A01"));
-        assertTrue(processor.process("HELP").contains("ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION ENTER;<attraction>;<ticket>;SPEED"));
     }
 }
