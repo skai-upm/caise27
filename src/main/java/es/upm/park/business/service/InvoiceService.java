@@ -5,9 +5,13 @@ import es.upm.park.business.invoice.InvoiceBuilder;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
+import es.upm.park.business.model.Pass;
+import es.upm.park.business.model.SpecialPass;
+import es.upm.park.business.model.SpeedPass;
 import es.upm.park.business.model.Ticket;
 import es.upm.park.business.model.User;
 import es.upm.park.persistence.repository.GroupRepository;
+import es.upm.park.persistence.repository.PassRepository;
 import es.upm.park.persistence.repository.TicketRepository;
 import es.upm.park.persistence.repository.UserRepository;
 
@@ -19,6 +23,8 @@ public class InvoiceService {
 
     static final String TICKETS_SECTION = "Individual tickets";
     static final String GROUP_TICKETS_SECTION = "Group tickets";
+    static final String SPEED_PASSES_SECTION = "SpeedPasses";
+    static final String SPECIAL_PASSES_SECTION = "Special passes";
 
     private static final InvoiceService INSTANCE = new InvoiceService();
 
@@ -26,6 +32,7 @@ public class InvoiceService {
     private GroupRepository groups;
     private TicketRepository tickets;
     private InvoiceBuilder builder;
+    private PassRepository passes = new PassRepository();
 
     private InvoiceService() {
     }
@@ -49,6 +56,16 @@ public class InvoiceService {
         return this;
     }
 
+    /**
+     * Injects the passes so user invoices can include them.
+     *
+     * @return this controller
+     */
+    public InvoiceService withPasses(PassRepository passRepository) {
+        this.passes = passRepository;
+        return this;
+    }
+
     /** Invoice of an active user: direct individual tickets (no group constituents). */
     public Invoice userInvoice(String email) {
         User user = users.findByEmail(email).orElseThrow(() -> new UserException("no user with email " + email));
@@ -62,6 +79,8 @@ public class InvoiceService {
                 builder.item("Ticket " + i.getId() + " (" + i.getDate() + ")", i.getPrice());
             }
         }
+        addPasses(user, SpeedPass.class, SPEED_PASSES_SECTION, "SpeedPass ");
+        addPasses(user, SpecialPass.class, SPECIAL_PASSES_SECTION, "Special pass ");
         return builder.build();
     }
 
@@ -81,5 +100,14 @@ public class InvoiceService {
             }
         }
         return builder.build();
+    }
+
+    private void addPasses(User user, Class<? extends Pass> type, String section, String label) {
+        builder.section(section);
+        for (Pass p : passes.findAll()) {
+            if (type.isInstance(p) && p.getTicket().involves(user)) {
+                builder.item(label + p.getId() + " (ticket " + p.getTicket().getId() + ")", p.getPrice());
+            }
+        }
     }
 }

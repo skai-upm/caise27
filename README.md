@@ -36,6 +36,10 @@ TICKET CREATE;<id>;<email>;<yyyy-MM-dd>
 TICKET DELETE;<id>
 GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>
 GROUPTICKET DELETE;<id>
+SPEEDPASS CREATE;<purchase>;<ticket>;<quantity>
+SPEEDPASS DELETE;<pass>
+SPECIALPASS CREATE;<id>;<ticket>
+SPECIALPASS DELETE;<id>
 ATTRACTION CREATE;<id>;<name>;<capacity>
 ATTRACTION LIST;<id>
 ATTRACTION ENTER;<attraction>;<ticket>

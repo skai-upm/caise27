@@ -9,7 +9,10 @@ import java.util.function.Function;
 
 import es.upm.park.business.controller.Dates;
 import es.upm.park.business.controller.ParkController;
+import es.upm.park.business.model.SpecialPass;
+import es.upm.park.business.model.SpeedPass;
 import es.upm.park.business.model.User;
+import es.upm.park.business.service.PassService;
 import es.upm.park.persistence.PersistenceException;
 import es.upm.park.presentation.help.CommandCatalog;
 import es.upm.park.presentation.help.ExtendedHelpFormatter;
@@ -57,6 +60,12 @@ public class CommandProcessor {
         commands.put("TICKET DELETE", new Command(1, this::deleteTicket));
         commands.put("GROUPTICKET CREATE", new Command(3, this::createGroupTicket));
         commands.put("GROUPTICKET DELETE", new Command(1, this::deleteGroupTicket));
+        commands.put("SPEEDPASS CREATE", new Command(3, this::buySpeedPasses));
+        commands.put("SPEEDPASS DELETE", new Command(1,
+                f -> "SpeedPass refunded: " + park.getPassService().refundSpeedPass(f[0]).getId()));
+        commands.put("SPECIALPASS CREATE", new Command(2, this::buySpecialPass));
+        commands.put("SPECIALPASS DELETE", new Command(1,
+                f -> "Special pass refunded: " + park.getPassService().refundSpecialPass(f[0]).getId()));
         commands.put("ATTRACTION CREATE", new Command(3, this::createAttraction));
         commands.put("ATTRACTION LIST", new Command(1, this::listAttraction));
         commands.put("ATTRACTION ENTER", new Command(2, this::enterAttraction));
@@ -147,7 +156,7 @@ public class CommandProcessor {
     }
 
     private String deleteTicket(String[] f) {
-        park.getTicketService().deleteIndividual(f[0]);
+        park.deleteTicket(f[0]);
         return "Ticket deleted: " + f[0];
     }
 
@@ -157,8 +166,20 @@ public class CommandProcessor {
     }
 
     private String deleteGroupTicket(String[] f) {
-        park.getTicketService().deleteGroupTicket(f[0]);
+        park.deleteGroupTicket(f[0]);
         return "Group ticket deleted: " + f[0];
+    }
+
+    private String buySpeedPasses(String[] f) {
+        List<SpeedPass> passes = park.getPassService().buySpeedPasses(f[0], f[1], f[2]);
+        String range = passes.size() == 1 ? passes.get(0).getId()
+                : passes.get(0).getId() + ".." + passes.get(passes.size() - 1).getId();
+        return "SpeedPasses created: " + range + " total " + PassService.total(passes).toPlainString();
+    }
+
+    private String buySpecialPass(String[] f) {
+        SpecialPass pass = park.getPassService().buySpecialPass(f[0], f[1]);
+        return "Special pass created: " + pass.getId() + " price " + pass.getPrice().toPlainString();
     }
 
     private String createAttraction(String[] f) {

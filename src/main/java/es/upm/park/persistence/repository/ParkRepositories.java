@@ -13,7 +13,7 @@ import es.upm.park.persistence.UserFileStore;
  * instances: each configuration has its own.
  */
 public record ParkRepositories(UserRepository users, GroupRepository groups, AttractionRepository attractions,
-        TicketRepository tickets) {
+        TicketRepository tickets, PassRepository passes) {
 
     public static final String USERS_FILE = "users.txt";
     public static final String GROUPS_FILE = "groups.txt";
@@ -27,7 +27,8 @@ public record ParkRepositories(UserRepository users, GroupRepository groups, Att
 
     /** In-memory repositories around the given users. */
     public static ParkRepositories inMemory(UserRepository users) {
-        return new ParkRepositories(users, new GroupRepository(), new AttractionRepository(), new TicketRepository());
+        return new ParkRepositories(users, new GroupRepository(), new AttractionRepository(), new TicketRepository(),
+                new PassRepository());
     }
 
     /**
@@ -44,6 +45,6 @@ public record ParkRepositories(UserRepository users, GroupRepository groups, Att
                 new AttractionRepository(new AttractionFileStore(dataDir.resolve(ATTRACTIONS_FILE)));
         TicketRepository tickets = new TicketRepository(new TicketFileStore(dataDir.resolve(TICKETS_FILE)),
                 users::findByDni, groups::findById);
-        return new ParkRepositories(users, groups, attractions, tickets);
+        return new ParkRepositories(users, groups, attractions, tickets, new PassRepository());
     }
 }

@@ -31,7 +31,7 @@ class HelpGeneratorTest {
             assertFalse(c.purpose().isBlank(), c.syntax());
             assertTrue(help.contains("  " + c.syntax() + NL + "      - " + c.purpose()), c.syntax());
         }
-        assertEquals(23, catalog.size());
+        assertEquals(27, catalog.size());
     }
 
     @Test

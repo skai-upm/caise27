@@ -64,7 +64,7 @@ public class TicketService {
     /**
      * Deletes an individual ticket dated strictly after the current date.
      */
-    public void deleteIndividual(String id) {
+    public IndividualTicket deleteIndividual(String id) {
         groupTickets().filter(g -> g.findConstituent(id).isPresent()).findFirst().ifPresent(g -> {
             throw new TicketException("ticket " + id + " belongs to group ticket " + g.getId()
                     + " and cannot be deleted independently");
@@ -74,6 +74,17 @@ public class TicketService {
                 .orElseThrow(() -> new TicketException("no ticket " + id));
         checkDeletable(ticket);
         tickets.remove(ticket);
+        return (IndividualTicket) ticket;
+    }
+
+    /**
+     * Finds an individual ticket, bought directly or as a group-ticket
+     * constituent.
+     */
+    public IndividualTicket findIndividual(String id) {
+        return tickets.findById(id).filter(IndividualTicket.class::isInstance).map(IndividualTicket.class::cast)
+                .or(() -> groupTickets().flatMap(g -> g.findConstituent(id).stream()).findFirst())
+                .orElseThrow(() -> new TicketException("no individual ticket " + id));
     }
 
     /**
@@ -102,11 +113,12 @@ public class TicketService {
      * Deletes a group ticket dated strictly after the current date, together
      * with its composition.
      */
-    public void deleteGroupTicket(String id) {
+    public GroupTicket deleteGroupTicket(String id) {
         GroupTicket ticket = groupTickets().filter(g -> g.getId().equals(id)).findFirst()
                 .orElseThrow(() -> new TicketException("no group ticket " + id));
         checkDeletable(ticket);
         tickets.remove(ticket);
+        return ticket;
     }
 
     /** Whether the group has a group ticket dated on or after the current date. */

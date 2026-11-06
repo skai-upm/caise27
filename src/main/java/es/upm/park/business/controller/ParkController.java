@@ -7,6 +7,7 @@ import java.util.List;
 
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
+import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.model.User;
 import es.upm.park.persistence.repository.ParkRepositories;
 import es.upm.park.persistence.repository.UserRepository;
@@ -16,6 +17,7 @@ import es.upm.park.business.service.GroupException;
 import es.upm.park.business.invoice.TextInvoiceBuilder;
 import es.upm.park.business.service.GroupService;
 import es.upm.park.business.service.InvoiceService;
+import es.upm.park.business.service.PassService;
 import es.upm.park.business.service.ParkException;
 import es.upm.park.business.service.TicketException;
 import es.upm.park.business.service.TicketService;
@@ -40,6 +42,7 @@ public final class ParkController {
     private TicketService ticketService;
     private AttractionService attractionService;
     private InvoiceService invoiceService;
+    private PassService passService;
 
     private ParkController() {
         start(ParkRepositories.inMemory(), LocalDate.now());
@@ -71,8 +74,9 @@ public final class ParkController {
         this.groupService = GroupService.getInstance().configure(repositories.groups(), repositories.users(),
                 tickets::hasActiveGroupTicket);
         this.attractionService = AttractionService.getInstance().configure(repositories.attractions());
+        this.passService = PassService.getInstance().configure(repositories.passes(), tickets, this::getCurrentDate);
         this.invoiceService = InvoiceService.getInstance().configure(repositories.users(), repositories.groups(),
-                repositories.tickets(), new TextInvoiceBuilder());
+                repositories.tickets(), new TextInvoiceBuilder()).withPasses(repositories.passes());
         this.currentDate = today;
         this.basePrice = INITIAL_PRICE;
     }
@@ -87,6 +91,22 @@ public final class ParkController {
 
     public AttractionService getAttractionService() {
         return attractionService;
+    }
+
+    public PassService getPassService() {
+        return passService;
+    }
+
+    /** Refunds a future individual ticket together with all its passes. */
+    public void deleteTicket(String id) {
+        IndividualTicket ticket = ticketService.deleteIndividual(id);
+        passService.removeAllFor(List.of(ticket));
+    }
+
+    /** Refunds a future group ticket, its constituents and all their passes. */
+    public void deleteGroupTicket(String id) {
+        GroupTicket ticket = ticketService.deleteGroupTicket(id);
+        passService.removeAllFor(ticket.getComposition());
     }
 
     public InvoiceService getInvoiceService() {

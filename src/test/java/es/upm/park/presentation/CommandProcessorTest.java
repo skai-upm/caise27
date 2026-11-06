@@ -301,4 +301,20 @@ class CommandProcessorTest {
         assertEquals("custom help", custom.process("HELP"));
         assertEquals("custom help", custom.process("HELP EXTENDED"));
     }
+
+    @Test
+    void passCommands() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-20");
+        assertEquals("SpeedPasses created: SP02:1..SP02:10 total 80.00", processor.process("SPEEDPASS CREATE;SP02;T001;10"));
+        assertEquals("SpeedPasses created: SP01:1 total 8.00", processor.process("SPEEDPASS CREATE;SP01;T001;1"));
+        assertEquals("Special pass created: PE01 price 40.00", processor.process("SPECIALPASS CREATE;PE01;T001"));
+        assertEquals("SpeedPass refunded: SP02:3", processor.process("SPEEDPASS DELETE;SP02:3"));
+        assertEquals("Special pass refunded: PE01", processor.process("SPECIALPASS DELETE;PE01"));
+        assertEquals("Error: quantity must be 1 or 10", processor.process("SPEEDPASS CREATE;SP03;T001;2"));
+        assertEquals("Ticket deleted: T001", processor.process("TICKET DELETE;T001"));
+        assertEquals("Error: no speed pass SP01:1", processor.process("SPEEDPASS DELETE;SP01:1"));
+        assertTrue(processor.process("HELP").contains("SPECIALPASS CREATE;<id>;<ticket>"));
+    }
 }
