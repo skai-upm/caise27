@@ -261,4 +261,18 @@ class CommandProcessorTest {
         assertEquals("Error: no ticket T9", processor.process("ATTRACTION ENTER;A01;T9"));
         assertTrue(processor.process("HELP").contains("ATTRACTION ENTER;<attraction>;<ticket>"));
     }
+
+    @Test
+    void attractionExitAndStatusCommands() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("ATTRACTION ENTER;A01;T001");
+        assertTrue(processor.process("ATTRACTION STATUS;A01").contains("Inside: 1"));
+        assertEquals("Exited A01: ana@correo.com", processor.process("ATTRACTION EXIT;A01;ana@correo.com"));
+        assertEquals("Error: user ana@correo.com is not inside attraction A01",
+                processor.process("ATTRACTION EXIT;A01;ana@correo.com"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION STATUS;<id>"));
+    }
 }

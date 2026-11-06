@@ -72,6 +72,33 @@ public class AttractionService {
         return holders;
     }
 
+    /**
+     * The user with that email leaves the attraction, releasing one place.
+     *
+     * @return the user who left
+     */
+    public User exit(String attractionId, String email) {
+        Attraction attraction = find(attractionId);
+        User user = attraction.getOccupants().stream().filter(u -> u.getEmail().equals(email)).findFirst()
+                .orElseThrow(() -> new AttractionException("user " + email + " is not inside attraction "
+                        + attractionId));
+        attraction.leave(user);
+        return user;
+    }
+
+    /** Status text built from the attraction's own state; read-only. */
+    public String status(String attractionId) {
+        Attraction a = find(attractionId);
+        int inside = a.getOccupants().size();
+        List<String> emails = a.getOccupants().stream().map(User::getEmail).toList();
+        return String.join(System.lineSeparator(),
+                "Attraction " + a.getId() + " - " + a.getName(),
+                "Capacity: " + a.getCapacity(),
+                "Inside: " + inside,
+                "Available: " + (a.getCapacity() - inside),
+                "Users: " + (emails.isEmpty() ? "none" : String.join(", ", emails)));
+    }
+
     private static int parseCapacity(String text) {
         boolean digits = text != null && !text.isEmpty() && text.length() <= MAX_CAPACITY_DIGITS
                 && text.chars().allMatch(c -> c >= '0' && c <= '9');

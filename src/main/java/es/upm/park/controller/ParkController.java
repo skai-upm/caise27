@@ -122,7 +122,7 @@ public final class ParkController {
      */
     public List<User> enterAttraction(String attractionId, String ticketId) {
         attractionService.find(attractionId);
-        return attractionService.enter(attractionId, ticketService.findIndividualForAccess(ticketId), currentDate);
+        return attractionService.enter(attractionId, ticketService.findForAccess(ticketId), currentDate);
     }
 
     public LocalDate getCurrentDate() {

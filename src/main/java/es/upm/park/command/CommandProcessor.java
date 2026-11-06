@@ -39,6 +39,8 @@ public class CommandProcessor {
             "  ATTRACTION CREATE;<id>;<name>;<capacity>",
             "  ATTRACTION LIST;<id>",
             "  ATTRACTION ENTER;<attraction>;<ticket>",
+            "  ATTRACTION EXIT;<attraction>;<email>",
+            "  ATTRACTION STATUS;<id>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<price>",
             "  HELP",
@@ -68,6 +70,9 @@ public class CommandProcessor {
         commands.put("ATTRACTION CREATE", new Command(3, this::createAttraction));
         commands.put("ATTRACTION LIST", new Command(1, this::listAttraction));
         commands.put("ATTRACTION ENTER", new Command(2, this::enterAttraction));
+        commands.put("ATTRACTION EXIT", new Command(2,
+                f -> "Exited " + f[0] + ": " + park.getAttractionService().exit(f[0], f[1]).getEmail()));
+        commands.put("ATTRACTION STATUS", new Command(1, f -> park.getAttractionService().status(f[0])));
         commands.put("SYSTEM DATE", new Command(1, f -> "System date set to " + park.setCurrentDate(f[0])));
         commands.put("SYSTEM PRICE", new Command(1,
                 f -> "System price set to " + park.setBasePrice(f[0]).toPlainString()));
