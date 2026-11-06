@@ -28,12 +28,14 @@ public final class InvoiceController {
         this.park = park;
     }
 
-    /** Invoice of an active user's direct purchases. */
+    /** Invoice of an active user's direct tickets and personal passes. */
     public Invoice userInvoice(String email) {
         ParkController source = requirePark();
         return new UserInvoiceBuilder()
                 .forUser(email, source.userDni(email))
                 .directTickets(source.ticketsOf(email))
+                .speedPasses(source.passesOf(email))
+                .specialPasses(source.passesOf(email))
                 .build();
     }
 

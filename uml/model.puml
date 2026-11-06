@@ -33,6 +33,20 @@ package "es.upm.park.business.model" {
     - occupantEmails : Set<String>
   }
 
+  abstract class Pass {
+    - id : String
+    - ticket : IndividualTicket
+    - price : BigDecimal
+    - consumed : boolean
+  }
+  class SpeedPass {
+  }
+  class SpecialPass {
+  }
+  Pass <|-- SpeedPass
+  Pass <|-- SpecialPass
+  Pass --> "1" IndividualTicket : ticket
+
   Ticket <|-- IndividualTicket
   Ticket <|-- GroupTicket
   GroupTicket *--> "1..*" IndividualTicket : composition
@@ -58,6 +72,7 @@ package "es.upm.park.business.controller" {
     - groups : Map<String, Group>
     - tickets : Map<String, Ticket>
     - attractions : Map<String, Attraction>
+    - passes : Map<String, Pass>
     - users : UserDirectory
     - storage : ParkStorage
   }
@@ -77,12 +92,14 @@ package "es.upm.park.business.controller" {
     groups : List<Group>
     tickets : List<Ticket>
     attractions : List<Attraction>
+    passes : List<Pass>
   }
 
   ParkController --> "1" ParkController : INSTANCE
   ParkController o--> "0..*" Group : groups
   ParkController o--> "0..*" Ticket : tickets
   ParkController o--> "0..*" Attraction : attractions
+  ParkController o--> "0..*" Pass : passes
   ParkController --> "1" UserDirectory : users (injected)
   ParkController --> "1" ParkStorage : storage (injected)
   ParkStorage ..> ParkState : loads / saves
@@ -145,6 +162,7 @@ package "es.upm.park.business.invoice" {
   InvoiceBuilder <|-- GroupInvoiceBuilder
   InvoiceBuilder ..> Invoice : builds
   UserInvoiceBuilder ..> IndividualTicket : reads
+  UserInvoiceBuilder ..> Pass : reads
   GroupInvoiceBuilder ..> GroupTicket : reads
 }
 
@@ -156,6 +174,7 @@ package "es.upm.park.persistence" {
     - groups : GroupRepository
     - tickets : TicketRepository
     - attractions : AttractionRepository
+    - passes : PassRepository
   }
 
   class GroupRepository {
@@ -173,6 +192,11 @@ package "es.upm.park.persistence" {
     - warnings : PrintStream
   }
 
+  class PassRepository {
+    - file : Path
+    - warnings : PrintStream
+  }
+
   class StoragePaths <<record>> {
     directory : Path
   }
@@ -184,6 +208,8 @@ package "es.upm.park.persistence" {
   TextParkStorage o--> "1" GroupRepository : injected
   TextParkStorage o--> "1" TicketRepository : injected
   TextParkStorage o--> "1" AttractionRepository : injected
+  TextParkStorage o--> "1" PassRepository : injected
+  PassRepository ..> TextFile
   GroupRepository ..> TextFile
   TicketRepository ..> TextFile
   AttractionRepository ..> TextFile
@@ -248,6 +274,7 @@ package "es.upm.park" {
   AppConfiguration ..> GroupRepository : creates
   AppConfiguration ..> TicketRepository : creates
   AppConfiguration ..> AttractionRepository : creates
+  AppConfiguration ..> PassRepository : creates
   AppConfiguration ..> TextParkStorage : creates
   AppConfiguration ..> ParkController : injects storage
   AppConfiguration ..> InvoiceController : injects park

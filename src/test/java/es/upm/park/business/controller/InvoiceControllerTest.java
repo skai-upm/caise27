@@ -79,6 +79,22 @@ class InvoiceControllerTest {
     }
 
     @Test
+    void userInvoiceIncludesPersonalPassesButGroupInvoiceDoesNot() {
+        park.createIndividualTicket("T001", ANA, TODAY);
+        park.buySpeedPasses("SP01", "T001", 1);
+        park.createGroupTicket("TG01", "G01", TODAY);
+        park.buySpecialPass("PE01", "TG01:12345678Z");
+        Invoice invoice = invoices.userInvoice(ANA);
+        String text = invoice.render();
+        assertTrue(text.contains("SP01:1") && text.contains("PE01") && text.contains("T001"));
+        assertFalse(text.contains("TG01:12345678Z ("));
+        assertEquals(new BigDecimal("88.00"), invoice.total());
+        Invoice group = invoices.groupInvoice("G01");
+        assertFalse(group.render().contains("PE01"));
+        assertEquals(new BigDecimal("80.00"), group.total());
+    }
+
+    @Test
     void singleInstance() {
         assertSame(InvoiceController.getInstance(), InvoiceController.getInstance());
     }

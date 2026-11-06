@@ -5,6 +5,8 @@ import es.upm.park.business.controller.ParkController;
 import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.ParkException;
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.SpecialPass;
+import es.upm.park.business.model.SpeedPass;
 import es.upm.park.presentation.help.CommandCatalog;
 import es.upm.park.presentation.help.ExtendedHelpFormatter;
 import es.upm.park.presentation.help.HelpGenerator;
@@ -94,6 +96,23 @@ public class CommandProcessor {
             park().exitAttraction(a[0], a[1]);
             return "EXITED " + a[0] + ": " + a[1];
         }));
+        handlers.put("SPEEDPASS CREATE", args -> withArgs(args, 3,
+                "SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>", a -> {
+                    var bought = park().buySpeedPasses(a[0], a[1], parseQuantity(a[2]));
+                    var total = bought.stream().map(SpeedPass::getPrice)
+                            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                    return "SPEEDPASS PURCHASED. TOTAL PRICE: " + total;
+                }));
+        handlers.put("SPEEDPASS DELETE", args -> withArgs(args, 1, "SPEEDPASS DELETE;<speedPassIdentifier>", a -> {
+            park().refundPass(a[0], SpeedPass.class);
+            return "SPEEDPASS REFUNDED";
+        }));
+        handlers.put("SPECIALPASS CREATE", args -> withArgs(args, 2, "SPECIALPASS CREATE;<identifier>;<individualTicket>",
+                a -> "SPECIALPASS PURCHASED. PRICE: " + park().buySpecialPass(a[0], a[1]).getPrice()));
+        handlers.put("SPECIALPASS DELETE", args -> withArgs(args, 1, "SPECIALPASS DELETE;<specialPassIdentifier>", a -> {
+            park().refundPass(a[0], SpecialPass.class);
+            return "SPECIALPASS REFUNDED";
+        }));
         handlers.put("INVOICE CREATE", args -> withArgs(args, 2, "INVOICE CREATE;USER;<email> | INVOICE CREATE;GROUP;<groupIdentifier>",
                 a -> switch (a[0]) {
                     case "USER" -> invoiceController.userInvoice(a[1]).render();
@@ -141,6 +160,14 @@ public class CommandProcessor {
 
     private ParkController park() {
         return parkController;
+    }
+
+    private static int parseQuantity(String text) {
+        try {
+            return Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            throw new InvalidInputException("SpeedPasses are sold in quantities of 1 or 10: " + text);
+        }
     }
 
     private static int parseCapacity(String text) {

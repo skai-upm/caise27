@@ -7,6 +7,7 @@ import es.upm.park.business.security.PasswordPolicy;
 import es.upm.park.business.security.PasswordService;
 import es.upm.park.persistence.AttractionRepository;
 import es.upm.park.persistence.GroupRepository;
+import es.upm.park.persistence.PassRepository;
 import es.upm.park.persistence.StoragePaths;
 import es.upm.park.persistence.TextParkStorage;
 import es.upm.park.persistence.TicketRepository;
@@ -40,7 +41,8 @@ public final class AppConfiguration {
         GroupRepository groups = new GroupRepository(paths.groups(), warnings);
         TicketRepository tickets = new TicketRepository(paths.tickets(), warnings);
         AttractionRepository attractions = new AttractionRepository(paths.attractions(), warnings);
-        TextParkStorage storage = new TextParkStorage(groups, tickets, attractions);
+        PassRepository passes = new PassRepository(paths.passes(), warnings);
+        TextParkStorage storage = new TextParkStorage(groups, tickets, attractions, passes);
 
         ParkController park = ParkController.getInstance();
         park.setStorage(storage);

@@ -7,6 +7,9 @@ import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
+import es.upm.park.business.model.Pass;
+import es.upm.park.business.model.SpecialPass;
+import es.upm.park.business.model.SpeedPass;
 import es.upm.park.business.model.Ticket;
 
 import java.math.BigDecimal;
@@ -34,6 +37,7 @@ public final class ParkController {
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction> attractions = new LinkedHashMap<>();
+    private final Map<String, Pass> passes = new LinkedHashMap<>();
     private UserDirectory users;
     private ParkStorage storage = ParkStorage.NONE;
 
@@ -52,6 +56,7 @@ public final class ParkController {
         groups.clear();
         tickets.clear();
         attractions.clear();
+        passes.clear();
         users = email -> Optional.empty();
         storage = ParkStorage.NONE;
     }
@@ -76,6 +81,8 @@ public final class ParkController {
             }
         }
         state.attractions().forEach(attraction -> attractions.put(attraction.getId(), attraction));
+        passes.clear();
+        state.passes().forEach(pass -> passes.put(pass.getId(), pass));
     }
 
     /** The persistent part of the park state. */
@@ -83,7 +90,8 @@ public final class ParkController {
         List<Ticket> topLevel = tickets.values().stream()
                 .filter(ticket -> !(ticket instanceof IndividualTicket individual && individual.isPartOfGroupTicket()))
                 .toList();
-        return new ParkState(List.copyOf(groups.values()), topLevel, List.copyOf(attractions.values()));
+        return new ParkState(List.copyOf(groups.values()), topLevel, List.copyOf(attractions.values()),
+                List.copyOf(passes.values()));
     }
 
     private void save() {
@@ -226,6 +234,7 @@ public final class ParkController {
         if (!ticket.isDeletableOn(currentDate)) {
             throw new BusinessRuleException("Ticket " + id + " is dated today or earlier and is kept as a historical record");
         }
+        removePassesOf(List.of(individual));
         tickets.remove(id);
         save();
     }
@@ -270,9 +279,91 @@ public final class ParkController {
         if (!groupTicket.isDeletableOn(currentDate)) {
             throw new BusinessRuleException("Group ticket " + id + " is dated today or earlier and is kept as a historical record");
         }
+        removePassesOf(groupTicket.getComposition());
         groupTicket.getComposition().forEach(ticket -> tickets.remove(ticket.getId()));
         tickets.remove(id);
         save();
+    }
+
+    // ---- passes ---------------------------------------------------------------
+
+    public Optional<Pass> findPass(String id) {
+        return Optional.ofNullable(passes.get(id));
+    }
+
+    /** Passes associated with individual tickets owned by a user, found by traversal. */
+    public List<Pass> passesOf(String email) {
+        return passes.values().stream().filter(pass -> pass.getTicket().getOwnerEmail().equals(email)).toList();
+    }
+
+    /** Buys 1 or 10 SpeedPasses identified {@code <purchaseId>:1..n}; nothing is created on any conflict. */
+    public List<SpeedPass> buySpeedPasses(String purchaseId, String ticketId, int quantity) {
+        requireText(purchaseId, "The SpeedPass purchase identifier is required");
+        if (quantity != 1 && quantity != 10) {
+            throw new InvalidInputException("SpeedPasses are sold in quantities of 1 or 10");
+        }
+        IndividualTicket ticket = requireTicketForPass(ticketId);
+        List<SpeedPass> bought = new java.util.ArrayList<>();
+        for (int n = 1; n <= quantity; n++) {
+            String passId = purchaseId + ":" + n;
+            requireUnusedPassId(passId);
+            bought.add(new SpeedPass(passId, ticket));
+        }
+        bought.forEach(pass -> passes.put(pass.getId(), pass));
+        save();
+        return bought;
+    }
+
+    /** Buys the Special Pass of an individual ticket (at most one, even once consumed). */
+    public SpecialPass buySpecialPass(String id, String ticketId) {
+        requireText(id, "The Special Pass identifier is required");
+        requireUnusedPassId(id);
+        IndividualTicket ticket = requireTicketForPass(ticketId);
+        boolean alreadyHasOne = passes.values().stream()
+                .anyMatch(pass -> pass instanceof SpecialPass && pass.getTicket() == ticket);
+        if (alreadyHasOne) {
+            throw new BusinessRuleException("Ticket " + ticketId + " already has a Special Pass");
+        }
+        SpecialPass pass = new SpecialPass(id, ticket);
+        passes.put(id, pass);
+        save();
+        return pass;
+    }
+
+    /** Refunds (deletes) an unconsumed pass of the given kind whose ticket is dated after today. */
+    public void refundPass(String id, Class<? extends Pass> kind) {
+        Pass pass = passes.get(id);
+        if (!kind.isInstance(pass)) {
+            throw new NotFoundException("No " + kind.getSimpleName() + " with identifier " + id);
+        }
+        if (pass.isConsumed()) {
+            throw new BusinessRuleException("Pass " + id + " has been consumed and cannot be refunded");
+        }
+        if (!pass.isRefundableOn(currentDate)) {
+            throw new BusinessRuleException("Pass " + id + " belongs to a ticket for today or earlier and cannot be refunded");
+        }
+        passes.remove(id);
+        save();
+    }
+
+    private IndividualTicket requireTicketForPass(String ticketId) {
+        if (!(tickets.get(ticketId) instanceof IndividualTicket ticket)) {
+            throw new NotFoundException("No individual ticket with identifier " + ticketId);
+        }
+        if (ticket.getDate().isBefore(currentDate)) {
+            throw new BusinessRuleException("Ticket " + ticketId + " is dated before " + currentDate);
+        }
+        return ticket;
+    }
+
+    private void requireUnusedPassId(String id) {
+        if (passes.containsKey(id)) {
+            throw new BusinessRuleException("A pass with identifier " + id + " already exists");
+        }
+    }
+
+    private void removePassesOf(List<IndividualTicket> deletedTickets) {
+        passes.values().removeIf(pass -> deletedTickets.contains(pass.getTicket()));
     }
 
     /** Common identifier check shared by all ticket types. */

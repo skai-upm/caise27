@@ -87,6 +87,14 @@ Attraction commands:
 - `ATTRACTION EXIT;<AttractionIdentifier>;<Email>` lets a user leave and frees their place.
 - `ATTRACTION STATUS;<AttractionIdentifier>` shows the identifier, name, capacity, number of users inside, available places and the users inside.
 
+Pass commands (personal extras bought for an individual ticket, also for tickets in a group ticket):
+
+- `SPEEDPASS CREATE;<purchaseIdentifier>;<individualTicket>;<quantity>` buys 1 or 10 SpeedPasses (`<purchaseIdentifier>:1..n`), each costing 20% of the ticket's price. The total is displayed.
+- `SPECIALPASS CREATE;<identifier>;<individualTicket>` buys the ticket's only Special Pass, at the ticket's price.
+- `SPEEDPASS DELETE;<speedPassIdentifier>` and `SPECIALPASS DELETE;<specialPassIdentifier>` refund an unconsumed pass whose ticket is dated after today.
+
+Deleting a ticket or group ticket also refunds its passes. User invoices include the user's passes.
+
 Invoice commands:
 
 - `INVOICE CREATE;USER;<email>` shows the user's identification, the individual tickets bought directly for them, and the total. Tickets that are part of a group ticket are not counted again.

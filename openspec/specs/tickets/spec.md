@@ -38,7 +38,7 @@ The system SHALL create an individual ticket with `TICKET CREATE;<identifier>;<e
 - **THEN** an error message is displayed and no ticket is created
 
 ### Requirement: Delete an individual ticket
-The system SHALL delete an individual ticket with `TICKET DELETE;<identifier>` only when it exists, is not part of a group ticket, and its date is strictly later than the current system date. Tickets dated on or before the current system date SHALL be kept as historical records and the deletion rejected with an error message. Individual tickets that compose a group ticket SHALL only be deleted through deletion of their group ticket.
+The system SHALL delete an individual ticket with `TICKET DELETE;<identifier>` only when it exists, is not part of a group ticket, and its date is strictly later than the current system date. Tickets dated on or before the current system date SHALL be kept as historical records and the deletion rejected with an error message. Individual tickets that compose a group ticket SHALL only be deleted through deletion of their group ticket. When the deletion is valid, every SpeedPass and Special Pass associated with the ticket SHALL be deleted with it, as a joint refund.
 
 #### Scenario: Delete a future ticket
 - **GIVEN** the system date is 2027-04-15 and ticket `T002` is dated 2027-04-16
@@ -58,6 +58,11 @@ The system SHALL delete an individual ticket with `TICKET DELETE;<identifier>` o
 - **GIVEN** individual ticket `TG01:12345678Z` is part of future group ticket `TG01`
 - **WHEN** `TICKET DELETE;TG01:12345678Z` is processed
 - **THEN** an error message is displayed and the ticket and its group ticket remain
+
+#### Scenario: Passes deleted with their ticket
+- **GIVEN** future ticket `T002` has SpeedPasses from two purchases and a Special Pass
+- **WHEN** `TICKET DELETE;T002` is processed
+- **THEN** `T002` and all its passes no longer exist
 
 ### Requirement: Users do not store their tickets
 The association between an individual ticket and its user SHALL be one-way: the ticket identifies its user, and a user's tickets SHALL be determined by traversing the tickets managed by the system.
@@ -142,7 +147,7 @@ The system SHALL price each composed ticket at the current base price minus the 
 - **THEN** the per-ticket prices are 40.00, 36.00, 36.00, 32.00 and 20.00 respectively
 
 ### Requirement: Delete a group ticket
-The system SHALL delete a group ticket with `GROUPTICKET DELETE;<identifier>` only when it exists and is dated strictly after the current system date, and SHALL delete its composed individual tickets with it. Group tickets for the current day or earlier SHALL be kept as historical records and the deletion rejected with an error message.
+The system SHALL delete a group ticket with `GROUPTICKET DELETE;<identifier>` only when it exists and is dated strictly after the current system date. It SHALL then delete all SpeedPasses and Special Passes of its composed individual tickets, the composed individual tickets, and the group ticket itself, completely or not at all. Group tickets for the current day or earlier SHALL be kept as historical records and the deletion rejected with an error message.
 
 #### Scenario: Delete a future group ticket
 - **GIVEN** system date 2027-04-15 and group ticket `TG01` dated 2027-04-20
@@ -154,6 +159,11 @@ The system SHALL delete a group ticket with `GROUPTICKET DELETE;<identifier>` on
 - **GIVEN** group ticket `TG01` is dated today
 - **WHEN** `GROUPTICKET DELETE;TG01` is processed
 - **THEN** an error message is displayed and `TG01` and its composed tickets remain
+
+#### Scenario: Passes of composed tickets deleted with the group ticket
+- **GIVEN** future group ticket `TG01` whose composed ticket `TG01:12345678Z` has a SpeedPass and a Special Pass
+- **WHEN** `GROUPTICKET DELETE;TG01` is processed
+- **THEN** those passes, the composed tickets and `TG01` no longer exist
 
 ### Requirement: Group ticket references its group while it exists
 A group ticket SHALL refer to the group that purchased it while that group exists, and the group SHALL NOT keep references to its tickets. When the group is deleted, its historical group tickets SHALL be kept with their identifier, date, price and composition, and their group reference SHALL become empty.

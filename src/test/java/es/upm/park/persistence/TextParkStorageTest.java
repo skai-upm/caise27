@@ -5,6 +5,9 @@ import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
+import es.upm.park.business.model.Pass;
+import es.upm.park.business.model.SpecialPass;
+import es.upm.park.business.model.SpeedPass;
 import es.upm.park.business.model.Ticket;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -38,7 +41,7 @@ class TextParkStorageTest {
         StoragePaths paths = new StoragePaths(dir);
         PrintStream out = new PrintStream(warnings, true, StandardCharsets.UTF_8);
         return new TextParkStorage(new GroupRepository(paths.groups(), out), new TicketRepository(paths.tickets(), out),
-                new AttractionRepository(paths.attractions(), out));
+                new AttractionRepository(paths.attractions(), out), new PassRepository(paths.passes(), out));
     }
 
     @Test
@@ -91,6 +94,27 @@ class TextParkStorageTest {
         assertEquals(20, loadedAttraction.getCapacity());
         assertTrue(loadedAttraction.getOccupantEmails().isEmpty());
         assertEquals("", warnings.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void passesRoundTripWithTicketsAndConsumedFlag() {
+        IndividualTicket single = new IndividualTicket("T001", "ana@correo.com", DAY, new BigDecimal("40.00"));
+        GroupTicket group = GroupTicket.purchase("TG01", null, DAY, new BigDecimal("40.00"),
+                Map.of("pedro@correo.com", "87654321X"));
+        SpeedPass speed = new SpeedPass("SP01:1", single);
+        SpecialPass special = new SpecialPass("PE01", group.getComposition().get(0));
+        special.consume();
+        storage().save(new ParkState(List.of(), List.of(single, group), List.of(), List.of(speed, special)));
+        ParkState loaded = storage().load();
+        assertEquals(2, loaded.passes().size());
+        Pass loadedSpeed = loaded.passes().get(0);
+        assertTrue(loadedSpeed instanceof SpeedPass);
+        assertEquals(new BigDecimal("8.00"), loadedSpeed.getPrice());
+        assertSame(loaded.tickets().get(0), loadedSpeed.getTicket());
+        Pass loadedSpecial = loaded.passes().get(1);
+        assertTrue(loadedSpecial instanceof SpecialPass);
+        assertTrue(loadedSpecial.isConsumed());
+        assertSame(((GroupTicket) loaded.tickets().get(1)).getComposition().get(0), loadedSpecial.getTicket());
     }
 
     @Test
