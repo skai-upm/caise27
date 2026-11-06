@@ -115,10 +115,10 @@ class AttractionCommandsTest {
     @Test
     void helpListsAttractionCommands() {
         String help = run("HELP");
-        assertTrue(help.contains("ATTRACTION EXIT;<AttractionIdentifier>;<Email>"));
-        assertTrue(help.contains("ATTRACTION STATUS;<AttractionIdentifier>"));
-        assertTrue(help.contains("ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>"));
-        assertTrue(help.contains("ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>"));
-        assertTrue(help.contains("ATTRACTION LIST;<AttractionIdentifier>"));
+        assertTrue(help.contains("ATTRACTION EXIT;<attraction>;<email>"));
+        assertTrue(help.contains("ATTRACTION STATUS;<attractionIdentifier>"));
+        assertTrue(help.contains("ATTRACTION ENTER;<attraction>;<ticket>"));
+        assertTrue(help.contains("ATTRACTION CREATE;<identifier>;<name>;<capacity>"));
+        assertTrue(help.contains("ATTRACTION LIST;<attraction>"));
     }
 }

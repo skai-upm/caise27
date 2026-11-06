@@ -19,11 +19,12 @@ import java.util.function.Function;
  */
 public class CommandProcessor {
 
+    /** Command syntax shown by HELP, exactly as mandated for Delivery 2. */
     static final String HELP_TEXT = String.join(System.lineSeparator(),
             "Available commands:",
-            "USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-            "USER DELETE;<email>;<password>",
-            "USER UPDATE;<email>;<password>;<field>;<value>",
+            "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>",
+            "USER DELETE;<Email>;<Password>",
+            "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>",
             "SYSTEM DATE;<yyyy-MM-dd>",
             "SYSTEM PRICE;<Price>",
             "GROUP CREATE;<Identifier>;<Name>",
@@ -34,11 +35,11 @@ public class CommandProcessor {
             "TICKET DELETE;<identifier>",
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
-            "ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>",
-            "ATTRACTION LIST;<AttractionIdentifier>",
-            "ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>",
-            "ATTRACTION EXIT;<AttractionIdentifier>;<Email>",
-            "ATTRACTION STATUS;<AttractionIdentifier>",
+            "ATTRACTION CREATE;<identifier>;<name>;<capacity>",
+            "ATTRACTION ENTER;<attraction>;<ticket>",
+            "ATTRACTION EXIT;<attraction>;<email>",
+            "ATTRACTION LIST;<attraction>",
+            "ATTRACTION STATUS;<attractionIdentifier>",
             "HELP",
             "EXIT");
 
@@ -80,20 +81,20 @@ public class CommandProcessor {
             park().deleteGroupTicket(a[0]);
             return "GROUP TICKET DELETED";
         }));
-        handlers.put("ATTRACTION CREATE", args -> withArgs(args, 3, "ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>", a -> {
+        handlers.put("ATTRACTION CREATE", args -> withArgs(args, 3, "ATTRACTION CREATE;<identifier>;<name>;<capacity>", a -> {
             park().createAttraction(a[0], a[1], parseCapacity(a[2]));
             return "ATTRACTION CREATED";
         }));
-        handlers.put("ATTRACTION LIST", args -> withArgs(args, 1, "ATTRACTION LIST;<AttractionIdentifier>",
+        handlers.put("ATTRACTION LIST", args -> withArgs(args, 1, "ATTRACTION LIST;<attraction>",
                 a -> listOccupants(park().requireAttraction(a[0]))));
         handlers.put("ATTRACTION ENTER", args -> withArgs(args, 2,
-                "ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>",
+                "ATTRACTION ENTER;<attraction>;<ticket>",
                 a -> "ENTERED " + a[0] + ": " + String.join(", ", park().enterAttraction(a[0], a[1]))));
-        handlers.put("ATTRACTION EXIT", args -> withArgs(args, 2, "ATTRACTION EXIT;<AttractionIdentifier>;<Email>", a -> {
+        handlers.put("ATTRACTION EXIT", args -> withArgs(args, 2, "ATTRACTION EXIT;<attraction>;<email>", a -> {
             park().exitAttraction(a[0], a[1]);
             return "EXITED " + a[0] + ": " + a[1];
         }));
-        handlers.put("ATTRACTION STATUS", args -> withArgs(args, 1, "ATTRACTION STATUS;<AttractionIdentifier>",
+        handlers.put("ATTRACTION STATUS", args -> withArgs(args, 1, "ATTRACTION STATUS;<attractionIdentifier>",
                 a -> status(park().requireAttraction(a[0]))));
     }
 

@@ -93,3 +93,17 @@ Groups, tickets (including group tickets and their composition) and attractions 
 ## Design model
 
 The PlantUML class model is in [`uml/model.puml`](uml/model.puml). `UmlModelConsistencyTest` fails if a type of the model, controller or persistence packages is missing from it.
+
+## Delivery 2 example session
+
+```text
+SYSTEM DATE;2027-04-15
+GROUP CREATE;G01;Familia Garcia
+ATTRACTION CREATE;A01;Dragon Rojo;20
+GROUPTICKET CREATE;TG01;G01;2027-04-15
+ATTRACTION ENTER;A01;TG01
+ATTRACTION STATUS;A01
+EXIT
+```
+
+Save it as `input_fase2.txt` and run `java -jar target/amusement-park.jar --fly input_fase2.txt` to try it without changing `data/`. Group members and ticket owners must be registered users.

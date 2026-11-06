@@ -48,7 +48,7 @@ The system SHALL display, for `ATTRACTION LIST;AttractionIdentifier`, the email 
 - **THEN** an error message is displayed
 
 ### Requirement: ATTRACTION commands listed in HELP
-The system SHALL include `ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>` and `ATTRACTION LIST;<AttractionIdentifier>` in the output of `HELP`.
+The system SHALL include `ATTRACTION CREATE;<identifier>;<name>;<capacity>` and `ATTRACTION LIST;<attraction>` in the output of `HELP`.
 
 #### Scenario: HELP shows ATTRACTION commands
 - **WHEN** `HELP` is processed
@@ -94,11 +94,11 @@ The system SHALL perform attraction entry through one operation that works on an
 - **THEN** exactly `ana@correo.com` is admitted
 
 ### Requirement: ATTRACTION ENTER listed in HELP
-The system SHALL include `ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>` in the output of `HELP`.
+The system SHALL include `ATTRACTION ENTER;<attraction>;<ticket>` in the output of `HELP`.
 
 #### Scenario: HELP shows ATTRACTION ENTER
 - **WHEN** `HELP` is processed
-- **THEN** the output contains `ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>`
+- **THEN** the output contains `ATTRACTION ENTER;<attraction>;<ticket>`
 
 ### Requirement: Enter an attraction with a group ticket
 The system SHALL, for `ATTRACTION ENTER;AttractionIdentifier;TicketIdentifier` with a group ticket, admit together every user associated with the individual tickets of its composition. It SHALL do so only when the group ticket's date equals the current system date, none of those users is already inside, and the attraction's free places are at least the number of those users. Entry SHALL be indivisible: if any condition fails, no user enters and an error message is displayed.
@@ -152,7 +152,7 @@ The system SHALL, for `ATTRACTION STATUS;AttractionIdentifier`, display the attr
 - **THEN** the output shows 0 users inside and 12 available places
 
 ### Requirement: ATTRACTION EXIT and STATUS listed in HELP
-The system SHALL include `ATTRACTION EXIT;<AttractionIdentifier>;<Email>` and `ATTRACTION STATUS;<AttractionIdentifier>` in the output of `HELP`.
+The system SHALL include `ATTRACTION EXIT;<attraction>;<email>` and `ATTRACTION STATUS;<attractionIdentifier>` in the output of `HELP`.
 
 #### Scenario: HELP shows ATTRACTION EXIT and STATUS
 - **WHEN** `HELP` is processed
