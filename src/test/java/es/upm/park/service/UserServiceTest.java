@@ -74,4 +74,25 @@ class UserServiceTest {
                 "00000000T", "ana@correo.com", "Clave1!", "600000000", "1111222233334444"));
         assertEquals(false, repo.findByDni("00000000T").isPresent());
     }
+
+    @Test
+    void deletesUserWithCorrectCredentials() {
+        User ana = createAna();
+        assertSame(ana, service.delete("ana@correo.com", "Clave1!"));
+        assertEquals(0, repo.findAll().size());
+    }
+
+    @Test
+    void wrongPasswordDoesNotDelete() {
+        User ana = createAna();
+        assertRejected("incorrect password", () -> service.delete("ana@correo.com", "Otra2#"));
+        assertSame(ana, repo.findAll().get(0));
+        assertEquals("Clave1!", ana.getPassword());
+    }
+
+    @Test
+    void unknownEmailDoesNotDelete() {
+        createAna();
+        assertRejected("no user with email nadie@correo.com", () -> service.delete("nadie@correo.com", "Clave1!"));
+    }
 }

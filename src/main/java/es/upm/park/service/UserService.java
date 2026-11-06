@@ -45,4 +45,19 @@ public class UserService {
         repository.add(user);
         return user;
     }
+
+    /**
+     * Deletes the user identified by email after checking its password.
+     *
+     * @throws UserException when no user has that email or the password is incorrect
+     */
+    public User delete(String email, String password) {
+        User user = repository.findByEmail(email)
+                .orElseThrow(() -> new UserException("no user with email " + email));
+        if (!user.getPassword().equals(password)) {
+            throw new UserException("incorrect password");
+        }
+        repository.remove(user);
+        return user;
+    }
 }

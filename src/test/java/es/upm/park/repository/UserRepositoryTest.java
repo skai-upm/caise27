@@ -57,4 +57,26 @@ class UserRepositoryTest {
         assertThrows(PersistenceException.class, () -> repo.add(ana));
         assertTrue(repo.findAll().isEmpty());
     }
+
+    @Test
+    void removedUserIsGoneAfterReload(@TempDir Path dir) {
+        Path file = dir.resolve("users.txt");
+        UserRepository repo = new UserRepository(new UserFileStore(file));
+        repo.add(ana);
+        assertSame(ana, repo.findByEmail("ana@correo.com").orElseThrow());
+        repo.remove(ana);
+        assertTrue(repo.findAll().isEmpty());
+        assertTrue(new UserRepository(new UserFileStore(file)).findAll().isEmpty());
+    }
+
+    @Test
+    void failedRemoveKeepsUser(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("users.txt");
+        UserRepository repo = new UserRepository(new UserFileStore(file));
+        repo.add(ana);
+        Files.delete(file);
+        Files.createDirectory(file);
+        assertThrows(PersistenceException.class, () -> repo.remove(ana));
+        assertEquals(1, repo.findAll().size());
+    }
 }

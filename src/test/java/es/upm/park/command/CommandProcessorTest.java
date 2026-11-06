@@ -77,4 +77,22 @@ class CommandProcessorTest {
         assertEquals("Error: cannot write " + file, result);
         assertEquals(0, persistent.findAll().size());
     }
+
+    @Test
+    void deletesUserAndAllowsRecreation() {
+        processor.process(ANA);
+        assertEquals("User deleted: ana@correo.com", processor.process("USER DELETE;ana@correo.com;Clave1!"));
+        assertEquals(0, repo.findAll().size());
+        assertEquals("User created: 12345678Z", processor.process(ANA));
+    }
+
+    @Test
+    void rejectsDeleteWithWrongCredentialsOrFields() {
+        processor.process(ANA);
+        assertEquals("Error: incorrect password", processor.process("USER DELETE;ana@correo.com;Otra2#"));
+        assertEquals("Error: no user with email nadie@correo.com",
+                processor.process("USER DELETE;nadie@correo.com;Clave1!"));
+        assertEquals("Error: USER DELETE expects 2 fields", processor.process("USER DELETE;ana@correo.com"));
+        assertEquals(1, repo.findAll().size());
+    }
 }

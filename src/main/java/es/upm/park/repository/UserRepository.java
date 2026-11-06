@@ -39,12 +39,27 @@ public class UserRepository {
         users.add(user);
     }
 
+    /**
+     * Removes a user. When persistent, the file is written first so that a
+     * failed write leaves the repository unchanged.
+     */
+    public void remove(User user) {
+        List<User> updated = new ArrayList<>(users);
+        updated.remove(user);
+        persist(updated);
+        users.remove(user);
+    }
+
+    public Optional<User> findByEmail(String email) {
+        return users.stream().filter(u -> u.getEmail().equals(email)).findFirst();
+    }
+
     public Optional<User> findByDni(String dni) {
         return users.stream().filter(u -> u.getDni().equals(dni)).findFirst();
     }
 
     public boolean existsByEmail(String email) {
-        return users.stream().anyMatch(u -> u.getEmail().equals(email));
+        return findByEmail(email).isPresent();
     }
 
     public List<User> findAll() {

@@ -11,7 +11,9 @@ import es.upm.park.service.UserService;
 public class CommandProcessor {
 
     static final String USER_CREATE = "USER CREATE";
+    static final String USER_DELETE = "USER DELETE";
     private static final int USER_CREATE_FIELDS = 7;
+    private static final int USER_DELETE_FIELDS = 2;
 
     private final UserService userService;
 
@@ -34,6 +36,9 @@ public class CommandProcessor {
             if (USER_CREATE.equals(name)) {
                 return createUser(parts);
             }
+            if (USER_DELETE.equals(name)) {
+                return deleteUser(parts);
+            }
             return error("unknown command '" + name + "'");
         } catch (UserException | PersistenceException e) {
             return error(e.getMessage());
@@ -46,6 +51,14 @@ public class CommandProcessor {
         }
         userService.create(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
         return "User created: " + parts[3];
+    }
+
+    private String deleteUser(String[] parts) {
+        if (parts.length != USER_DELETE_FIELDS + 1) {
+            return error(USER_DELETE + " expects " + USER_DELETE_FIELDS + " fields");
+        }
+        userService.delete(parts[1], parts[2]);
+        return "User deleted: " + parts[1];
     }
 
     private static String error(String message) {
