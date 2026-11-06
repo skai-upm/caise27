@@ -69,3 +69,8 @@ Group ticket commands:
 - `GROUPTICKET DELETE;<identifier>` deletes a group ticket dated strictly after the current date, together with its individual tickets.
 
 Group discount on the base price of each member's ticket: fewer than 3 members 0%, 3-5 members 10%, 6-10 members 20%, more than 10 members 50%. Individual tickets that belong to a group ticket cannot be deleted with `TICKET DELETE`.
+
+Attraction commands:
+
+- `ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>` creates an attraction with a positive maximum capacity.
+- `ATTRACTION LIST;<AttractionIdentifier>` shows the emails of the users currently inside it (read-only).

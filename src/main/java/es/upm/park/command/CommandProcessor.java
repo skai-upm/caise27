@@ -2,6 +2,7 @@ package es.upm.park.command;
 
 import es.upm.park.controller.ParkController;
 import es.upm.park.controller.ParkException;
+import es.upm.park.model.Attraction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,6 +34,8 @@ public class CommandProcessor {
             "TICKET DELETE;<identifier>",
             "GROUPTICKET CREATE;<identifier>;<group>;<date>",
             "GROUPTICKET DELETE;<identifier>",
+            "ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>",
+            "ATTRACTION LIST;<AttractionIdentifier>",
             "HELP",
             "EXIT");
 
@@ -74,6 +77,12 @@ public class CommandProcessor {
             park().deleteGroupTicket(a[0]);
             return "GROUP TICKET DELETED";
         }));
+        handlers.put("ATTRACTION CREATE", args -> withArgs(args, 3, "ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>", a -> {
+            park().createAttraction(a[0], a[1], parseCapacity(a[2]));
+            return "ATTRACTION CREATED";
+        }));
+        handlers.put("ATTRACTION LIST", args -> withArgs(args, 1, "ATTRACTION LIST;<AttractionIdentifier>",
+                a -> listOccupants(park().requireAttraction(a[0]))));
     }
 
     public CommandResult process(String line) {
@@ -108,6 +117,25 @@ public class CommandProcessor {
 
     private static ParkController park() {
         return ParkController.getInstance();
+    }
+
+    private static int parseCapacity(String text) {
+        try {
+            return Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            throw new ParkException("The attraction capacity must be a positive number: " + text);
+        }
+    }
+
+    private static String listOccupants(Attraction attraction) {
+        if (attraction.getOccupantEmails().isEmpty()) {
+            return "NO USERS IN " + attraction.getId();
+        }
+        StringBuilder out = new StringBuilder("USERS IN " + attraction.getId() + ":");
+        for (String email : attraction.getOccupantEmails()) {
+            out.append(System.lineSeparator()).append(email);
+        }
+        return out.toString();
     }
 
     /** Parses a yyyy-MM-dd date argument, rejecting impossible calendar dates. */

@@ -1,5 +1,6 @@
 package es.upm.park.controller;
 
+import es.upm.park.model.Attraction;
 import es.upm.park.model.Group;
 import es.upm.park.model.GroupTicket;
 import es.upm.park.model.IndividualTicket;
@@ -16,7 +17,8 @@ import java.util.Set;
 
 /**
  * Central park management. Exactly one instance exists per execution; it keeps
- * the overall park state: current system date, base ticket price, groups and tickets.
+ * the overall park state: current system date, base ticket price, groups,
+ * tickets and attractions.
  */
 public final class ParkController {
 
@@ -28,6 +30,7 @@ public final class ParkController {
     private BigDecimal basePrice;
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
+    private final Map<String, Attraction> attractions = new LinkedHashMap<>();
     private UserDirectory users;
 
     private ParkController() {
@@ -44,6 +47,7 @@ public final class ParkController {
         basePrice = INITIAL_BASE_PRICE;
         groups.clear();
         tickets.clear();
+        attractions.clear();
         users = email -> Optional.empty();
     }
 
@@ -237,6 +241,30 @@ public final class ParkController {
         if (date.isBefore(currentDate)) {
             throw new ParkException("Tickets cannot be created for a date before " + currentDate);
         }
+    }
+
+    // ---- attractions -----------------------------------------------------------
+
+    public Optional<Attraction> findAttraction(String id) {
+        return Optional.ofNullable(attractions.get(id));
+    }
+
+    public Attraction createAttraction(String id, String name, int capacity) {
+        requireText(id, "The attraction identifier is required");
+        requireText(name, "The attraction name is required");
+        if (capacity <= 0) {
+            throw new ParkException("The attraction capacity must be a positive number");
+        }
+        if (attractions.containsKey(id)) {
+            throw new ParkException("An attraction with identifier " + id + " already exists");
+        }
+        Attraction attraction = new Attraction(id, name, capacity);
+        attractions.put(id, attraction);
+        return attraction;
+    }
+
+    public Attraction requireAttraction(String id) {
+        return findAttraction(id).orElseThrow(() -> new ParkException("No attraction with identifier " + id));
     }
 
     // ---- users ---------------------------------------------------------------
