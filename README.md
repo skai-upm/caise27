@@ -142,9 +142,17 @@ Presentation never uses persistence, and business uses neither (`LayeredArchitec
 
 A user (`business.model.User`) has a first name, surnames, DNI, email, password (stored protected value), phone and card number. All fields are private, and the DNI cannot change after creation. `business.controller.UserRegistry` stores and retrieves users by email and DNI, and serves as the park controller's `UserDirectory`.
 
+User data is validated by `business.validation.UserValidator` using plain String operations:
+
+- DNI: 8 digits and the correct check letter (`12345678Z`).
+- Email: `text@text.xxx`, with a three-character extension.
+- Password: at least one uppercase letter, one lowercase letter, one digit and one symbol.
+- Card: exactly 16 digits.
+- Phone: stored as given.
+
 ## Passwords
 
-User passwords are never stored in plain text. `business.security.PasswordService` validates a new or changed password, protects it with BCrypt (salted, `$2a$...`) before it is stored, and verifies entered passwords against the stored value. The hashing algorithm and the validation policy are injected by `AppConfiguration`.
+User passwords are never stored in plain text. `business.security.PasswordService` validates a new or changed password, protects it with BCrypt (salted, `$2a$...`) before it is stored, and verifies entered passwords against the stored value. The hashing algorithm and the validation policy (the password rule of `UserValidator`) are injected by `AppConfiguration`.
 
 ## Delivery 3 example session
 

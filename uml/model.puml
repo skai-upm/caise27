@@ -202,6 +202,14 @@ package "es.upm.park.business.security" {
   BCryptPasswordHasher ..> "org.mindrot.jbcrypt.BCrypt" : uses
 }
 
+package "es.upm.park.business.validation" {
+  class UserValidator <<utility>> {
+    - {static} DNI_LETTERS : String
+  }
+  UserValidator ..> PasswordPolicy : provides password rule
+  UserValidator ..> InvalidInputException : throws
+}
+
 package "es.upm.park.business.invoice" {
   class Invoice {
     - title : String
@@ -338,7 +346,7 @@ package "es.upm.park" {
   AppConfiguration ..> ParkController : injects storage
   AppConfiguration ..> InvoiceController : injects park
   AppConfiguration ..> CommandProcessor : creates
-  AppConfiguration ..> PasswordService : creates with BCrypt
+  AppConfiguration ..> PasswordService : creates with BCrypt and UserValidator rule
   AppConfiguration ..> UserRegistry : creates, injects as UserDirectory
   AppConfiguration ..> HelpGenerator : creates with formatter
 }

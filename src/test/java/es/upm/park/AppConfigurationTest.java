@@ -52,6 +52,9 @@ class AppConfigurationTest {
         String stored = configured.passwords().protect("Clave1!");
         assertTrue(stored.startsWith("$2a$"));
         assertTrue(configured.passwords().verify("Clave1!", stored));
+        org.junit.jupiter.api.Assertions.assertThrows(
+                es.upm.park.business.exception.InvalidInputException.class,
+                () -> configured.passwords().protect("clave1!"), "Delivery 1 password rule applied");
     }
 
     @Test

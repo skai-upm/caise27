@@ -4,8 +4,8 @@ import es.upm.park.business.controller.InvoiceController;
 import es.upm.park.business.controller.ParkController;
 import es.upm.park.business.controller.UserRegistry;
 import es.upm.park.business.security.BCryptPasswordHasher;
-import es.upm.park.business.security.PasswordPolicy;
 import es.upm.park.business.security.PasswordService;
+import es.upm.park.business.validation.UserValidator;
 import es.upm.park.persistence.AttractionRepository;
 import es.upm.park.persistence.GroupRepository;
 import es.upm.park.persistence.PassRepository;
@@ -52,7 +52,7 @@ public final class AppConfiguration {
         InvoiceController invoices = InvoiceController.getInstance();
         invoices.setParkController(park);
 
-        PasswordService passwords = new PasswordService(new BCryptPasswordHasher(), PasswordPolicy.notBlank());
+        PasswordService passwords = new PasswordService(new BCryptPasswordHasher(), UserValidator.passwordPolicy());
 
         HelpGenerator help = new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter());
         HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter());
