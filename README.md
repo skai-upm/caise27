@@ -35,6 +35,13 @@ File mode runs the commands of a text file in order:
 java -jar target/amusement-park.jar input.txt
 ```
 
+Temporary mode runs with an isolated, throw-away data directory:
+
+```bash
+java -jar target/amusement-park.jar --fly
+java -jar target/amusement-park.jar --fly input.txt
+```
+
 Blank lines are ignored. Unknown commands and commands that fail are reported with an `ERROR:` message, and processing continues. A command file that does not exist or cannot be read is reported, and no command runs.
 
 General commands:
@@ -78,3 +85,7 @@ Attraction commands:
 - With a group ticket, all its users enter together or nobody enters.
 - `ATTRACTION EXIT;<AttractionIdentifier>;<Email>` lets a user leave and frees their place.
 - `ATTRACTION STATUS;<AttractionIdentifier>` shows the identifier, name, capacity, number of users inside, available places and the users inside.
+
+## Persistence
+
+Groups, tickets (including group tickets and their composition) and attractions are stored as text files in `data/` and reloaded at startup. Attractions always start empty. Historical tickets are kept even after their user or group is deleted. With `--fly`, all files go to a new `tmp/<yyyyMMdd_HHmmss>/` directory, which is deleted when the execution ends.

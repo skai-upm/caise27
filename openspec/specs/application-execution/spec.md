@@ -27,7 +27,7 @@ The application SHALL, when started without arguments, read commands from standa
 - **THEN** the help text is displayed and then the application terminates
 
 ### Requirement: File mode
-The application SHALL, when started with a first argument, treat it as the path to a text file with one command per line and execute the commands in the order in which they appear in the file.
+The application SHALL, when started with a command file argument, treat it as the path to a text file with one command per line and execute the commands in the order in which they appear in the file. The command file argument is the first argument, or the second when the first is `--fly`.
 
 #### Scenario: Commands from a file run in order
 - **GIVEN** a file `input.txt` containing `FOO`, `HELP` and `EXIT` on separate lines
@@ -40,6 +40,11 @@ The application SHALL, when started with a first argument, treat it as the path 
 - **WHEN** the application is started with that path as its argument
 - **THEN** an error message stating that the command file cannot be read is displayed
 - **AND** the application terminates without a stack trace and without executing any command
+
+#### Scenario: Command file after --fly
+- **GIVEN** a file `input.txt` containing `HELP` and `EXIT`
+- **WHEN** `java -jar target/amusement-park.jar --fly input.txt` is run
+- **THEN** the commands of `input.txt` are executed in order
 
 ### Requirement: Blank lines are ignored
 The application SHALL ignore lines that are empty or contain only whitespace in both interactive and file mode, without producing output or errors.
@@ -57,3 +62,10 @@ The application SHALL report an unexpected failure while processing a command li
 - **WHEN** both lines are processed
 - **THEN** an error message is displayed for the failing line
 - **AND** the help text is displayed for the next line
+
+### Requirement: Supported execution forms
+The application SHALL support exactly these argument forms: no arguments (interactive), `<file>` (file mode), `--fly` (interactive, temporary persistence) and `--fly <file>` (file mode, temporary persistence). Without `--fly`, argument behavior SHALL be the same as in Delivery 1.
+
+#### Scenario: Interactive fly mode
+- **WHEN** `java -jar target/amusement-park.jar --fly` is run with `HELP` and `EXIT` on standard input
+- **THEN** the help text is displayed and the application terminates normally

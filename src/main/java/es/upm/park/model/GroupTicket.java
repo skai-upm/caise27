@@ -37,6 +37,19 @@ public class GroupTicket extends Ticket {
         return new GroupTicket(id, group, date, tickets);
     }
 
+    /** One stored composed ticket: its identifier, user email and price. */
+    public record Composed(String ticketId, String email, BigDecimal price) {
+    }
+
+    /** Rebuilds a stored group ticket; {@code group} is null when the group no longer exists. */
+    public static GroupTicket restore(String id, Group group, LocalDate date, List<Composed> composed) {
+        List<IndividualTicket> tickets = new ArrayList<>();
+        for (Composed entry : composed) {
+            tickets.add(new IndividualTicket(entry.ticketId(), entry.email(), date, entry.price(), true));
+        }
+        return new GroupTicket(id, group, date, tickets);
+    }
+
     public static String composedId(String groupTicketId, String dni) {
         return groupTicketId + ":" + dni;
     }

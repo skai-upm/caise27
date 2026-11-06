@@ -32,6 +32,7 @@ public final class ParkController {
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private final Map<String, Attraction> attractions = new LinkedHashMap<>();
     private UserDirectory users;
+    private ParkStorage storage = ParkStorage.NONE;
 
     private ParkController() {
         reset();
@@ -49,6 +50,41 @@ public final class ParkController {
         tickets.clear();
         attractions.clear();
         users = email -> Optional.empty();
+        storage = ParkStorage.NONE;
+    }
+
+    // ---- persistence ------------------------------------------------------------
+
+    /** Sets where the persistent state is saved after every change. */
+    public void setStorage(ParkStorage storage) {
+        this.storage = storage;
+    }
+
+    /** Replaces groups, tickets and attractions with a stored state; attractions start empty. */
+    public void restore(ParkState state) {
+        groups.clear();
+        tickets.clear();
+        attractions.clear();
+        state.groups().forEach(group -> groups.put(group.getId(), group));
+        for (Ticket ticket : state.tickets()) {
+            tickets.put(ticket.getId(), ticket);
+            if (ticket instanceof GroupTicket groupTicket) {
+                groupTicket.getComposition().forEach(composed -> tickets.put(composed.getId(), composed));
+            }
+        }
+        state.attractions().forEach(attraction -> attractions.put(attraction.getId(), attraction));
+    }
+
+    /** The persistent part of the park state. */
+    public ParkState snapshot() {
+        List<Ticket> topLevel = tickets.values().stream()
+                .filter(ticket -> !(ticket instanceof IndividualTicket individual && individual.isPartOfGroupTicket()))
+                .toList();
+        return new ParkState(List.copyOf(groups.values()), topLevel, List.copyOf(attractions.values()));
+    }
+
+    private void save() {
+        storage.save(snapshot());
     }
 
     // ---- system settings -------------------------------------------------
@@ -113,6 +149,7 @@ public final class ParkController {
         }
         Group group = new Group(id, name);
         groups.put(id, group);
+        save();
         return group;
     }
 
@@ -124,6 +161,7 @@ public final class ParkController {
         if (!group.addMember(email)) {
             throw new ParkException("User " + email + " already belongs to group " + id);
         }
+        save();
     }
 
     public void removeUserFromGroup(String id, String email) {
@@ -131,6 +169,7 @@ public final class ParkController {
         if (!group.removeMember(email)) {
             throw new ParkException("User " + email + " does not belong to group " + id);
         }
+        save();
     }
 
     /** Deletes a group; its historical group tickets are kept without a group reference. */
@@ -141,6 +180,7 @@ public final class ParkController {
         }
         groupTicketsOf(group).forEach(GroupTicket::detachGroup);
         groups.remove(id);
+        save();
     }
 
     // ---- tickets ------------------------------------------------------------
@@ -167,6 +207,7 @@ public final class ParkController {
         requireNotPast(date);
         IndividualTicket ticket = new IndividualTicket(id, email, date, basePrice);
         tickets.put(id, ticket);
+        save();
         return ticket;
     }
 
@@ -182,6 +223,7 @@ public final class ParkController {
             throw new ParkException("Ticket " + id + " is dated today or earlier and is kept as a historical record");
         }
         tickets.remove(id);
+        save();
     }
 
     /**
@@ -212,6 +254,7 @@ public final class ParkController {
         GroupTicket groupTicket = GroupTicket.purchase(id, group, date, basePrice, memberDnis);
         tickets.put(id, groupTicket);
         groupTicket.getComposition().forEach(ticket -> tickets.put(ticket.getId(), ticket));
+        save();
         return groupTicket;
     }
 
@@ -225,6 +268,7 @@ public final class ParkController {
         }
         groupTicket.getComposition().forEach(ticket -> tickets.remove(ticket.getId()));
         tickets.remove(id);
+        save();
     }
 
     /** Common identifier check shared by all ticket types. */
@@ -260,6 +304,7 @@ public final class ParkController {
         }
         Attraction attraction = new Attraction(id, name, capacity);
         attractions.put(id, attraction);
+        save();
         return attraction;
     }
 
@@ -323,6 +368,7 @@ public final class ParkController {
             }
         }
         memberships.forEach(group -> group.removeMember(email));
+        save();
     }
 
     private Group requireGroup(String id) {
