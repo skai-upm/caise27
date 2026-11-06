@@ -2,6 +2,7 @@ package es.upm.park.presentation;
 
 import es.upm.park.business.controller.InvoiceController;
 import es.upm.park.business.controller.ParkController;
+import es.upm.park.business.controller.UserController;
 import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.ParkException;
 import es.upm.park.business.model.Attraction;
@@ -34,26 +35,33 @@ public class CommandProcessor {
     private final Map<String, Function<String[], CommandResult>> handlers = new LinkedHashMap<>();
     private final ParkController parkController;
     private final InvoiceController invoiceController;
+    private final UserController userController;
     private final HelpGenerator help;
     private final HelpGenerator extendedHelp;
 
     /** Uses the execution's controller instances and the standard help formats. */
     public CommandProcessor() {
-        this(ParkController.getInstance(), InvoiceController.getInstance(),
+        this(ParkController.getInstance(), InvoiceController.getInstance(), UserController.getInstance(),
                 new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter()),
                 new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter()));
     }
 
     /** Uses the controllers and help generators injected by the application configuration. */
     public CommandProcessor(ParkController parkController, InvoiceController invoiceController,
-                            HelpGenerator help, HelpGenerator extendedHelp) {
+                            UserController userController, HelpGenerator help, HelpGenerator extendedHelp) {
         this.parkController = parkController;
         this.invoiceController = invoiceController;
+        this.userController = userController;
         this.help = help;
         this.extendedHelp = extendedHelp;
         handlers.put("HELP", args -> CommandResult.of(help.generate()));
         handlers.put("HELP EXTENDED", args -> CommandResult.of(extendedHelp.generate()));
         handlers.put("EXIT", args -> CommandResult.exit(EXIT_TEXT));
+        handlers.put("USER CREATE", args -> withArgs(args, 7,
+                "USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>", a -> {
+                    userController.createUser(a[0], a[1], a[2], a[3], a[4], a[5], a[6]);
+                    return "USER CREATED";
+                }));
         handlers.put("SYSTEM DATE", this::systemDate);
         handlers.put("SYSTEM PRICE", this::systemPrice);
         handlers.put("GROUP CREATE", args -> withArgs(args, 2, "GROUP CREATE;<Identifier>;<Name>", a -> {

@@ -2,6 +2,7 @@ package es.upm.park;
 
 import es.upm.park.business.controller.InvoiceController;
 import es.upm.park.business.controller.ParkController;
+import es.upm.park.business.controller.UserController;
 import es.upm.park.business.controller.UserRegistry;
 import es.upm.park.business.security.BCryptPasswordHasher;
 import es.upm.park.business.security.PasswordService;
@@ -54,10 +55,13 @@ public final class AppConfiguration {
 
         PasswordService passwords = new PasswordService(new BCryptPasswordHasher(), UserValidator.passwordPolicy());
 
+        UserController userController = UserController.getInstance();
+        userController.configure(users, passwords);
+
         HelpGenerator help = new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter());
         HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter());
 
         return new Configured(storage, groups, tickets, attractions, passwords, users,
-                new CommandProcessor(park, invoices, help, extendedHelp));
+                new CommandProcessor(park, invoices, userController, help, extendedHelp));
     }
 }

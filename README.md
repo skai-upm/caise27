@@ -50,6 +50,10 @@ General commands:
 - `HELP EXTENDED` lists every command with its syntax and a short explanation of its purpose. Help text is produced by a `HelpGenerator` with an injected `HelpFormatter`, so new help formats can be added without touching command processing.
 - `EXIT` ends the application. No command after `EXIT` is executed, including later lines of a command file.
 
+User commands:
+
+- `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>` registers a user after validating the data and checking that the DNI and email are not already in use. The password is stored BCrypt-protected.
+
 System commands (park-wide settings for the current execution):
 
 - `SYSTEM DATE;<yyyy-MM-dd>` sets the current system date. It starts as the local date when the application starts.
