@@ -75,8 +75,48 @@ class AttractionCommandsTest {
     }
 
     @Test
+    void statusAfterMixedEntriesAndExit() {
+        ParkController.getInstance().setUserDirectory(
+                TestUsers.of("ana@correo.com", "pedro@correo.com", "luis@correo.com"));
+        run("SYSTEM DATE;2027-04-15");
+        run("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        run("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        run("GROUP CREATE;G01;Amigos");
+        run("GROUP ADD;G01;pedro@correo.com");
+        run("GROUP ADD;G01;luis@correo.com");
+        run("GROUPTICKET CREATE;TG01;G01;2027-04-15");
+        run("ATTRACTION ENTER;A01;T001");
+        assertEquals("ENTERED A01: pedro@correo.com, luis@correo.com", run("ATTRACTION ENTER;A01;TG01"));
+        assertEquals("EXITED A01: luis@correo.com", run("ATTRACTION EXIT;A01;luis@correo.com"));
+        String status = run("ATTRACTION STATUS;A01");
+        assertTrue(status.contains("A01"));
+        assertTrue(status.contains("Dragon Rojo"));
+        assertTrue(status.contains("CAPACITY: 20"));
+        assertTrue(status.contains("INSIDE: 2"));
+        assertTrue(status.contains("AVAILABLE: 18"));
+        assertTrue(status.contains("ana@correo.com"));
+        assertTrue(status.contains("pedro@correo.com"));
+        assertTrue(!status.contains("luis@correo.com"));
+        assertTrue(run("ATTRACTION EXIT;A01;luis@correo.com").startsWith("ERROR"));
+    }
+
+    @Test
+    void statusOfEmptyAttractionAndErrors() {
+        run("ATTRACTION CREATE;A02;Torre del Cielo;12");
+        String status = run("ATTRACTION STATUS;A02");
+        assertTrue(status.contains("INSIDE: 0"));
+        assertTrue(status.contains("AVAILABLE: 12"));
+        assertTrue(status.contains("USERS: none"));
+        assertTrue(run("ATTRACTION STATUS;A99").startsWith("ERROR"));
+        assertTrue(run("ATTRACTION EXIT;A99;ana@correo.com").startsWith("ERROR"));
+        assertTrue(run("ATTRACTION EXIT;A02").startsWith("ERROR"));
+    }
+
+    @Test
     void helpListsAttractionCommands() {
         String help = run("HELP");
+        assertTrue(help.contains("ATTRACTION EXIT;<AttractionIdentifier>;<Email>"));
+        assertTrue(help.contains("ATTRACTION STATUS;<AttractionIdentifier>"));
         assertTrue(help.contains("ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>"));
         assertTrue(help.contains("ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>"));
         assertTrue(help.contains("ATTRACTION LIST;<AttractionIdentifier>"));

@@ -37,6 +37,8 @@ public class CommandProcessor {
             "ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>",
             "ATTRACTION LIST;<AttractionIdentifier>",
             "ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>",
+            "ATTRACTION EXIT;<AttractionIdentifier>;<Email>",
+            "ATTRACTION STATUS;<AttractionIdentifier>",
             "HELP",
             "EXIT");
 
@@ -87,6 +89,12 @@ public class CommandProcessor {
         handlers.put("ATTRACTION ENTER", args -> withArgs(args, 2,
                 "ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>",
                 a -> "ENTERED " + a[0] + ": " + String.join(", ", park().enterAttraction(a[0], a[1]))));
+        handlers.put("ATTRACTION EXIT", args -> withArgs(args, 2, "ATTRACTION EXIT;<AttractionIdentifier>;<Email>", a -> {
+            park().exitAttraction(a[0], a[1]);
+            return "EXITED " + a[0] + ": " + a[1];
+        }));
+        handlers.put("ATTRACTION STATUS", args -> withArgs(args, 1, "ATTRACTION STATUS;<AttractionIdentifier>",
+                a -> status(park().requireAttraction(a[0]))));
     }
 
     public CommandResult process(String line) {
@@ -140,6 +148,16 @@ public class CommandProcessor {
             out.append(System.lineSeparator()).append(email);
         }
         return out.toString();
+    }
+
+    private static String status(Attraction attraction) {
+        int inside = attraction.getOccupantEmails().size();
+        String users = inside == 0 ? "none" : String.join(", ", attraction.getOccupantEmails());
+        return "ATTRACTION " + attraction.getId() + " - " + attraction.getName()
+                + " | CAPACITY: " + attraction.getCapacity()
+                + " | INSIDE: " + inside
+                + " | AVAILABLE: " + (attraction.getCapacity() - inside)
+                + System.lineSeparator() + "USERS: " + users;
     }
 
     /** Parses a yyyy-MM-dd date argument, rejecting impossible calendar dates. */

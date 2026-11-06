@@ -291,6 +291,14 @@ public final class ParkController {
         return entrants;
     }
 
+    /** Removes a user who is inside an attraction, releasing their place. */
+    public void exitAttraction(String attractionId, String email) {
+        Attraction attraction = requireAttraction(attractionId);
+        if (!attraction.leave(email)) {
+            throw new ParkException("User " + email + " is not inside attraction " + attractionId);
+        }
+    }
+
     public Attraction requireAttraction(String id) {
         return findAttraction(id).orElseThrow(() -> new ParkException("No attraction with identifier " + id));
     }
