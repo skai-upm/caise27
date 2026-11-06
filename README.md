@@ -84,6 +84,7 @@ Attraction commands:
 - `ATTRACTION LIST;<AttractionIdentifier>` shows the emails of the users currently inside it (read-only).
 - `ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>` admits the ticket's user(s) when the ticket is dated exactly the current system date and the attraction has room for all of them. The date is checked only at entry.
 - With a group ticket, all its users enter together or nobody enters.
+- `ATTRACTION ENTER;<attraction>;<ticket>;SPEED` uses one unconsumed SpeedPass per individual ticket (each member of a group ticket needs one). It is not allowed at SPECIAL attractions, which automatically consume the ticket's Special Pass instead. Entry and pass consumption happen together or not at all, and the output names the consumed passes.
 - `ATTRACTION EXIT;<AttractionIdentifier>;<Email>` lets a user leave and frees their place.
 - `ATTRACTION STATUS;<AttractionIdentifier>` shows the identifier, name, capacity, number of users inside, available places and the users inside.
 

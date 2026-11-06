@@ -38,4 +38,9 @@ public class IndividualTicket extends Ticket implements IndividualAccess {
     public List<String> admittedUsers() {
         return List.of(ownerEmail);
     }
+
+    @Override
+    public List<IndividualTicket> individualTickets() {
+        return List.of(this);
+    }
 }

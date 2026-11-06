@@ -64,7 +64,7 @@ class AttractionTypeCommandsTest {
         assertEquals("ENTERED A02: ana@correo.com", run("ATTRACTION ENTER;A02;T001"));
         assertEquals("ENTERED A03: pedro@correo.com", run("ATTRACTION ENTER;A03;TG01"));
         run("SPECIALPASS CREATE;PE01;T001");
-        assertEquals("ENTERED A04: ana@correo.com", run("ATTRACTION ENTER;A04;T001"));
+        assertEquals("ENTERED A04: ana@correo.com (CONSUMED: PE01)", run("ATTRACTION ENTER;A04;T001"));
     }
 
     @Test

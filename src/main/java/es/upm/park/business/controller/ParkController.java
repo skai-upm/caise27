@@ -5,7 +5,9 @@ import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.NotFoundException;
 import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.AttractionType;
+import es.upm.park.business.model.EntryResult;
 import es.upm.park.business.model.EntryRules;
+import es.upm.park.business.model.IndividualAccess;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
@@ -416,16 +418,49 @@ public final class ParkController {
      * @return the emails of the users who entered
      */
     public List<String> enterAttraction(String attractionId, String ticketId) {
+        return enterAttraction(attractionId, ticketId, false).entrants();
+    }
+
+    /**
+     * Admits a ticket to an attraction, optionally using SpeedPasses. Entry and pass
+     * consumption happen together or not at all; consumed passes are saved.
+     */
+    public EntryResult enterAttraction(String attractionId, String ticketId, boolean speed) {
         Attraction<?> attraction = requireAttraction(attractionId);
         Ticket ticket = findTicket(ticketId)
                 .orElseThrow(() -> new NotFoundException("No ticket with identifier " + ticketId));
-        return attraction.admit(ticket, currentDate, entryRules());
+        EntryResult result = attraction.admit(ticket, currentDate, entryRules(), speed);
+        if (!result.consumedPasses().isEmpty()) {
+            save();
+        }
+        return result;
     }
 
-    /** Park information used by attraction-specific entry rules. */
+    /** Pass information and consumption offered to attractions while admitting tickets. */
     private EntryRules entryRules() {
-        return ticket -> passes.values().stream()
-                .anyMatch(pass -> pass instanceof SpecialPass && pass.getTicket() == ticket && !pass.isConsumed());
+        return new EntryRules() {
+            @Override
+            public Optional<String> availableSpeedPass(IndividualAccess ticket) {
+                return firstUnconsumed(SpeedPass.class, ticket);
+            }
+
+            @Override
+            public Optional<String> availableSpecialPass(IndividualAccess ticket) {
+                return firstUnconsumed(SpecialPass.class, ticket);
+            }
+
+            @Override
+            public void consume(String passId) {
+                passes.get(passId).consume();
+            }
+        };
+    }
+
+    private Optional<String> firstUnconsumed(Class<? extends Pass> kind, IndividualAccess ticket) {
+        return passes.values().stream()
+                .filter(pass -> kind.isInstance(pass) && pass.getTicket() == ticket && !pass.isConsumed())
+                .map(Pass::getId)
+                .findFirst();
     }
 
     /** Removes a user who is inside an attraction, releasing their place. */

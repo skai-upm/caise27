@@ -6,6 +6,7 @@ import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.ParkException;
 import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.AttractionType;
+import es.upm.park.business.model.EntryResult;
 import es.upm.park.business.model.SpecialPass;
 import es.upm.park.business.model.SpeedPass;
 import es.upm.park.presentation.help.CommandCatalog;
@@ -87,9 +88,7 @@ public class CommandProcessor {
         handlers.put("ATTRACTION CREATE", this::attractionCreate);
         handlers.put("ATTRACTION LIST", args -> withArgs(args, 1, "ATTRACTION LIST;<attraction>",
                 a -> listOccupants(park().requireAttraction(a[0]))));
-        handlers.put("ATTRACTION ENTER", args -> withArgs(args, 2,
-                "ATTRACTION ENTER;<attraction>;<ticket>",
-                a -> "ENTERED " + a[0] + ": " + String.join(", ", park().enterAttraction(a[0], a[1]))));
+        handlers.put("ATTRACTION ENTER", this::attractionEnter);
         handlers.put("ATTRACTION EXIT", args -> withArgs(args, 2, "ATTRACTION EXIT;<attraction>;<email>", a -> {
             park().exitAttraction(a[0], a[1]);
             return "EXITED " + a[0] + ": " + a[1];
@@ -158,6 +157,23 @@ public class CommandProcessor {
 
     private ParkController park() {
         return parkController;
+    }
+
+    private CommandResult attractionEnter(String[] args) {
+        if (args.length != 2 && args.length != 3) {
+            return error("Usage: ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]");
+        }
+        boolean speed = args.length == 3;
+        if (speed && !args[2].trim().equals("SPEED")) {
+            throw new InvalidInputException("The only entry option is SPEED: " + args[2].trim());
+        }
+        String attraction = args[0].trim();
+        EntryResult result = park().enterAttraction(attraction, args[1].trim(), speed);
+        String out = "ENTERED " + attraction + ": " + String.join(", ", result.entrants());
+        if (!result.consumedPasses().isEmpty()) {
+            out += " (CONSUMED: " + String.join(", ", result.consumedPasses()) + ")";
+        }
+        return CommandResult.of(out);
     }
 
     private CommandResult attractionCreate(String[] args) {

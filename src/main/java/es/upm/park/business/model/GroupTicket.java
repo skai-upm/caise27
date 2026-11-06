@@ -79,6 +79,11 @@ public class GroupTicket extends Ticket implements GroupAccess {
     }
 
     @Override
+    public List<IndividualTicket> individualTickets() {
+        return composition;
+    }
+
+    @Override
     public List<IndividualTicket> getComposition() {
         return composition;
     }

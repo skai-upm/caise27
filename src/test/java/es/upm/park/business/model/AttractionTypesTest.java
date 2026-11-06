@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AttractionTypesTest {
 
     private static final LocalDate DAY = LocalDate.of(2027, 4, 15);
-    private static final EntryRules NO_PASSES = ticket -> false;
-    private static final EntryRules ALL_PASSES = ticket -> true;
+    private static final EntryRules NO_PASSES = new TestEntryRules();
+    private final TestEntryRules allPasses = new TestEntryRules().specialPass("T001", "PE01");
 
     private final IndividualTicket individual =
             new IndividualTicket("T001", "ana@correo.com", DAY, new BigDecimal("40.00"));
@@ -59,7 +59,7 @@ class AttractionTypesTest {
         Attraction<?> special = new SpecialAttraction("A04", "x", 20);
         assertThrows(BusinessRuleException.class, () -> special.admit(individual, DAY, NO_PASSES));
         assertTrue(special.getOccupantEmails().isEmpty());
-        assertEquals(List.of("ana@correo.com"), special.admit(individual, DAY, ALL_PASSES));
+        assertEquals(List.of("ana@correo.com"), special.admit(individual, DAY, allPasses));
     }
 
     @Test

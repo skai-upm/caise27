@@ -13,4 +13,7 @@ public interface AccessTicket {
 
     /** Emails of the users the ticket admits. */
     List<String> admittedUsers();
+
+    /** The individual tickets involved in an entry: the ticket itself or a group's composition. */
+    List<? extends IndividualAccess> individualTickets();
 }
