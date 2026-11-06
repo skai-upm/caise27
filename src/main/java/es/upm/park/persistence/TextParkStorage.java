@@ -1,8 +1,8 @@
 package es.upm.park.persistence;
 
-import es.upm.park.controller.ParkState;
-import es.upm.park.controller.ParkStorage;
-import es.upm.park.model.Group;
+import es.upm.park.business.controller.ParkState;
+import es.upm.park.business.controller.ParkStorage;
+import es.upm.park.business.model.Group;
 
 import java.io.PrintStream;
 import java.util.LinkedHashMap;

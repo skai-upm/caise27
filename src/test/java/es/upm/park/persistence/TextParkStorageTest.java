@@ -1,11 +1,11 @@
 package es.upm.park.persistence;
 
-import es.upm.park.controller.ParkState;
-import es.upm.park.model.Attraction;
-import es.upm.park.model.Group;
-import es.upm.park.model.GroupTicket;
-import es.upm.park.model.IndividualTicket;
-import es.upm.park.model.Ticket;
+import es.upm.park.business.controller.ParkState;
+import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.Group;
+import es.upm.park.business.model.GroupTicket;
+import es.upm.park.business.model.IndividualTicket;
+import es.upm.park.business.model.Ticket;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

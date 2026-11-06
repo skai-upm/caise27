@@ -12,12 +12,12 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Checks that every type of the documented packages is declared in uml/model.puml. */
+/** Checks that every type of the business and persistence layers is declared in uml/model.puml. */
 class UmlModelConsistencyTest {
 
     private static final Path UML = Path.of("uml", "model.puml");
     private static final Path SOURCES = Path.of("src", "main", "java", "es", "upm", "park");
-    private static final String[] PACKAGES = {"model", "controller", "persistence"};
+    private static final String[] PACKAGES = {"business/model", "business/controller", "business/exception", "persistence"};
 
     static List<String> missingTypes(String diagram, List<String> typeNames) {
         List<String> missing = new ArrayList<>();
@@ -38,7 +38,7 @@ class UmlModelConsistencyTest {
     private static List<String> documentedTypeNames() throws IOException {
         List<String> names = new ArrayList<>();
         for (String pkg : PACKAGES) {
-            try (Stream<Path> files = Files.list(SOURCES.resolve(pkg))) {
+            try (Stream<Path> files = Files.list(SOURCES.resolve(Path.of(pkg)))) {
                 files.map(file -> file.getFileName().toString())
                         .filter(name -> name.endsWith(".java"))
                         .map(name -> name.substring(0, name.length() - ".java".length()))
@@ -69,5 +69,14 @@ class UmlModelConsistencyTest {
         assertTrue(diagram.contains("Ticket <|-- GroupTicket"));
         assertTrue(diagram.contains("GroupTicket *--> \"1..*\" IndividualTicket"));
         assertTrue(diagram.contains("GroupTicket --> \"0..1\" Group"));
+    }
+
+    @Test
+    void diagramUsesLayerPackages() throws IOException {
+        String diagram = Files.readString(UML, StandardCharsets.UTF_8);
+        for (String pkg : new String[] {"es.upm.park.business.model", "es.upm.park.business.controller",
+                "es.upm.park.business.exception", "es.upm.park.persistence", "es.upm.park.presentation"}) {
+            assertTrue(diagram.contains("package \"" + pkg + "\""), pkg);
+        }
     }
 }

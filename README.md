@@ -107,3 +107,14 @@ EXIT
 ```
 
 Save it as `input_fase2.txt` and run `java -jar target/amusement-park.jar --fly input_fase2.txt` to try it without changing `data/`. Group members and ticket owners must be registered users.
+
+## Architecture
+
+The code is organized in layers under `es.upm.park`:
+
+- `presentation`: command parsing and processing, the command loop and command-file reading.
+- `business`: `model` (domain objects), `controller` (central park management and its storage/user ports) and `exception` (the `ParkException` hierarchy: not found, business rule, invalid input, storage).
+- `persistence`: text-file repositories that implement the storage port.
+- `App`: the composition root that parses arguments and wires the layers.
+
+Presentation never uses persistence, and business uses neither (`LayeredArchitectureTest`). Every abnormal situation is an exception, which the presentation layer reports as `ERROR:` before continuing with the next command.

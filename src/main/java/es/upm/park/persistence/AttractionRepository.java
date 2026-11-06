@@ -1,6 +1,6 @@
 package es.upm.park.persistence;
 
-import es.upm.park.model.Attraction;
+import es.upm.park.business.model.Attraction;
 
 import java.io.PrintStream;
 import java.nio.file.Path;

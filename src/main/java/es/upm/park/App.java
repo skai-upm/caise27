@@ -1,8 +1,9 @@
 package es.upm.park;
 
-import es.upm.park.command.CommandProcessor;
-import es.upm.park.command.CommandRunner;
-import es.upm.park.controller.ParkController;
+import es.upm.park.business.controller.ParkController;
+import es.upm.park.business.exception.ParkException;
+import es.upm.park.presentation.CommandProcessor;
+import es.upm.park.presentation.CommandRunner;
 import es.upm.park.persistence.StoragePaths;
 import es.upm.park.persistence.TextParkStorage;
 
@@ -19,7 +20,9 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 
 /**
- * Application entry point. Supported forms: no arguments (interactive),
+ * Application entry point and composition root: parses the arguments, configures
+ * the persistence layer, restores the park state and hands control to the
+ * presentation layer. Supported forms: no arguments (interactive),
  * {@code <file>}, {@code --fly} and {@code --fly <file>}. Normal runs keep data in
  * {@code data/}; {@code --fly} runs use a fresh {@code tmp/<timestamp>/} directory
  * that is deleted when the execution ends.
@@ -47,34 +50,23 @@ public class App {
         try {
             ParkController park = ParkController.getInstance();
             TextParkStorage storage = new TextParkStorage(new StoragePaths(dataDir), err);
-            park.restore(storage.load());
+            try {
+                park.restore(storage.load());
+            } catch (ParkException e) {
+                err.println("ERROR: " + e.getMessage());
+                return;
+            }
             park.setStorage(storage);
             CommandRunner runner = new CommandRunner(new CommandProcessor(), out);
             if (commandFile == null) {
-                runReporting(runner, stdin, err);
+                runner.runInteractive(stdin, err);
             } else {
-                runFile(runner, commandFile, err);
+                runner.runFile(commandFile, err);
             }
         } finally {
             if (fly) {
                 deleteRecursively(dataDir, err);
             }
-        }
-    }
-
-    private static void runFile(CommandRunner runner, String commandFile, PrintStream err) {
-        try (BufferedReader file = Files.newBufferedReader(Path.of(commandFile), StandardCharsets.UTF_8)) {
-            runner.run(file);
-        } catch (IOException e) {
-            err.println("ERROR: Cannot read command file: " + commandFile);
-        }
-    }
-
-    private static void runReporting(CommandRunner runner, BufferedReader input, PrintStream err) {
-        try {
-            runner.run(input);
-        } catch (IOException e) {
-            err.println("ERROR: Cannot read input: " + e.getMessage());
         }
     }
 

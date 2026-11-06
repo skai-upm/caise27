@@ -1,8 +1,8 @@
 package es.upm.park.persistence;
 
+import es.upm.park.business.exception.StorageException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
@@ -28,7 +28,7 @@ final class TextFile {
         try {
             return Files.readAllLines(file, StandardCharsets.UTF_8).stream().filter(line -> !line.isBlank()).toList();
         } catch (IOException e) {
-            throw new UncheckedIOException("Cannot read " + file, e);
+            throw new StorageException("Data could not be read from " + file, e);
         }
     }
 
@@ -44,7 +44,7 @@ final class TextFile {
                 Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("Cannot write " + file, e);
+            throw new StorageException("Data could not be saved to " + file, e);
         }
     }
 

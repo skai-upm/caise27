@@ -1,9 +1,9 @@
 @startuml model
-title Amusement Park - class model (Delivery 2)
+title Amusement Park - class model (layered)
 hide empty methods
 skinparam classAttributeIconSize 0
 
-package "es.upm.park.model" {
+package "es.upm.park.business.model" {
   abstract class Ticket {
     - id : String
     - date : LocalDate
@@ -50,7 +50,7 @@ package "es.upm.park.model" {
   UsersNote .. Attraction
 }
 
-package "es.upm.park.controller" {
+package "es.upm.park.business.controller" {
   class ParkController <<singleton>> {
     - {static} INSTANCE : ParkController
     - currentDate : LocalDate
@@ -74,9 +74,6 @@ package "es.upm.park.controller" {
     attractions : List<Attraction>
   }
 
-  class ParkException {
-  }
-
   ParkController --> "1" ParkController : INSTANCE
   ParkController o--> "0..*" Group : groups
   ParkController o--> "0..*" Ticket : tickets
@@ -84,8 +81,27 @@ package "es.upm.park.controller" {
   ParkController --> "1" UserDirectory : users
   ParkController --> "1" ParkStorage : storage
   ParkStorage ..> ParkState : loads / saves
+}
+
+package "es.upm.park.business.exception" {
+  abstract class ParkException {
+  }
+  class NotFoundException {
+  }
+  class BusinessRuleException {
+  }
+  class InvalidInputException {
+  }
+  class StorageException {
+  }
+  ParkException <|-- NotFoundException
+  ParkException <|-- BusinessRuleException
+  ParkException <|-- InvalidInputException
+  ParkException <|-- StorageException
   ParkException --|> RuntimeException
 }
+
+ParkController ..> ParkException : throws
 
 package "es.upm.park.persistence" {
   class TextParkStorage {
@@ -124,9 +140,10 @@ package "es.upm.park.persistence" {
   GroupRepository ..> TextFile
   TicketRepository ..> TextFile
   AttractionRepository ..> TextFile
+  TextFile ..> StorageException : throws
 }
 
-package "es.upm.park.command" {
+package "es.upm.park.presentation" {
   class CommandRunner {
     - processor : CommandProcessor
     - out : PrintStream
@@ -144,10 +161,11 @@ package "es.upm.park.command" {
   CommandRunner --> "1" CommandProcessor
   CommandProcessor ..> CommandResult : creates
   CommandProcessor ..> ParkController : uses
+  CommandProcessor ..> ParkException : reports
 }
 
 package "es.upm.park" {
-  class App {
+  class App <<composition root>> {
   }
   App ..> CommandRunner
   App ..> TextParkStorage

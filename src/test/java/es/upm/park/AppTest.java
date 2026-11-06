@@ -1,6 +1,6 @@
 package es.upm.park;
 
-import es.upm.park.controller.ParkControllerTestSupport;
+import es.upm.park.business.controller.ParkControllerTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
