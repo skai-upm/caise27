@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import es.upm.park.controller.Dates;
 import es.upm.park.controller.ParkController;
+import es.upm.park.model.User;
 import es.upm.park.model.UserField;
 import es.upm.park.persistence.PersistenceException;
 import es.upm.park.service.ParkException;
@@ -37,6 +38,7 @@ public class CommandProcessor {
             "  GROUPTICKET DELETE;<id>",
             "  ATTRACTION CREATE;<id>;<name>;<capacity>",
             "  ATTRACTION LIST;<id>",
+            "  ATTRACTION ENTER;<attraction>;<ticket>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<price>",
             "  HELP",
@@ -65,6 +67,7 @@ public class CommandProcessor {
         commands.put("GROUPTICKET DELETE", new Command(1, this::deleteGroupTicket));
         commands.put("ATTRACTION CREATE", new Command(3, this::createAttraction));
         commands.put("ATTRACTION LIST", new Command(1, this::listAttraction));
+        commands.put("ATTRACTION ENTER", new Command(2, this::enterAttraction));
         commands.put("SYSTEM DATE", new Command(1, f -> "System date set to " + park.setCurrentDate(f[0])));
         commands.put("SYSTEM PRICE", new Command(1,
                 f -> "System price set to " + park.setBasePrice(f[0]).toPlainString()));
@@ -171,6 +174,11 @@ public class CommandProcessor {
             return "Attraction " + f[0] + " has no users inside";
         }
         return "Users in " + f[0] + ":" + System.lineSeparator() + String.join(System.lineSeparator(), emails);
+    }
+
+    private String enterAttraction(String[] f) {
+        List<String> emails = park.enterAttraction(f[0], f[1]).stream().map(User::getEmail).toList();
+        return "Entered " + f[0] + ": " + String.join(", ", emails);
     }
 
     private String exit(String[] f) {

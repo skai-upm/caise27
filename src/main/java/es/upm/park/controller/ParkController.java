@@ -3,6 +3,7 @@ package es.upm.park.controller;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 
 import es.upm.park.model.Group;
 import es.upm.park.model.GroupTicket;
@@ -112,6 +113,16 @@ public final class ParkController {
     /** Buys a group ticket for the current members of the group. */
     public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) {
         return ticketService.createGroupTicket(id, groupService.find(groupId), date);
+    }
+
+    /**
+     * Uses a ticket to let its users into an attraction on the current date.
+     *
+     * @return the users who entered
+     */
+    public List<User> enterAttraction(String attractionId, String ticketId) {
+        attractionService.find(attractionId);
+        return attractionService.enter(attractionId, ticketService.findIndividualForAccess(ticketId), currentDate);
     }
 
     public LocalDate getCurrentDate() {

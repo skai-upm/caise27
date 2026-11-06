@@ -70,6 +70,11 @@ public class GroupTicket extends Ticket {
     }
 
     @Override
+    public List<User> holders() {
+        return composition.stream().map(IndividualTicket::getUser).toList();
+    }
+
+    @Override
     public boolean involves(User user) {
         return composition.stream().anyMatch(t -> t.involves(user));
     }

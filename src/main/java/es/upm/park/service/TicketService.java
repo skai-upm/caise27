@@ -113,6 +113,12 @@ public class TicketService {
         return tickets.findById(id).orElseThrow(() -> new TicketException("no ticket " + id));
     }
 
+    /** A top-level individual ticket usable for attraction access. */
+    public Ticket findIndividualForAccess(String id) {
+        return tickets.findById(id).filter(IndividualTicket.class::isInstance)
+                .orElseThrow(() -> new TicketException("no ticket " + id));
+    }
+
     /** Number of top-level tickets (individual and group tickets). */
     public int count() {
         return tickets.findAll().size();

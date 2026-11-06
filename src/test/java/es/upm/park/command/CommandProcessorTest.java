@@ -249,4 +249,16 @@ class CommandProcessorTest {
         assertEquals("Error: no attraction A99", processor.process("ATTRACTION LIST;A99"));
         assertTrue(processor.process("HELP").contains("ATTRACTION LIST;<id>"));
     }
+
+    @Test
+    void attractionEnterCommand() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        assertEquals("Entered A01: ana@correo.com", processor.process("ATTRACTION ENTER;A01;T001"));
+        assertEquals("Users in A01:" + System.lineSeparator() + "ana@correo.com", processor.process("ATTRACTION LIST;A01"));
+        assertEquals("Error: no ticket T9", processor.process("ATTRACTION ENTER;A01;T9"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION ENTER;<attraction>;<ticket>"));
+    }
 }

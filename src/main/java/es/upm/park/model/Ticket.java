@@ -62,6 +62,14 @@ public abstract class Ticket {
         return List.of(id);
     }
 
+    /** A ticket is valid for entry only on its own date. */
+    public boolean isValidOn(LocalDate today) {
+        return date.equals(today);
+    }
+
+    /** Users admitted to an attraction when this ticket is used. */
+    public abstract List<User> holders();
+
     /** Whether this ticket concerns the given user. */
     public abstract boolean involves(User user);
 }
