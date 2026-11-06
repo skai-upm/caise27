@@ -55,4 +55,31 @@ class CommandRunnerTest {
         assertTrue(out.contains("ERROR: Unknown command: FOO"));
         assertTrue(out.contains(CommandProcessor.EXIT_TEXT));
     }
+
+    @Test
+    void blankLinesAreIgnoredSilently() throws IOException {
+        String out = run("HELP\n\n   \nEXIT\n");
+        assertEquals(1, occurrences(out, "Available commands:"));
+        assertEquals(0, occurrences(out, "ERROR"));
+        assertTrue(out.contains(CommandProcessor.EXIT_TEXT));
+    }
+
+    @Test
+    void failingCommandIsReportedAndProcessingContinues() throws IOException {
+        CommandProcessor failing = new CommandProcessor() {
+            @Override
+            public CommandResult process(String line) {
+                if (line.equals("BOOM")) {
+                    throw new IllegalStateException("boom");
+                }
+                return super.process(line);
+            }
+        };
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        new CommandRunner(failing, new PrintStream(bytes, true, StandardCharsets.UTF_8))
+                .run(new BufferedReader(new StringReader("BOOM\nHELP\n")));
+        String out = bytes.toString(StandardCharsets.UTF_8);
+        assertTrue(out.contains("ERROR: Could not process command: BOOM"));
+        assertTrue(out.indexOf("ERROR") < out.indexOf("Available commands:"));
+    }
 }

@@ -6,7 +6,8 @@ import java.io.PrintStream;
 
 /**
  * Single command loop shared by interactive and file input: reads one command
- * per line and stops right after EXIT or at end of input.
+ * per line, ignores blank lines, isolates failures of individual commands and
+ * stops right after EXIT or at end of input.
  */
 public class CommandRunner {
 
@@ -21,13 +22,24 @@ public class CommandRunner {
     public void run(BufferedReader input) throws IOException {
         String line;
         while ((line = input.readLine()) != null) {
-            CommandResult result = processor.process(line);
+            if (line.isBlank()) {
+                continue;
+            }
+            CommandResult result = processSafely(line);
             if (!result.output().isEmpty()) {
                 out.println(result.output());
             }
             if (result.terminate()) {
                 return;
             }
+        }
+    }
+
+    private CommandResult processSafely(String line) {
+        try {
+            return processor.process(line);
+        } catch (RuntimeException e) {
+            return CommandResult.of("ERROR: Could not process command: " + line.trim());
         }
     }
 }
