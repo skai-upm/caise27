@@ -820,6 +820,26 @@ public final class ParkController {
         return user;
     }
 
+    /**
+     * Deletes a user after verifying the password: the user is removed from every group and from the registry;
+     * historical tickets are kept.
+     *
+     * @throws ParkException if the user does not exist, the password is wrong, or active tickets or locked groups
+     *         forbid the deletion (nothing changes)
+     */
+    public synchronized void deleteUser(String email, String password) {
+        User user = users.get(email);
+        if (user == null) {
+            throw new ParkException("User " + email + " does not exist");
+        }
+        if (!verifyPassword(password, user.getPassword())) {
+            throw new ParkException("Incorrect password for user " + email);
+        }
+        ensureUserDeletable(email);
+        removeUserFromAllGroups(email);
+        users.remove(email);
+    }
+
     public synchronized User findUser(String email) {
         return users.get(email);
     }

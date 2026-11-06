@@ -19,5 +19,11 @@ public final class UserCommands {
             out.println("USER CREATED");
             return true;
         });
+        processor.register("USER DELETE", line -> {
+            String[] f = CommandSupport.fields(line, 3, "USER DELETE;<Email>;<Password>");
+            park.deleteUser(f[1], f[2]);
+            out.println("USER DELETED");
+            return true;
+        });
     }
 }
