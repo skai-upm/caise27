@@ -11,6 +11,7 @@ import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.model.User;
 import es.upm.park.persistence.repository.ParkRepositories;
 import es.upm.park.persistence.repository.UserRepository;
+import es.upm.park.business.service.AccessResult;
 import es.upm.park.business.service.AttractionService;
 import es.upm.park.business.service.BCryptPasswordHasher;
 import es.upm.park.business.service.GroupException;
@@ -160,9 +161,17 @@ public final class ParkController {
      * @return the users who entered
      */
     public List<User> enterAttraction(String attractionId, String ticketId) {
+        return enterAttraction(attractionId, ticketId, false).users();
+    }
+
+    /**
+     * Uses a ticket, optionally with SpeedPasses, to let its users into an
+     * attraction; passes are consumed only if entry succeeds.
+     */
+    public AccessResult enterAttraction(String attractionId, String ticketId, boolean speed) {
         attractionService.find(attractionId);
         return attractionService.enter(attractionId, ticketService.findForAccess(ticketId), currentDate,
-                passService::passesOf);
+                passService::passesOf, speed);
     }
 
     public LocalDate getCurrentDate() {

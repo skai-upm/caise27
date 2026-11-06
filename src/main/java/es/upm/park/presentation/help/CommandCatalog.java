@@ -42,8 +42,9 @@ public final class CommandCatalog {
                     "<type>: " + Arrays.stream(AttractionType.values()).map(Enum::name)
                             .collect(Collectors.joining(", ")) + " (default GENERAL)"),
             CommandInfo.of("ATTRACTION LIST;<id>", "Lists the emails of the users inside an attraction."),
-            CommandInfo.of("ATTRACTION ENTER;<attraction>;<ticket>",
-                    "Lets the users of a ticket valid today into an attraction, all or none."),
+            CommandInfo.of("ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]",
+                    "Lets the users of a ticket valid today into an attraction, all or none; SPEED uses one "
+                            + "SpeedPass per ticket and special attractions use the Special Pass."),
             CommandInfo.of("ATTRACTION EXIT;<attraction>;<email>", "Makes a user leave an attraction."),
             CommandInfo.of("ATTRACTION STATUS;<id>", "Shows capacity, occupancy and users of an attraction."),
             CommandInfo.of("INVOICE CREATE;USER;<email>", "Prints the invoice of a user's own purchases."),

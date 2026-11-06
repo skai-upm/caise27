@@ -41,6 +41,30 @@ public abstract class Attraction<T extends Admission> {
         return ticket.holders();
     }
 
+    /** Whether entry with SpeedPasses is allowed here. */
+    public boolean acceptsSpeedPasses() {
+        return true;
+    }
+
+    /**
+     * Individual tickets that must each spend a SpeedPass when the ticket
+     * enters with the SPEED option.
+     */
+    public List<IndividualAccess> speedPassTickets(T ticket) {
+        if (ticket instanceof GroupAccess group) {
+            return List.copyOf(group.getComposition());
+        }
+        if (ticket instanceof IndividualAccess individual) {
+            return List.of(individual);
+        }
+        return List.of();
+    }
+
+    /** Passes consumed automatically when the ticket enters. */
+    public List<Pass> automaticPasses(T ticket, PassLookup passes) {
+        return List.of();
+    }
+
     /** Reason why the ticket cannot enter beyond type and capacity, if any. */
     public Optional<String> missingRequirement(T ticket, PassLookup passes) {
         return Optional.empty();

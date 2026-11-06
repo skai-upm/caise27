@@ -20,4 +20,9 @@ public class IndividualAttraction extends Attraction<IndividualAccess> {
     public List<User> holdersOf(IndividualAccess ticket) {
         return List.of(ticket.getUser());
     }
+
+    @Override
+    public List<IndividualAccess> speedPassTickets(IndividualAccess ticket) {
+        return List.of(ticket);
+    }
 }

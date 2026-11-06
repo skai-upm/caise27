@@ -10,9 +10,11 @@ import java.util.function.Function;
 import es.upm.park.business.controller.Dates;
 import es.upm.park.business.controller.ParkController;
 import es.upm.park.business.model.Attraction;
+import es.upm.park.business.model.Pass;
 import es.upm.park.business.model.SpecialPass;
 import es.upm.park.business.model.SpeedPass;
 import es.upm.park.business.model.User;
+import es.upm.park.business.service.AccessResult;
 import es.upm.park.business.service.PassService;
 import es.upm.park.persistence.PersistenceException;
 import es.upm.park.presentation.help.CommandCatalog;
@@ -28,6 +30,7 @@ import es.upm.park.business.service.ParkException;
 public class CommandProcessor {
 
     static final String BYE = "Bye";
+    static final String SPEED = "SPEED";
 
     /** A command handler: expected number of fields and the action on them. */
     private record Command(int minFields, int maxFields, Function<String[], String> action) {
@@ -81,7 +84,7 @@ public class CommandProcessor {
                 f -> "Special pass refunded: " + park.getPassService().refundSpecialPass(f[0]).getId()));
         commands.put("ATTRACTION CREATE", new Command(3, 4, this::createAttraction));
         commands.put("ATTRACTION LIST", new Command(1, this::listAttraction));
-        commands.put("ATTRACTION ENTER", new Command(2, this::enterAttraction));
+        commands.put("ATTRACTION ENTER", new Command(2, 3, this::enterAttraction));
         commands.put("ATTRACTION EXIT", new Command(2,
                 f -> "Exited " + f[0] + ": " + park.getAttractionService().exit(f[0], f[1]).getEmail()));
         commands.put("ATTRACTION STATUS", new Command(1, f -> park.getAttractionService().status(f[0])));
@@ -211,8 +214,17 @@ public class CommandProcessor {
     }
 
     private String enterAttraction(String[] f) {
-        List<String> emails = park.enterAttraction(f[0], f[1]).stream().map(User::getEmail).toList();
-        return "Entered " + f[0] + ": " + String.join(", ", emails);
+        boolean speed = f.length == 3;
+        if (speed && !SPEED.equals(f[2])) {
+            return error("invalid entry option " + f[2]);
+        }
+        AccessResult result = park.enterAttraction(f[0], f[1], speed);
+        String entered = "Entered " + f[0] + ": "
+                + String.join(", ", result.users().stream().map(User::getEmail).toList());
+        if (result.consumed().isEmpty()) {
+            return entered;
+        }
+        return entered + "; consumed " + String.join(", ", result.consumed().stream().map(Pass::getId).toList());
     }
 
     private String createInvoice(String[] f) {

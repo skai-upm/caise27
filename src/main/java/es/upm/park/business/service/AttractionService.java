@@ -1,12 +1,16 @@
 package es.upm.park.business.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import es.upm.park.business.model.Admission;
 import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.AttractionType;
+import es.upm.park.business.model.IndividualAccess;
+import es.upm.park.business.model.Pass;
 import es.upm.park.business.model.PassLookup;
+import es.upm.park.business.model.SpeedPass;
 import es.upm.park.business.model.Ticket;
 import es.upm.park.business.model.User;
 import es.upm.park.persistence.repository.AttractionRepository;
@@ -75,19 +79,29 @@ public class AttractionService {
     }
 
     /**
-     * Admits the users of the ticket into the attraction, or nobody: the
-     * attraction must accept the ticket type, the ticket must be valid today,
-     * the attraction's own requirements must hold, none of the users may
-     * already be inside and there must be room for all of them.
+     * Admits the users of the ticket into the attraction without SpeedPasses.
      *
      * @return the users who entered
      */
     public List<User> enter(String attractionId, Ticket ticket, LocalDate today, PassLookup passes) {
-        return admit(find(attractionId), ticket, today, passes);
+        return enter(attractionId, ticket, today, passes, false).users();
     }
 
-    private static <T extends Admission> List<User> admit(Attraction<T> attraction, Ticket ticket, LocalDate today,
-            PassLookup passes) {
+    /**
+     * Admits the users of the ticket into the attraction, optionally using
+     * SpeedPasses, or nobody: every condition (ticket type, validity, the
+     * attraction's own requirements, SpeedPass availability, presence and
+     * capacity) is checked before entering and consuming passes together.
+     *
+     * @return who entered and which passes were consumed
+     */
+    public AccessResult enter(String attractionId, Ticket ticket, LocalDate today, PassLookup passes,
+            boolean speed) {
+        return admit(find(attractionId), ticket, today, passes, speed);
+    }
+
+    private static <T extends Admission> AccessResult admit(Attraction<T> attraction, Ticket ticket,
+            LocalDate today, PassLookup passes, boolean speed) {
         T admission = attraction.admissible(ticket).orElseThrow(() -> new AttractionException("attraction "
                 + attraction.getId() + " (" + attraction.getType() + ") does not accept ticket " + ticket.getId()));
         if (!admission.isValidOn(today)) {
@@ -96,6 +110,10 @@ public class AttractionService {
         attraction.missingRequirement(admission, passes).ifPresent(reason -> {
             throw new AttractionException(reason);
         });
+        List<Pass> toConsume = new ArrayList<>(attraction.automaticPasses(admission, passes));
+        if (speed) {
+            toConsume.addAll(speedPasses(attraction, admission, passes));
+        }
         List<User> holders = attraction.holdersOf(admission);
         for (User user : holders) {
             if (attraction.contains(user)) {
@@ -108,7 +126,23 @@ public class AttractionService {
                     + holders.size() + " users");
         }
         holders.forEach(attraction::enter);
-        return holders;
+        toConsume.forEach(Pass::consume);
+        return new AccessResult(holders, toConsume);
+    }
+
+    private static <T extends Admission> List<Pass> speedPasses(Attraction<T> attraction, T admission,
+            PassLookup passes) {
+        if (!attraction.acceptsSpeedPasses()) {
+            throw new AttractionException("attraction " + attraction.getId() + " (" + attraction.getType()
+                    + ") does not accept SpeedPasses");
+        }
+        List<Pass> selected = new ArrayList<>();
+        for (IndividualAccess ticket : attraction.speedPassTickets(admission)) {
+            selected.add(passes.passesOf(ticket).stream().filter(p -> p instanceof SpeedPass && !p.isConsumed())
+                    .findFirst().orElseThrow(() -> new AttractionException("ticket " + ticket.getId()
+                            + " has no unconsumed SpeedPass")));
+        }
+        return selected;
     }
 
     /**

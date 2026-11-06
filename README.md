@@ -42,7 +42,7 @@ SPECIALPASS CREATE;<id>;<ticket>
 SPECIALPASS DELETE;<id>
 ATTRACTION CREATE;<id>;<name>;<capacity>[;<type>]   (type: GENERAL, INDIVIDUAL, GROUP, SPECIAL; default GENERAL)
 ATTRACTION LIST;<id>
-ATTRACTION ENTER;<attraction>;<ticket>
+ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]
 ATTRACTION EXIT;<attraction>;<email>
 ATTRACTION STATUS;<id>
 INVOICE CREATE;USER;<email>

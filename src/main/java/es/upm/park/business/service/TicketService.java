@@ -141,9 +141,14 @@ public class TicketService {
         return tickets.findById(id).orElseThrow(() -> new TicketException("no ticket " + id));
     }
 
-    /** A top-level ticket of any type usable for attraction access. */
+    /**
+     * A ticket usable for attraction access: any top-level ticket, or a
+     * group-ticket constituent presented on its own as an individual ticket.
+     */
     public Ticket findForAccess(String id) {
-        return find(id);
+        return tickets.findById(id)
+                .or(() -> groupTickets().flatMap(g -> g.findConstituent(id).stream()).findFirst().map(Ticket.class::cast))
+                .orElseThrow(() -> new TicketException("no ticket " + id));
     }
 
     /** Number of top-level tickets (individual and group tickets). */

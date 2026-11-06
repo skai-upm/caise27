@@ -328,4 +328,20 @@ class CommandProcessorTest {
                 ParkController.getInstance().getAttractionService().find("A01").getType());
         assertTrue(processor.process("HELP").contains("ATTRACTION CREATE;<id>;<name>;<capacity>[;<type>]"));
     }
+
+    @Test
+    void attractionEnterWithSpeedOption() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        processor.process("ATTRACTION CREATE;A04;Terror;15;SPECIAL");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("SPEEDPASS CREATE;SP01;T001;1");
+        processor.process("SPECIALPASS CREATE;PE01;T001");
+        assertEquals("Error: invalid entry option FAST", processor.process("ATTRACTION ENTER;A01;T001;FAST"));
+        assertEquals("Entered A01: ana@correo.com; consumed SP01:1", processor.process("ATTRACTION ENTER;A01;T001;SPEED"));
+        assertEquals("Entered A04: ana@correo.com; consumed PE01", processor.process("ATTRACTION ENTER;A04;T001"));
+        assertEquals("Error: ATTRACTION ENTER expects 2 to 3 fields", processor.process("ATTRACTION ENTER;A01"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION ENTER;<attraction>;<ticket>[;SPEED]"));
+    }
 }

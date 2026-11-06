@@ -20,4 +20,9 @@ public class GroupAttraction extends Attraction<GroupAccess> {
     public List<User> holdersOf(GroupAccess ticket) {
         return ticket.getComposition().stream().map(IndividualTicket::getUser).toList();
     }
+
+    @Override
+    public List<IndividualAccess> speedPassTickets(GroupAccess ticket) {
+        return List.copyOf(ticket.getComposition());
+    }
 }

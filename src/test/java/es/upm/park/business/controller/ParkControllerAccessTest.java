@@ -84,7 +84,7 @@ class ParkControllerAccessTest {
         park.getGroupService().addUser("G01", "ana@correo.com");
         park.getGroupService().addUser("G01", "pedro@correo.com");
         assertEquals(List.of(ana, pedro), park.createGroupTicket("TG01", "G01", DAY).holders());
-        assertRejected("no ticket TG01:12345678Z", () -> park.enterAttraction("A01", "TG01:12345678Z"));
+        assertEquals(List.of(ana), park.enterAttraction("A01", "TG01:12345678Z"));
     }
 
     private void groupTicket(String id, LocalDate date) {
