@@ -16,14 +16,16 @@ import java.util.Objects;
 public class ParkStorage implements ParkRepository {
 
     private final Path directory;
+    private final UserRepository users;
     private final AttractionRepository attractions;
     private final GroupRepository groups;
     private final TicketRepository tickets;
     private final PassRepository passes;
 
-    public ParkStorage(Path directory, AttractionRepository attractions, GroupRepository groups,
-            TicketRepository tickets, PassRepository passes) {
+    public ParkStorage(Path directory, UserRepository users, AttractionRepository attractions,
+            GroupRepository groups, TicketRepository tickets, PassRepository passes) {
         this.directory = Objects.requireNonNull(directory, "directory");
+        this.users = Objects.requireNonNull(users, "users");
         this.attractions = Objects.requireNonNull(attractions, "attractions");
         this.groups = Objects.requireNonNull(groups, "groups");
         this.tickets = Objects.requireNonNull(tickets, "tickets");
@@ -37,7 +39,8 @@ public class ParkStorage implements ParkRepository {
      * @return a new, independent storage
      */
     public static ParkStorage inDirectory(Path directory) {
-        return new ParkStorage(directory, new AttractionRepository(directory.resolve("attractions.txt")),
+        return new ParkStorage(directory, new UserRepository(directory.resolve("users.txt")),
+                new AttractionRepository(directory.resolve("attractions.txt")),
                 new GroupRepository(directory.resolve("groups.txt")),
                 new TicketRepository(directory.resolve("tickets.txt")),
                 new PassRepository(directory.resolve("passes.txt")));
@@ -47,11 +50,12 @@ public class ParkStorage implements ParkRepository {
         return directory;
     }
 
-    /** Rebuilds attractions, groups, tickets, then passes. */
+    /** Rebuilds users, attractions, groups, tickets, then passes. */
     @Override
     public List<String> load(ParkController park) {
         List<String> warnings = new ArrayList<>();
         try {
+            users.load(park, warnings);
             attractions.load(park, warnings);
             groups.load(park, warnings);
             tickets.load(park, warnings);
@@ -65,6 +69,7 @@ public class ParkStorage implements ParkRepository {
     @Override
     public void save(ParkController park) {
         try {
+            users.save(park);
             attractions.save(park);
             groups.save(park);
             tickets.save(park);

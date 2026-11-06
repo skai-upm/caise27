@@ -800,6 +800,26 @@ public final class ParkController {
         return user;
     }
 
+    /**
+     * Rebuilds a persisted user with its stored (already protected) password (used only by persistence).
+     *
+     * @throws ParkException if the DNI or e-mail is already used
+     */
+    public synchronized User restoreUser(String firstName, String surnames, String dni, String email,
+            String storedPassword, String phone, String card) {
+        for (User user : users.values()) {
+            if (user.getDni().equals(dni)) {
+                throw new ParkException("User with DNI " + dni + " already exists");
+            }
+        }
+        if (users.containsKey(email)) {
+            throw new ParkException("User with email " + email + " already exists");
+        }
+        User user = new User(firstName, surnames, dni, email, storedPassword, phone, card);
+        users.put(email, user);
+        return user;
+    }
+
     public synchronized User findUser(String email) {
         return users.get(email);
     }

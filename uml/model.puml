@@ -186,6 +186,8 @@ package es.upm.amusementpark.persistence {
   }
   class PassRepository {
   }
+  class UserRepository {
+  }
 }
 
 ' ---- ticket hierarchy and composition ----
@@ -226,6 +228,8 @@ ParkController --> "0..*" Pass : passes
 PassCommands ..> ParkController : uses
 PassCommands ..> CommandSupport : parses with
 ParkStorage *-- "1" PassRepository : passes
+ParkStorage *-- "1" UserRepository : users
+UserRepository *-- "1" TextFile : file
 PassRepository *-- "1" TextFile : file
 
 ' ---- central management ----
