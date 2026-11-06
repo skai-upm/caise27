@@ -145,6 +145,7 @@ package "es.upm.park.business.controller" {
   UserController --> "1" UserRegistry : registry (injected)
   UserController --> "1" PasswordService : passwords (injected)
   UserController --> "1" UserStorage : storage (injected)
+  UserController --> "1" ParkController : park (injected)
   interface UserStorage {
   }
   UserController ..> UserValidator : validates with
@@ -366,7 +367,7 @@ package "es.upm.park" {
   AppConfiguration ..> TextParkStorage : creates
   AppConfiguration ..> ParkController : injects storage
   AppConfiguration ..> InvoiceController : injects park
-  AppConfiguration ..> UserController : injects registry, passwords
+  AppConfiguration ..> UserController : injects registry, passwords, storage, park
   AppConfiguration ..> CommandProcessor : creates
   AppConfiguration ..> PasswordService : creates with BCrypt and UserValidator rule
   AppConfiguration ..> UserRegistry : creates, injects as UserDirectory

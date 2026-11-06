@@ -23,10 +23,16 @@ class UserControllerTest {
             new PasswordService(new BCryptPasswordHasher(), UserValidator.passwordPolicy());
     private UserRegistry registry;
 
+    private final ParkController park = ParkController.getInstance();
+
     @BeforeEach
     void setUp() {
         registry = new UserRegistry();
         controller.configure(registry, passwords);
+        park.reset();
+        park.setCurrentDate(java.time.LocalDate.of(2027, 4, 15));
+        park.setUserDirectory(registry);
+        controller.setParkController(park);
     }
 
     @AfterEach
@@ -77,6 +83,39 @@ class UserControllerTest {
                     () -> controller.createUser(d[0], d[1], d[2], d[3], d[4], d[5], d[6]), String.join(";", d));
         }
         assertTrue(registry.all().isEmpty());
+    }
+
+    @Test
+    void deletesWithCorrectPasswordOnly() {
+        ana();
+        assertThrows(BusinessRuleException.class, () -> controller.deleteUser("ana@correo.com", "Otra1!"));
+        assertTrue(registry.findByEmail("ana@correo.com").isPresent());
+        assertThrows(es.upm.park.business.exception.NotFoundException.class,
+                () -> controller.deleteUser("nadie@correo.com", "Clave1!"));
+        controller.deleteUser("ana@correo.com", "Clave1!");
+        assertTrue(registry.findByEmail("ana@correo.com").isEmpty());
+    }
+
+    @Test
+    void activeTicketOrLockedGroupPreventsDeletion() {
+        ana();
+        park.createIndividualTicket("T001", "ana@correo.com", park.getCurrentDate());
+        assertThrows(BusinessRuleException.class, () -> controller.deleteUser("ana@correo.com", "Clave1!"));
+        assertTrue(registry.findByEmail("ana@correo.com").isPresent());
+        assertTrue(park.findTicket("T001").isPresent());
+    }
+
+    @Test
+    void deletionLeavesGroupsAndKeepsHistoricalTickets() {
+        ana();
+        park.createGroup("G01", "Familia");
+        park.addUserToGroup("G01", "ana@correo.com");
+        park.createIndividualTicket("T001", "ana@correo.com", park.getCurrentDate());
+        park.setCurrentDate(park.getCurrentDate().plusDays(1));
+        controller.deleteUser("ana@correo.com", "Clave1!");
+        assertTrue(registry.findByEmail("ana@correo.com").isEmpty());
+        assertTrue(park.findGroup("G01").orElseThrow().getMemberEmails().isEmpty());
+        assertTrue(park.findTicket("T001").isPresent(), "historical ticket kept");
     }
 
     @Test

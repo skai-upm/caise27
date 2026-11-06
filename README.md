@@ -53,6 +53,7 @@ General commands:
 User commands:
 
 - `USER CREATE;<FirstName>;<Surnames>;<DNI>;<Email>;<Password>;<Phone>;<Card>` registers a user after validating the data and checking that the DNI and email are not already in use. The password is stored BCrypt-protected.
+- `USER DELETE;<Email>;<Password>` deletes a user after verifying the password. It is rejected while the user has a ticket dated today or later or belongs to a group with an active group ticket. Otherwise the user is removed from their groups, and historical tickets are kept.
 
 System commands (park-wide settings for the current execution):
 

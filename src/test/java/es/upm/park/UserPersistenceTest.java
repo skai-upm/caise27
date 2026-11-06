@@ -61,6 +61,20 @@ class UserPersistenceTest {
     }
 
     @Test
+    void deletionIsPersisted() throws IOException {
+        run(ANA + "\n" + PEDRO + "\nEXIT\n");
+        ParkControllerTestSupport.reset();
+        String out = run("USER DELETE;ana@correo.com;Mala1!\nUSER DELETE;ana@correo.com;Clave1!\nEXIT\n");
+        assertTrue(out.contains("ERROR: Incorrect password for user ana@correo.com"), out);
+        assertTrue(out.contains("USER DELETED"), out);
+        String file = Files.readString(base.resolve("data").resolve("users.txt"));
+        assertFalse(file.contains("ana@correo.com"));
+        assertTrue(file.contains("pedro@correo.com"));
+        ParkControllerTestSupport.reset();
+        assertTrue(run("USER DELETE;ana@correo.com;Clave1!\nEXIT\n").contains("ERROR: No registered user"));
+    }
+
+    @Test
     void flyRunIsolatesUsers() throws IOException {
         run(ANA + "\nEXIT\n");
         String before = Files.readString(base.resolve("data").resolve("users.txt"));

@@ -18,5 +18,6 @@ public final class ParkControllerTestSupport {
         ParkController.getInstance().setUserDirectory(users);
         UserController.getInstance().configure(users,
                 new PasswordService(new BCryptPasswordHasher(), UserValidator.passwordPolicy()));
+        UserController.getInstance().setParkController(ParkController.getInstance());
     }
 }

@@ -1,6 +1,7 @@
 package es.upm.park.business.controller;
 
 import es.upm.park.business.exception.BusinessRuleException;
+import es.upm.park.business.exception.NotFoundException;
 import es.upm.park.business.model.User;
 import es.upm.park.business.security.PasswordService;
 import es.upm.park.business.validation.UserValidator;
@@ -17,6 +18,7 @@ public final class UserController {
     private UserRegistry registry;
     private PasswordService passwords;
     private UserStorage storage = UserStorage.NONE;
+    private ParkController park;
 
     private UserController() {
     }
@@ -37,6 +39,11 @@ public final class UserController {
         this.storage = storage;
     }
 
+    /** Injects the park management collaborator used to apply the user-deletion rules. */
+    public void setParkController(ParkController park) {
+        this.park = park;
+    }
+
     /** Registers a new user after validating its data and the uniqueness of DNI and email. */
     public User createUser(String firstName, String surnames, String dni, String email, String rawPassword,
                            String phone, String card) {
@@ -52,6 +59,26 @@ public final class UserController {
         registry.save(user);
         save();
         return user;
+    }
+
+    /**
+     * Deletes a user identified by email and password. The park rules (active
+     * tickets, locked groups) are applied before anything changes; historical
+     * tickets are kept.
+     */
+    public void deleteUser(String email, String rawPassword) {
+        requireConfigured();
+        if (park == null) {
+            throw new IllegalStateException("UserController is not configured with a ParkController");
+        }
+        User user = registry.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("No registered user with email " + email));
+        if (!passwords.verify(rawPassword, user.getPassword())) {
+            throw new BusinessRuleException("Incorrect password for user " + email);
+        }
+        park.deleteUserReferences(email);
+        registry.remove(email);
+        save();
     }
 
     private void save() {

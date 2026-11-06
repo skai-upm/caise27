@@ -41,6 +41,15 @@ class UserCommandsTest {
     }
 
     @Test
+    void deleteUserCommand() {
+        run(ANA);
+        assertTrue(run("USER DELETE;ana@correo.com;Clave2!").startsWith("ERROR"));
+        assertTrue(run("USER DELETE;ana@correo.com").startsWith("ERROR"));
+        assertEquals("USER DELETED", run("USER DELETE;ana@correo.com;Clave1!"));
+        assertTrue(run("USER DELETE;ana@correo.com;Clave1!").startsWith("ERROR"));
+    }
+
+    @Test
     void errorsAddNoUser() {
         run(ANA);
         for (String line : new String[] {ANA,

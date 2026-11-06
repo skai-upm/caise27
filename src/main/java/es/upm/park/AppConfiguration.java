@@ -59,6 +59,7 @@ public final class AppConfiguration {
         UserController userController = UserController.getInstance();
         UserRepository userStorage = new UserRepository(paths.users(), warnings);
         userController.configure(users, passwords, userStorage);
+        userController.setParkController(park);
 
         HelpGenerator help = new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter());
         HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter());

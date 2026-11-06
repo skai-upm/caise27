@@ -62,6 +62,10 @@ public class CommandProcessor {
                     userController.createUser(a[0], a[1], a[2], a[3], a[4], a[5], a[6]);
                     return "USER CREATED";
                 }));
+        handlers.put("USER DELETE", args -> withArgs(args, 2, "USER DELETE;<Email>;<Password>", a -> {
+            userController.deleteUser(a[0], a[1]);
+            return "USER DELETED";
+        }));
         handlers.put("SYSTEM DATE", this::systemDate);
         handlers.put("SYSTEM PRICE", this::systemPrice);
         handlers.put("GROUP CREATE", args -> withArgs(args, 2, "GROUP CREATE;<Identifier>;<Name>", a -> {
