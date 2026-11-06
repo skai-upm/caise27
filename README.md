@@ -86,6 +86,13 @@ Attraction commands:
 - `ATTRACTION EXIT;<AttractionIdentifier>;<Email>` lets a user leave and frees their place.
 - `ATTRACTION STATUS;<AttractionIdentifier>` shows the identifier, name, capacity, number of users inside, available places and the users inside.
 
+Invoice commands:
+
+- `INVOICE CREATE;USER;<email>` shows the user's identification, the individual tickets bought directly for them, and the total. Tickets that are part of a group ticket are not counted again.
+- `INVOICE CREATE;GROUP;<groupIdentifier>` shows the group, its group tickets with their composition, and the total of the group tickets.
+
+Invoices are built with the Builder pattern (`business.invoice`), and empty sections are omitted.
+
 ## Persistence
 
 Groups, tickets (including group tickets and their composition) and attractions are stored as text files in `data/` and reloaded at startup. Attractions always start empty. Historical tickets are kept even after their user or group is deleted. With `--fly`, all files go to a new `tmp/<yyyyMMdd_HHmmss>/` directory, which is deleted when the execution ends.

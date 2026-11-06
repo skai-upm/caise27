@@ -103,6 +103,31 @@ package "es.upm.park.business.exception" {
 
 ParkController ..> ParkException : throws
 
+package "es.upm.park.business.invoice" {
+  class Invoice {
+    - title : String
+    - recipient : List<String>
+    - sections : List<Section>
+  }
+  abstract class InvoiceBuilder<B> {
+    - title : String
+    - recipient : List<String>
+    - sections : List<SectionDraft>
+  }
+  class UserInvoiceBuilder {
+  }
+  class GroupInvoiceBuilder {
+  }
+  InvoiceBuilder <|-- UserInvoiceBuilder
+  InvoiceBuilder <|-- GroupInvoiceBuilder
+  InvoiceBuilder ..> Invoice : builds
+  UserInvoiceBuilder ..> IndividualTicket : reads
+  GroupInvoiceBuilder ..> GroupTicket : reads
+}
+
+ParkController ..> UserInvoiceBuilder : directs
+ParkController ..> GroupInvoiceBuilder : directs
+
 package "es.upm.park.persistence" {
   class TextParkStorage {
     - groups : GroupRepository

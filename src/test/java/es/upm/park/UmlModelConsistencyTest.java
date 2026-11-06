@@ -17,14 +17,15 @@ class UmlModelConsistencyTest {
 
     private static final Path UML = Path.of("uml", "model.puml");
     private static final Path SOURCES = Path.of("src", "main", "java", "es", "upm", "park");
-    private static final String[] PACKAGES = {"business/model", "business/controller", "business/exception", "persistence"};
+    private static final String[] PACKAGES = {"business/model", "business/controller", "business/exception", "business/invoice", "persistence"};
 
     static List<String> missingTypes(String diagram, List<String> typeNames) {
         List<String> missing = new ArrayList<>();
         for (String name : typeNames) {
             boolean declared = false;
             for (String keyword : new String[] {"class ", "interface ", "enum "}) {
-                if (diagram.contains(keyword + name + " ") || diagram.contains(keyword + name + "\n")) {
+                if (diagram.contains(keyword + name + " ") || diagram.contains(keyword + name + "\n")
+                        || diagram.contains(keyword + name + "<")) {
                     declared = true;
                 }
             }
@@ -75,7 +76,8 @@ class UmlModelConsistencyTest {
     void diagramUsesLayerPackages() throws IOException {
         String diagram = Files.readString(UML, StandardCharsets.UTF_8);
         for (String pkg : new String[] {"es.upm.park.business.model", "es.upm.park.business.controller",
-                "es.upm.park.business.exception", "es.upm.park.persistence", "es.upm.park.presentation"}) {
+                "es.upm.park.business.exception", "es.upm.park.business.invoice", "es.upm.park.persistence",
+                "es.upm.park.presentation"}) {
             assertTrue(diagram.contains("package \"" + pkg + "\""), pkg);
         }
     }

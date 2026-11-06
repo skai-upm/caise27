@@ -3,6 +3,9 @@ package es.upm.park.business.controller;
 import es.upm.park.business.exception.BusinessRuleException;
 import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.NotFoundException;
+import es.upm.park.business.invoice.GroupInvoiceBuilder;
+import es.upm.park.business.invoice.Invoice;
+import es.upm.park.business.invoice.UserInvoiceBuilder;
 import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
@@ -349,6 +352,27 @@ public final class ParkController {
 
     public Attraction requireAttraction(String id) {
         return findAttraction(id).orElseThrow(() -> new NotFoundException("No attraction with identifier " + id));
+    }
+
+    // ---- invoices (director of the invoice builders) ------------------------------
+
+    /** Invoice of an active user's direct purchases. */
+    public Invoice userInvoice(String email) {
+        String dni = users.dniOf(email)
+                .orElseThrow(() -> new NotFoundException("No registered user with email " + email));
+        return new UserInvoiceBuilder()
+                .forUser(email, dni)
+                .directTickets(ticketsOf(email))
+                .build();
+    }
+
+    /** Invoice of the group tickets bought by an existing group. */
+    public Invoice groupInvoice(String id) {
+        Group group = requireGroup(id);
+        return new GroupInvoiceBuilder()
+                .forGroup(group)
+                .groupTickets(groupTicketsOf(group))
+                .build();
     }
 
     // ---- users ---------------------------------------------------------------

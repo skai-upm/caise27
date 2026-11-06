@@ -41,6 +41,8 @@ public class CommandProcessor {
             "ATTRACTION EXIT;<attraction>;<email>",
             "ATTRACTION LIST;<attraction>",
             "ATTRACTION STATUS;<attractionIdentifier>",
+            "INVOICE CREATE;USER;<email>",
+            "INVOICE CREATE;GROUP;<groupIdentifier>",
             "HELP",
             "EXIT");
 
@@ -95,6 +97,12 @@ public class CommandProcessor {
             park().exitAttraction(a[0], a[1]);
             return "EXITED " + a[0] + ": " + a[1];
         }));
+        handlers.put("INVOICE CREATE", args -> withArgs(args, 2, "INVOICE CREATE;USER;<email> | INVOICE CREATE;GROUP;<groupIdentifier>",
+                a -> switch (a[0]) {
+                    case "USER" -> park().userInvoice(a[1]).render();
+                    case "GROUP" -> park().groupInvoice(a[1]).render();
+                    default -> throw new InvalidInputException("Invoice type must be USER or GROUP: " + a[0]);
+                }));
         handlers.put("ATTRACTION STATUS", args -> withArgs(args, 1, "ATTRACTION STATUS;<attractionIdentifier>",
                 a -> status(park().requireAttraction(a[0]))));
     }
