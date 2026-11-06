@@ -63,10 +63,10 @@ package es.upm.park.business.controller {
 }
 
 package es.upm.park.business.service {
-  class UserService
-  class GroupService
-  class TicketService
-  class AttractionService
+  class UserService <<singleton>>
+  class GroupService <<singleton>>
+  class TicketService <<singleton>>
+  class AttractionService <<singleton>>
 }
 
 package es.upm.park.persistence.repository {

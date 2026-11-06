@@ -2,20 +2,13 @@ package es.upm.park.business.controller;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.User;
-import es.upm.park.persistence.AttractionFileStore;
-import es.upm.park.persistence.GroupFileStore;
-import es.upm.park.persistence.TicketFileStore;
-import es.upm.park.persistence.UserFileStore;
-import es.upm.park.persistence.repository.AttractionRepository;
-import es.upm.park.persistence.repository.GroupRepository;
-import es.upm.park.persistence.repository.TicketRepository;
+import es.upm.park.persistence.repository.ParkRepositories;
 import es.upm.park.persistence.repository.UserRepository;
 import es.upm.park.business.service.AttractionService;
 import es.upm.park.business.service.GroupException;
@@ -35,10 +28,6 @@ import es.upm.park.business.service.UserService;
 public final class ParkController {
 
     public static final BigDecimal INITIAL_PRICE = new BigDecimal("40.00");
-    public static final String USERS_FILE = "users.txt";
-    public static final String GROUPS_FILE = "groups.txt";
-    public static final String ATTRACTIONS_FILE = "attractions.txt";
-    public static final String TICKETS_FILE = "tickets.txt";
     private static final int PRICE_DECIMALS = 2;
 
     private static final ParkController INSTANCE = new ParkController();
@@ -52,7 +41,7 @@ public final class ParkController {
     private InvoiceService invoiceService;
 
     private ParkController() {
-        start(new UserRepository(), LocalDate.now());
+        start(ParkRepositories.inMemory(), LocalDate.now());
     }
 
     /** The single central management instance. */
@@ -61,38 +50,28 @@ public final class ParkController {
     }
 
     /**
-     * Starts a new execution: resets the date to {@code today}, the base price
-     * to 40.00 and attaches the stored users.
+     * Starts a new execution with in-memory repositories around the given
+     * users (convenience for embedding and tests).
      */
     public void start(UserRepository users, LocalDate today) {
-        wire(users, new GroupRepository(), new AttractionRepository(), new TicketRepository(), today);
+        start(ParkRepositories.inMemory(users), today);
     }
 
     /**
-     * Starts a new execution whose park state is stored in, and reloaded
-     * from, the text files of {@code dataDir}.
-     *
-     * @throws es.upm.park.persistence.PersistenceException when stored data cannot be read
+     * Starts a new execution: injects the repositories configured during
+     * application initialization into the singleton controllers, wires their
+     * collaborations, resets the date to {@code today} and the price to 40.00.
      */
-    public void start(Path dataDir, LocalDate today) {
-        UserRepository users = new UserRepository(new UserFileStore(dataDir.resolve(USERS_FILE)));
-        GroupRepository groups = new GroupRepository(new GroupFileStore(dataDir.resolve(GROUPS_FILE)),
-                users::findByDni);
-        AttractionRepository attractions =
-                new AttractionRepository(new AttractionFileStore(dataDir.resolve(ATTRACTIONS_FILE)));
-        TicketRepository tickets = new TicketRepository(new TicketFileStore(dataDir.resolve(TICKETS_FILE)),
-                users::findByDni, groups::findById);
-        wire(users, groups, attractions, tickets, today);
-    }
-
-    private void wire(UserRepository users, GroupRepository groups, AttractionRepository attractions,
-            TicketRepository tickets, LocalDate today) {
-        this.userService = new UserService(users);
-        TicketService ticketsService = new TicketService(tickets, users, this::getCurrentDate, this::getBasePrice);
-        this.ticketService = ticketsService;
-        this.groupService = new GroupService(groups, users, ticketsService::hasActiveGroupTicket);
-        this.attractionService = new AttractionService(attractions);
-        this.invoiceService = new InvoiceService(users, groups, tickets, new TextInvoiceBuilder());
+    public void start(ParkRepositories repositories, LocalDate today) {
+        this.userService = UserService.getInstance().configure(repositories.users());
+        this.ticketService = TicketService.getInstance().configure(repositories.tickets(), repositories.users(),
+                this::getCurrentDate, this::getBasePrice);
+        TicketService tickets = this.ticketService;
+        this.groupService = GroupService.getInstance().configure(repositories.groups(), repositories.users(),
+                tickets::hasActiveGroupTicket);
+        this.attractionService = AttractionService.getInstance().configure(repositories.attractions());
+        this.invoiceService = InvoiceService.getInstance().configure(repositories.users(), repositories.groups(),
+                repositories.tickets(), new TextInvoiceBuilder());
         this.currentDate = today;
         this.basePrice = INITIAL_PRICE;
     }

@@ -58,11 +58,19 @@ class ArchitectureTest {
         }
     }
 
+    /**
+     * Presentation may only obtain the repository configuration as the
+     * composition root (ParkRepositories); it never uses file stores or
+     * individual repositories.
+     */
     @Test
     void presentationDoesNotUseFileStores() throws IOException {
         assertNoImport("presentation", "es.upm.park.persistence.UserFileStore",
                 "es.upm.park.persistence.GroupFileStore", "es.upm.park.persistence.TicketFileStore",
-                "es.upm.park.persistence.AttractionFileStore", "es.upm.park.persistence.repository");
+                "es.upm.park.persistence.AttractionFileStore", "es.upm.park.persistence.repository.UserRepository",
+                "es.upm.park.persistence.repository.GroupRepository",
+                "es.upm.park.persistence.repository.TicketRepository",
+                "es.upm.park.persistence.repository.AttractionRepository");
     }
 
     @Test

@@ -14,14 +14,30 @@ import es.upm.park.persistence.repository.UserRepository;
  */
 public class GroupService {
 
-    private final GroupRepository groups;
-    private final UserRepository users;
-    private final Predicate<Group> activeTicket;
+    private static final GroupService INSTANCE = new GroupService();
 
-    public GroupService(GroupRepository groups, UserRepository users, Predicate<Group> activeTicket) {
+    private GroupRepository groups;
+    private UserRepository users;
+    private Predicate<Group> activeTicket;
+
+    private GroupService() {
+    }
+
+    /** The single GroupService instance of the execution. */
+    public static GroupService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies chosen during application initialization.
+     *
+     * @return this controller
+     */
+    public GroupService configure(GroupRepository groups, UserRepository users, Predicate<Group> activeTicket) {
         this.groups = groups;
         this.users = users;
         this.activeTicket = activeTicket;
+        return this;
     }
 
     public Group create(String id, String name) {

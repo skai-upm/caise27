@@ -17,6 +17,7 @@ import org.junit.jupiter.api.io.TempDir;
 import es.upm.park.business.model.GroupTicket;
 import es.upm.park.business.model.IndividualTicket;
 import es.upm.park.business.service.ParkException;
+import es.upm.park.persistence.repository.ParkRepositories;
 
 class ParkControllerPersistenceTest {
 
@@ -27,7 +28,7 @@ class ParkControllerPersistenceTest {
     Path dir;
 
     private void populate() {
-        park.start(dir, DAY);
+        park.start(ParkRepositories.load(dir), DAY);
         park.getUserService().create("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
         park.getUserService().create("Pedro", "L", "87654321X", "pedro@correo.com", "Otra2#", "6", "9876543210987654");
         park.getGroupService().create("G01", "Familia Garcia");
@@ -44,7 +45,7 @@ class ParkControllerPersistenceTest {
     @Test
     void reconstructsGroupsTicketsAndAttractions() {
         populate();
-        park.start(dir, DAY);
+        park.start(ParkRepositories.load(dir), DAY);
         assertEquals(List.of("12345678Z", "87654321X"), park.getGroupService().find("G01").getMemberDnis());
         IndividualTicket t1 = (IndividualTicket) park.getTicketService().find("T001");
         assertSame(park.getUserService().authenticate("ana@correo.com", "Clave1!"), t1.getUser());
@@ -66,7 +67,7 @@ class ParkControllerPersistenceTest {
         park.deleteUser("pedro@correo.com", "Otra2#");
         park.deleteGroup("G01");
         park.getGroupService().create("G01", "Nuevo");
-        park.start(dir, LocalDate.of(2027, 4, 16));
+        park.start(ParkRepositories.load(dir), LocalDate.of(2027, 4, 16));
         GroupTicket tg = (GroupTicket) park.getTicketService().find("TG01");
         assertNull(tg.getGroup());
         assertEquals("G01", tg.getGroupId());
@@ -79,7 +80,7 @@ class ParkControllerPersistenceTest {
     @Test
     void groupMembersAreTheLoadedUserObjects() {
         populate();
-        park.start(dir, DAY);
+        park.start(ParkRepositories.load(dir), DAY);
         es.upm.park.business.model.User ana = park.getUserService().authenticate("ana@correo.com", "Clave1!");
         assertSame(ana, park.getGroupService().find("G01").getMembers().get(0));
     }

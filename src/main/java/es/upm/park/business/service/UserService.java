@@ -12,10 +12,26 @@ import es.upm.park.persistence.repository.UserRepository;
  */
 public class UserService {
 
-    private final UserRepository repository;
+    private static final UserService INSTANCE = new UserService();
 
-    public UserService(UserRepository repository) {
+    private UserRepository repository;
+
+    private UserService() {
+    }
+
+    /** The single UserService instance of the execution. */
+    public static UserService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies chosen during application initialization.
+     *
+     * @return this controller
+     */
+    public UserService configure(UserRepository repository) {
         this.repository = repository;
+        return this;
     }
 
     /**

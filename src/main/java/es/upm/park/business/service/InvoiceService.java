@@ -20,17 +20,33 @@ public class InvoiceService {
     static final String TICKETS_SECTION = "Individual tickets";
     static final String GROUP_TICKETS_SECTION = "Group tickets";
 
-    private final UserRepository users;
-    private final GroupRepository groups;
-    private final TicketRepository tickets;
-    private final InvoiceBuilder builder;
+    private static final InvoiceService INSTANCE = new InvoiceService();
 
-    public InvoiceService(UserRepository users, GroupRepository groups, TicketRepository tickets,
+    private UserRepository users;
+    private GroupRepository groups;
+    private TicketRepository tickets;
+    private InvoiceBuilder builder;
+
+    private InvoiceService() {
+    }
+
+    /** The single InvoiceService instance of the execution. */
+    public static InvoiceService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies chosen during application initialization.
+     *
+     * @return this controller
+     */
+    public InvoiceService configure(UserRepository users, GroupRepository groups, TicketRepository tickets,
             InvoiceBuilder builder) {
         this.users = users;
         this.groups = groups;
         this.tickets = tickets;
         this.builder = builder;
+        return this;
     }
 
     /** Invoice of an active user: direct individual tickets (no group constituents). */

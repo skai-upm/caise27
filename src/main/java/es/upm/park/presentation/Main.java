@@ -9,6 +9,7 @@ import es.upm.park.presentation.CommandRunner;
 import es.upm.park.business.controller.ParkController;
 import es.upm.park.persistence.DataDirectory;
 import es.upm.park.persistence.PersistenceException;
+import es.upm.park.persistence.repository.ParkRepositories;
 
 /**
  * Entry point of the Amusement Park application. It only interprets the
@@ -48,7 +49,7 @@ public final class Main {
     private static void run(DataDirectory data, String commandFile) {
         ParkController park = ParkController.getInstance();
         try {
-            park.start(data.path(), LocalDate.now());
+            park.start(ParkRepositories.load(data.path()), LocalDate.now());
         } catch (PersistenceException e) {
             System.out.println("Error: cannot load park data: " + e.getMessage());
             return;

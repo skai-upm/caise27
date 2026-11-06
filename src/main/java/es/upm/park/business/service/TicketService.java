@@ -20,17 +20,33 @@ import es.upm.park.persistence.repository.UserRepository;
  */
 public class TicketService {
 
-    private final TicketRepository tickets;
-    private final UserRepository users;
-    private final Supplier<LocalDate> today;
-    private final Supplier<BigDecimal> basePrice;
+    private static final TicketService INSTANCE = new TicketService();
 
-    public TicketService(TicketRepository tickets, UserRepository users,
+    private TicketRepository tickets;
+    private UserRepository users;
+    private Supplier<LocalDate> today;
+    private Supplier<BigDecimal> basePrice;
+
+    private TicketService() {
+    }
+
+    /** The single TicketService instance of the execution. */
+    public static TicketService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies chosen during application initialization.
+     *
+     * @return this controller
+     */
+    public TicketService configure(TicketRepository tickets, UserRepository users,
             Supplier<LocalDate> today, Supplier<BigDecimal> basePrice) {
         this.tickets = tickets;
         this.users = users;
         this.today = today;
         this.basePrice = basePrice;
+        return this;
     }
 
     /**

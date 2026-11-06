@@ -25,11 +25,11 @@ class GroupServiceTest {
     @BeforeEach
     void setUp() {
         UserRepository users = new UserRepository();
-        UserService userService = new UserService(users);
+        UserService userService = UserService.getInstance().configure(users);
         userService.create("Ana", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
         userService.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "6", "9876543210987654");
         groups = new GroupRepository();
-        service = new GroupService(groups, users, g -> lockedIds.contains(g.getId()));
+        service = GroupService.getInstance().configure(groups, users, g -> lockedIds.contains(g.getId()));
     }
 
     private void assertRejected(String message, Runnable action) {

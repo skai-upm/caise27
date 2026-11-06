@@ -21,7 +21,7 @@ class AttractionServiceTest {
     @BeforeEach
     void setUp() {
         repo = new AttractionRepository();
-        service = new AttractionService(repo);
+        service = AttractionService.getInstance().configure(repo);
     }
 
     private void assertRejected(String message, Runnable action) {

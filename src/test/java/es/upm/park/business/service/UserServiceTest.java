@@ -18,7 +18,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         repo = new UserRepository();
-        service = new UserService(repo);
+        service = UserService.getInstance().configure(repo);
     }
 
     private User createAna() {

@@ -27,9 +27,9 @@ class TicketServiceTest {
     @BeforeEach
     void setUp() {
         UserRepository users = new UserRepository();
-        ana = new UserService(users).create("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
+        ana = UserService.getInstance().configure(users).create("Ana", "G", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
         tickets = new TicketRepository();
-        service = new TicketService(tickets, users, () -> today, () -> price);
+        service = TicketService.getInstance().configure(tickets, users, () -> today, () -> price);
     }
 
     private void assertRejected(String message, Runnable action) {

@@ -15,10 +15,26 @@ public class AttractionService {
 
     private static final int MAX_CAPACITY_DIGITS = 9;
 
-    private final AttractionRepository attractions;
+    private static final AttractionService INSTANCE = new AttractionService();
 
-    public AttractionService(AttractionRepository attractions) {
+    private AttractionRepository attractions;
+
+    private AttractionService() {
+    }
+
+    /** The single AttractionService instance of the execution. */
+    public static AttractionService getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Injects the dependencies chosen during application initialization.
+     *
+     * @return this controller
+     */
+    public AttractionService configure(AttractionRepository attractions) {
         this.attractions = attractions;
+        return this;
     }
 
     public Attraction create(String id, String name, String capacity) {
