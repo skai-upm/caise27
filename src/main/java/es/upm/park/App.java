@@ -54,13 +54,14 @@ public class App {
         try {
             ParkController park = ParkController.getInstance();
             AppConfiguration.Configured configured = AppConfiguration.configure(dataDir, err);
-            customizer.accept(configured);
             try {
+                configured.users().restore(configured.userStorage().load());
                 park.restore(configured.storage().load());
             } catch (ParkException e) {
                 err.println("ERROR: " + e.getMessage());
                 return;
             }
+            customizer.accept(configured);
             CommandRunner runner = new CommandRunner(configured.processor(), out);
             if (commandFile == null) {
                 runner.runInteractive(stdin, err);

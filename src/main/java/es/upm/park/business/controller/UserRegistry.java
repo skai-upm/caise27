@@ -16,6 +16,12 @@ public class UserRegistry implements UserDirectory {
 
     private final Map<String, User> usersByEmail = new LinkedHashMap<>();
 
+    /** Replaces all users with the given ones (used when loading stored users). */
+    public void restore(List<User> users) {
+        usersByEmail.clear();
+        users.forEach(this::save);
+    }
+
     /** Stores a user, replacing any user with the same email. */
     public void save(User user) {
         usersByEmail.put(user.getEmail(), user);

@@ -13,6 +13,7 @@ import es.upm.park.persistence.PassRepository;
 import es.upm.park.persistence.StoragePaths;
 import es.upm.park.persistence.TextParkStorage;
 import es.upm.park.persistence.TicketRepository;
+import es.upm.park.persistence.UserRepository;
 import es.upm.park.presentation.CommandProcessor;
 import es.upm.park.presentation.help.CommandCatalog;
 import es.upm.park.presentation.help.ExtendedHelpFormatter;
@@ -32,7 +33,7 @@ public final class AppConfiguration {
     /** The configured objects of one execution. */
     public record Configured(TextParkStorage storage, GroupRepository groups, TicketRepository tickets,
                              AttractionRepository attractions, PasswordService passwords, UserRegistry users,
-                             CommandProcessor processor) {
+                             UserRepository userStorage, CommandProcessor processor) {
     }
 
     private AppConfiguration() {
@@ -56,12 +57,13 @@ public final class AppConfiguration {
         PasswordService passwords = new PasswordService(new BCryptPasswordHasher(), UserValidator.passwordPolicy());
 
         UserController userController = UserController.getInstance();
-        userController.configure(users, passwords);
+        UserRepository userStorage = new UserRepository(paths.users(), warnings);
+        userController.configure(users, passwords, userStorage);
 
         HelpGenerator help = new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter());
         HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter());
 
-        return new Configured(storage, groups, tickets, attractions, passwords, users,
+        return new Configured(storage, groups, tickets, attractions, passwords, users, userStorage,
                 new CommandProcessor(park, invoices, userController, help, extendedHelp));
     }
 }

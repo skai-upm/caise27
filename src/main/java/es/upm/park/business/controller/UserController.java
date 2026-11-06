@@ -16,6 +16,7 @@ public final class UserController {
 
     private UserRegistry registry;
     private PasswordService passwords;
+    private UserStorage storage = UserStorage.NONE;
 
     private UserController() {
     }
@@ -24,10 +25,16 @@ public final class UserController {
         return INSTANCE;
     }
 
-    /** Injects the user store and the password protection. */
+    /** Injects the user store and the password protection, without persistence. */
     public void configure(UserRegistry registry, PasswordService passwords) {
+        configure(registry, passwords, UserStorage.NONE);
+    }
+
+    /** Injects the user store, the password protection and where users are persisted. */
+    public void configure(UserRegistry registry, PasswordService passwords, UserStorage storage) {
         this.registry = registry;
         this.passwords = passwords;
+        this.storage = storage;
     }
 
     /** Registers a new user after validating its data and the uniqueness of DNI and email. */
@@ -43,7 +50,12 @@ public final class UserController {
         }
         User user = new User(firstName, surnames, dni, email, passwords.protect(rawPassword), phone, card);
         registry.save(user);
+        save();
         return user;
+    }
+
+    private void save() {
+        storage.save(registry.all());
     }
 
     private void requireConfigured() {

@@ -144,6 +144,9 @@ package "es.upm.park.business.controller" {
   }
   UserController --> "1" UserRegistry : registry (injected)
   UserController --> "1" PasswordService : passwords (injected)
+  UserController --> "1" UserStorage : storage (injected)
+  interface UserStorage {
+  }
   UserController ..> UserValidator : validates with
 
   class UserRegistry {
@@ -268,6 +271,13 @@ package "es.upm.park.persistence" {
     - warnings : PrintStream
   }
 
+  class UserRepository {
+    - file : Path
+    - warnings : PrintStream
+  }
+  UserRepository ..|> UserStorage
+  UserRepository ..> TextFile
+
   class PassRepository {
     - file : Path
     - warnings : PrintStream
@@ -352,6 +362,7 @@ package "es.upm.park" {
   AppConfiguration ..> TicketRepository : creates
   AppConfiguration ..> AttractionRepository : creates
   AppConfiguration ..> PassRepository : creates
+  AppConfiguration ..> UserRepository : creates
   AppConfiguration ..> TextParkStorage : creates
   AppConfiguration ..> ParkController : injects storage
   AppConfiguration ..> InvoiceController : injects park

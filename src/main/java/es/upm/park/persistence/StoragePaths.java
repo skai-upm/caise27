@@ -8,6 +8,10 @@ import java.nio.file.Path;
  */
 public record StoragePaths(Path directory) {
 
+    public Path users() {
+        return directory.resolve("users.txt");
+    }
+
     public Path groups() {
         return directory.resolve("groups.txt");
     }

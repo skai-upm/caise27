@@ -109,7 +109,7 @@ Invoices are built with the Builder pattern (`business.invoice`), and empty sect
 
 ## Persistence
 
-Groups, tickets (including group tickets and their composition), attractions (with their type) and passes (with their ticket, price and consumed state) are stored as text files in `data/` and reloaded at startup. Attractions always start empty. Consumed passes are kept while their ticket exists. Refunds and ticket deletions remove the affected passes. Historical tickets are kept even after their user or group is deleted. With `--fly`, all files go to a new `tmp/<yyyyMMdd_HHmmss>/` directory, which is deleted when the execution ends.
+Users (`users.txt`, one per line: `FirstName;Surnames;DNI;Email;Password;Phone;Card`, with the password BCrypt-protected), groups, tickets (including group tickets and their composition), attractions (with their type) and passes (with their ticket, price and consumed state) are stored as text files in `data/` and reloaded at startup. Attractions always start empty. Consumed passes are kept while their ticket exists. Refunds and ticket deletions remove the affected passes. Historical tickets are kept even after their user or group is deleted. With `--fly`, all files go to a new `tmp/<yyyyMMdd_HHmmss>/` directory, which is deleted when the execution ends.
 
 ## Design model
 
