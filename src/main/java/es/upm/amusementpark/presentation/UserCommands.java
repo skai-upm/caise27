@@ -1,6 +1,7 @@
 package es.upm.amusementpark.presentation;
 
 import es.upm.amusementpark.business.ParkController;
+import es.upm.amusementpark.business.UserField;
 import java.io.PrintStream;
 
 /**
@@ -23,6 +24,19 @@ public final class UserCommands {
             String[] f = CommandSupport.fields(line, 3, "USER DELETE;<Email>;<Password>");
             park.deleteUser(f[1], f[2]);
             out.println("USER DELETED");
+            return true;
+        });
+        processor.register("USER UPDATE", line -> {
+            String[] f = CommandSupport.fields(line, 5, "USER UPDATE;<Email>;<Password>;<Field>;<NewValue>");
+            if ("DNI".equals(f[3])) {
+                throw new InvalidCommandException("DNI cannot be modified");
+            }
+            UserField field = UserField.parse(f[3]);
+            if (field == null) {
+                throw new InvalidCommandException("Invalid field. Expected NAME, SURNAME, EMAIL, PASSWORD, PHONE or CARD");
+            }
+            park.updateUser(f[1], f[2], field, f[4]);
+            out.println("USER UPDATED");
             return true;
         });
     }

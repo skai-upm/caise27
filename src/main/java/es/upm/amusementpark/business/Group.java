@@ -41,6 +41,13 @@ public class Group {
         return members.add(email);
     }
 
+    /** Replaces a member's e-mail, keeping the membership. */
+    void replaceMember(String oldEmail, String newEmail) {
+        if (members.remove(oldEmail)) {
+            members.add(newEmail);
+        }
+    }
+
     /** @return {@code false} if the user was not a member */
     boolean removeMember(String email) {
         return members.remove(email);

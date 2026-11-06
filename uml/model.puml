@@ -108,6 +108,14 @@ package es.upm.amusementpark.business {
     - phone : String
     - card : String
   }
+  enum UserField {
+    NAME
+    SURNAME
+    EMAIL
+    PASSWORD
+    PHONE
+    CARD
+  }
   class UserValidator <<utility>> {
   }
   class Group {
@@ -216,6 +224,7 @@ ParkController ..> PassLookup : provides passesOfTicket
 UserValidator ..> ParkException : throws
 ParkController --> "0..*" User : users (registry)
 ParkController ..> UserValidator : validates with
+ParkController ..> UserField : updates
 UserCommands ..> ParkController : uses
 
 ' ---- passes ----

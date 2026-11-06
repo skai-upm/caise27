@@ -141,6 +141,13 @@ public abstract class Attraction<T extends GeneralAccess> {
         return occupants.add(email);
     }
 
+    /** Replaces an occupant's e-mail, keeping their presence. */
+    void replaceOccupant(String oldEmail, String newEmail) {
+        if (occupants.remove(oldEmail)) {
+            occupants.add(newEmail);
+        }
+    }
+
     /** @return {@code false} if the user was not inside */
     boolean leave(String email) {
         return occupants.remove(email);

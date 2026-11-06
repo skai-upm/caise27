@@ -10,7 +10,7 @@ import java.util.Objects;
  */
 public class IndividualTicket extends Ticket implements IndividualAccess {
 
-    private final String userEmail;
+    private String userEmail;
     private final BigDecimal price;
     private GroupTicket containingGroupTicket;
 
@@ -28,6 +28,11 @@ public class IndividualTicket extends Ticket implements IndividualAccess {
     /** @return the group ticket this ticket belongs to, or {@code null} for a standalone ticket */
     public GroupTicket getContainingGroupTicket() {
         return containingGroupTicket;
+    }
+
+    /** Follows a change of the owner's e-mail. */
+    void changeUserEmail(String newEmail) {
+        userEmail = Objects.requireNonNull(newEmail, "newEmail");
     }
 
     void setContainingGroupTicket(GroupTicket groupTicket) {

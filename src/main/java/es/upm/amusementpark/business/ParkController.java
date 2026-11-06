@@ -840,6 +840,76 @@ public final class ParkController {
         users.remove(email);
     }
 
+    /**
+     * Modifies one field of a user after verifying the e-mail and password; new values follow the creation rules.
+     *
+     * @throws ParkException if authentication fails or the new value is invalid (nothing changes)
+     */
+    public synchronized void updateUser(String email, String password, UserField field, String value) {
+        User user = users.get(email);
+        if (user == null) {
+            throw new ParkException("User " + email + " does not exist");
+        }
+        if (!verifyPassword(password, user.getPassword())) {
+            throw new ParkException("Incorrect password for user " + email);
+        }
+        Objects.requireNonNull(field, "field");
+        switch (field) {
+            case NAME -> user.setFirstName(required(value, "Name"));
+            case SURNAME -> user.setSurnames(required(value, "Surname"));
+            case PHONE -> user.setPhone(required(value, "Phone"));
+            case CARD -> {
+                if (!UserValidator.isValidCard(value)) {
+                    throw new ParkException("Invalid card number: exactly 16 digits are required");
+                }
+                user.setCard(value);
+            }
+            case PASSWORD -> {
+                if (!UserValidator.isValidPassword(value)) {
+                    throw new ParkException("Invalid password: an uppercase letter, a lowercase letter, a digit "
+                            + "and a symbol are required");
+                }
+                user.setPassword(protectPassword(value));
+            }
+            case EMAIL -> changeEmail(user, value);
+            default -> throw new ParkException("Field " + field + " cannot be modified");
+        }
+    }
+
+    private static String required(String value, String name) {
+        if (isBlank(value)) {
+            throw new ParkException(name + " cannot be empty");
+        }
+        return value;
+    }
+
+    private void changeEmail(User user, String newEmail) {
+        if (!UserValidator.isValidEmail(newEmail)) {
+            throw new ParkException("Invalid email: expected text@text.xxx");
+        }
+        String oldEmail = user.getEmail();
+        if (newEmail.equals(oldEmail)) {
+            return;
+        }
+        if (users.containsKey(newEmail)) {
+            throw new ParkException("User with email " + newEmail + " already exists");
+        }
+        users.remove(oldEmail);
+        user.setEmail(newEmail);
+        users.put(newEmail, user);
+        for (Group group : groups.values()) {
+            group.replaceMember(oldEmail, newEmail);
+        }
+        for (Ticket ticket : tickets.values()) {
+            if (ticket instanceof IndividualTicket single && single.getUserEmail().equals(oldEmail)) {
+                single.changeUserEmail(newEmail);
+            }
+        }
+        for (Attraction<?> attraction : attractions.values()) {
+            attraction.replaceOccupant(oldEmail, newEmail);
+        }
+    }
+
     public synchronized User findUser(String email) {
         return users.get(email);
     }
