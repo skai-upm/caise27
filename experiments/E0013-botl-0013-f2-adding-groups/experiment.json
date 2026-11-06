@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0013-botl-0013-f2-adding-groups",
+  "change": "botl-0013-f2-adding-groups",
+  "status": "archived",
+  "createdAt": "2026-11-05T13:08:21.233905+00:00",
+  "updatedAt": "2026-11-05T13:13:23.633180+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261105T130821Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261105T130821Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 551931,
+        "totalCost": 0.20087919999999926
+      }
+    },
+    {
+      "runId": "0002-apply-20261105T130937Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261105T130937Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1694869,
+        "totalCost": 0.5880584000000013
+      }
+    },
+    {
+      "runId": "0003-archive-20261105T131247Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261105T131247Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-05T13:13:23.580028+00:00"
+}

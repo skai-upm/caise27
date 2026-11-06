@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0024-botl-0023-f3-invoice-generation-using-builder",
+  "change": "botl-0023-f3-invoice-generation-using-builder",
+  "status": "archived",
+  "createdAt": "2026-11-05T14:18:42.447154+00:00",
+  "updatedAt": "2026-11-05T14:19:18.395983+00:00",
+  "runs": [
+    {
+      "runId": "0001-archive-20261105T141842Z",
+      "sequence": 1,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0001-archive-20261105T141842Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 0,
+        "totalCost": 0.0
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-05T14:19:18.319238+00:00"
+}

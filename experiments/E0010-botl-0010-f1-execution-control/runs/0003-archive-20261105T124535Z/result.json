@@ -1,0 +1,429 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0010-botl-0010-f1-execution-control",
+  "change": "botl-0010-f1-execution-control",
+  "runId": "0003-archive-20261105T124535Z",
+  "sequence": 3,
+  "phase": "archive",
+  "startedAt": "2026-11-05T12:45:35.830263+00:00",
+  "finishedAt": "2026-11-05T12:46:33.525601+00:00",
+  "durationSeconds": 57.695338,
+  "environment": {
+    "agent": "claude-code",
+    "agentAdapter": "claude-code",
+    "aiUsageSource": "claude",
+    "analysisAdapterConfigured": "auto",
+    "analysisAdapterBefore": "java-maven",
+    "analysisAdapterAfter": "java-maven"
+  },
+  "projectProfileBefore": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "projectProfileAfter": {
+    "kind": "java-maven",
+    "modules": [
+      {
+        "path": ".",
+        "adapter": "java-maven",
+        "marker": "pom.xml"
+      }
+    ]
+  },
+  "profileTransition": {
+    "changed": false,
+    "before": "java-maven",
+    "after": "java-maven"
+  },
+  "ai": {
+    "available": true,
+    "source": "claude",
+    "sessionId": "fd8767be-c5b7-4cd7-9c15-9fca2159d251",
+    "modelsUsed": [
+      "claude-opus-5-5"
+    ],
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "cacheCreationTokens": 0,
+    "cacheReadTokens": 0,
+    "totalTokens": 0,
+    "totalCost": 0.0,
+    "newTokens": 0,
+    "cachedTokens": 0,
+    "totalProcessedTokens": 0
+  },
+  "before": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt",
+      "head": "62f91b1287f01b1e4cfe729e104a5ae210abff42",
+      "dirty": true,
+      "statusPorcelain": [
+        " M src/main/java/es/upm/parque/App.java",
+        " M src/main/java/es/upm/parque/command/CommandProcessor.java",
+        " M src/test/java/es/upm/parque/AppTest.java",
+        " M src/test/java/es/upm/parque/command/CommandProcessorTest.java",
+        "?? .DS_Store",
+        "?? .botl/proposals/opus_2_setup_gpractices_multiple_gpt/0010-10.F1---execution-control.md",
+        "?? .scannerwork/",
+        "?? experiments/",
+        "?? openspec/changes/botl-0010-f1-execution-control/",
+        "?? sonar_metric_catalog.json"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 62,
+      "lines": 1754,
+      "words": 15900,
+      "requirements": 79,
+      "scenarios": 160,
+      "tasks": 48,
+      "shallStatements": 93
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "amusement-park",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "[INFO] Scanning for projects...\n[INFO] \n[INFO] --------------------< es.upm.parque:amusement-park >--------------------\n[INFO] Building amusement-park 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.13:prepare-agent (default-cli) @ amusement-park ---\n[INFO] argLine set to -javaagent:/Users/andreacimmino/.m2/repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13-runtime.jar=destfile=/Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.3.0:test (default-test) @ amusement-park ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running es.upm.parque.repository.UserRepositoryTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.395 s -- in es.upm.parque.repository.UserRepositoryTest\n[INFO] Running es.upm.parque.AppTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.148 s -- in es.upm.parque.AppTest\n[INFO] Running es.upm.parque.persistence.UserFileStoreTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s -- in es.upm.parque.persistence.UserFileStoreTest\n[INFO] Running es.upm.parque.model.UserTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.045 s -- in es.upm.parque.model.UserTest\n[INFO] Running es.upm.parque.model.UserFieldTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.160 s -- in es.upm.parque.model.UserFieldTest\n[INFO] Running es.upm.parque.model.UserValidatorTest\n[INFO] Tests run: 40, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.287 s -- in es.upm.parque.model.UserValidatorTest\n[INFO] Running es.upm.parque.command.CommandProcessorTest\n[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in es.upm.parque.command.CommandProcessorTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 85, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ amusement-park ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/target/jacoco.exec\n[INFO] Analyzed bundle 'amusement-park' with 7 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  8.892 s\n[INFO] Finished at: 2026-11-05T13:46:01+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "surefire": {
+              "reportFiles": 7,
+              "tests": 85,
+              "passed": 85,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 1.139
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 27,
+                    "covered": 1115,
+                    "total": 1142,
+                    "coverage": 97.63572679509632
+                  },
+                  "branch": {
+                    "missed": 6,
+                    "covered": 157,
+                    "total": 163,
+                    "coverage": 96.31901840490798
+                  },
+                  "line": {
+                    "missed": 7,
+                    "covered": 246,
+                    "total": 253,
+                    "coverage": 97.23320158102767
+                  },
+                  "complexity": {
+                    "missed": 7,
+                    "covered": 139,
+                    "total": 146,
+                    "coverage": 95.2054794520548
+                  },
+                  "method": {
+                    "missed": 1,
+                    "covered": 58,
+                    "total": 59,
+                    "coverage": 98.30508474576271
+                  },
+                  "class": {
+                    "missed": 0,
+                    "covered": 7,
+                    "total": 7,
+                    "coverage": 100.0
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "after": {
+    "git": {
+      "available": true,
+      "repo": "/Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt",
+      "head": "62f91b1287f01b1e4cfe729e104a5ae210abff42",
+      "dirty": true,
+      "statusPorcelain": [
+        " M src/main/java/es/upm/parque/App.java",
+        " M src/main/java/es/upm/parque/command/CommandProcessor.java",
+        " M src/test/java/es/upm/parque/AppTest.java",
+        " M src/test/java/es/upm/parque/command/CommandProcessorTest.java",
+        "?? .DS_Store",
+        "?? .botl/proposals/opus_2_setup_gpractices_multiple_gpt/0010-10.F1---execution-control.md",
+        "?? .scannerwork/",
+        "?? experiments/",
+        "?? openspec/changes/archive/2026-11-05-botl-0010-f1-execution-control/",
+        "?? openspec/specs/execution-control/",
+        "?? sonar_metric_catalog.json"
+      ]
+    },
+    "artifacts": {
+      "available": true,
+      "files": 63,
+      "lines": 1795,
+      "words": 16274,
+      "requirements": 82,
+      "scenarios": 166,
+      "tasks": 48,
+      "shallStatements": 96
+    },
+    "radon": {
+      "available": false
+    },
+    "sonar": {
+      "available": false,
+      "skipped": true
+    },
+    "codeQuality": {
+      "common": {
+        "sonar": {
+          "available": false,
+          "skipped": true
+        }
+      },
+      "languageSpecific": {
+        "profile": {
+          "kind": "java-maven",
+          "modules": [
+            {
+              "path": ".",
+              "adapter": "java-maven",
+              "marker": "pom.xml"
+            }
+          ]
+        },
+        "modules": [
+          {
+            "adapter": "java-maven",
+            "path": ".",
+            "preflight": {
+              "pomExists": true,
+              "mavenAvailable": true,
+              "javaAvailable": true,
+              "mavenVersion": {
+                "returnCode": 0,
+                "stdout": "Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)\nMaven home: /usr/local/Cellar/maven/3.9.11/libexec\nJava version: 24.0.1, vendor: Homebrew, runtime: /usr/local/Cellar/openjdk/24.0.1/libexec/openjdk.jdk/Contents/Home\nDefault locale: es_ES, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"13.7.8\", arch: \"x86_64\", family: \"mac\"\n",
+                "stderr": ""
+              },
+              "javaVersion": {
+                "returnCode": 0,
+                "stdout": "",
+                "stderr": "java version \"25.0.4.1\" 2026-08-18 LTS\nJava(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)\n"
+              },
+              "projectEvaluation": {
+                "returnCode": 0,
+                "stdout": "amusement-park",
+                "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+              },
+              "ok": true
+            },
+            "build": {
+              "returnCode": 0,
+              "stdout": "[INFO] Scanning for projects...\n[INFO] \n[INFO] --------------------< es.upm.parque:amusement-park >--------------------\n[INFO] Building amusement-park 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.13:prepare-agent (default-cli) @ amusement-park ---\n[INFO] argLine set to -javaagent:/Users/andreacimmino/.m2/repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13-runtime.jar=destfile=/Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/src/main/resources\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ amusement-park ---\n[INFO] skip non existing resourceDirectory /Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ amusement-park ---\n[INFO] Nothing to compile - all classes are up to date.\n[INFO] \n[INFO] --- surefire:3.3.0:test (default-test) @ amusement-park ---\n[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running es.upm.parque.repository.UserRepositoryTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.424 s -- in es.upm.parque.repository.UserRepositoryTest\n[INFO] Running es.upm.parque.AppTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.119 s -- in es.upm.parque.AppTest\n[INFO] Running es.upm.parque.persistence.UserFileStoreTest\n[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s -- in es.upm.parque.persistence.UserFileStoreTest\n[INFO] Running es.upm.parque.model.UserTest\n[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in es.upm.parque.model.UserTest\n[INFO] Running es.upm.parque.model.UserFieldTest\n[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.191 s -- in es.upm.parque.model.UserFieldTest\n[INFO] Running es.upm.parque.model.UserValidatorTest\n[INFO] Tests run: 40, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.230 s -- in es.upm.parque.model.UserValidatorTest\n[INFO] Running es.upm.parque.command.CommandProcessorTest\n[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.084 s -- in es.upm.parque.command.CommandProcessorTest\n[INFO] \n[INFO] Results:\n[INFO] \n[INFO] Tests run: 85, Failures: 0, Errors: 0, Skipped: 0\n[INFO] \n[INFO] \n[INFO] --- jacoco:0.8.13:report (default-cli) @ amusement-park ---\n[INFO] Loading execution data file /Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/target/jacoco.exec\n[INFO] Analyzed bundle 'amusement-park' with 7 classes\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  9.016 s\n[INFO] Finished at: 2026-11-05T13:46:32+01:00\n[INFO] ------------------------------------------------------------------------\n",
+              "stderr": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)\nWARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner\nWARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release\n"
+            },
+            "surefire": {
+              "reportFiles": 7,
+              "tests": 85,
+              "passed": 85,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 1.133
+            },
+            "failsafe": {
+              "reportFiles": 0,
+              "tests": 0,
+              "passed": 0,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+              "timeSeconds": 0.0
+            },
+            "jacoco": [
+              {
+                "available": true,
+                "path": "/Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/target/site/jacoco/jacoco.xml",
+                "counters": {
+                  "instruction": {
+                    "missed": 27,
+                    "covered": 1115,
+                    "total": 1142,
+                    "coverage": 97.63572679509632
+                  },
+                  "branch": {
+                    "missed": 6,
+                    "covered": 157,
+                    "total": 163,
+                    "coverage": 96.31901840490798
+                  },
+                  "line": {
+                    "missed": 7,
+                    "covered": 246,
+                    "total": 253,
+                    "coverage": 97.23320158102767
+                  },
+                  "complexity": {
+                    "missed": 7,
+                    "covered": 139,
+                    "total": 146,
+                    "coverage": 95.2054794520548
+                  },
+                  "method": {
+                    "missed": 1,
+                    "covered": 58,
+                    "total": 59,
+                    "coverage": 98.30508474576271
+                  },
+                  "class": {
+                    "missed": 0,
+                    "covered": 7,
+                    "total": 7,
+                    "coverage": 100.0
+                  }
+                }
+              }
+            ],
+            "jacocoXmlPaths": [
+              "/Users/andreacimmino/Desktop/opendev/opus_2_setup_gpractices_multiple_gpt/target/site/jacoco/jacoco.xml"
+            ],
+            "compiledClasses": true
+          }
+        ]
+      },
+      "sonar": {
+        "available": false,
+        "skipped": true
+      },
+      "radon": {
+        "available": false
+      }
+    },
+    "projectProfile": {
+      "kind": "java-maven",
+      "modules": [
+        {
+          "path": ".",
+          "adapter": "java-maven",
+          "marker": "pom.xml"
+        }
+      ]
+    }
+  },
+  "delta": {
+    "git": {
+      "available": true,
+      "filesModified": 4,
+      "untrackedFiles": 113,
+      "locAdded": 77,
+      "locRemoved": 11,
+      "netLoc": 66
+    },
+    "artifacts": {
+      "words": 374,
+      "lines": 41,
+      "tasks": 0,
+      "scenarios": 6,
+      "shallStatements": 3,
+      "files": 1,
+      "requirements": 3
+    },
+    "radon": {},
+    "sonar": {
+      "allMeasures": {}
+    }
+  }
+}
