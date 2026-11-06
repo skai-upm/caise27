@@ -1,5 +1,6 @@
 package es.upm.park.command;
 
+import es.upm.park.persistence.PersistenceException;
 import es.upm.park.service.UserException;
 import es.upm.park.service.UserService;
 
@@ -34,7 +35,7 @@ public class CommandProcessor {
                 return createUser(parts);
             }
             return error("unknown command '" + name + "'");
-        } catch (UserException e) {
+        } catch (UserException | PersistenceException e) {
             return error(e.getMessage());
         }
     }

@@ -22,3 +22,6 @@ buildNumber.properties
 
 # macOS
 .DS_Store
+
+# Runtime data
+users.txt

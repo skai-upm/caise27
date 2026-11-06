@@ -6,8 +6,10 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 
 import es.upm.park.command.CommandProcessor;
+import es.upm.park.persistence.UserFileStore;
 import es.upm.park.repository.UserRepository;
 import es.upm.park.service.UserService;
 
@@ -18,6 +20,8 @@ import es.upm.park.service.UserService;
 public final class Main {
 
     static final String BANNER = "Amusement Park application started";
+    static final String USERS_FILE_PROPERTY = "park.users.file";
+    static final String DEFAULT_USERS_FILE = "users.txt";
 
     private Main() {
     }
@@ -29,7 +33,9 @@ public final class Main {
      */
     public static void main(String[] args) {
         System.out.println(BANNER);
-        CommandProcessor processor = new CommandProcessor(new UserService(new UserRepository()));
+        Path usersFile = Path.of(System.getProperty(USERS_FILE_PROPERTY, DEFAULT_USERS_FILE));
+        UserRepository users = new UserRepository(new UserFileStore(usersFile));
+        CommandProcessor processor = new CommandProcessor(new UserService(users));
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         run(processor, in, System.out);
     }

@@ -6,9 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.park.model.User;
+import es.upm.park.persistence.PersistenceException;
+import es.upm.park.persistence.UserFileStore;
 
 class UserRepositoryTest {
 
@@ -32,5 +38,23 @@ class UserRepositoryTest {
         UserRepository repo = new UserRepository();
         repo.add(ana);
         assertThrows(UnsupportedOperationException.class, () -> repo.findAll().clear());
+    }
+
+    @Test
+    void persistentRepositoryReloadsUsers(@TempDir Path dir) {
+        Path file = dir.resolve("users.txt");
+        new UserRepository(new UserFileStore(file)).add(ana);
+        UserRepository reloaded = new UserRepository(new UserFileStore(file));
+        assertEquals(1, reloaded.findAll().size());
+        assertEquals("ana@correo.com", reloaded.findByDni("12345678Z").orElseThrow().getEmail());
+    }
+
+    @Test
+    void failedSaveLeavesRepositoryUnchanged(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("users.txt");
+        UserRepository repo = new UserRepository(new UserFileStore(file));
+        Files.createDirectory(file);
+        assertThrows(PersistenceException.class, () -> repo.add(ana));
+        assertTrue(repo.findAll().isEmpty());
     }
 }

@@ -4,8 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import es.upm.park.persistence.UserFileStore;
 import es.upm.park.repository.UserRepository;
 import es.upm.park.service.UserService;
 
@@ -61,5 +66,15 @@ class CommandProcessorTest {
     void ignoresBlankLines() {
         assertNull(processor.process("   "));
         assertNull(processor.process(null));
+    }
+
+    @Test
+    void reportsPersistenceFailureAsMessage(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("users.txt");
+        UserRepository persistent = new UserRepository(new UserFileStore(file));
+        Files.createDirectory(file);
+        String result = new CommandProcessor(new UserService(persistent)).process(ANA);
+        assertEquals("Error: cannot write " + file, result);
+        assertEquals(0, persistent.findAll().size());
     }
 }

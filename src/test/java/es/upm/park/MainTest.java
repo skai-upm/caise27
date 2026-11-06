@@ -7,10 +7,35 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class MainTest {
+
+    private static final String ANA =
+            "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
+
+    @TempDir
+    Path dir;
+
+    private Path usersFile;
+
+    @BeforeEach
+    void useTemporaryUsersFile() {
+        usersFile = dir.resolve("users.txt");
+        System.setProperty(Main.USERS_FILE_PROPERTY, usersFile.toString());
+    }
+
+    @AfterEach
+    void clearProperty() {
+        System.clearProperty(Main.USERS_FILE_PROPERTY);
+    }
 
     private String run(String input, String... args) {
         PrintStream originalOut = System.out;
@@ -49,5 +74,13 @@ class MainTest {
         assertEquals("User created: 12345678Z", lines[1]);
         assertEquals("Error: unknown command 'FOO BAR'", lines[2]);
         assertEquals("Error: a user with DNI 12345678Z already exists", lines[3]);
+    }
+
+    @Test
+    void usersSurviveRestart() throws Exception {
+        assertEquals(Main.BANNER + "\nUser created: 12345678Z", run(ANA + "\n"));
+        assertEquals(List.of(ANA.substring("USER CREATE;".length())), Files.readAllLines(usersFile));
+        assertEquals(Main.BANNER + "\nError: a user with DNI 12345678Z already exists", run(ANA + "\n"));
+        assertEquals(1, Files.readAllLines(usersFile).size());
     }
 }
