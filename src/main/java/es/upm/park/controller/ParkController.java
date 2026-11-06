@@ -1,18 +1,18 @@
 package es.upm.park.controller;
 
 import es.upm.park.model.Group;
+import es.upm.park.model.GroupTicket;
 import es.upm.park.model.IndividualTicket;
 import es.upm.park.model.Ticket;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.Set;
 
 /**
  * Central park management. Exactly one instance exists per execution; it keeps
@@ -28,8 +28,7 @@ public final class ParkController {
     private BigDecimal basePrice;
     private final Map<String, Group> groups = new LinkedHashMap<>();
     private final Map<String, Ticket> tickets = new LinkedHashMap<>();
-    private Predicate<String> userExists;
-    private Function<String, Collection<LocalDate>> groupTicketDates;
+    private UserDirectory users;
 
     private ParkController() {
         reset();
@@ -45,8 +44,7 @@ public final class ParkController {
         basePrice = INITIAL_BASE_PRICE;
         groups.clear();
         tickets.clear();
-        userExists = email -> false;
-        groupTicketDates = groupId -> List.of();
+        users = email -> Optional.empty();
     }
 
     // ---- system settings -------------------------------------------------
@@ -76,16 +74,11 @@ public final class ParkController {
         basePrice = price.setScale(2);
     }
 
-    // ---- integration points with users and group tickets -------------------
+    // ---- integration point with user management ------------------------------
 
-    /** Sets how the existence of a registered user is checked (by email). */
-    public void setUserExistsLookup(Predicate<String> lookup) {
-        this.userExists = lookup;
-    }
-
-    /** Sets how the dates of the group tickets associated with a group are obtained. */
-    public void setGroupTicketDatesLookup(Function<String, Collection<LocalDate>> lookup) {
-        this.groupTicketDates = lookup;
+    /** Sets the source of registered users (existence and DNI, by email). */
+    public void setUserDirectory(UserDirectory directory) {
+        this.users = directory;
     }
 
     // ---- groups -----------------------------------------------------------
@@ -96,7 +89,16 @@ public final class ParkController {
 
     /** A group is locked while it has a group ticket dated today or later (derived, never stored). */
     public boolean isGroupLocked(String id) {
-        return groupTicketDates.apply(id).stream().anyMatch(date -> !date.isBefore(currentDate));
+        Group group = groups.get(id);
+        return group != null && groupTicketsOf(group).stream().anyMatch(ticket -> ticket.isActiveOn(currentDate));
+    }
+
+    private List<GroupTicket> groupTicketsOf(Group group) {
+        return tickets.values().stream()
+                .filter(GroupTicket.class::isInstance)
+                .map(GroupTicket.class::cast)
+                .filter(ticket -> ticket.getGroup() == group)
+                .toList();
     }
 
     public Group createGroup(String id, String name) {
@@ -112,7 +114,7 @@ public final class ParkController {
 
     public void addUserToGroup(String id, String email) {
         Group group = requireModifiableGroup(id);
-        if (!userExists.test(email)) {
+        if (!users.exists(email)) {
             throw new ParkException("No registered user with email " + email);
         }
         if (!group.addMember(email)) {
@@ -127,11 +129,13 @@ public final class ParkController {
         }
     }
 
+    /** Deletes a group; its historical group tickets are kept without a group reference. */
     public void deleteGroup(String id) {
-        requireGroup(id);
+        Group group = requireGroup(id);
         if (isGroupLocked(id)) {
             throw new ParkException("Group " + id + " has a group ticket for today or a later date and cannot be deleted");
         }
+        groupTicketsOf(group).forEach(GroupTicket::detachGroup);
         groups.remove(id);
     }
 
@@ -153,7 +157,7 @@ public final class ParkController {
     public IndividualTicket createIndividualTicket(String id, String email, LocalDate date) {
         requireText(id, "The ticket identifier is required");
         requireUnusedTicketId(id);
-        if (!userExists.test(email)) {
+        if (!users.exists(email)) {
             throw new ParkException("No registered user with email " + email);
         }
         requireNotPast(date);
@@ -164,12 +168,58 @@ public final class ParkController {
 
     public void deleteTicket(String id) {
         Ticket ticket = tickets.get(id);
-        if (!(ticket instanceof IndividualTicket)) {
+        if (!(ticket instanceof IndividualTicket individual)) {
             throw new ParkException("No individual ticket with identifier " + id);
+        }
+        if (individual.isPartOfGroupTicket()) {
+            throw new ParkException("Ticket " + id + " belongs to a group ticket and can only be deleted with it");
         }
         if (!ticket.isDeletableOn(currentDate)) {
             throw new ParkException("Ticket " + id + " is dated today or earlier and is kept as a historical record");
         }
+        tickets.remove(id);
+    }
+
+    /**
+     * Buys a group ticket for the current members of a non-empty group. All
+     * identifiers (the group ticket and its composed tickets) are checked first,
+     * so nothing is created if any of them conflicts.
+     */
+    public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) {
+        requireText(id, "The ticket identifier is required");
+        Group group = requireGroup(groupId);
+        if (group.getMemberEmails().isEmpty()) {
+            throw new ParkException("Group " + groupId + " has no members");
+        }
+        requireNotPast(date);
+        requireUnusedTicketId(id);
+        Map<String, String> memberDnis = new LinkedHashMap<>();
+        Set<String> derivedIds = new HashSet<>();
+        for (String email : group.getMemberEmails()) {
+            String dni = users.dniOf(email)
+                    .orElseThrow(() -> new ParkException("No registered user with email " + email));
+            String derivedId = GroupTicket.composedId(id, dni);
+            requireUnusedTicketId(derivedId);
+            if (!derivedIds.add(derivedId)) {
+                throw new ParkException("Duplicate ticket identifier " + derivedId);
+            }
+            memberDnis.put(email, dni);
+        }
+        GroupTicket groupTicket = GroupTicket.purchase(id, group, date, basePrice, memberDnis);
+        tickets.put(id, groupTicket);
+        groupTicket.getComposition().forEach(ticket -> tickets.put(ticket.getId(), ticket));
+        return groupTicket;
+    }
+
+    /** Deletes a strictly future group ticket together with its composed tickets. */
+    public void deleteGroupTicket(String id) {
+        if (!(tickets.get(id) instanceof GroupTicket groupTicket)) {
+            throw new ParkException("No group ticket with identifier " + id);
+        }
+        if (!groupTicket.isDeletableOn(currentDate)) {
+            throw new ParkException("Group ticket " + id + " is dated today or earlier and is kept as a historical record");
+        }
+        groupTicket.getComposition().forEach(ticket -> tickets.remove(ticket.getId()));
         tickets.remove(id);
     }
 

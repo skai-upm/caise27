@@ -1,6 +1,7 @@
 package es.upm.park.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 
 /**
@@ -27,8 +28,15 @@ public abstract class Ticket {
         return date;
     }
 
+    /** The price charged for this ticket. */
     public BigDecimal getPrice() {
         return price;
+    }
+
+    /** Common price rule: a base price reduced by a percentage, rounded to cents. */
+    protected static BigDecimal discounted(BigDecimal base, int percent) {
+        BigDecimal factor = BigDecimal.valueOf(100L - percent).movePointLeft(2);
+        return base.multiply(factor).setScale(2, RoundingMode.HALF_UP);
     }
 
     /** A ticket is active on its date and before it; afterwards it is historical. */

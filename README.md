@@ -62,3 +62,10 @@ Ticket commands:
 - `TICKET DELETE;<identifier>` deletes an individual ticket dated strictly after the current date. Tickets for today or earlier are kept as historical records.
 
 A user with a ticket dated today or later, or who belongs to a group with an active group ticket, cannot be deleted.
+
+Group ticket commands:
+
+- `GROUPTICKET CREATE;<identifier>;<group>;<date>` buys a joint ticket for all current members of a non-empty group. It contains one individual ticket per member, identified `<identifier>:<dni>`. The total price is displayed.
+- `GROUPTICKET DELETE;<identifier>` deletes a group ticket dated strictly after the current date, together with its individual tickets.
+
+Group discount on the base price of each member's ticket: fewer than 3 members 0%, 3-5 members 10%, 6-10 members 20%, more than 10 members 50%. Individual tickets that belong to a group ticket cannot be deleted with `TICKET DELETE`.

@@ -31,6 +31,8 @@ public class CommandProcessor {
             "GROUP DELETE;<Identifier>",
             "TICKET CREATE;<identifier>;<email>;<date>",
             "TICKET DELETE;<identifier>",
+            "GROUPTICKET CREATE;<identifier>;<group>;<date>",
+            "GROUPTICKET DELETE;<identifier>",
             "HELP",
             "EXIT");
 
@@ -64,6 +66,13 @@ public class CommandProcessor {
         handlers.put("TICKET DELETE", args -> withArgs(args, 1, "TICKET DELETE;<identifier>", a -> {
             park().deleteTicket(a[0]);
             return "TICKET DELETED";
+        }));
+        handlers.put("GROUPTICKET CREATE", args -> withArgs(args, 3, "GROUPTICKET CREATE;<identifier>;<group>;<date>",
+                a -> "GROUP TICKET CREATED. TOTAL PRICE: "
+                        + park().createGroupTicket(a[0], a[1], parseDate(a[2])).getPrice()));
+        handlers.put("GROUPTICKET DELETE", args -> withArgs(args, 1, "GROUPTICKET DELETE;<identifier>", a -> {
+            park().deleteGroupTicket(a[0]);
+            return "GROUP TICKET DELETED";
         }));
     }
 

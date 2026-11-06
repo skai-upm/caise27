@@ -2,11 +2,11 @@ package es.upm.park.command;
 
 import es.upm.park.controller.ParkController;
 import es.upm.park.controller.ParkControllerTestSupport;
+import es.upm.park.controller.TestUsers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,7 +19,7 @@ class TicketCommandsTest {
     void setUp() {
         ParkControllerTestSupport.reset();
         ParkController.getInstance().setCurrentDate(LocalDate.of(2027, 4, 15));
-        ParkController.getInstance().setUserExistsLookup(Set.of("ana@correo.com")::contains);
+        ParkController.getInstance().setUserDirectory(TestUsers.of("ana@correo.com"));
     }
 
     private String run(String line) {

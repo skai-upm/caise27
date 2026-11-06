@@ -4,8 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,17 +14,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ParkControllerGroupTest {
 
     private static final LocalDate TODAY = LocalDate.of(2027, 4, 15);
+    private static final String ANA = "ana@correo.com";
+    private static final String PEDRO = "pedro@correo.com";
 
     private final ParkController park = ParkController.getInstance();
-    private final List<LocalDate> ticketDates = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         park.reset();
         park.setCurrentDate(TODAY);
-        Set<String> users = Set.of("ana@correo.com", "pedro@correo.com");
-        park.setUserExistsLookup(users::contains);
-        park.setGroupTicketDatesLookup(id -> id.equals("G01") ? ticketDates : List.of());
+        park.setUserDirectory(TestUsers.of(ANA, PEDRO));
         park.createGroup("G01", "Familia Garcia");
     }
 
@@ -45,61 +42,62 @@ class ParkControllerGroupTest {
 
     @Test
     void addsRegisteredUsersOnlyOnce() {
-        park.addUserToGroup("G01", "ana@correo.com");
-        park.addUserToGroup("G01", "pedro@correo.com");
-        assertThrows(ParkException.class, () -> park.addUserToGroup("G01", "ana@correo.com"));
-        assertEquals(Set.of("ana@correo.com", "pedro@correo.com"), members());
+        park.addUserToGroup("G01", ANA);
+        park.addUserToGroup("G01", PEDRO);
+        assertThrows(ParkException.class, () -> park.addUserToGroup("G01", ANA));
+        assertEquals(Set.of(ANA, PEDRO), members());
     }
 
     @Test
     void rejectsUnknownUserAndUnknownGroup() {
         assertThrows(ParkException.class, () -> park.addUserToGroup("G01", "nadie@correo.com"));
-        assertThrows(ParkException.class, () -> park.addUserToGroup("G99", "ana@correo.com"));
+        assertThrows(ParkException.class, () -> park.addUserToGroup("G99", ANA));
         assertTrue(members().isEmpty());
     }
 
     @Test
     void removesOnlyMembers() {
-        park.addUserToGroup("G01", "ana@correo.com");
-        assertThrows(ParkException.class, () -> park.removeUserFromGroup("G01", "pedro@correo.com"));
-        park.removeUserFromGroup("G01", "ana@correo.com");
+        park.addUserToGroup("G01", ANA);
+        assertThrows(ParkException.class, () -> park.removeUserFromGroup("G01", PEDRO));
+        park.removeUserFromGroup("G01", ANA);
         assertTrue(members().isEmpty());
     }
 
     @Test
-    void lockIsDerivedFromTicketDatesAndSystemDate() {
+    void lockIsDerivedFromGroupTicketsAndSystemDate() {
+        park.addUserToGroup("G01", ANA);
         assertFalse(park.isGroupLocked("G01"));
-        ticketDates.add(TODAY.minusDays(1));
-        assertFalse(park.isGroupLocked("G01"), "historical tickets do not lock");
-        ticketDates.add(TODAY);
-        assertTrue(park.isGroupLocked("G01"), "a ticket for today locks");
+        park.createGroupTicket("TG01", "G01", TODAY);
+        assertTrue(park.isGroupLocked("G01"), "a group ticket for today locks");
         park.setCurrentDate(TODAY.plusDays(1));
-        assertFalse(park.isGroupLocked("G01"), "lock follows the system date");
+        assertFalse(park.isGroupLocked("G01"), "historical group tickets do not lock");
     }
 
     @Test
-    void activeTicketBlocksMembershipChangesWithoutChangingState() {
-        park.addUserToGroup("G01", "ana@correo.com");
-        ticketDates.add(TODAY.plusDays(3));
-        assertThrows(ParkException.class, () -> park.addUserToGroup("G01", "pedro@correo.com"));
-        assertThrows(ParkException.class, () -> park.removeUserFromGroup("G01", "ana@correo.com"));
-        assertEquals(Set.of("ana@correo.com"), members());
+    void activeGroupTicketBlocksMembershipChangesWithoutChangingState() {
+        park.addUserToGroup("G01", ANA);
+        park.createGroupTicket("TG01", "G01", TODAY.plusDays(3));
+        assertThrows(ParkException.class, () -> park.addUserToGroup("G01", PEDRO));
+        assertThrows(ParkException.class, () -> park.removeUserFromGroup("G01", ANA));
+        assertEquals(Set.of(ANA), members());
     }
 
     @Test
-    void historicalTicketsAllowMembershipChanges() {
-        ticketDates.add(TODAY.minusDays(10));
-        park.addUserToGroup("G01", "pedro@correo.com");
-        assertEquals(Set.of("pedro@correo.com"), members());
+    void historicalGroupTicketsAllowMembershipChanges() {
+        park.addUserToGroup("G01", ANA);
+        park.createGroupTicket("TG01", "G01", TODAY);
+        park.setCurrentDate(TODAY.plusDays(1));
+        park.addUserToGroup("G01", PEDRO);
+        assertEquals(Set.of(ANA, PEDRO), members());
     }
 
     @Test
-    void deleteRespectsTicketsForTodayOrLater() {
-        ticketDates.add(TODAY);
+    void deleteRespectsGroupTicketsForTodayOrLater() {
+        park.addUserToGroup("G01", ANA);
+        park.createGroupTicket("TG01", "G01", TODAY);
         assertThrows(ParkException.class, () -> park.deleteGroup("G01"));
         assertTrue(park.findGroup("G01").isPresent());
-        ticketDates.clear();
-        ticketDates.add(TODAY.minusDays(1));
+        park.setCurrentDate(TODAY.plusDays(1));
         park.deleteGroup("G01");
         assertTrue(park.findGroup("G01").isEmpty());
         assertThrows(ParkException.class, () -> park.deleteGroup("G01"));

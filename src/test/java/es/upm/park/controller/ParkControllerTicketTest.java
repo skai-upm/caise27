@@ -6,9 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,14 +20,12 @@ class ParkControllerTicketTest {
     private static final String PEDRO = "pedro@correo.com";
 
     private final ParkController park = ParkController.getInstance();
-    private final List<LocalDate> groupTicketDates = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         park.reset();
         park.setCurrentDate(TODAY);
-        park.setUserExistsLookup(Set.of(ANA, PEDRO)::contains);
-        park.setGroupTicketDatesLookup(id -> id.equals("G01") ? groupTicketDates : List.of());
+        park.setUserDirectory(TestUsers.of(ANA, PEDRO));
     }
 
     @Test
@@ -96,9 +92,10 @@ class ParkControllerTicketTest {
     void lockedGroupBlocksUserDeletion() {
         park.createGroup("G01", "Familia");
         park.addUserToGroup("G01", ANA);
-        groupTicketDates.add(TODAY);
-        assertThrows(ParkException.class, () -> park.deleteUserReferences(ANA));
-        assertTrue(park.findGroup("G01").orElseThrow().hasMember(ANA));
+        park.addUserToGroup("G01", PEDRO);
+        park.createGroupTicket("TG01", "G01", TODAY);
+        assertThrows(ParkException.class, () -> park.deleteUserReferences(PEDRO));
+        assertTrue(park.findGroup("G01").orElseThrow().hasMember(PEDRO));
     }
 
     @Test
