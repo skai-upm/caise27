@@ -1,6 +1,8 @@
 package es.upm.park.controller;
 
 import es.upm.park.model.Group;
+import es.upm.park.model.IndividualTicket;
+import es.upm.park.model.Ticket;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,7 +16,7 @@ import java.util.function.Predicate;
 
 /**
  * Central park management. Exactly one instance exists per execution; it keeps
- * the overall park state: current system date, base ticket price and groups.
+ * the overall park state: current system date, base ticket price, groups and tickets.
  */
 public final class ParkController {
 
@@ -25,6 +27,7 @@ public final class ParkController {
     private LocalDate currentDate;
     private BigDecimal basePrice;
     private final Map<String, Group> groups = new LinkedHashMap<>();
+    private final Map<String, Ticket> tickets = new LinkedHashMap<>();
     private Predicate<String> userExists;
     private Function<String, Collection<LocalDate>> groupTicketDates;
 
@@ -41,6 +44,7 @@ public final class ParkController {
         currentDate = LocalDate.now();
         basePrice = INITIAL_BASE_PRICE;
         groups.clear();
+        tickets.clear();
         userExists = email -> false;
         groupTicketDates = groupId -> List.of();
     }
@@ -129,6 +133,82 @@ public final class ParkController {
             throw new ParkException("Group " + id + " has a group ticket for today or a later date and cannot be deleted");
         }
         groups.remove(id);
+    }
+
+    // ---- tickets ------------------------------------------------------------
+
+    public Optional<Ticket> findTicket(String id) {
+        return Optional.ofNullable(tickets.get(id));
+    }
+
+    /** The individual tickets of a user, obtained by traversing the system's tickets. */
+    public List<IndividualTicket> ticketsOf(String email) {
+        return tickets.values().stream()
+                .filter(IndividualTicket.class::isInstance)
+                .map(IndividualTicket.class::cast)
+                .filter(ticket -> ticket.getOwnerEmail().equals(email))
+                .toList();
+    }
+
+    public IndividualTicket createIndividualTicket(String id, String email, LocalDate date) {
+        requireText(id, "The ticket identifier is required");
+        requireUnusedTicketId(id);
+        if (!userExists.test(email)) {
+            throw new ParkException("No registered user with email " + email);
+        }
+        requireNotPast(date);
+        IndividualTicket ticket = new IndividualTicket(id, email, date, basePrice);
+        tickets.put(id, ticket);
+        return ticket;
+    }
+
+    public void deleteTicket(String id) {
+        Ticket ticket = tickets.get(id);
+        if (!(ticket instanceof IndividualTicket)) {
+            throw new ParkException("No individual ticket with identifier " + id);
+        }
+        if (!ticket.isDeletableOn(currentDate)) {
+            throw new ParkException("Ticket " + id + " is dated today or earlier and is kept as a historical record");
+        }
+        tickets.remove(id);
+    }
+
+    /** Common identifier check shared by all ticket types. */
+    void requireUnusedTicketId(String id) {
+        if (tickets.containsKey(id)) {
+            throw new ParkException("A ticket with identifier " + id + " already exists");
+        }
+    }
+
+    private void requireNotPast(LocalDate date) {
+        if (date == null) {
+            throw new ParkException("The ticket date is required");
+        }
+        if (date.isBefore(currentDate)) {
+            throw new ParkException("Tickets cannot be created for a date before " + currentDate);
+        }
+    }
+
+    // ---- users ---------------------------------------------------------------
+
+    /**
+     * Checks that a user can be deleted and, if so, removes them from every group.
+     * Rejected when the user has an active ticket or belongs to a locked group;
+     * in that case nothing changes. Historical tickets are kept.
+     */
+    public void deleteUserReferences(String email) {
+        boolean activeTicket = ticketsOf(email).stream().anyMatch(ticket -> ticket.isActiveOn(currentDate));
+        if (activeTicket) {
+            throw new ParkException("User " + email + " has an active ticket and cannot be deleted");
+        }
+        List<Group> memberships = groups.values().stream().filter(group -> group.hasMember(email)).toList();
+        for (Group group : memberships) {
+            if (isGroupLocked(group.getId())) {
+                throw new ParkException("User " + email + " belongs to group " + group.getId()
+                        + ", which has an active group ticket");
+            }
+        }
+        memberships.forEach(group -> group.removeMember(email));
     }
 
     private Group requireGroup(String id) {

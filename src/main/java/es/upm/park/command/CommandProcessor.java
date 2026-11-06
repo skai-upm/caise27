@@ -29,6 +29,8 @@ public class CommandProcessor {
             "GROUP ADD;<Identifier>;<Email>",
             "GROUP REMOVE;<Identifier>;<Email>",
             "GROUP DELETE;<Identifier>",
+            "TICKET CREATE;<identifier>;<email>;<date>",
+            "TICKET DELETE;<identifier>",
             "HELP",
             "EXIT");
 
@@ -56,6 +58,12 @@ public class CommandProcessor {
         handlers.put("GROUP DELETE", args -> withArgs(args, 1, "GROUP DELETE;<Identifier>", a -> {
             park().deleteGroup(a[0]);
             return "GROUP DELETED";
+        }));
+        handlers.put("TICKET CREATE", args -> withArgs(args, 3, "TICKET CREATE;<identifier>;<email>;<date>", a ->
+                "TICKET CREATED. PRICE: " + park().createIndividualTicket(a[0], a[1], parseDate(a[2])).getPrice()));
+        handlers.put("TICKET DELETE", args -> withArgs(args, 1, "TICKET DELETE;<identifier>", a -> {
+            park().deleteTicket(a[0]);
+            return "TICKET DELETED";
         }));
     }
 
@@ -93,16 +101,20 @@ public class CommandProcessor {
         return ParkController.getInstance();
     }
 
+    /** Parses a yyyy-MM-dd date argument, rejecting impossible calendar dates. */
+    static LocalDate parseDate(String text) {
+        try {
+            return LocalDate.parse(text.trim());
+        } catch (DateTimeParseException e) {
+            throw new ParkException("Invalid date, expected yyyy-MM-dd: " + text.trim());
+        }
+    }
+
     private CommandResult systemDate(String[] args) {
         if (args.length != 1 || args[0].isBlank()) {
             return error("Usage: SYSTEM DATE;<yyyy-MM-dd>");
         }
-        LocalDate date;
-        try {
-            date = LocalDate.parse(args[0].trim());
-        } catch (DateTimeParseException e) {
-            return error("Invalid date, expected yyyy-MM-dd: " + args[0].trim());
-        }
+        LocalDate date = parseDate(args[0]);
         ParkController.getInstance().setCurrentDate(date);
         return CommandResult.of("SYSTEM DATE UPDATED: " + date);
     }

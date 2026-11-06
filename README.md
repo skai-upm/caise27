@@ -55,3 +55,10 @@ Group commands:
 - `GROUP DELETE;<Identifier>` deletes a group.
 
 A group with a group ticket dated today or later cannot be modified or deleted.
+
+Ticket commands:
+
+- `TICKET CREATE;<identifier>;<email>;<date>` buys an individual ticket for a registered user, dated today or later, at the current base price. The price is displayed.
+- `TICKET DELETE;<identifier>` deletes an individual ticket dated strictly after the current date. Tickets for today or earlier are kept as historical records.
+
+A user with a ticket dated today or later, or who belongs to a group with an active group ticket, cannot be deleted.
