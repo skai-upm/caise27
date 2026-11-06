@@ -41,6 +41,8 @@ public class CommandProcessor {
             "  ATTRACTION ENTER;<attraction>;<ticket>",
             "  ATTRACTION EXIT;<attraction>;<email>",
             "  ATTRACTION STATUS;<id>",
+            "  INVOICE CREATE;USER;<email>",
+            "  INVOICE CREATE;GROUP;<group>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<price>",
             "  HELP",
@@ -73,6 +75,7 @@ public class CommandProcessor {
         commands.put("ATTRACTION EXIT", new Command(2,
                 f -> "Exited " + f[0] + ": " + park.getAttractionService().exit(f[0], f[1]).getEmail()));
         commands.put("ATTRACTION STATUS", new Command(1, f -> park.getAttractionService().status(f[0])));
+        commands.put("INVOICE CREATE", new Command(2, this::createInvoice));
         commands.put("SYSTEM DATE", new Command(1, f -> "System date set to " + park.setCurrentDate(f[0])));
         commands.put("SYSTEM PRICE", new Command(1,
                 f -> "System price set to " + park.setBasePrice(f[0]).toPlainString()));
@@ -184,6 +187,14 @@ public class CommandProcessor {
     private String enterAttraction(String[] f) {
         List<String> emails = park.enterAttraction(f[0], f[1]).stream().map(User::getEmail).toList();
         return "Entered " + f[0] + ": " + String.join(", ", emails);
+    }
+
+    private String createInvoice(String[] f) {
+        return switch (f[0]) {
+            case "USER" -> park.getInvoiceService().userInvoice(f[1]).render();
+            case "GROUP" -> park.getInvoiceService().groupInvoice(f[1]).render();
+            default -> error("unknown invoice type " + f[0]);
+        };
     }
 
     private String exit(String[] f) {

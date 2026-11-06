@@ -19,7 +19,9 @@ import es.upm.park.persistence.repository.TicketRepository;
 import es.upm.park.persistence.repository.UserRepository;
 import es.upm.park.business.service.AttractionService;
 import es.upm.park.business.service.GroupException;
+import es.upm.park.business.invoice.TextInvoiceBuilder;
 import es.upm.park.business.service.GroupService;
+import es.upm.park.business.service.InvoiceService;
 import es.upm.park.business.service.ParkException;
 import es.upm.park.business.service.TicketException;
 import es.upm.park.business.service.TicketService;
@@ -47,6 +49,7 @@ public final class ParkController {
     private GroupService groupService;
     private TicketService ticketService;
     private AttractionService attractionService;
+    private InvoiceService invoiceService;
 
     private ParkController() {
         start(new UserRepository(), LocalDate.now());
@@ -89,6 +92,7 @@ public final class ParkController {
         this.ticketService = ticketsService;
         this.groupService = new GroupService(groups, users, ticketsService::hasActiveGroupTicket);
         this.attractionService = new AttractionService(attractions);
+        this.invoiceService = new InvoiceService(users, groups, tickets, new TextInvoiceBuilder());
         this.currentDate = today;
         this.basePrice = INITIAL_PRICE;
     }
@@ -103,6 +107,10 @@ public final class ParkController {
 
     public AttractionService getAttractionService() {
         return attractionService;
+    }
+
+    public InvoiceService getInvoiceService() {
+        return invoiceService;
     }
 
     public TicketService getTicketService() {

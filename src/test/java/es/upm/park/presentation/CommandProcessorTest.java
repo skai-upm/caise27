@@ -275,4 +275,19 @@ class CommandProcessorTest {
                 processor.process("ATTRACTION EXIT;A01;ana@correo.com"));
         assertTrue(processor.process("HELP").contains("ATTRACTION STATUS;<id>"));
     }
+
+    @Test
+    void invoiceCommands() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-15");
+        processor.process("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        processor.process("GROUP CREATE;G01;F");
+        String user = processor.process("INVOICE CREATE;USER;ana@correo.com");
+        assertTrue(user.startsWith("INVOICE (USER)"));
+        assertTrue(user.endsWith("TOTAL: 40.00"));
+        assertTrue(processor.process("INVOICE CREATE;GROUP;G01").endsWith("TOTAL: 0.00"));
+        assertEquals("Error: unknown invoice type COMPANY", processor.process("INVOICE CREATE;COMPANY;X"));
+        assertEquals("Error: INVOICE CREATE expects 2 fields", processor.process("INVOICE CREATE;USER"));
+        assertTrue(processor.process("HELP").contains("INVOICE CREATE;GROUP;<group>"));
+    }
 }
