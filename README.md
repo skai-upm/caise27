@@ -46,3 +46,12 @@ System commands (park-wide settings for the current execution):
 
 - `SYSTEM DATE;<yyyy-MM-dd>` sets the current system date. It starts as the local date when the application starts.
 - `SYSTEM PRICE;<Price>` sets the current base ticket price, a positive amount with at most two decimals. It starts at 40.00 euros on every execution.
+
+Group commands:
+
+- `GROUP CREATE;<Identifier>;<Name>` creates an empty group with a unique identifier.
+- `GROUP ADD;<Identifier>;<Email>` adds a registered user to a group (at most once).
+- `GROUP REMOVE;<Identifier>;<Email>` removes a member from a group.
+- `GROUP DELETE;<Identifier>` deletes a group.
+
+A group with a group ticket dated today or later cannot be modified or deleted.

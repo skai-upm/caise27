@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+
 class ParkControllerTest {
 
     private final ParkController park = ParkController.getInstance();
@@ -35,16 +36,16 @@ class ParkControllerTest {
     @Test
     void invalidPricesAreRejectedWithoutChangingState() {
         for (String value : new String[] {"0", "-5", "10.999"}) {
-            assertThrows(IllegalArgumentException.class, () -> park.setBasePrice(new BigDecimal(value)));
+            assertThrows(ParkException.class, () -> park.setBasePrice(new BigDecimal(value)));
         }
-        assertThrows(IllegalArgumentException.class, () -> park.setBasePrice(null));
+        assertThrows(ParkException.class, () -> park.setBasePrice(null));
         assertEquals(new BigDecimal("40.00"), park.getBasePrice());
     }
 
     @Test
     void nullDateIsRejected() {
         LocalDate before = park.getCurrentDate();
-        assertThrows(IllegalArgumentException.class, () -> park.setCurrentDate(null));
+        assertThrows(ParkException.class, () -> park.setCurrentDate(null));
         assertEquals(before, park.getCurrentDate());
     }
 

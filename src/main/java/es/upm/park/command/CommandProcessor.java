@@ -1,6 +1,7 @@
 package es.upm.park.command;
 
 import es.upm.park.controller.ParkController;
+import es.upm.park.controller.ParkException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,6 +25,10 @@ public class CommandProcessor {
             "USER UPDATE;<email>;<password>;<field>;<value>",
             "SYSTEM DATE;<yyyy-MM-dd>",
             "SYSTEM PRICE;<Price>",
+            "GROUP CREATE;<Identifier>;<Name>",
+            "GROUP ADD;<Identifier>;<Email>",
+            "GROUP REMOVE;<Identifier>;<Email>",
+            "GROUP DELETE;<Identifier>",
             "HELP",
             "EXIT");
 
@@ -36,6 +41,22 @@ public class CommandProcessor {
         handlers.put("EXIT", args -> CommandResult.exit(EXIT_TEXT));
         handlers.put("SYSTEM DATE", this::systemDate);
         handlers.put("SYSTEM PRICE", this::systemPrice);
+        handlers.put("GROUP CREATE", args -> withArgs(args, 2, "GROUP CREATE;<Identifier>;<Name>", a -> {
+            park().createGroup(a[0], a[1]);
+            return "GROUP CREATED";
+        }));
+        handlers.put("GROUP ADD", args -> withArgs(args, 2, "GROUP ADD;<Identifier>;<Email>", a -> {
+            park().addUserToGroup(a[0], a[1]);
+            return "USER ADDED TO GROUP";
+        }));
+        handlers.put("GROUP REMOVE", args -> withArgs(args, 2, "GROUP REMOVE;<Identifier>;<Email>", a -> {
+            park().removeUserFromGroup(a[0], a[1]);
+            return "USER REMOVED FROM GROUP";
+        }));
+        handlers.put("GROUP DELETE", args -> withArgs(args, 1, "GROUP DELETE;<Identifier>", a -> {
+            park().deleteGroup(a[0]);
+            return "GROUP DELETED";
+        }));
     }
 
     public CommandResult process(String line) {
@@ -45,7 +66,31 @@ public class CommandProcessor {
         if (handler == null) {
             return error("Unknown command: " + (line == null ? "" : line.trim()));
         }
-        return handler.apply(Arrays.copyOfRange(parts, 1, parts.length));
+        try {
+            return handler.apply(Arrays.copyOfRange(parts, 1, parts.length));
+        } catch (ParkException e) {
+            return error(e.getMessage());
+        }
+    }
+
+    /**
+     * Checks the argument count, trims the arguments and runs the action, whose
+     * return value is the confirmation message.
+     */
+    private static CommandResult withArgs(String[] args, int count, String usage,
+                                          Function<String[], String> action) {
+        if (args.length != count) {
+            return error("Usage: " + usage);
+        }
+        String[] trimmed = new String[count];
+        for (int i = 0; i < count; i++) {
+            trimmed[i] = args[i].trim();
+        }
+        return CommandResult.of(action.apply(trimmed));
+    }
+
+    private static ParkController park() {
+        return ParkController.getInstance();
     }
 
     private CommandResult systemDate(String[] args) {
@@ -72,11 +117,7 @@ public class CommandProcessor {
         } catch (NumberFormatException e) {
             return error("Invalid price: " + args[0].trim());
         }
-        try {
-            ParkController.getInstance().setBasePrice(price);
-        } catch (IllegalArgumentException e) {
-            return error(e.getMessage());
-        }
+        ParkController.getInstance().setBasePrice(price);
         return CommandResult.of("SYSTEM PRICE UPDATED: " + ParkController.getInstance().getBasePrice());
     }
 
