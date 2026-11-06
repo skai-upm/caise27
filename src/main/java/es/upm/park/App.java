@@ -2,10 +2,7 @@ package es.upm.park;
 
 import es.upm.park.business.controller.ParkController;
 import es.upm.park.business.exception.ParkException;
-import es.upm.park.presentation.CommandProcessor;
 import es.upm.park.presentation.CommandRunner;
-import es.upm.park.persistence.StoragePaths;
-import es.upm.park.persistence.TextParkStorage;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -49,15 +46,14 @@ public class App {
         }
         try {
             ParkController park = ParkController.getInstance();
-            TextParkStorage storage = new TextParkStorage(new StoragePaths(dataDir), err);
+            AppConfiguration.Configured configured = AppConfiguration.configure(dataDir, err);
             try {
-                park.restore(storage.load());
+                park.restore(configured.storage().load());
             } catch (ParkException e) {
                 err.println("ERROR: " + e.getMessage());
                 return;
             }
-            park.setStorage(storage);
-            CommandRunner runner = new CommandRunner(new CommandProcessor(), out);
+            CommandRunner runner = new CommandRunner(configured.processor(), out);
             if (commandFile == null) {
                 runner.runInteractive(stdin, err);
             } else {

@@ -35,7 +35,10 @@ class TextParkStorageTest {
     private final ByteArrayOutputStream warnings = new ByteArrayOutputStream();
 
     private TextParkStorage storage() {
-        return new TextParkStorage(new StoragePaths(dir), new PrintStream(warnings, true, StandardCharsets.UTF_8));
+        StoragePaths paths = new StoragePaths(dir);
+        PrintStream out = new PrintStream(warnings, true, StandardCharsets.UTF_8);
+        return new TextParkStorage(new GroupRepository(paths.groups(), out), new TicketRepository(paths.tickets(), out),
+                new AttractionRepository(paths.attractions(), out));
     }
 
     @Test

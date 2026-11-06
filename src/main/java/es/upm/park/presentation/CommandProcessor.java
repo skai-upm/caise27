@@ -1,5 +1,6 @@
 package es.upm.park.presentation;
 
+import es.upm.park.business.controller.InvoiceController;
 import es.upm.park.business.controller.ParkController;
 import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.ParkException;
@@ -49,8 +50,18 @@ public class CommandProcessor {
     static final String EXIT_TEXT = "Exiting the application.";
 
     private final Map<String, Function<String[], CommandResult>> handlers = new LinkedHashMap<>();
+    private final ParkController parkController;
+    private final InvoiceController invoiceController;
 
+    /** Uses the execution's controller instances. */
     public CommandProcessor() {
+        this(ParkController.getInstance(), InvoiceController.getInstance());
+    }
+
+    /** Uses the controllers injected by the application configuration. */
+    public CommandProcessor(ParkController parkController, InvoiceController invoiceController) {
+        this.parkController = parkController;
+        this.invoiceController = invoiceController;
         handlers.put("HELP", args -> CommandResult.of(HELP_TEXT));
         handlers.put("EXIT", args -> CommandResult.exit(EXIT_TEXT));
         handlers.put("SYSTEM DATE", this::systemDate);
@@ -99,8 +110,8 @@ public class CommandProcessor {
         }));
         handlers.put("INVOICE CREATE", args -> withArgs(args, 2, "INVOICE CREATE;USER;<email> | INVOICE CREATE;GROUP;<groupIdentifier>",
                 a -> switch (a[0]) {
-                    case "USER" -> park().userInvoice(a[1]).render();
-                    case "GROUP" -> park().groupInvoice(a[1]).render();
+                    case "USER" -> invoiceController.userInvoice(a[1]).render();
+                    case "GROUP" -> invoiceController.groupInvoice(a[1]).render();
                     default -> throw new InvalidInputException("Invoice type must be USER or GROUP: " + a[0]);
                 }));
         handlers.put("ATTRACTION STATUS", args -> withArgs(args, 1, "ATTRACTION STATUS;<attractionIdentifier>",
@@ -137,8 +148,8 @@ public class CommandProcessor {
         return CommandResult.of(action.apply(trimmed));
     }
 
-    private static ParkController park() {
-        return ParkController.getInstance();
+    private ParkController park() {
+        return parkController;
     }
 
     private static int parseCapacity(String text) {
@@ -184,7 +195,7 @@ public class CommandProcessor {
             return error("Usage: SYSTEM DATE;<yyyy-MM-dd>");
         }
         LocalDate date = parseDate(args[0]);
-        ParkController.getInstance().setCurrentDate(date);
+        park().setCurrentDate(date);
         return CommandResult.of("SYSTEM DATE UPDATED: " + date);
     }
 
@@ -198,8 +209,8 @@ public class CommandProcessor {
         } catch (NumberFormatException e) {
             return error("Invalid price: " + args[0].trim());
         }
-        ParkController.getInstance().setBasePrice(price);
-        return CommandResult.of("SYSTEM PRICE UPDATED: " + ParkController.getInstance().getBasePrice());
+        park().setBasePrice(price);
+        return CommandResult.of("SYSTEM PRICE UPDATED: " + park().getBasePrice());
     }
 
     private static CommandResult error(String message) {

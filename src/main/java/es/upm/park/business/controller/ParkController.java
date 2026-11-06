@@ -3,9 +3,6 @@ package es.upm.park.business.controller;
 import es.upm.park.business.exception.BusinessRuleException;
 import es.upm.park.business.exception.InvalidInputException;
 import es.upm.park.business.exception.NotFoundException;
-import es.upm.park.business.invoice.GroupInvoiceBuilder;
-import es.upm.park.business.invoice.Invoice;
-import es.upm.park.business.invoice.UserInvoiceBuilder;
 import es.upm.park.business.model.Attraction;
 import es.upm.park.business.model.Group;
 import es.upm.park.business.model.GroupTicket;
@@ -139,7 +136,8 @@ public final class ParkController {
         return group != null && groupTicketsOf(group).stream().anyMatch(ticket -> ticket.isActiveOn(currentDate));
     }
 
-    private List<GroupTicket> groupTicketsOf(Group group) {
+    /** Group tickets bought by a group, obtained by traversing the system's tickets. */
+    public List<GroupTicket> groupTicketsOf(Group group) {
         return tickets.values().stream()
                 .filter(GroupTicket.class::isInstance)
                 .map(GroupTicket.class::cast)
@@ -354,27 +352,6 @@ public final class ParkController {
         return findAttraction(id).orElseThrow(() -> new NotFoundException("No attraction with identifier " + id));
     }
 
-    // ---- invoices (director of the invoice builders) ------------------------------
-
-    /** Invoice of an active user's direct purchases. */
-    public Invoice userInvoice(String email) {
-        String dni = users.dniOf(email)
-                .orElseThrow(() -> new NotFoundException("No registered user with email " + email));
-        return new UserInvoiceBuilder()
-                .forUser(email, dni)
-                .directTickets(ticketsOf(email))
-                .build();
-    }
-
-    /** Invoice of the group tickets bought by an existing group. */
-    public Invoice groupInvoice(String id) {
-        Group group = requireGroup(id);
-        return new GroupInvoiceBuilder()
-                .forGroup(group)
-                .groupTickets(groupTicketsOf(group))
-                .build();
-    }
-
     // ---- users ---------------------------------------------------------------
 
     /**
@@ -398,7 +375,13 @@ public final class ParkController {
         save();
     }
 
-    private Group requireGroup(String id) {
+    /** The DNI of an active registered user. */
+    public String userDni(String email) {
+        return users.dniOf(email)
+                .orElseThrow(() -> new NotFoundException("No registered user with email " + email));
+    }
+
+    public Group requireGroup(String id) {
         Group group = groups.get(id);
         if (group == null) {
             throw new NotFoundException("No group with identifier " + id);

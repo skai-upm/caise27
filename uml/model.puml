@@ -62,6 +62,11 @@ package "es.upm.park.business.controller" {
     - storage : ParkStorage
   }
 
+  class InvoiceController <<singleton>> {
+    - {static} INSTANCE : InvoiceController
+    - park : ParkController
+  }
+
   interface UserDirectory {
   }
 
@@ -78,9 +83,10 @@ package "es.upm.park.business.controller" {
   ParkController o--> "0..*" Group : groups
   ParkController o--> "0..*" Ticket : tickets
   ParkController o--> "0..*" Attraction : attractions
-  ParkController --> "1" UserDirectory : users
-  ParkController --> "1" ParkStorage : storage
+  ParkController --> "1" UserDirectory : users (injected)
+  ParkController --> "1" ParkStorage : storage (injected)
   ParkStorage ..> ParkState : loads / saves
+  InvoiceController --> "1" ParkController : park (injected)
 }
 
 package "es.upm.park.business.exception" {
@@ -125,8 +131,8 @@ package "es.upm.park.business.invoice" {
   GroupInvoiceBuilder ..> GroupTicket : reads
 }
 
-ParkController ..> UserInvoiceBuilder : directs
-ParkController ..> GroupInvoiceBuilder : directs
+InvoiceController ..> UserInvoiceBuilder : directs
+InvoiceController ..> GroupInvoiceBuilder : directs
 
 package "es.upm.park.persistence" {
   class TextParkStorage {
@@ -158,10 +164,9 @@ package "es.upm.park.persistence" {
   }
 
   TextParkStorage ..|> ParkStorage
-  TextParkStorage *--> "1" GroupRepository
-  TextParkStorage *--> "1" TicketRepository
-  TextParkStorage *--> "1" AttractionRepository
-  TextParkStorage ..> StoragePaths : configured by
+  TextParkStorage o--> "1" GroupRepository : injected
+  TextParkStorage o--> "1" TicketRepository : injected
+  TextParkStorage o--> "1" AttractionRepository : injected
   GroupRepository ..> TextFile
   TicketRepository ..> TextFile
   AttractionRepository ..> TextFile
@@ -185,16 +190,26 @@ package "es.upm.park.presentation" {
 
   CommandRunner --> "1" CommandProcessor
   CommandProcessor ..> CommandResult : creates
-  CommandProcessor ..> ParkController : uses
+  CommandProcessor --> "1" ParkController : injected
+  CommandProcessor --> "1" InvoiceController : injected
   CommandProcessor ..> ParkException : reports
 }
 
 package "es.upm.park" {
-  class App <<composition root>> {
+  class App {
   }
+  class AppConfiguration <<composition root>> {
+  }
+  App ..> AppConfiguration : configure(dataDir)
   App ..> CommandRunner
-  App ..> TextParkStorage
-  App ..> ParkController
+  AppConfiguration ..> StoragePaths : creates
+  AppConfiguration ..> GroupRepository : creates
+  AppConfiguration ..> TicketRepository : creates
+  AppConfiguration ..> AttractionRepository : creates
+  AppConfiguration ..> TextParkStorage : creates
+  AppConfiguration ..> ParkController : injects storage
+  AppConfiguration ..> InvoiceController : injects park
+  AppConfiguration ..> CommandProcessor : creates
 }
 
 class RuntimeException

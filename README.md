@@ -122,6 +122,8 @@ The code is organized in layers under `es.upm.park`:
 - `presentation`: command parsing and processing, the command loop and command-file reading.
 - `business`: `model` (domain objects), `controller` (central park management and its storage/user ports) and `exception` (the `ParkException` hierarchy: not found, business rule, invalid input, storage).
 - `persistence`: text-file repositories that implement the storage port.
-- `App`: the composition root that parses arguments and wires the layers.
+- `App` and `AppConfiguration`: the composition root. `App` parses arguments. `AppConfiguration` creates the repositories for the data directory (`data/` or the `--fly` temporary one), injects them into the storage and the controllers, wires `InvoiceController` to `ParkController`, and creates the command processor. Injection is plain Java, with no framework.
+
+Controllers with an execution-wide responsibility (`ParkController`, `InvoiceController`) are singletons. Repositories are not: each configuration creates its own.
 
 Presentation never uses persistence, and business uses neither (`LayeredArchitectureTest`). Every abnormal situation is an exception, which the presentation layer reports as `ERROR:` before continuing with the next command.

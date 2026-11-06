@@ -1,0 +1,44 @@
+package es.upm.park;
+
+import es.upm.park.business.controller.InvoiceController;
+import es.upm.park.business.controller.ParkController;
+import es.upm.park.persistence.AttractionRepository;
+import es.upm.park.persistence.GroupRepository;
+import es.upm.park.persistence.StoragePaths;
+import es.upm.park.persistence.TextParkStorage;
+import es.upm.park.persistence.TicketRepository;
+import es.upm.park.presentation.CommandProcessor;
+
+import java.io.PrintStream;
+import java.nio.file.Path;
+
+/**
+ * Hand-written dependency injection: builds the repositories for a data
+ * directory, injects them into the storage and controllers, wires controller
+ * collaborations and creates the presentation entry point.
+ */
+public final class AppConfiguration {
+
+    /** The configured objects of one execution. */
+    public record Configured(TextParkStorage storage, GroupRepository groups, TicketRepository tickets,
+                             AttractionRepository attractions, CommandProcessor processor) {
+    }
+
+    private AppConfiguration() {
+    }
+
+    public static Configured configure(Path dataDir, PrintStream warnings) {
+        StoragePaths paths = new StoragePaths(dataDir);
+        GroupRepository groups = new GroupRepository(paths.groups(), warnings);
+        TicketRepository tickets = new TicketRepository(paths.tickets(), warnings);
+        AttractionRepository attractions = new AttractionRepository(paths.attractions(), warnings);
+        TextParkStorage storage = new TextParkStorage(groups, tickets, attractions);
+
+        ParkController park = ParkController.getInstance();
+        park.setStorage(storage);
+        InvoiceController invoices = InvoiceController.getInstance();
+        invoices.setParkController(park);
+
+        return new Configured(storage, groups, tickets, attractions, new CommandProcessor(park, invoices));
+    }
+}
