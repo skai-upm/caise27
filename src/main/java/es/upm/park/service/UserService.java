@@ -1,6 +1,7 @@
 package es.upm.park.service;
 
 import es.upm.park.model.User;
+import es.upm.park.model.UserField;
 import es.upm.park.model.UserValidator;
 import es.upm.park.repository.UserRepository;
 
@@ -52,12 +53,67 @@ public class UserService {
      * @throws UserException when no user has that email or the password is incorrect
      */
     public User delete(String email, String password) {
+        User user = authenticate(email, password);
+        repository.remove(user);
+        return user;
+    }
+
+    /**
+     * Changes one modifiable field of the user identified by email and
+     * password. New values must satisfy the creation rules.
+     *
+     * @return the updated user
+     * @throws UserException when authentication fails, the field is not
+     *         modifiable or the new value is invalid or duplicated
+     */
+    public User update(String email, String password, String fieldName, String value) {
+        User user = authenticate(email, password);
+        UserField field = UserField.fromName(fieldName);
+        if (field == null) {
+            throw new UserException("field " + fieldName + " cannot be modified");
+        }
+        User updated = copy(user);
+        switch (field) {
+            case NAME -> updated.setFirstName(value);
+            case SURNAME -> updated.setSurnames(value);
+            case PHONE -> updated.setTelephone(value);
+            case EMAIL -> {
+                if (!UserValidator.isValidEmail(value)) {
+                    throw new UserException("invalid email");
+                }
+                repository.findByEmail(value).filter(other -> other != user).ifPresent(other -> {
+                    throw new UserException("a user with email " + value + " already exists");
+                });
+                updated.setEmail(value);
+            }
+            case PASSWORD -> {
+                if (!UserValidator.isValidPassword(value)) {
+                    throw new UserException("invalid password");
+                }
+                updated.setPassword(value);
+            }
+            case CARD -> {
+                if (!UserValidator.isValidCardNumber(value)) {
+                    throw new UserException("invalid card number");
+                }
+                updated.setCardNumber(value);
+            }
+        }
+        repository.replace(user, updated);
+        return updated;
+    }
+
+    private User authenticate(String email, String password) {
         User user = repository.findByEmail(email)
                 .orElseThrow(() -> new UserException("no user with email " + email));
         if (!user.getPassword().equals(password)) {
             throw new UserException("incorrect password");
         }
-        repository.remove(user);
         return user;
+    }
+
+    private static User copy(User u) {
+        return new User(u.getFirstName(), u.getSurnames(), u.getDni(), u.getEmail(),
+                u.getPassword(), u.getTelephone(), u.getCardNumber());
     }
 }

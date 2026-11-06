@@ -83,4 +83,14 @@ class MainTest {
         assertEquals(Main.BANNER + "\nError: a user with DNI 12345678Z already exists", run(ANA + "\n"));
         assertEquals(1, Files.readAllLines(usersFile).size());
     }
+
+    @Test
+    void updatesSurviveRestart() throws Exception {
+        run(ANA + "\nUSER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria\n");
+        assertEquals(List.of("Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456"),
+                Files.readAllLines(usersFile));
+        assertEquals(Main.BANNER + "\nUser updated: 12345678Z PHONE", run("USER UPDATE;ana@correo.com;Clave1!;PHONE;699\n"));
+        assertEquals("Ana Maria;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;699;1234567890123456",
+                Files.readAllLines(usersFile).get(0));
+    }
 }

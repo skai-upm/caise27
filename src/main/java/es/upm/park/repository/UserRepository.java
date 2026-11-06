@@ -50,6 +50,17 @@ public class UserRepository {
         users.remove(user);
     }
 
+    /**
+     * Replaces a stored user by its updated copy. When persistent, the file is
+     * written first so that a failed write leaves the repository unchanged.
+     */
+    public void replace(User old, User updated) {
+        List<User> snapshot = new ArrayList<>(users);
+        snapshot.set(snapshot.indexOf(old), updated);
+        persist(snapshot);
+        users.set(users.indexOf(old), updated);
+    }
+
     public Optional<User> findByEmail(String email) {
         return users.stream().filter(u -> u.getEmail().equals(email)).findFirst();
     }

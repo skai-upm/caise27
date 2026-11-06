@@ -79,4 +79,27 @@ class UserRepositoryTest {
         assertThrows(PersistenceException.class, () -> repo.remove(ana));
         assertEquals(1, repo.findAll().size());
     }
+
+    @Test
+    void replacedUserIsReloaded(@TempDir Path dir) {
+        Path file = dir.resolve("users.txt");
+        UserRepository repo = new UserRepository(new UserFileStore(file));
+        repo.add(ana);
+        User changed = new User("Ana Maria", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
+        repo.replace(ana, changed);
+        assertSame(changed, repo.findByDni("12345678Z").orElseThrow());
+        assertEquals("Ana Maria", new UserRepository(new UserFileStore(file)).findAll().get(0).getFirstName());
+    }
+
+    @Test
+    void failedReplaceKeepsOriginal(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("users.txt");
+        UserRepository repo = new UserRepository(new UserFileStore(file));
+        repo.add(ana);
+        Files.delete(file);
+        Files.createDirectory(file);
+        User changed = new User("X", "Garcia", "12345678Z", "ana@correo.com", "Clave1!", "6", "1234567890123456");
+        assertThrows(PersistenceException.class, () -> repo.replace(ana, changed));
+        assertSame(ana, repo.findAll().get(0));
+    }
 }

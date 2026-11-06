@@ -95,4 +95,53 @@ class UserServiceTest {
         createAna();
         assertRejected("no user with email nadie@correo.com", () -> service.delete("nadie@correo.com", "Clave1!"));
     }
+
+    @Test
+    void updatesEachModifiableField() {
+        createAna();
+        assertEquals("Ana Maria", service.update("ana@correo.com", "Clave1!", "NAME", "Ana Maria").getFirstName());
+        assertEquals("Ruiz", service.update("ana@correo.com", "Clave1!", "SURNAME", "Ruiz").getSurnames());
+        assertEquals("699", service.update("ana@correo.com", "Clave1!", "PHONE", "699").getTelephone());
+        assertEquals("9999888877776666",
+                service.update("ana@correo.com", "Clave1!", "CARD", "9999888877776666").getCardNumber());
+        assertEquals("Nueva2#", service.update("ana@correo.com", "Clave1!", "PASSWORD", "Nueva2#").getPassword());
+        User u = service.update("ana@correo.com", "Nueva2#", "EMAIL", "ana.nueva@correo.com");
+        assertEquals("12345678Z", u.getDni());
+        assertSame(u, repo.findByEmail("ana.nueva@correo.com").orElseThrow());
+        assertEquals(false, repo.findByEmail("ana@correo.com").isPresent());
+        assertEquals(1, repo.findAll().size());
+    }
+
+    @Test
+    void ownEmailCanBeKept() {
+        createAna();
+        assertEquals("ana@correo.com", service.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo.com").getEmail());
+    }
+
+    @Test
+    void rejectsNonModifiableFieldsAndBadCredentials() {
+        User ana = createAna();
+        assertRejected("field DNI cannot be modified", () -> service.update("ana@correo.com", "Clave1!", "DNI", "87654321X"));
+        assertRejected("field AGE cannot be modified", () -> service.update("ana@correo.com", "Clave1!", "AGE", "30"));
+        assertRejected("incorrect password", () -> service.update("ana@correo.com", "Otra2#", "NAME", "X"));
+        assertRejected("no user with email nadie@correo.com", () -> service.update("nadie@correo.com", "Clave1!", "NAME", "X"));
+        assertSame(ana, repo.findAll().get(0));
+        assertEquals("Ana", ana.getFirstName());
+        assertEquals("12345678Z", ana.getDni());
+    }
+
+    @Test
+    void rejectsInvalidOrDuplicateValues() {
+        User ana = createAna();
+        service.create("Pedro", "Lopez", "87654321X", "pedro@correo.com", "Otra2#", "6", "9876543210987654");
+        assertRejected("invalid email", () -> service.update("ana@correo.com", "Clave1!", "EMAIL", "ana@correo.es"));
+        assertRejected("a user with email pedro@correo.com already exists",
+                () -> service.update("ana@correo.com", "Clave1!", "EMAIL", "pedro@correo.com"));
+        assertRejected("invalid password", () -> service.update("ana@correo.com", "Clave1!", "PASSWORD", "clave1!"));
+        assertRejected("invalid card number", () -> service.update("ana@correo.com", "Clave1!", "CARD", "123456789012345"));
+        assertSame(ana, repo.findByDni("12345678Z").orElseThrow());
+        assertEquals("ana@correo.com", ana.getEmail());
+        assertEquals("Clave1!", ana.getPassword());
+        assertEquals("1234567890123456", ana.getCardNumber());
+    }
 }

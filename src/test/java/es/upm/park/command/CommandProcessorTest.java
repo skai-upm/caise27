@@ -95,4 +95,15 @@ class CommandProcessorTest {
         assertEquals("Error: USER DELETE expects 2 fields", processor.process("USER DELETE;ana@correo.com"));
         assertEquals(1, repo.findAll().size());
     }
+
+    @Test
+    void updatesUserFromCommand() {
+        processor.process(ANA);
+        assertEquals("User updated: 12345678Z NAME",
+                processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME;Ana Maria"));
+        assertEquals("Ana Maria", repo.findByDni("12345678Z").orElseThrow().getFirstName());
+        assertEquals("Error: USER UPDATE expects 4 fields", processor.process("USER UPDATE;ana@correo.com;Clave1!;NAME"));
+        assertEquals("Error: field DNI cannot be modified",
+                processor.process("USER UPDATE;ana@correo.com;Clave1!;DNI;87654321X"));
+    }
 }

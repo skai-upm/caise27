@@ -12,7 +12,9 @@ public class CommandProcessor {
 
     static final String USER_CREATE = "USER CREATE";
     static final String USER_DELETE = "USER DELETE";
+    static final String USER_UPDATE = "USER UPDATE";
     private static final int USER_CREATE_FIELDS = 7;
+    private static final int USER_UPDATE_FIELDS = 4;
     private static final int USER_DELETE_FIELDS = 2;
 
     private final UserService userService;
@@ -39,6 +41,9 @@ public class CommandProcessor {
             if (USER_DELETE.equals(name)) {
                 return deleteUser(parts);
             }
+            if (USER_UPDATE.equals(name)) {
+                return updateUser(parts);
+            }
             return error("unknown command '" + name + "'");
         } catch (UserException | PersistenceException e) {
             return error(e.getMessage());
@@ -59,6 +64,14 @@ public class CommandProcessor {
         }
         userService.delete(parts[1], parts[2]);
         return "User deleted: " + parts[1];
+    }
+
+    private String updateUser(String[] parts) {
+        if (parts.length != USER_UPDATE_FIELDS + 1) {
+            return error(USER_UPDATE + " expects " + USER_UPDATE_FIELDS + " fields");
+        }
+        String dni = userService.update(parts[1], parts[2], parts[3], parts[4]).getDni();
+        return "User updated: " + dni + " " + parts[3];
     }
 
     private static String error(String message) {
