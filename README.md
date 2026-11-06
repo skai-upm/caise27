@@ -41,3 +41,8 @@ General commands:
 
 - `HELP` lists the available commands and their syntax.
 - `EXIT` ends the application. No command after `EXIT` is executed, including later lines of a command file.
+
+System commands (park-wide settings for the current execution):
+
+- `SYSTEM DATE;<yyyy-MM-dd>` sets the current system date. It starts as the local date when the application starts.
+- `SYSTEM PRICE;<Price>` sets the current base ticket price, a positive amount with at most two decimals. It starts at 40.00 euros on every execution.
