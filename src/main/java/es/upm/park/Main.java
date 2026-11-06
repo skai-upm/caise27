@@ -1,13 +1,14 @@
 package es.upm.park;
 
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 import es.upm.park.command.CommandProcessor;
 import es.upm.park.command.CommandRunner;
+import es.upm.park.controller.ParkController;
 import es.upm.park.persistence.PersistenceException;
 import es.upm.park.persistence.UserFileStore;
 import es.upm.park.repository.UserRepository;
-import es.upm.park.service.UserService;
 
 /**
  * Entry point of the Amusement Park application. It only wires the
@@ -38,7 +39,9 @@ public final class Main {
             System.out.println("Error: cannot load users: " + e.getMessage());
             return;
         }
-        CommandRunner runner = new CommandRunner(new CommandProcessor(new UserService(users)), System.out);
+        ParkController park = ParkController.getInstance();
+        park.start(users, LocalDate.now());
+        CommandRunner runner = new CommandRunner(new CommandProcessor(park), System.out);
         if (args.length > 0) {
             runner.runFile(args[0]);
         } else {

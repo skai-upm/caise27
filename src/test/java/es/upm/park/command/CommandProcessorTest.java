@@ -14,12 +14,18 @@ import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.park.persistence.UserFileStore;
 import es.upm.park.repository.UserRepository;
-import es.upm.park.service.UserService;
+import es.upm.park.controller.ParkController;
+import es.upm.park.model.User;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Optional;
 
 class CommandProcessorTest {
 
     private static final String ANA =
             "USER CREATE;Ana;Garcia Lopez;12345678Z;ana@correo.com;Clave1!;612345678;1234567890123456";
+
+    private static final LocalDate TODAY = LocalDate.of(2026, 11, 6);
 
     private UserRepository repo;
     private CommandProcessor processor;
@@ -27,7 +33,8 @@ class CommandProcessorTest {
     @BeforeEach
     void setUp() {
         repo = new UserRepository();
-        processor = new CommandProcessor(new UserService(repo));
+        ParkController.getInstance().start(repo, TODAY);
+        processor = new CommandProcessor(ParkController.getInstance());
     }
 
     @Test
@@ -75,7 +82,8 @@ class CommandProcessorTest {
         Path file = dir.resolve("users.txt");
         UserRepository persistent = new UserRepository(new UserFileStore(file));
         Files.createDirectory(file);
-        String result = new CommandProcessor(new UserService(persistent)).process(ANA);
+        ParkController.getInstance().start(persistent, TODAY);
+        String result = processor.process(ANA);
         assertEquals("Error: cannot write " + file, result);
         assertEquals(0, persistent.findAll().size());
     }
@@ -141,14 +149,50 @@ class CommandProcessorTest {
 
     @Test
     void unexpectedFailureBecomesErrorMessage() {
-        UserService failing = new UserService(repo) {
+        UserRepository failing = new UserRepository() {
             @Override
-            public es.upm.park.model.User delete(String email, String password) {
+            public Optional<User> findByEmail(String email) {
                 throw new IllegalStateException("boom");
             }
         };
-        CommandProcessor p = new CommandProcessor(failing);
-        assertEquals("Error: command could not be processed", p.process("USER DELETE;a@b.com;x"));
-        assertEquals("User created: 12345678Z", p.process(ANA));
+        ParkController.getInstance().start(failing, TODAY);
+        assertEquals("Error: command could not be processed", processor.process("USER DELETE;a@b.com;x"));
+        assertEquals("System price set to 45.00", processor.process("SYSTEM PRICE;45"));
+    }
+
+    @Test
+    void systemDateChangesCurrentDate() {
+        ParkController park = ParkController.getInstance();
+        assertEquals(TODAY, park.getCurrentDate());
+        assertEquals("System date set to 2027-04-15", processor.process("SYSTEM DATE;2027-04-15"));
+        assertEquals(LocalDate.of(2027, 4, 15), park.getCurrentDate());
+        assertEquals("System date set to 2027-05-01", processor.process("SYSTEM DATE;2027-05-01"));
+        assertEquals(LocalDate.of(2027, 5, 1), park.getCurrentDate());
+    }
+
+    @Test
+    void invalidSystemDateIsRejected() {
+        assertEquals("Error: invalid date 2027-02-30", processor.process("SYSTEM DATE;2027-02-30"));
+        assertEquals("Error: invalid date 15/04/2027", processor.process("SYSTEM DATE;15/04/2027"));
+        assertEquals("Error: SYSTEM DATE expects 1 fields", processor.process("SYSTEM DATE"));
+        assertEquals(TODAY, ParkController.getInstance().getCurrentDate());
+    }
+
+    @Test
+    void systemPriceChangesBasePrice() {
+        ParkController park = ParkController.getInstance();
+        assertEquals(new BigDecimal("40.00"), park.getBasePrice());
+        assertEquals("System price set to 45.50", processor.process("SYSTEM PRICE;45.50"));
+        assertEquals(new BigDecimal("45.50"), park.getBasePrice());
+        assertEquals("System price set to 50.00", processor.process("SYSTEM PRICE;50"));
+    }
+
+    @Test
+    void invalidSystemPriceIsRejected() {
+        for (String bad : new String[] {"0", "0.00", "-5", "abc", "10.999", "", ".5", "5.", "1e3", "+5", "4.5.1"}) {
+            assertEquals("Error: invalid price " + bad, processor.process("SYSTEM PRICE;" + bad), bad);
+        }
+        assertEquals("Error: SYSTEM PRICE expects 1 fields", processor.process("SYSTEM PRICE;1;2"));
+        assertEquals(new BigDecimal("40.00"), ParkController.getInstance().getBasePrice());
     }
 }

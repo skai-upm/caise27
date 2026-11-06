@@ -10,6 +10,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import es.upm.park.repository.UserRepository;
-import es.upm.park.service.UserService;
+import es.upm.park.controller.ParkController;
 
 class CommandRunnerTest {
 
@@ -35,7 +36,8 @@ class CommandRunnerTest {
     void setUp() {
         buffer = new ByteArrayOutputStream();
         repo = new UserRepository();
-        runner = new CommandRunner(new CommandProcessor(new UserService(repo)),
+        ParkController.getInstance().start(repo, LocalDate.of(2027, 4, 15));
+        runner = new CommandRunner(new CommandProcessor(ParkController.getInstance()),
                 new PrintStream(buffer, true, StandardCharsets.UTF_8));
     }
 

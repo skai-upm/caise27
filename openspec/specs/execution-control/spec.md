@@ -7,11 +7,11 @@ Provides the general `HELP` and `EXIT` commands that show the available operatio
 ## Requirements
 
 ### Requirement: HELP lists available commands
-The `HELP` command SHALL print the available commands and their basic syntax, including at least `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `HELP` and `EXIT`, and MUST NOT change any stored data.
+The `HELP` command SHALL print the available commands and their basic syntax, including at least `USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>`, `USER DELETE;<email>;<password>`, `USER UPDATE;<email>;<password>;<field>;<value>`, `SYSTEM DATE;<yyyy-MM-dd>`, `SYSTEM PRICE;<price>`, `HELP` and `EXIT`, and MUST NOT change any stored data.
 
 #### Scenario: Help in interactive mode
 - **WHEN** `HELP` is entered on standard input
-- **THEN** the output contains each of the five command syntaxes listed above and processing continues with the next line
+- **THEN** the output contains each of the command syntaxes listed above and processing continues with the next line
 
 #### Scenario: Help in file mode
 - **GIVEN** a command file whose only line is `HELP`

@@ -204,4 +204,12 @@ class MainTest {
         assertEquals(Main.BANNER + "\nError: cannot load users: cannot read " + usersFile, out);
         assertTrue(Files.isDirectory(usersFile));
     }
+
+    @Test
+    void priceRevertsOnNewExecutionAndDateStartsToday() {
+        run("SYSTEM PRICE;45.50\nSYSTEM DATE;2030-01-01\n");
+        run("");
+        assertEquals(new java.math.BigDecimal("40.00"), es.upm.park.controller.ParkController.getInstance().getBasePrice());
+        assertEquals(java.time.LocalDate.now(), es.upm.park.controller.ParkController.getInstance().getCurrentDate());
+    }
 }
