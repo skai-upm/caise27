@@ -18,9 +18,18 @@ public class GroupTicket extends Ticket {
     private final List<IndividualTicket> composition;
 
     public GroupTicket(String id, LocalDate date, BigDecimal basePrice, Group group, List<User> members) {
-        super(id, date, basePrice, GroupDiscount.forMembers(members.size()));
+        this(id, date, basePrice, GroupDiscount.forMembers(members.size()), group, group.getId(), members);
+    }
+
+    /**
+     * Rebuilds a stored group ticket; {@code group} is null when the
+     * purchasing group no longer exists.
+     */
+    public GroupTicket(String id, LocalDate date, BigDecimal basePrice, BigDecimal discount, Group group,
+            String groupId, List<User> members) {
+        super(id, date, basePrice, discount);
         this.group = group;
-        this.groupId = group.getId();
+        this.groupId = groupId;
         List<IndividualTicket> tickets = new ArrayList<>();
         for (User member : members) {
             tickets.add(new IndividualTicket(constituentId(id, member.getDni()), date, basePrice, getDiscount(), member));

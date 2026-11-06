@@ -6,20 +6,45 @@ import java.util.List;
 import java.util.Optional;
 
 import es.upm.park.model.Group;
+import es.upm.park.persistence.GroupFileStore;
 
 /**
- * Keeps the groups known to the application.
+ * Keeps the groups known to the application, optionally backed by a file
+ * store loaded on creation.
  */
 public class GroupRepository {
 
     private final List<Group> groups = new ArrayList<>();
+    private final GroupFileStore store;
 
+    public GroupRepository() {
+        this.store = null;
+    }
+
+    public GroupRepository(GroupFileStore store) {
+        this.store = store;
+        groups.addAll(store.load());
+    }
+
+    /** Adds a group, writing the file first when persistent. */
     public void add(Group group) {
+        List<Group> snapshot = new ArrayList<>(groups);
+        snapshot.add(group);
+        persist(snapshot);
         groups.add(group);
     }
 
+    /** Removes a group, writing the file first when persistent. */
     public void remove(Group group) {
+        List<Group> snapshot = new ArrayList<>(groups);
+        snapshot.remove(group);
+        persist(snapshot);
         groups.remove(group);
+    }
+
+    /** Writes the current groups after an in-place change (membership). */
+    public void save() {
+        persist(groups);
     }
 
     public Optional<Group> findById(String id) {
@@ -28,5 +53,11 @@ public class GroupRepository {
 
     public List<Group> findAll() {
         return Collections.unmodifiableList(groups);
+    }
+
+    private void persist(List<Group> snapshot) {
+        if (store != null) {
+            store.save(snapshot);
+        }
     }
 }

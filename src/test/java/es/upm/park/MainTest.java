@@ -30,12 +30,14 @@ class MainTest {
     @BeforeEach
     void useTemporaryUsersFile() {
         usersFile = dir.resolve("users.txt");
-        System.setProperty(Main.USERS_FILE_PROPERTY, usersFile.toString());
+        System.setProperty(Main.DATA_DIR_PROPERTY, dir.toString());
+        System.setProperty(Main.TMP_DIR_PROPERTY, dir.resolve("tmp").toString());
     }
 
     @AfterEach
     void clearProperty() {
-        System.clearProperty(Main.USERS_FILE_PROPERTY);
+        System.clearProperty(Main.DATA_DIR_PROPERTY);
+        System.clearProperty(Main.TMP_DIR_PROPERTY);
     }
 
     private String run(String input, String... args) {
@@ -201,7 +203,7 @@ class MainTest {
     void unreadableUsersFileStopsInAControlledWay() throws Exception {
         Files.createDirectory(usersFile);
         String out = run(ANA + "\n");
-        assertEquals(Main.BANNER + "\nError: cannot load users: cannot read " + usersFile, out);
+        assertEquals(Main.BANNER + "\nError: cannot load park data: cannot read " + usersFile, out);
         assertTrue(Files.isDirectory(usersFile));
     }
 
@@ -211,5 +213,53 @@ class MainTest {
         run("");
         assertEquals(new java.math.BigDecimal("40.00"), es.upm.park.controller.ParkController.getInstance().getBasePrice());
         assertEquals(java.time.LocalDate.now(), es.upm.park.controller.ParkController.getInstance().getCurrentDate());
+    }
+
+    private static final String PEDRO =
+            "USER CREATE;Pedro;Lopez Martin;87654321X;pedro@correo.com;Otra2#;623456789;9876543210987654";
+
+    private boolean tmpIsEmpty() throws Exception {
+        Path tmp = dir.resolve("tmp");
+        try (var children = Files.list(tmp)) {
+            return children.findAny().isEmpty();
+        }
+    }
+
+    @Test
+    void parkStateSurvivesRestart() throws Exception {
+        run(ANA + "\n" + PEDRO + "\nSYSTEM DATE;2027-04-15\nGROUP CREATE;G01;Familia Garcia\nGROUP ADD;G01;ana@correo.com\n"
+                + "GROUP ADD;G01;pedro@correo.com\nATTRACTION CREATE;A01;Dragon Rojo;20\n"
+                + "TICKET CREATE;T001;ana@correo.com;2099-04-15\nGROUPTICKET CREATE;TG01;G01;2099-04-15\n");
+        String out = run("GROUP ADD;G01;ana@correo.com\nTICKET CREATE;T001;pedro@correo.com;2099-04-16\n"
+                + "ATTRACTION CREATE;A01;X;3\nATTRACTION LIST;A01\nGROUP DELETE;G01\n");
+        assertEquals(String.join("\n", Main.BANNER,
+                "Error: group G01 has an active group ticket",
+                "Error: ticket T001 already exists",
+                "Error: attraction A01 already exists",
+                "Attraction A01 has no users inside",
+                "Error: group G01 has an active group ticket"), out);
+        assertTrue(Files.readString(dir.resolve("tickets.txt")).contains("MEMBER;87654321X;Pedro;Lopez Martin;pedro@correo.com"));
+    }
+
+    @Test
+    void flyModeWithFileLeavesPermanentDataUntouched() throws Exception {
+        run(ANA + "\n");
+        List<String> permanent = Files.readAllLines(usersFile);
+        Path input = dir.resolve("fly.txt");
+        Files.write(input, List.of(ANA, PEDRO, "GROUP CREATE;G01;F"));
+        String out = run("", "--fly", input.toString());
+        assertEquals(Main.BANNER + "\nUser created: 12345678Z\nUser created: 87654321X\nGroup created: G01", out);
+        assertEquals(permanent, Files.readAllLines(usersFile));
+        assertTrue(Files.notExists(dir.resolve("groups.txt")));
+        assertTrue(tmpIsEmpty());
+    }
+
+    @Test
+    void flyModeInteractiveIsCleanedOnExitAndOnEndOfInput() throws Exception {
+        assertEquals(Main.BANNER + "\nUser created: 12345678Z\nBye", run(ANA + "\nEXIT\n", "--fly"));
+        assertTrue(tmpIsEmpty());
+        assertEquals(Main.BANNER + "\nUser created: 12345678Z", run(ANA + "\n", "--fly"));
+        assertTrue(tmpIsEmpty());
+        assertTrue(Files.notExists(usersFile));
     }
 }

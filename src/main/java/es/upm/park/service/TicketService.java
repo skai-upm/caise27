@@ -103,6 +103,7 @@ public class TicketService {
     /** Clears the group reference of the tickets of a deleted group. */
     public void detachGroup(Group group) {
         groupTickets().filter(g -> g.getGroup() == group).forEach(GroupTicket::detachGroup);
+        tickets.save();
     }
 
     private java.util.stream.Stream<GroupTicket> groupTickets() {

@@ -42,6 +42,7 @@ public class GroupService {
         if (!group.addMember(user.getDni())) {
             throw new GroupException("user " + email + " already in group " + id);
         }
+        groups.save();
     }
 
     public void removeUser(String id, String email) {
@@ -50,6 +51,13 @@ public class GroupService {
         if (!group.removeMember(user.getDni())) {
             throw new GroupException("user " + email + " not in group " + id);
         }
+        groups.save();
+    }
+
+    /** Removes a user from every group (used when the user is deleted). */
+    public void removeFromAllGroups(User user) {
+        groupsOf(user).forEach(group -> group.removeMember(user.getDni()));
+        groups.save();
     }
 
     public void delete(String id) {

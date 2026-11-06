@@ -2,12 +2,17 @@ package es.upm.park.controller;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
 import es.upm.park.model.Group;
 import es.upm.park.model.GroupTicket;
 import es.upm.park.model.User;
+import es.upm.park.persistence.AttractionFileStore;
+import es.upm.park.persistence.GroupFileStore;
+import es.upm.park.persistence.TicketFileStore;
+import es.upm.park.persistence.UserFileStore;
 import es.upm.park.repository.AttractionRepository;
 import es.upm.park.repository.GroupRepository;
 import es.upm.park.repository.TicketRepository;
@@ -28,6 +33,10 @@ import es.upm.park.service.UserService;
 public final class ParkController {
 
     public static final BigDecimal INITIAL_PRICE = new BigDecimal("40.00");
+    public static final String USERS_FILE = "users.txt";
+    public static final String GROUPS_FILE = "groups.txt";
+    public static final String ATTRACTIONS_FILE = "attractions.txt";
+    public static final String TICKETS_FILE = "tickets.txt";
     private static final int PRICE_DECIMALS = 2;
 
     private static final ParkController INSTANCE = new ParkController();
@@ -53,11 +62,32 @@ public final class ParkController {
      * to 40.00 and attaches the stored users.
      */
     public void start(UserRepository users, LocalDate today) {
+        wire(users, new GroupRepository(), new AttractionRepository(), new TicketRepository(), today);
+    }
+
+    /**
+     * Starts a new execution whose park state is stored in, and reloaded
+     * from, the text files of {@code dataDir}.
+     *
+     * @throws es.upm.park.persistence.PersistenceException when stored data cannot be read
+     */
+    public void start(Path dataDir, LocalDate today) {
+        UserRepository users = new UserRepository(new UserFileStore(dataDir.resolve(USERS_FILE)));
+        GroupRepository groups = new GroupRepository(new GroupFileStore(dataDir.resolve(GROUPS_FILE)));
+        AttractionRepository attractions =
+                new AttractionRepository(new AttractionFileStore(dataDir.resolve(ATTRACTIONS_FILE)));
+        TicketRepository tickets = new TicketRepository(new TicketFileStore(dataDir.resolve(TICKETS_FILE)),
+                users::findByDni, groups::findById);
+        wire(users, groups, attractions, tickets, today);
+    }
+
+    private void wire(UserRepository users, GroupRepository groups, AttractionRepository attractions,
+            TicketRepository tickets, LocalDate today) {
         this.userService = new UserService(users);
-        this.ticketService = new TicketService(new TicketRepository(), users, this::getCurrentDate, this::getBasePrice);
-        TicketService tickets = this.ticketService;
-        this.groupService = new GroupService(new GroupRepository(), users, tickets::hasActiveGroupTicket);
-        this.attractionService = new AttractionService(new AttractionRepository());
+        TicketService ticketsService = new TicketService(tickets, users, this::getCurrentDate, this::getBasePrice);
+        this.ticketService = ticketsService;
+        this.groupService = new GroupService(groups, users, ticketsService::hasActiveGroupTicket);
+        this.attractionService = new AttractionService(attractions);
         this.currentDate = today;
         this.basePrice = INITIAL_PRICE;
     }
@@ -96,7 +126,7 @@ public final class ParkController {
             }
         }
         userService.remove(user);
-        groupService.groupsOf(user).forEach(group -> group.removeMember(user.getDni()));
+        groupService.removeFromAllGroups(user);
         return user;
     }
 
