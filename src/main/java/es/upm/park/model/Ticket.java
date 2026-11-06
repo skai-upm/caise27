@@ -3,6 +3,7 @@ package es.upm.park.model;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Common abstraction for every ticket type: a unique identifier, the single
@@ -43,6 +44,14 @@ public abstract class Ticket {
     public boolean isActiveOn(LocalDate today) {
         return !date.isBefore(today);
     }
+
+    /** A ticket is valid for access only on its own date. */
+    public boolean isValidOn(LocalDate today) {
+        return date.equals(today);
+    }
+
+    /** Emails of the users this ticket admits to an attraction. */
+    public abstract List<String> admittedUsers();
 
     /** Only tickets dated strictly after the given day may be deleted. */
     public boolean isDeletableOn(LocalDate today) {

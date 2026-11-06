@@ -2,6 +2,7 @@ package es.upm.park.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * A ticket for a single user. The ticket knows its user (by email); users do not
@@ -30,5 +31,10 @@ public class IndividualTicket extends Ticket {
 
     public String getOwnerEmail() {
         return ownerEmail;
+    }
+
+    @Override
+    public List<String> admittedUsers() {
+        return List.of(ownerEmail);
     }
 }

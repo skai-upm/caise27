@@ -60,6 +60,11 @@ public class GroupTicket extends Ticket {
         return composition.stream().map(Ticket::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    @Override
+    public List<String> admittedUsers() {
+        return composition.stream().map(IndividualTicket::getOwnerEmail).toList();
+    }
+
     public List<IndividualTicket> getComposition() {
         return composition;
     }

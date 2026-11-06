@@ -47,5 +47,7 @@ class GroupTicketTest {
         assertEquals("u1@correo.com", ticket.getComposition().get(0).getOwnerEmail());
         assertTrue(ticket.getComposition().stream().allMatch(IndividualTicket::isPartOfGroupTicket));
         assertTrue(ticket.getComposition().stream().allMatch(t -> t.getDate().equals(DAY)));
+        assertEquals(6, ticket.admittedUsers().size());
+        assertEquals("u1@correo.com", ticket.admittedUsers().get(0));
     }
 }

@@ -30,6 +30,18 @@ class TicketTest {
     }
 
     @Test
+    void validOnlyOnItsDate() {
+        assertTrue(ticket.isValidOn(DAY));
+        assertFalse(ticket.isValidOn(DAY.minusDays(1)));
+        assertFalse(ticket.isValidOn(DAY.plusDays(1)));
+    }
+
+    @Test
+    void individualTicketAdmitsItsOwner() {
+        assertEquals(java.util.List.of("ana@correo.com"), ticket.admittedUsers());
+    }
+
+    @Test
     void keepsCommonData() {
         assertEquals("T001", ticket.getId());
         assertEquals(DAY, ticket.getDate());

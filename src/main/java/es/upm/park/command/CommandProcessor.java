@@ -36,6 +36,7 @@ public class CommandProcessor {
             "GROUPTICKET DELETE;<identifier>",
             "ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>",
             "ATTRACTION LIST;<AttractionIdentifier>",
+            "ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>",
             "HELP",
             "EXIT");
 
@@ -83,6 +84,9 @@ public class CommandProcessor {
         }));
         handlers.put("ATTRACTION LIST", args -> withArgs(args, 1, "ATTRACTION LIST;<AttractionIdentifier>",
                 a -> listOccupants(park().requireAttraction(a[0]))));
+        handlers.put("ATTRACTION ENTER", args -> withArgs(args, 2,
+                "ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>",
+                a -> "ENTERED " + a[0] + ": " + String.join(", ", park().enterAttraction(a[0], a[1]))));
     }
 
     public CommandResult process(String line) {

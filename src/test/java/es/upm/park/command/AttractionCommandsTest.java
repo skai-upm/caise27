@@ -2,6 +2,7 @@ package es.upm.park.command;
 
 import es.upm.park.controller.ParkController;
 import es.upm.park.controller.ParkControllerTestSupport;
+import es.upm.park.controller.TestUsers;
 import es.upm.park.model.Attraction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,8 +59,25 @@ class AttractionCommandsTest {
     }
 
     @Test
+    void enterWithIndividualTicket() {
+        ParkController.getInstance().setUserDirectory(TestUsers.of("ana@correo.com"));
+        run("SYSTEM DATE;2027-04-15");
+        run("ATTRACTION CREATE;A01;Dragon Rojo;20");
+        run("TICKET CREATE;T001;ana@correo.com;2027-04-15");
+        run("TICKET CREATE;T002;ana@correo.com;2027-04-16");
+        assertTrue(run("ATTRACTION ENTER;A01;T002").startsWith("ERROR"));
+        assertEquals("ENTERED A01: ana@correo.com", run("ATTRACTION ENTER;A01;T001"));
+        assertTrue(run("ATTRACTION LIST;A01").contains("ana@correo.com"));
+        run("SYSTEM DATE;2027-04-16");
+        assertTrue(run("ATTRACTION LIST;A01").contains("ana@correo.com"));
+        assertTrue(run("ATTRACTION ENTER;A01").startsWith("ERROR"));
+        assertTrue(run("ATTRACTION ENTER;A99;T001").startsWith("ERROR"));
+    }
+
+    @Test
     void helpListsAttractionCommands() {
         String help = run("HELP");
+        assertTrue(help.contains("ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>"));
         assertTrue(help.contains("ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>"));
         assertTrue(help.contains("ATTRACTION LIST;<AttractionIdentifier>"));
     }

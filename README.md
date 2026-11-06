@@ -74,3 +74,4 @@ Attraction commands:
 
 - `ATTRACTION CREATE;<Identifier>;<Name>;<Capacity>` creates an attraction with a positive maximum capacity.
 - `ATTRACTION LIST;<AttractionIdentifier>` shows the emails of the users currently inside it (read-only).
+- `ATTRACTION ENTER;<AttractionIdentifier>;<TicketIdentifier>` admits the ticket's user(s) when the ticket is dated exactly the current system date and the attraction has room for all of them. The date is checked only at entry.

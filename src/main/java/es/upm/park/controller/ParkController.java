@@ -263,6 +263,34 @@ public final class ParkController {
         return attraction;
     }
 
+    /**
+     * Admits the users of a ticket to an attraction, whatever the ticket type.
+     * Every check runs before anyone enters, so entry is all-or-nothing.
+     *
+     * @return the emails of the users who entered
+     */
+    public List<String> enterAttraction(String attractionId, String ticketId) {
+        Attraction attraction = requireAttraction(attractionId);
+        Ticket ticket = findTicket(ticketId)
+                .orElseThrow(() -> new ParkException("No ticket with identifier " + ticketId));
+        if (!ticket.isValidOn(currentDate)) {
+            throw new ParkException("Ticket " + ticketId + " is not valid on " + currentDate);
+        }
+        List<String> entrants = ticket.admittedUsers();
+        for (String email : entrants) {
+            if (attraction.isInside(email)) {
+                throw new ParkException("User " + email + " is already inside attraction " + attractionId);
+            }
+        }
+        int free = attraction.getCapacity() - attraction.getOccupantEmails().size();
+        if (entrants.size() > free) {
+            throw new ParkException("Attraction " + attractionId + " has " + free + " free places for "
+                    + entrants.size() + " users");
+        }
+        entrants.forEach(attraction::enter);
+        return entrants;
+    }
+
     public Attraction requireAttraction(String id) {
         return findAttraction(id).orElseThrow(() -> new ParkException("No attraction with identifier " + id));
     }
