@@ -106,6 +106,8 @@ package es.upm.amusementpark.business {
     - phone : String
     - card : String
   }
+  class UserValidator <<utility>> {
+  }
   class Group {
     - id : String
     - name : String
@@ -206,6 +208,8 @@ Attraction ..> Admission : produces
 Admission --> "0..*" Pass : toConsume
 AttractionType ..> Attraction : creates
 ParkController ..> PassLookup : provides passesOfTicket
+
+UserValidator ..> ParkException : throws
 
 ' ---- passes ----
 Pass <|-- SpeedPass
