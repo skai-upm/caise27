@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0024-botl-0024-f3-delivery-3-persistence-and-uml",
+  "change": "botl-0024-f3-delivery-3-persistence-and-uml",
+  "status": "archived",
+  "createdAt": "2026-11-05T22:38:47.962350+00:00",
+  "updatedAt": "2026-11-05T22:53:41.305740+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261105T223847Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261105T223847Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 1010741,
+        "totalCost": 0.30876719999999835
+      }
+    },
+    {
+      "runId": "0002-apply-20261105T223955Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261105T223955Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 3105664,
+        "totalCost": 0.9268325999999973
+      }
+    },
+    {
+      "runId": "0003-archive-20261105T225258Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261105T225258Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 525568,
+        "totalCost": 0.11720160000000135
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-05T22:53:41.249899+00:00"
+}

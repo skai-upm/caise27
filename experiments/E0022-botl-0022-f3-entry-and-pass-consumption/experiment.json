@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "7.2",
+  "experiment": "E0022-botl-0022-f3-entry-and-pass-consumption",
+  "change": "botl-0022-f3-entry-and-pass-consumption",
+  "status": "archived",
+  "createdAt": "2026-11-05T22:13:34.604475+00:00",
+  "updatedAt": "2026-11-05T22:34:01.079305+00:00",
+  "runs": [
+    {
+      "runId": "0001-propose-20261105T221334Z",
+      "sequence": 1,
+      "phase": "propose",
+      "agent": "claude-code",
+      "path": "runs/0001-propose-20261105T221334Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 960909,
+        "totalCost": 0.31859659999999934
+      }
+    },
+    {
+      "runId": "0002-apply-20261105T221446Z",
+      "sequence": 2,
+      "phase": "apply",
+      "agent": "claude-code",
+      "path": "runs/0002-apply-20261105T221446Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 2432810,
+        "totalCost": 0.7068820000000002
+      }
+    },
+    {
+      "runId": "0003-archive-20261105T223318Z",
+      "sequence": 3,
+      "phase": "archive",
+      "agent": "claude-code",
+      "path": "runs/0003-archive-20261105T223318Z/result.json",
+      "ai": {
+        "totalProcessedTokens": 489486,
+        "totalCost": 0.10958799999999869
+      }
+    }
+  ],
+  "totals": {},
+  "archivedAt": "2026-11-05T22:34:01.023296+00:00"
+}
