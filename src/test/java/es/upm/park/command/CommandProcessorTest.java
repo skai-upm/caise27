@@ -235,4 +235,18 @@ class CommandProcessorTest {
         assertEquals("Group deleted: G01", processor.process("GROUP DELETE;G01"));
         assertTrue(processor.process("HELP").contains("GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>"));
     }
+
+    @Test
+    void attractionCommands() {
+        assertEquals("Attraction created: A01", processor.process("ATTRACTION CREATE;A01;Dragon Rojo;20"));
+        assertEquals("Attraction A01 has no users inside", processor.process("ATTRACTION LIST;A01"));
+        assertEquals("Attraction A01 has no users inside", processor.process("ATTRACTION LIST;A01"));
+        processor.process(ANA);
+        ParkController.getInstance().getAttractionService().find("A01")
+                .enter(repo.findByDni("12345678Z").orElseThrow());
+        assertEquals("Users in A01:" + System.lineSeparator() + "ana@correo.com", processor.process("ATTRACTION LIST;A01"));
+        assertEquals("Error: invalid capacity 0", processor.process("ATTRACTION CREATE;A02;Torre;0"));
+        assertEquals("Error: no attraction A99", processor.process("ATTRACTION LIST;A99"));
+        assertTrue(processor.process("HELP").contains("ATTRACTION LIST;<id>"));
+    }
 }

@@ -3,6 +3,7 @@ package es.upm.park.command;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -34,6 +35,8 @@ public class CommandProcessor {
             "  TICKET DELETE;<id>",
             "  GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>",
             "  GROUPTICKET DELETE;<id>",
+            "  ATTRACTION CREATE;<id>;<name>;<capacity>",
+            "  ATTRACTION LIST;<id>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<price>",
             "  HELP",
@@ -60,6 +63,8 @@ public class CommandProcessor {
         commands.put("TICKET DELETE", new Command(1, this::deleteTicket));
         commands.put("GROUPTICKET CREATE", new Command(3, this::createGroupTicket));
         commands.put("GROUPTICKET DELETE", new Command(1, this::deleteGroupTicket));
+        commands.put("ATTRACTION CREATE", new Command(3, this::createAttraction));
+        commands.put("ATTRACTION LIST", new Command(1, this::listAttraction));
         commands.put("SYSTEM DATE", new Command(1, f -> "System date set to " + park.setCurrentDate(f[0])));
         commands.put("SYSTEM PRICE", new Command(1,
                 f -> "System price set to " + park.setBasePrice(f[0]).toPlainString()));
@@ -154,6 +159,18 @@ public class CommandProcessor {
     private String deleteGroupTicket(String[] f) {
         park.getTicketService().deleteGroupTicket(f[0]);
         return "Group ticket deleted: " + f[0];
+    }
+
+    private String createAttraction(String[] f) {
+        return "Attraction created: " + park.getAttractionService().create(f[0], f[1], f[2]).getId();
+    }
+
+    private String listAttraction(String[] f) {
+        List<String> emails = park.getAttractionService().occupantEmails(f[0]);
+        if (emails.isEmpty()) {
+            return "Attraction " + f[0] + " has no users inside";
+        }
+        return "Users in " + f[0] + ":" + System.lineSeparator() + String.join(System.lineSeparator(), emails);
     }
 
     private String exit(String[] f) {

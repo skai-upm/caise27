@@ -7,9 +7,11 @@ import java.time.LocalDate;
 import es.upm.park.model.Group;
 import es.upm.park.model.GroupTicket;
 import es.upm.park.model.User;
+import es.upm.park.repository.AttractionRepository;
 import es.upm.park.repository.GroupRepository;
 import es.upm.park.repository.TicketRepository;
 import es.upm.park.repository.UserRepository;
+import es.upm.park.service.AttractionService;
 import es.upm.park.service.GroupException;
 import es.upm.park.service.GroupService;
 import es.upm.park.service.ParkException;
@@ -34,6 +36,7 @@ public final class ParkController {
     private UserService userService;
     private GroupService groupService;
     private TicketService ticketService;
+    private AttractionService attractionService;
 
     private ParkController() {
         start(new UserRepository(), LocalDate.now());
@@ -53,6 +56,7 @@ public final class ParkController {
         this.ticketService = new TicketService(new TicketRepository(), users, this::getCurrentDate, this::getBasePrice);
         TicketService tickets = this.ticketService;
         this.groupService = new GroupService(new GroupRepository(), users, tickets::hasActiveGroupTicket);
+        this.attractionService = new AttractionService(new AttractionRepository());
         this.currentDate = today;
         this.basePrice = INITIAL_PRICE;
     }
@@ -63,6 +67,10 @@ public final class ParkController {
 
     public GroupService getGroupService() {
         return groupService;
+    }
+
+    public AttractionService getAttractionService() {
+        return attractionService;
     }
 
     public TicketService getTicketService() {
