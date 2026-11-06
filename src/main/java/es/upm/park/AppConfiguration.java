@@ -2,6 +2,7 @@ package es.upm.park;
 
 import es.upm.park.business.controller.InvoiceController;
 import es.upm.park.business.controller.ParkController;
+import es.upm.park.business.controller.UserRegistry;
 import es.upm.park.business.security.BCryptPasswordHasher;
 import es.upm.park.business.security.PasswordPolicy;
 import es.upm.park.business.security.PasswordService;
@@ -29,7 +30,7 @@ public final class AppConfiguration {
 
     /** The configured objects of one execution. */
     public record Configured(TextParkStorage storage, GroupRepository groups, TicketRepository tickets,
-                             AttractionRepository attractions, PasswordService passwords,
+                             AttractionRepository attractions, PasswordService passwords, UserRegistry users,
                              CommandProcessor processor) {
     }
 
@@ -44,8 +45,10 @@ public final class AppConfiguration {
         PassRepository passes = new PassRepository(paths.passes(), warnings);
         TextParkStorage storage = new TextParkStorage(groups, tickets, attractions, passes);
 
+        UserRegistry users = new UserRegistry();
         ParkController park = ParkController.getInstance();
         park.setStorage(storage);
+        park.setUserDirectory(users);
         InvoiceController invoices = InvoiceController.getInstance();
         invoices.setParkController(park);
 
@@ -54,7 +57,7 @@ public final class AppConfiguration {
         HelpGenerator help = new HelpGenerator(CommandCatalog.standard(), new SyntaxHelpFormatter());
         HelpGenerator extendedHelp = new HelpGenerator(CommandCatalog.standard(), new ExtendedHelpFormatter());
 
-        return new Configured(storage, groups, tickets, attractions, passwords,
+        return new Configured(storage, groups, tickets, attractions, passwords, users,
                 new CommandProcessor(park, invoices, help, extendedHelp));
     }
 }

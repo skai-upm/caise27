@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -35,6 +36,12 @@ public class App {
     }
 
     static void run(String[] args, Path baseDir, BufferedReader stdin, PrintStream out, PrintStream err) {
+        run(args, baseDir, stdin, out, err, configured -> { });
+    }
+
+    /** As {@link #run}, letting the caller adjust the configured objects before commands run (tests). */
+    static void run(String[] args, Path baseDir, BufferedReader stdin, PrintStream out, PrintStream err,
+                    Consumer<AppConfiguration.Configured> customizer) {
         boolean fly = args.length > 0 && FLY.equals(args[0]);
         String commandFile = fly ? (args.length > 1 ? args[1] : null) : (args.length > 0 ? args[0] : null);
         Path dataDir;
@@ -47,6 +54,7 @@ public class App {
         try {
             ParkController park = ParkController.getInstance();
             AppConfiguration.Configured configured = AppConfiguration.configure(dataDir, err);
+            customizer.accept(configured);
             try {
                 park.restore(configured.storage().load());
             } catch (ParkException e) {

@@ -93,6 +93,16 @@ package "es.upm.park.business.model" {
   GroupTicket *--> "1..*" IndividualTicket : composition
   GroupTicket --> "0..1" Group : purchaser
 
+  class User {
+    - firstName : String
+    - surnames : String
+    - dni : String {readOnly}
+    - email : String
+    - password : String
+    - phone : String
+    - card : String
+  }
+
   note as UsersNote
     Users are referenced by email:
     Group.memberEmails (0..*), IndividualTicket.ownerEmail (1),
@@ -125,6 +135,12 @@ package "es.upm.park.business.controller" {
 
   interface UserDirectory {
   }
+
+  class UserRegistry {
+    - usersByEmail : Map<String, User>
+  }
+  UserRegistry ..|> UserDirectory
+  UserRegistry o--> "0..*" User : users
 
   interface ParkStorage {
   }
@@ -322,6 +338,7 @@ package "es.upm.park" {
   AppConfiguration ..> InvoiceController : injects park
   AppConfiguration ..> CommandProcessor : creates
   AppConfiguration ..> PasswordService : creates with BCrypt
+  AppConfiguration ..> UserRegistry : creates, injects as UserDirectory
   AppConfiguration ..> HelpGenerator : creates with formatter
 }
 

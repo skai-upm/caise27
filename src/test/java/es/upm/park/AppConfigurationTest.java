@@ -55,6 +55,17 @@ class AppConfigurationTest {
     }
 
     @Test
+    void storedUsersAreVisibleToParkManagement() {
+        AppConfiguration.Configured configured = AppConfiguration.configure(base.resolve("data"),
+                new PrintStream(new ByteArrayOutputStream()));
+        configured.users().save(new es.upm.park.business.model.User("Ana", "Garcia Lopez", "12345678Z",
+                "ana@correo.com", configured.passwords().protect("Clave1!"), "612345678", "1234567890123456"));
+        String today = ParkController.getInstance().getCurrentDate().toString();
+        assertEquals("TICKET CREATED. PRICE: 40.00",
+                configured.processor().process("TICKET CREATE;T001;ana@correo.com;" + today).output());
+    }
+
+    @Test
     void controllersAreWiredByTheConfiguration() {
         InvoiceController.getInstance().setParkController(null);
         AppConfiguration.Configured configured = AppConfiguration.configure(base.resolve("data"),

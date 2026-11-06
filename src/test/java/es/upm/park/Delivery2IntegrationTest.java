@@ -1,8 +1,7 @@
 package es.upm.park;
 
-import es.upm.park.business.controller.ParkController;
 import es.upm.park.business.controller.ParkControllerTestSupport;
-import es.upm.park.business.controller.TestUsers;
+import es.upm.park.business.model.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,11 +56,17 @@ class Delivery2IntegrationTest {
     @TempDir
     Path base;
 
+    private static final Map<String, String> USERS = Map.of(
+            "ana@correo.com", "12345678Z", "pedro@correo.com", "87654321X", "luis@correo.com", "11111111H");
+
     @BeforeEach
     void setUp() {
         ParkControllerTestSupport.reset();
-        ParkController.getInstance().setUserDirectory(TestUsers.withDnis(Map.of(
-                "ana@correo.com", "12345678Z", "pedro@correo.com", "87654321X", "luis@correo.com", "11111111H")));
+    }
+
+    private static void registerUsers(AppConfiguration.Configured configured, Map<String, String> users) {
+        users.forEach((email, dni) -> configured.users().save(
+                new User("Name", "Surname", dni, email, "$2a$10$hash", "600000000", "1234567890123456")));
     }
 
     @AfterEach
@@ -70,9 +75,14 @@ class Delivery2IntegrationTest {
     }
 
     private String run(String... args) {
+        return runWith(USERS, args);
+    }
+
+    private String runWith(Map<String, String> users, String... args) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         App.run(args, base, new BufferedReader(new StringReader("")),
-                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(new ByteArrayOutputStream()));
+                new PrintStream(out, true, StandardCharsets.UTF_8), new PrintStream(new ByteArrayOutputStream()),
+                configured -> registerUsers(configured, users));
         return out.toString(StandardCharsets.UTF_8);
     }
 
@@ -105,7 +115,6 @@ class Delivery2IntegrationTest {
     void normalRunPersistsAndRestartsWithEmptyAttractions() throws IOException {
         assertSessionOutput(run(sessionFile().toString()));
         ParkControllerTestSupport.reset();
-        ParkController.getInstance().setUserDirectory(TestUsers.of("ana@correo.com"));
         Path check = Files.writeString(base.resolve("check.txt"), String.join("\n",
                 "SYSTEM DATE;2027-04-15",
                 "ATTRACTION STATUS;A01",
@@ -113,7 +122,7 @@ class Delivery2IntegrationTest {
                 "GROUPTICKET CREATE;TG01;G01;2027-04-16",
                 "TICKET CREATE;T001;ana@correo.com;2027-04-16",
                 "EXIT"), StandardCharsets.UTF_8);
-        String out = run(check.toString());
+        String out = runWith(Map.of("ana@correo.com", "12345678Z"), check.toString());
         assertTrue(out.contains("INSIDE: 0 | AVAILABLE: 20"), "attractions restart empty");
         assertTrue(out.contains("cannot be deleted"), "group ticket TG01 restored and still locks G01");
         assertTrue(out.contains("A ticket with identifier TG01 already exists"));

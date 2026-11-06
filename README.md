@@ -138,6 +138,10 @@ Controllers with an execution-wide responsibility (`ParkController`, `InvoiceCon
 
 Presentation never uses persistence, and business uses neither (`LayeredArchitectureTest`). Every abnormal situation is an exception, which the presentation layer reports as `ERROR:` before continuing with the next command.
 
+## Users
+
+A user (`business.model.User`) has a first name, surnames, DNI, email, password (stored protected value), phone and card number. All fields are private, and the DNI cannot change after creation. `business.controller.UserRegistry` stores and retrieves users by email and DNI, and serves as the park controller's `UserDirectory`.
+
 ## Passwords
 
 User passwords are never stored in plain text. `business.security.PasswordService` validates a new or changed password, protects it with BCrypt (salted, `$2a$...`) before it is stored, and verifies entered passwords against the stored value. The hashing algorithm and the validation policy are injected by `AppConfiguration`.
