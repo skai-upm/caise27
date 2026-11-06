@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 
 import es.upm.park.model.Group;
+import es.upm.park.model.GroupTicket;
 import es.upm.park.model.User;
 import es.upm.park.repository.GroupRepository;
 import es.upm.park.repository.TicketRepository;
@@ -49,8 +50,9 @@ public final class ParkController {
      */
     public void start(UserRepository users, LocalDate today) {
         this.userService = new UserService(users);
-        this.groupService = new GroupService(new GroupRepository(), users, group -> false);
         this.ticketService = new TicketService(new TicketRepository(), users, this::getCurrentDate, this::getBasePrice);
+        TicketService tickets = this.ticketService;
+        this.groupService = new GroupService(new GroupRepository(), users, tickets::hasActiveGroupTicket);
         this.currentDate = today;
         this.basePrice = INITIAL_PRICE;
     }
@@ -87,6 +89,21 @@ public final class ParkController {
         userService.remove(user);
         groupService.groupsOf(user).forEach(group -> group.removeMember(user.getDni()));
         return user;
+    }
+
+    /**
+     * Deletes a group without active group tickets; its historical group
+     * tickets are kept with their group reference cleared.
+     */
+    public void deleteGroup(String id) {
+        Group group = groupService.find(id);
+        groupService.delete(id);
+        ticketService.detachGroup(group);
+    }
+
+    /** Buys a group ticket for the current members of the group. */
+    public GroupTicket createGroupTicket(String id, String groupId, LocalDate date) {
+        return ticketService.createGroupTicket(id, groupService.find(groupId), date);
     }
 
     public LocalDate getCurrentDate() {

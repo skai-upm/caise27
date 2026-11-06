@@ -222,4 +222,17 @@ class CommandProcessorTest {
         assertEquals("User deleted: ana@correo.com", processor.process("USER DELETE;ana@correo.com;Clave1!"));
         assertTrue(processor.process("HELP").contains("TICKET CREATE;<id>;<email>;<yyyy-MM-dd>"));
     }
+
+    @Test
+    void groupTicketCommandsShowTotal() {
+        processor.process(ANA);
+        processor.process("SYSTEM DATE;2027-04-01");
+        processor.process("GROUP CREATE;G01;F");
+        processor.process("GROUP ADD;G01;ana@correo.com");
+        assertEquals("Group ticket created: TG01 total 40.00", processor.process("GROUPTICKET CREATE;TG01;G01;2027-04-15"));
+        assertEquals("Error: group G01 has an active group ticket", processor.process("GROUP DELETE;G01"));
+        assertEquals("Group ticket deleted: TG01", processor.process("GROUPTICKET DELETE;TG01"));
+        assertEquals("Group deleted: G01", processor.process("GROUP DELETE;G01"));
+        assertTrue(processor.process("HELP").contains("GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>"));
+    }
 }

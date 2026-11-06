@@ -32,6 +32,8 @@ public class CommandProcessor {
             "  GROUP DELETE;<id>",
             "  TICKET CREATE;<id>;<email>;<yyyy-MM-dd>",
             "  TICKET DELETE;<id>",
+            "  GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>",
+            "  GROUPTICKET DELETE;<id>",
             "  SYSTEM DATE;<yyyy-MM-dd>",
             "  SYSTEM PRICE;<price>",
             "  HELP",
@@ -56,6 +58,8 @@ public class CommandProcessor {
         commands.put("GROUP DELETE", new Command(1, this::deleteGroup));
         commands.put("TICKET CREATE", new Command(3, this::createTicket));
         commands.put("TICKET DELETE", new Command(1, this::deleteTicket));
+        commands.put("GROUPTICKET CREATE", new Command(3, this::createGroupTicket));
+        commands.put("GROUPTICKET DELETE", new Command(1, this::deleteGroupTicket));
         commands.put("SYSTEM DATE", new Command(1, f -> "System date set to " + park.setCurrentDate(f[0])));
         commands.put("SYSTEM PRICE", new Command(1,
                 f -> "System price set to " + park.setBasePrice(f[0]).toPlainString()));
@@ -128,7 +132,7 @@ public class CommandProcessor {
     }
 
     private String deleteGroup(String[] f) {
-        park.getGroupService().delete(f[0]);
+        park.deleteGroup(f[0]);
         return "Group deleted: " + f[0];
     }
 
@@ -140,6 +144,16 @@ public class CommandProcessor {
     private String deleteTicket(String[] f) {
         park.getTicketService().deleteIndividual(f[0]);
         return "Ticket deleted: " + f[0];
+    }
+
+    private String createGroupTicket(String[] f) {
+        BigDecimal total = park.createGroupTicket(f[0], f[1], Dates.parse(f[2])).getPrice();
+        return "Group ticket created: " + f[0] + " total " + total.toPlainString();
+    }
+
+    private String deleteGroupTicket(String[] f) {
+        park.getTicketService().deleteGroupTicket(f[0]);
+        return "Group ticket deleted: " + f[0];
     }
 
     private String exit(String[] f) {

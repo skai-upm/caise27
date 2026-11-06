@@ -1,24 +1,27 @@
 package es.upm.park.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
 /**
  * Information and behavior shared by every ticket type: a unique identifier,
- * a date of use and a price. Whether a ticket is active is derived from its
- * date and the current system date.
+ * a date of use and a price obtained from a base price and a discount.
+ * Whether a ticket is active is derived from its date and the current date.
  */
 public abstract class Ticket {
 
     private final String id;
     private final LocalDate date;
-    private final BigDecimal price;
+    private final BigDecimal basePrice;
+    private final BigDecimal discount;
 
-    protected Ticket(String id, LocalDate date, BigDecimal price) {
+    protected Ticket(String id, LocalDate date, BigDecimal basePrice, BigDecimal discount) {
         this.id = id;
         this.date = date;
-        this.price = price;
+        this.basePrice = basePrice;
+        this.discount = discount;
     }
 
     public String getId() {
@@ -29,8 +32,19 @@ public abstract class Ticket {
         return date;
     }
 
+    /** Base price in force when the ticket was purchased. */
+    public BigDecimal getBasePrice() {
+        return basePrice;
+    }
+
+    /** Discount fraction applied to the base price (0 for none). */
+    public BigDecimal getDiscount() {
+        return discount;
+    }
+
+    /** Price charged: base price minus discount, in cents. */
     public BigDecimal getPrice() {
-        return price;
+        return basePrice.multiply(BigDecimal.ONE.subtract(discount)).setScale(2, RoundingMode.HALF_UP);
     }
 
     /** Active tickets are dated on or after the current date. */
