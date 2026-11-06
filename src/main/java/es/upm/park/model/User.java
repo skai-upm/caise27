@@ -75,4 +75,13 @@ public class User {
     public void setCardNumber(String cardNumber) {
         this.cardNumber = cardNumber;
     }
+
+    /**
+     * Whether this user's data satisfies the validation rules.
+     *
+     * @return true when DNI, email, password and card number are valid
+     */
+    public boolean isValid() {
+        return UserValidator.isValid(this);
+    }
 }
