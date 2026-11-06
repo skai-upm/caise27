@@ -7,7 +7,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 
+import es.upm.park.repository.GroupRepository;
 import es.upm.park.repository.UserRepository;
+import es.upm.park.service.GroupService;
 import es.upm.park.service.UserException;
 import es.upm.park.service.UserService;
 
@@ -27,9 +29,11 @@ public final class ParkController {
 
     private LocalDate currentDate = LocalDate.now();
     private BigDecimal basePrice = INITIAL_PRICE;
-    private UserService userService = new UserService(new UserRepository());
+    private UserService userService;
+    private GroupService groupService;
 
     private ParkController() {
+        start(new UserRepository(), LocalDate.now());
     }
 
     /** The single central management instance. */
@@ -43,12 +47,17 @@ public final class ParkController {
      */
     public void start(UserRepository users, LocalDate today) {
         this.userService = new UserService(users);
+        this.groupService = new GroupService(new GroupRepository(), users, group -> false);
         this.currentDate = today;
         this.basePrice = INITIAL_PRICE;
     }
 
     public UserService getUserService() {
         return userService;
+    }
+
+    public GroupService getGroupService() {
+        return groupService;
     }
 
     public LocalDate getCurrentDate() {

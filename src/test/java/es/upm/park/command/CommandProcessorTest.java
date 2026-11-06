@@ -195,4 +195,17 @@ class CommandProcessorTest {
         assertEquals("Error: SYSTEM PRICE expects 1 fields", processor.process("SYSTEM PRICE;1;2"));
         assertEquals(new BigDecimal("40.00"), ParkController.getInstance().getBasePrice());
     }
+
+    @Test
+    void groupCommands() {
+        processor.process(ANA);
+        assertEquals("Group created: G01", processor.process("GROUP CREATE;G01;Familia Garcia"));
+        assertEquals("User ana@correo.com added to group G01", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertEquals("Error: user ana@correo.com already in group G01", processor.process("GROUP ADD;G01;ana@correo.com"));
+        assertEquals("User ana@correo.com removed from group G01", processor.process("GROUP REMOVE;G01;ana@correo.com"));
+        assertEquals("Error: GROUP DELETE expects 1 fields", processor.process("GROUP DELETE"));
+        assertEquals("Group deleted: G01", processor.process("GROUP DELETE;G01"));
+        assertEquals("Error: no group G01", processor.process("GROUP DELETE;G01"));
+        assertTrue(processor.process("HELP").contains("GROUP REMOVE;<id>;<email>"));
+    }
 }
