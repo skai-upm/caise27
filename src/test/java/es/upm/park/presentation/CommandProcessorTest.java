@@ -290,4 +290,15 @@ class CommandProcessorTest {
         assertEquals("Error: INVOICE CREATE expects 2 fields", processor.process("INVOICE CREATE;USER"));
         assertTrue(processor.process("HELP").contains("INVOICE CREATE;GROUP;<group>"));
     }
+
+    @Test
+    void helpExtendedAndInjectedGenerators() {
+        assertTrue(processor.process("HELP EXTENDED").contains("      - Registers a new user"));
+        assertEquals("Error: HELP EXTENDED expects 0 fields", processor.process("HELP EXTENDED;x"));
+        es.upm.park.presentation.help.HelpGenerator fixed =
+                new es.upm.park.presentation.help.HelpGenerator(c -> "custom help", java.util.List.of());
+        CommandProcessor custom = new CommandProcessor(ParkController.getInstance(), fixed, fixed);
+        assertEquals("custom help", custom.process("HELP"));
+        assertEquals("custom help", custom.process("HELP EXTENDED"));
+    }
 }

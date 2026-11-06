@@ -6,13 +6,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import es.upm.park.business.controller.Dates;
 import es.upm.park.business.controller.ParkController;
 import es.upm.park.business.model.User;
-import es.upm.park.business.model.UserField;
 import es.upm.park.persistence.PersistenceException;
+import es.upm.park.presentation.help.CommandCatalog;
+import es.upm.park.presentation.help.ExtendedHelpFormatter;
+import es.upm.park.presentation.help.HelpGenerator;
+import es.upm.park.presentation.help.SyntaxHelpFormatter;
 import es.upm.park.business.service.ParkException;
 
 /**
@@ -22,42 +24,28 @@ import es.upm.park.business.service.ParkException;
 public class CommandProcessor {
 
     static final String BYE = "Bye";
-    static final String HELP_TEXT = String.join(System.lineSeparator(),
-            "Available commands:",
-            "  USER CREATE;<firstName>;<surnames>;<dni>;<email>;<password>;<phone>;<card>",
-            "  USER DELETE;<email>;<password>",
-            "  USER UPDATE;<email>;<password>;<field>;<value>",
-            "    <field>: " + Arrays.stream(UserField.values()).map(Enum::name).collect(Collectors.joining(", ")),
-            "  GROUP CREATE;<id>;<name>",
-            "  GROUP ADD;<id>;<email>",
-            "  GROUP REMOVE;<id>;<email>",
-            "  GROUP DELETE;<id>",
-            "  TICKET CREATE;<id>;<email>;<yyyy-MM-dd>",
-            "  TICKET DELETE;<id>",
-            "  GROUPTICKET CREATE;<id>;<group>;<yyyy-MM-dd>",
-            "  GROUPTICKET DELETE;<id>",
-            "  ATTRACTION CREATE;<id>;<name>;<capacity>",
-            "  ATTRACTION LIST;<id>",
-            "  ATTRACTION ENTER;<attraction>;<ticket>",
-            "  ATTRACTION EXIT;<attraction>;<email>",
-            "  ATTRACTION STATUS;<id>",
-            "  INVOICE CREATE;USER;<email>",
-            "  INVOICE CREATE;GROUP;<group>",
-            "  SYSTEM DATE;<yyyy-MM-dd>",
-            "  SYSTEM PRICE;<price>",
-            "  HELP",
-            "  EXIT");
 
     /** A command handler: expected number of fields and the action on them. */
     private record Command(int fields, Function<String[], String> action) {
     }
 
     private final ParkController park;
+    private final HelpGenerator help;
+    private final HelpGenerator extendedHelp;
     private final Map<String, Command> commands = new LinkedHashMap<>();
     private boolean exitRequested;
 
+    /** Processor with the default syntax and extended help generators. */
     public CommandProcessor(ParkController park) {
+        this(park, new HelpGenerator(new SyntaxHelpFormatter(), CommandCatalog.commands()),
+                new HelpGenerator(new ExtendedHelpFormatter(), CommandCatalog.commands()));
+    }
+
+    /** Processor whose help output is produced by the injected generators. */
+    public CommandProcessor(ParkController park, HelpGenerator help, HelpGenerator extendedHelp) {
         this.park = park;
+        this.help = help;
+        this.extendedHelp = extendedHelp;
         commands.put("USER CREATE", new Command(7, this::createUser));
         commands.put("USER DELETE", new Command(2, this::deleteUser));
         commands.put("USER UPDATE", new Command(4, this::updateUser));
@@ -79,7 +67,8 @@ public class CommandProcessor {
         commands.put("SYSTEM DATE", new Command(1, f -> "System date set to " + park.setCurrentDate(f[0])));
         commands.put("SYSTEM PRICE", new Command(1,
                 f -> "System price set to " + park.setBasePrice(f[0]).toPlainString()));
-        commands.put("HELP", new Command(0, f -> HELP_TEXT));
+        commands.put("HELP", new Command(0, f -> help.generate()));
+        commands.put("HELP EXTENDED", new Command(0, f -> extendedHelp.generate()));
         commands.put("EXIT", new Command(0, this::exit));
     }
 
